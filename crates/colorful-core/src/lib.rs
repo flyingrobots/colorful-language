@@ -68,6 +68,8 @@ pub enum FunctionKind {
     Auxiliary,
     /// `this`, `each`, `some`, `my`, ...
     Determiner,
+    /// `not`, `never`, and the `n't` of negative contractions.
+    Negator,
 }
 
 /// The part-of-speech class assigned to a token.

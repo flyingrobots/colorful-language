@@ -223,6 +223,63 @@ static FUNCTION_WORDS: phf::Map<&'static str, FunctionKind> = phf_map! {
     "need" => FunctionKind::Auxiliary,
     "dare" => FunctionKind::Auxiliary,
     "used" => FunctionKind::Auxiliary,
+
+    // Negators
+    "not" => FunctionKind::Negator,
+    "never" => FunctionKind::Negator,
+
+    // Negative contractions (auxiliary + n't). Keys are lowercase with a
+    // straight apostrophe; lookup normalizes a typographic apostrophe to match.
+    "don't" => FunctionKind::Auxiliary,
+    "doesn't" => FunctionKind::Auxiliary,
+    "didn't" => FunctionKind::Auxiliary,
+    "isn't" => FunctionKind::Auxiliary,
+    "aren't" => FunctionKind::Auxiliary,
+    "wasn't" => FunctionKind::Auxiliary,
+    "weren't" => FunctionKind::Auxiliary,
+    "haven't" => FunctionKind::Auxiliary,
+    "hasn't" => FunctionKind::Auxiliary,
+    "hadn't" => FunctionKind::Auxiliary,
+    "won't" => FunctionKind::Auxiliary,
+    "wouldn't" => FunctionKind::Auxiliary,
+    "can't" => FunctionKind::Auxiliary,
+    "cannot" => FunctionKind::Auxiliary,
+    "couldn't" => FunctionKind::Auxiliary,
+    "shouldn't" => FunctionKind::Auxiliary,
+    "mustn't" => FunctionKind::Auxiliary,
+    "mightn't" => FunctionKind::Auxiliary,
+    "shan't" => FunctionKind::Auxiliary,
+    "needn't" => FunctionKind::Auxiliary,
+    "ain't" => FunctionKind::Auxiliary,
+
+    // Pronoun + auxiliary contractions
+    "i'm" => FunctionKind::Pronoun,
+    "you're" => FunctionKind::Pronoun,
+    "we're" => FunctionKind::Pronoun,
+    "they're" => FunctionKind::Pronoun,
+    "he's" => FunctionKind::Pronoun,
+    "she's" => FunctionKind::Pronoun,
+    "it's" => FunctionKind::Pronoun,
+    "that's" => FunctionKind::Pronoun,
+    "there's" => FunctionKind::Pronoun,
+    "who's" => FunctionKind::Pronoun,
+    "i've" => FunctionKind::Pronoun,
+    "you've" => FunctionKind::Pronoun,
+    "we've" => FunctionKind::Pronoun,
+    "they've" => FunctionKind::Pronoun,
+    "i'll" => FunctionKind::Pronoun,
+    "you'll" => FunctionKind::Pronoun,
+    "we'll" => FunctionKind::Pronoun,
+    "they'll" => FunctionKind::Pronoun,
+    "he'll" => FunctionKind::Pronoun,
+    "she'll" => FunctionKind::Pronoun,
+    "it'll" => FunctionKind::Pronoun,
+    "i'd" => FunctionKind::Pronoun,
+    "you'd" => FunctionKind::Pronoun,
+    "he'd" => FunctionKind::Pronoun,
+    "she'd" => FunctionKind::Pronoun,
+    "we'd" => FunctionKind::Pronoun,
+    "they'd" => FunctionKind::Pronoun,
 };
 
 /// A [`Lexicon`] backed by the closed-class [`FUNCTION_WORDS`] set.
@@ -255,31 +312,32 @@ impl Lexicon for ClosedClassLexicon {
     }
 }
 
-/// Look a word up in the closed-class set, case-insensitively.
+/// Look a word up in the closed-class set, case-insensitively and tolerant of a
+/// typographic apostrophe (U+2019) in contractions.
 fn lookup(word: &str) -> Option<FunctionKind> {
     if let Some(kind) = FUNCTION_WORDS.get(word) {
         return Some(*kind);
     }
-    if word.bytes().any(|b| b.is_ascii_uppercase()) {
-        return FUNCTION_WORDS
-            .get(word.to_ascii_lowercase().as_str())
-            .copied();
+    // Normalize only when needed: lowercase any ASCII uppercase, and fold a
+    // curly apostrophe to a straight one so `don\u{2019}t` matches `don't`.
+    if word.bytes().any(|b| b.is_ascii_uppercase()) || word.contains('\u{2019}') {
+        let normalized: String = word
+            .chars()
+            .map(|c| if c == '\u{2019}' { '\'' } else { c })
+            .collect::<String>()
+            .to_ascii_lowercase();
+        return FUNCTION_WORDS.get(normalized.as_str()).copied();
     }
     None
 }
 
-/// Whether `word` is a numeric token: at least one digit, and every character is
-/// a digit or an internal `.`/`,` separator (for example `150`, `3.14`, `1,000`).
+/// Whether `word` is a numeric token: it starts and ends with a digit, and every
+/// character is a digit or an internal `.`/`,` separator (`150`, `3.14`, `1,000`,
+/// but not `3.`, `.5`, or `.`).
 fn is_number(word: &str) -> bool {
-    let mut has_digit = false;
-    for c in word.chars() {
-        if c.is_ascii_digit() {
-            has_digit = true;
-        } else if c != '.' && c != ',' {
-            return false;
-        }
-    }
-    has_digit
+    let first_is_digit = word.chars().next().is_some_and(|c| c.is_ascii_digit());
+    let last_is_digit = word.chars().next_back().is_some_and(|c| c.is_ascii_digit());
+    first_is_digit && last_is_digit && word.chars().all(|c| matches!(c, '0'..='9' | '.' | ','))
 }
 
 #[cfg(test)]
@@ -322,7 +380,7 @@ mod tests {
     fn content_words_are_undifferentiated() {
         assert_eq!(classify("cat"), PosClass::Content);
         assert_eq!(classify("running"), PosClass::Content);
-        // Proper-noun detection is the caller's job, not the lexicon.s.
+        // Proper-noun detection is the caller's job, not the lexicon's.
         assert_eq!(classify("Paris"), PosClass::Content);
     }
 
@@ -339,7 +397,59 @@ mod tests {
 
     #[test]
     fn set_is_nonempty_and_reasonably_sized() {
-        // A sanity floor; the exact count is documented in the lexicon topic.
+        // A sanity floor; word_count() is the authoritative current size.
         assert!(ClosedClassLexicon::word_count() >= 150);
+    }
+
+    #[test]
+    fn contractions_are_classified() {
+        // Negative contractions are auxiliaries; pronoun+aux contractions are
+        // pronouns. These are exactly the everyday words the product must reveal.
+        assert_eq!(
+            classify("don't"),
+            PosClass::Function(FunctionKind::Auxiliary)
+        );
+        assert_eq!(
+            classify("isn't"),
+            PosClass::Function(FunctionKind::Auxiliary)
+        );
+        assert_eq!(
+            classify("can't"),
+            PosClass::Function(FunctionKind::Auxiliary)
+        );
+        assert_eq!(classify("I'm"), PosClass::Function(FunctionKind::Pronoun));
+        assert_eq!(
+            classify("they're"),
+            PosClass::Function(FunctionKind::Pronoun)
+        );
+        assert_eq!(classify("we've"), PosClass::Function(FunctionKind::Pronoun));
+        assert_eq!(classify("it's"), PosClass::Function(FunctionKind::Pronoun));
+    }
+
+    #[test]
+    fn negation_is_its_own_kind() {
+        assert_eq!(classify("not"), PosClass::Function(FunctionKind::Negator));
+        assert_eq!(classify("never"), PosClass::Function(FunctionKind::Negator));
+    }
+
+    #[test]
+    fn curly_apostrophe_contractions_match() {
+        // A typographic apostrophe (U+2019) normalizes to a straight one.
+        assert_eq!(
+            classify("don\u{2019}t"),
+            PosClass::Function(FunctionKind::Auxiliary)
+        );
+        assert_eq!(
+            classify("I\u{2019}m"),
+            PosClass::Function(FunctionKind::Pronoun)
+        );
+    }
+
+    #[test]
+    fn malformed_numbers_are_not_numbers() {
+        // A numeric token must start and end with a digit.
+        assert_eq!(classify("3."), PosClass::Content);
+        assert_eq!(classify(".5"), PosClass::Content);
+        assert_eq!(classify("3.."), PosClass::Content);
     }
 }

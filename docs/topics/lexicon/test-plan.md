@@ -8,6 +8,10 @@ Requirements:
 - **LEX-4** Non-function, non-numeric words are `Content` (proper nouns are not
   decided here).
 - **LEX-5** The closed-class set meets a minimum size.
+- **LEX-6** Common contractions classify as function words; a typographic
+  apostrophe matches a straight one.
+- **LEX-7** Negators (`not`, `never`) classify as `Negator`.
+- **LEX-8** A numeric token must start and end with a digit.
 
 ## Cases
 
@@ -29,6 +33,16 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
 - **LEX-5a** — *Requirement:* LEX-5. *Behavior:* the set has at least 150 words.
   *Oracle:* `word_count()` lower bound. *Evidence:*
   `tests::set_is_nonempty_and_reasonably_sized`. *Status:* implemented.
+- **LEX-6a** — *Requirement:* LEX-6. *Behavior:* negative and pronoun+aux
+  contractions classify; curly apostrophe matches. *Oracle:* equality of
+  `PosClass`. *Evidence:* `tests::contractions_are_classified`,
+  `tests::curly_apostrophe_contractions_match`. *Status:* implemented.
+- **LEX-7a** — *Requirement:* LEX-7. *Behavior:* `not`/`never` are `Negator`.
+  *Oracle:* equality of `PosClass`. *Evidence:* `tests::negation_is_its_own_kind`.
+  *Status:* implemented.
+- **LEX-8a** — *Requirement:* LEX-8. *Behavior:* `3.`, `.5`, `3..` are not
+  numbers. *Oracle:* equality of `PosClass`. *Evidence:*
+  `tests::malformed_numbers_are_not_numbers`. *Status:* implemented.
 
 ## Known gaps
 

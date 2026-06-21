@@ -22,8 +22,8 @@ machine learning; pure lexing and shallow structure.
 
 | Slice | Crate | What it delivers |
 | --- | --- | --- |
-| [Workspace + core ports](https://github.com/flyingrobots/colorful-language/issues/1) | `colorful-core` | Cargo workspace; domain types (`Span`, `PosClass`, `Node`, `Tree`); the `Parser` and `Tagger` port traits. |
-| [Closed-class lexicon](https://github.com/flyingrobots/colorful-language/issues/2) | `colorful-lexicon` | A compile-time perfect-hash set of ~150 function words implementing `Tagger`. |
+| [Workspace + core ports](https://github.com/flyingrobots/colorful-language/issues/1) | `colorful-core` | Cargo workspace; domain types (`Span`, `PosClass`, `Node`, `Tree`); the `Parser`, `Lexicon`, and `Annotator` port traits. |
+| [Closed-class lexicon](https://github.com/flyingrobots/colorful-language/issues/2) | `colorful-lexicon` | A compile-time perfect-hash set of closed-class function words and common contractions implementing `Lexicon`. |
 | [Structural parser](https://github.com/flyingrobots/colorful-language/issues/3) | `colorful-parse` | A `logos` lexer + recursive descent producing sentence / word / punctuation structure, implementing `Parser`. |
 | [Terminal colorizer](https://github.com/flyingrobots/colorful-language/issues/4) | `colorful-cli` | ANSI rendering over `core` + `parse` + `lexicon`; golden fixtures as the test oracle. |
 | [Semantic-tokens server](https://github.com/flyingrobots/colorful-language/issues/5) | `colorful-lsp` | A `ropey` document mirror, incremental `didChange` handling, and a semantic-tokens response mapped onto standard token types. |
@@ -47,7 +47,7 @@ Detailed slices are defined when the goalpost opens.
 
 ## Goalpost 2 — "Open-class disambiguation" (v0.3.0)
 
-**Outcome:** content words stop being undifferentiated. A richer `Tagger`
+**Outcome:** content words stop being undifferentiated. A richer `Annotator`
 (dictionary-backed, later optionally ML) distinguishes noun / verb / adjective /
 adverb, behind the *same port*. Ships a custom semantic-token legend and a theme
 so the distinctions are visible.
