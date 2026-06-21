@@ -300,7 +300,7 @@ mod tests {
         // Adversarial inputs must not panic, and every leaf span must be
         // non-empty, in bounds, and strictly ordered (no overlaps).
         let long_word = "a".repeat(10_000);
-        let inputs: [&str; 10] = [
+        let inputs: [&str; 14] = [
             "",
             "?!?!?!",
             "\u{1F600}\u{1F4A9}", // emoji
@@ -311,6 +311,10 @@ mod tests {
             "don''t",
             "....",
             "He said \u{201C}hi\u{201D} to O'Brien.",
+            "cafe\u{0301} combining mark",  // combining acute
+            "a\u{200D}b zero\u{200B}width", // ZWJ + ZWSP
+            "\u{202E}reversed\u{202C} direction marks", // RTL override
+            "z\u{0300}\u{0301}\u{0302}\u{0303}\u{0304}algo text", // stacked combining
         ];
         for &input in &inputs {
             let spans = leaf_spans(input);

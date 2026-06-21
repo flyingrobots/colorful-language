@@ -258,6 +258,51 @@ mod tests {
     }
 
     #[test]
+    fn chaotic_unicode_keeps_offsets_consistent() {
+        // Combining marks, ZWJ/ZWSP, RTL overrides, and "Zalgo" stacks must not
+        // panic, must yield valid delta-encoded tokens, and must round-trip
+        // byte-faithfully through the edit path.
+        let corpus = [
+            "cafe\u{0301} test 12",
+            "a\u{200D}b\u{200B}c word 3",
+            "\u{202E}rtl\u{202C} here 9",
+            "z\u{0300}\u{0301}\u{0302}\u{0303}i Zalgo 4",
+            "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} family 7",
+        ];
+        for text in corpus {
+            // Decoding the delta stream must stay ordered (non-decreasing line,
+            // then non-decreasing column within a line).
+            let mut prev_line = 0u32;
+            let mut prev_start = 0u32;
+            for (i, t) in semantic_tokens(text).into_iter().enumerate() {
+                let (line, start) = if t.delta_line > 0 {
+                    (prev_line + t.delta_line, t.delta_start)
+                } else {
+                    (prev_line, prev_start + t.delta_start)
+                };
+                assert!(t.length >= 1, "empty token in {text:?}");
+                if i > 0 {
+                    assert!(
+                        line > prev_line || start >= prev_start,
+                        "out-of-order token in {text:?}"
+                    );
+                }
+                prev_line = line;
+                prev_start = start;
+            }
+            // A whole-document replace and a clamped no-op edit are byte-faithful.
+            let mut rope = Rope::from_str(text);
+            apply_change(&mut rope, None, text);
+            let range = Range {
+                start: Position::new(0, u32::MAX),
+                end: Position::new(0, u32::MAX),
+            };
+            apply_change(&mut rope, Some(range), "");
+            assert_eq!(rope.to_string(), text, "round-trip changed {text:?}");
+        }
+    }
+
+    #[test]
     fn apply_change_full_replace() {
         let mut rope = Rope::from_str("abc");
         apply_change(&mut rope, None, "xyz");
