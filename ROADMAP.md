@@ -20,11 +20,11 @@ machine learning; pure lexing and shallow structure.
 
 | Slice | Crate | What it delivers |
 | --- | --- | --- |
-| Workspace + core ports | `colorful-core` | Cargo workspace; domain types (`Span`, `PosClass`, `Node`, `Tree`); the `Parser` and `Tagger` port traits. |
-| Closed-class lexicon | `colorful-lexicon` | A compile-time perfect-hash set of ~150 function words implementing `Tagger`. |
-| Structural parser | `colorful-parse` | A `logos` lexer + recursive descent producing sentence / word / punctuation structure, implementing `Parser`. |
-| Terminal colorizer | `colorful-cli` | ANSI rendering over `core` + `parse` + `lexicon`; golden fixtures as the test oracle. |
-| Semantic-tokens server | `colorful-lsp` | A `ropey` document mirror, incremental `didChange` handling, and a semantic-tokens response mapped onto standard token types. |
+| [Workspace + core ports](https://github.com/flyingrobots/colorful-language/issues/1) | `colorful-core` | Cargo workspace; domain types (`Span`, `PosClass`, `Node`, `Tree`); the `Parser` and `Tagger` port traits. |
+| [Closed-class lexicon](https://github.com/flyingrobots/colorful-language/issues/2) | `colorful-lexicon` | A compile-time perfect-hash set of ~150 function words implementing `Tagger`. |
+| [Structural parser](https://github.com/flyingrobots/colorful-language/issues/3) | `colorful-parse` | A `logos` lexer + recursive descent producing sentence / word / punctuation structure, implementing `Parser`. |
+| [Terminal colorizer](https://github.com/flyingrobots/colorful-language/issues/4) | `colorful-cli` | ANSI rendering over `core` + `parse` + `lexicon`; golden fixtures as the test oracle. |
+| [Semantic-tokens server](https://github.com/flyingrobots/colorful-language/issues/5) | `colorful-lsp` | A `ropey` document mirror, incremental `didChange` handling, and a semantic-tokens response mapped onto standard token types. |
 
 **Done when:** the CLI colors a sample document deterministically against golden
 fixtures, and the LSP serves semantic tokens to at least one editor.
@@ -38,6 +38,7 @@ issues a shallow parse can already see — passive-voice candidates, run-on
 sentences, sentence-length outliers, weak/filler words. Surfaced as LSP
 diagnostics and CLI warnings.
 
+Tracked in [#6](https://github.com/flyingrobots/colorful-language/issues/6).
 Detailed slices are defined when the goalpost opens.
 
 ---
@@ -50,7 +51,8 @@ adverb, behind the *same port*. Ships a custom semantic-token legend and a theme
 so the distinctions are visible.
 
 This is the goalpost that demonstrates the hexagon paying off: the parser and
-the server do not change.
+the server do not change. Tracked in
+[#7](https://github.com/flyingrobots/colorful-language/issues/7).
 
 ---
 
