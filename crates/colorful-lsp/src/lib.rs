@@ -13,7 +13,7 @@
 
 use colorful_core::{Annotator, Parser, PosClass};
 use ropey::Rope;
-use tower_lsp::lsp_types::{Position, Range, SemanticToken, SemanticTokenType};
+use tower_lsp::lsp_types::{Range, SemanticToken, SemanticTokenType};
 
 /// The semantic-token legend, in index order. `v0` is a *skeleton* highlighter:
 /// it accentuates the structure (function words, proper nouns, numbers, quotes)
@@ -91,6 +91,29 @@ impl<'a> LineIndex<'a> {
             .sum();
         (line as u32, col_utf16 as u32)
     }
+
+    /// The byte offset of an LSP `(line, UTF-16 character)` position, clamped to
+    /// the line's content end (excluding its terminator), per the LSP `Position`
+    /// contract. Uses the same line model as [`LineIndex::position`].
+    fn offset_of(&self, line: u32, character: u32) -> usize {
+        let line = (line as usize).min(self.line_starts.len() - 1);
+        let line_start = self.line_starts[line];
+        let line_end = self
+            .line_starts
+            .get(line + 1)
+            .copied()
+            .unwrap_or(self.text.len());
+        let content = self.text[line_start..line_end].trim_end_matches(['\r', '\n']);
+
+        let mut utf16 = 0u32;
+        for (i, c) in content.char_indices() {
+            if utf16 >= character {
+                return line_start + i;
+            }
+            utf16 += c.len_utf16() as u32;
+        }
+        line_start + content.len()
+    }
 }
 
 /// The number of UTF-16 code units in `s`.
@@ -150,34 +173,22 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
     match range {
         None => *rope = Rope::from_str(text),
         Some(range) => {
-            let start = position_to_char(rope, range.start);
-            let end = position_to_char(rope, range.end).max(start);
-            rope.remove(start..end);
-            rope.insert(start, text);
+            // Map LSP positions to byte offsets using the *same* line model as
+            // the semantic-token path (LSP: `\n`, `\r\n`, `\r`). Ropey's own line
+            // APIs also split on NEL/LS/PS, which the LSP spec does not, so using
+            // them here would make edits and tokens disagree about line numbers.
+            let snapshot = rope.to_string();
+            let index = LineIndex::new(&snapshot);
+            let start = index.offset_of(range.start.line, range.start.character);
+            let end = index
+                .offset_of(range.end.line, range.end.character)
+                .max(start);
+            let start_char = rope.byte_to_char(start);
+            let end_char = rope.byte_to_char(end);
+            rope.remove(start_char..end_char);
+            rope.insert(start_char, text);
         }
     }
-}
-
-/// Convert an LSP [`Position`] (line, UTF-16 column) to a char index in `rope`.
-///
-/// The line is clamped to the document, and the character is clamped to that
-/// line's content length (excluding its line terminator) — per the LSP spec, a
-/// character past the line's length clamps to the line's end, never spilling
-/// into the next line.
-fn position_to_char(rope: &Rope, pos: Position) -> usize {
-    let last_line = rope.len_lines().saturating_sub(1);
-    let line = (pos.line as usize).min(last_line);
-    let line_start_char = rope.line_to_char(line);
-
-    // End of this line's *content*: the line slice minus any trailing line break.
-    let line_text = rope.line(line).to_string();
-    let content_chars = line_text.trim_end_matches(['\r', '\n']).chars().count();
-    let line_end_char = line_start_char + content_chars;
-
-    let line_start_cu = rope.char_to_utf16_cu(line_start_char);
-    let line_end_cu = rope.char_to_utf16_cu(line_end_char);
-    let target_cu = (line_start_cu + pos.character as usize).min(line_end_cu);
-    rope.utf16_cu_to_char(target_cu)
 }
 
 #[cfg(test)]
@@ -186,6 +197,7 @@ mod tests {
     use colorful_core::LexicalAnnotator;
     use colorful_lexicon::ClosedClassLexicon;
     use colorful_parse::ProseParser;
+    use tower_lsp::lsp_types::Position;
 
     fn tok(delta_line: u32, delta_start: u32, length: u32, token_type: u32) -> SemanticToken {
         SemanticToken {
@@ -306,6 +318,21 @@ mod tests {
             apply_change(&mut rope, Some(range), "");
             assert_eq!(rope.to_string(), text, "round-trip changed {text:?}");
         }
+    }
+
+    #[test]
+    fn edit_uses_lsp_line_model_not_ropey_unicode_breaks() {
+        // U+2028 (line separator) is not an LSP line break, so the document is
+        // one line for both tokens and edits. Replacing "is" at its token
+        // coordinates must hit "is" — Ropey alone over-splits on U+2028 and would
+        // clamp the edit to the wrong line.
+        let mut rope = Rope::from_str("ab\u{2028}is");
+        let range = Range {
+            start: Position::new(0, 3),
+            end: Position::new(0, 5),
+        };
+        apply_change(&mut rope, Some(range), "X");
+        assert_eq!(rope.to_string(), "ab\u{2028}X");
     }
 
     #[test]
