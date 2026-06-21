@@ -1,81 +1,114 @@
-# colorful-language
+<div align="center"><h1>colorful-language</h1>
+<h3><code>IDE-grade syntax highlighting for English prose.</code></h3></div>
 
-> IDE-grade structural and part-of-speech coloring for **English prose** — a
-> pure-Rust parser plus a Language Server, so your editor treats a paragraph
-> the way it treats a function.
+_Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotes glow as **strings**, and the skeleton of every sentence becomes visible._
 
-`colorful-language` points the kind of tooling we take for granted in code —
-live syntax highlighting, structural navigation, lint-as-you-type — at natural
-English. Open a `.txt`, an essay draft, or a design doc and watch the grammar
-light up: function words as keywords, proper nouns as types, quotes as strings,
-the skeleton of every sentence made visible.
+## Try it now (30 seconds)
 
-> **Status:** pre-release. **Goalpost 0 — "English lights up"** is delivered
-> (closed-class + structural coloring via a CLI and an LSP). See
-> [`ROADMAP.md`](ROADMAP.md).
+```bash
+# Install the CLI
+cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-cli
 
-## Why this is tractable (the one insight)
+# Color a file (or pipe stdin)
+cat README.md | colorful --help
+colorful my-essay.txt
+```
 
-Most attempts to "parse English" reach for statistical or neural NLP because
-they want *correct, deep* parses. We want something different and much cheaper:
-**fast, local, error-tolerant, good-enough structure** — exactly the contract an
-editor wants.
+Or just:
 
-The wedge is that **English's closed-class words form a finite, enumerable
-list** — articles, prepositions, conjunctions, pronouns, auxiliaries,
-determiners. A few hundred words. Those behave much like programming-language
-keywords: a fixed, enumerable set forming the skeleton of every sentence. (They
-are not perfectly unambiguous — `that` and `for` wear several hats — so `v0` is
-honestly *closed-class lexical highlighting*, not contextual POS tagging.) So the
-first version needs no machine learning at all — it lexes the keywords, marks
-structure (sentences, quotes, numbers, proper-noun heuristics), and colors the
-rest as undifferentiated "content." Telling a noun from a verb is a *later*
-escalation, not a prerequisite.
+```bash
+colorful --help
+```
 
-## Architecture
+It works on any text file and respects `NO_COLOR`.
 
-A Rust [hexagon](https://en.wikipedia.org/wiki/Hexagonal_architecture_%28software%29).
-The domain core is pure and tiny; everything that touches the outside world is
-an adapter behind a port. The three load-bearing ports:
+<div align="center"><img width="739" height="817" alt="Screenshot 2026-06-21 at 12 20 52" src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
 
-- **`Parser`** — text → a structural tree (sentences, word/punct spans). Knows
-  nothing about meaning.
-- **`Lexicon`** — a single word, *in isolation*, → a part-of-speech class. The
-  context-free dictionary (a closed-class set today, a richer one later).
-- **`Annotator`** — a parsed tree → a classified token stream, *with context*.
-  The *swappable* one: today a `LexicalAnnotator` over the lexicon plus shallow
-  heuristics; later a contextual or ML annotator that tells noun from verb,
-  **without touching the parser or the server.**
+---
 
-The seam between *structure*, context-free *lookup*, and context-aware
-*classification* is the whole design — it is what lets every future ambition (a
-prose linter, noun/verb disambiguation, an "English-as-code" interpreter) arrive
-as "add an adapter behind a port" rather than "rewrite the core."
+## Editor Support (LSP)
 
-Delivery is **LSP-first**: a single local language server emits
-[semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens),
-which lands coloring in nearly every modern editor (VS Code, Neovim, Helix, Zed,
-Emacs, JetBrains) at once. A CLI renders the same classification as ANSI color in
-your terminal for instant gratification with no editor setup.
+> [!note]
+> COMING SOON!
 
-The only TypeScript in this stack is the word "TypeScript."
+The real magic is the **Language Server**. Install once and get live coloring in:
 
-## Workspace
+- **VS Code** / **Cursor**
+- **Neovim**
+- **Helix**, **Zed**, **Emacs**, **JetBrains**, etc.
 
-| Crate | Job |
-| --- | --- |
-| `colorful-core` | Domain types + the `Parser` / `Lexicon` / `Annotator` port traits. Zero I/O. |
-| `colorful-parse` | `Parser` adapter: a `logos` lexer + sentence segmenter over prose structure. |
-| `colorful-lexicon` | `Lexicon` adapter: the compile-time closed-class function-word set. |
-| `colorful-cli` | Colorize a file to ANSI in the terminal. |
-| `colorful-lsp` | A `ropey`-backed document mirror and a semantic-tokens server. |
+**Quick VS Code setup:**
+
+(Full setup instructions coming with first release; currently in pre-release.)
+
+---
+
+## What it does (v0 = "English lights up")
+
+- **Closed-class words** (the, of, and, is, not, etc.) → highlighted like keywords
+- **Proper nouns** (mid-sentence capitalized words) → highlighted
+- **Numbers** → highlighted
+- **Quotes** → highlighted as strings
+- **Sentence structure** made visible
+- Everything else stays clean (skeleton mode; no color overload)
+
+No cloud. No ML. Blazing fast and 100% local.
+
+---
+
+## Why this actually works
+
+Most "parse English" projects go straight to heavy NLP. We took a smarter shortcut:
+
+English has a small, finite set of **closed-class words** (function words) that act exactly like programming keywords. By focusing on those + simple structural rules + a light proper-noun heuristic, we get something _immediately useful_ without the complexity.
+
+It's deterministic, auditable, and built to grow.
+
+---
+
+## Architecture (for the curious)
+
+Built as a **Rust hexagon** (ports & adapters):
+
+- Pure core with three clean seams: `Parser` → `Lexicon` → `Annotator`
+- Easy to extend (prose linter, better disambiguation, etc.)
+- CLI + LSP adapters reuse the same logic
+
+See [`docs/design/`](docs/design/) for the thinking.
+
+---
+
+## Project Status
+
+**Pre-release.** Goalpost 0 ("English lights up") is complete.
+
+See the full [ROADMAP.md](ROADMAP.md) for what's next (prose linter is up next!).
+
+---
+
+## Installation
+
+**From source (recommended while pre-release):**
+
+```bash
+cargo install --git https://github.com/flyingrobots/colorful-language.git --bin colorful
+cargo install --git https://github.com/flyingrobots/colorful-language.git --bin colorful-lsp
+```
+
+---
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). The short version: documentation is
-part of the contract, current references describe only what is true on `main`,
-and behavior is proven by deterministic, executable evidence.
+This project has high documentation and testing standards. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Contributions toward the **prose linter** (Goalpost 1) are especially welcome right now.
+
+---
 
 ## License
 
-Licensed under the [Apache License, Version 2.0](LICENSE).
+[Apache License 2.0](LICENSE)
+
+---
+
+<div align="center"><h4>Made by <a href="https://github.com/flyingrobots">FLYING ROBOTS</a></h4></div>
