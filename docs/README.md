@@ -18,7 +18,7 @@ proven by deterministic executable evidence.
 
 ## Topics
 
-_No topic folders yet._ The first topics arrive with Goalpost 0:
+*No topic folders yet.* The first topics arrive with Goalpost 0:
 
 - `parsing` — how prose is lexed and shaped into structure (the `Parser` port).
 - `lexicon` — the closed-class word set and classification (the `Tagger` port).
