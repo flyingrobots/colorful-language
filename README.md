@@ -7,7 +7,7 @@ _Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar 
 
 ```bash
 # Install the CLI
-cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-cli
+cargo install colorful-cli
 
 # Color a file (or pipe stdin)
 cat README.md | colorful --help
@@ -80,19 +80,31 @@ See [`docs/design/`](docs/design/) for the thinking.
 
 ## Project Status
 
-**Pre-release.** Goalpost 0 ("English lights up") is complete.
+**Pre-release — `v0.1.0`.** Goalpost 0 ("English lights up") is released.
 
-See the full [ROADMAP.md](ROADMAP.md) for what's next (prose linter is up next!).
+See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
+page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full
+[ROADMAP.md](ROADMAP.md) for what's next (prose linter is up next!).
 
 ---
 
 ## Installation
 
-**From source (recommended while pre-release):**
+**From crates.io** (installs the `colorful` CLI and the `colorful-lsp` server):
 
 ```bash
-cargo install --git https://github.com/flyingrobots/colorful-language.git --bin colorful
-cargo install --git https://github.com/flyingrobots/colorful-language.git --bin colorful-lsp
+cargo install colorful-cli
+cargo install colorful-lsp
+```
+
+**Prebuilt binaries:** download the archive for a tagged release from the
+[Releases](https://github.com/flyingrobots/colorful-language/releases) page.
+
+**From git** (latest `main`):
+
+```bash
+cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-cli
+cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-lsp
 ```
 
 ---

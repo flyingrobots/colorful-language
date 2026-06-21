@@ -14,7 +14,8 @@ proven by deterministic executable evidence.
 | --- | --- |
 | `topics/<topic>/` | The living reference for a durable concept (behavior, test plan, optional architecture and rationale). |
 | `design/` | Historical, proposal-era design documents. |
-| `goalposts/` | Delivery evidence for completed goalposts. |
+| `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |
+| [`RELEASING.md`](RELEASING.md) | The release runbook and pre-tag sign-off checklist. |
 
 ## Design records
 
@@ -37,4 +38,10 @@ not pose as the current reference.
 - [coloring](topics/coloring/README.md) — how classification becomes ANSI output
   and LSP semantic tokens.
 
-See [`../ROADMAP.md`](../ROADMAP.md) for the release train.
+## Releases
+
+- [v0.1.0](goalposts/v0.1.0/release.md) — Goalpost 0, "English lights up"
+  ([verification](goalposts/v0.1.0/verification.md)).
+
+See [`../ROADMAP.md`](../ROADMAP.md) for the release train and
+[`../CHANGELOG.md`](../CHANGELOG.md) for the ledger.

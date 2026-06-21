@@ -18,13 +18,13 @@ keywords, proper nouns, numbers, quotes, and undifferentiated content — both a
 ANSI in the terminal (CLI) and as semantic tokens in any LSP-speaking editor. No
 machine learning; pure lexing and shallow structure.
 
-**Status:** all five slices delivered (pending PR merge to `main`).
+**Status:** ✅ released in **v0.1.0** (all five slices merged to `main`).
 
 | Slice | Crate | What it delivers |
 | --- | --- | --- |
 | [Workspace + core ports](https://github.com/flyingrobots/colorful-language/issues/1) | `colorful-core` | Cargo workspace; domain types (`Span`, `PosClass`, `Node`, `Tree`); the `Parser`, `Lexicon`, and `Annotator` port traits. |
 | [Closed-class lexicon](https://github.com/flyingrobots/colorful-language/issues/2) | `colorful-lexicon` | A compile-time perfect-hash set of closed-class function words and common contractions implementing `Lexicon`. |
-| [Structural parser](https://github.com/flyingrobots/colorful-language/issues/3) | `colorful-parse` | A `logos` lexer + recursive descent producing sentence / word / punctuation structure, implementing `Parser`. |
+| [Structural parser](https://github.com/flyingrobots/colorful-language/issues/3) | `colorful-parse` | A `logos` lexer + sentence segmenter producing sentence / word / punctuation structure, implementing `Parser`. |
 | [Terminal colorizer](https://github.com/flyingrobots/colorful-language/issues/4) | `colorful-cli` | ANSI rendering over `core` + `parse` + `lexicon`; golden fixtures as the test oracle. |
 | [Semantic-tokens server](https://github.com/flyingrobots/colorful-language/issues/5) | `colorful-lsp` | A `ropey` document mirror, incremental `didChange` handling, and a semantic-tokens response mapped onto standard token types. |
 

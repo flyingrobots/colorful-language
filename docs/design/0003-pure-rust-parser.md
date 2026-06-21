@@ -16,7 +16,7 @@ highlighting." Two facts reframed it:
 
 ## Decision
 
-Use a pure-Rust parser (a `logos` lexer with recursive descent) as the primary
+Use a pure-Rust parser (a `logos` lexer with a sentence segmenter) as the primary
 `Parser` adapter, delivered LSP-first. Do not adopt tree-sitter for the core.
 
 A deliberately shallow, structural-only tree-sitter grammar — for no-server
