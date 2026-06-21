@@ -235,7 +235,11 @@ impl<L: Lexicon> Annotator for LexicalAnnotator<L> {
                         {
                             class = PosClass::ProperNoun;
                         }
-                        seen_word = true;
+                        // Only an alphabetic word makes the next capital
+                        // "mid-sentence"; a leading number must not.
+                        if text.chars().next().is_some_and(char::is_alphabetic) {
+                            seen_word = true;
+                        }
                         prev_end = span.end;
                         tokens.push(Token { span: *span, class });
                     }
@@ -450,6 +454,21 @@ mod tests {
                 .map(|t| t.class)
                 .collect::<Vec<_>>(),
             vec![PosClass::Content, PosClass::Content]
+        );
+    }
+
+    #[test]
+    fn a_leading_number_does_not_flip_the_proper_noun_guard() {
+        // "3 Apples": the only preceding token is a number, so "Apples" is still
+        // line-initial (Content), not a mid-sentence proper noun.
+        let src = "3 Apples";
+        let tree = Tree::document(vec![sentence((0, 8), vec![word(0, 1), word(2, 8)])]);
+        assert_eq!(
+            annotate(&tree, src)
+                .iter()
+                .map(|t| t.class)
+                .collect::<Vec<_>>(),
+            vec![PosClass::Number, PosClass::Content]
         );
     }
 
