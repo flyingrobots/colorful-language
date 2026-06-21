@@ -10,6 +10,8 @@ English. Open a `.txt`, an essay draft, or a design doc and watch the grammar
 light up: function words as keywords, proper nouns as types, quotes as strings,
 the skeleton of every sentence made visible.
 
+<div align="center"><img width="739" height="817" alt="Screenshot 2026-06-21 at 12 20 52" src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
+
 > **Status:** pre-release. Building toward **Goalpost 0 — "English lights up"**
 > (closed-class + structural coloring via a CLI and an LSP). See
 > [`ROADMAP.md`](ROADMAP.md).
@@ -74,3 +76,7 @@ and behavior is proven by deterministic, executable evidence.
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE).
+
+---
+
+<div align="center"><h4>Made by <a href="https://github.com/flyingrobots">FLYING ROBOTS</a></h4></div>
