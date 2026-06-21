@@ -16,17 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Goalpost 0 — "English lights up":** a cargo workspace delivering
   closed-class and structural part-of-speech coloring of English prose.
   - `colorful-core` — domain types (`Span`, `PosClass`, `Node`, `Tree`) and the
-    `Parser` / `Tagger` ports, plus the `classify` service (proper-noun
-    heuristic, structural quote/punctuation classification).
+    `Parser`, `Lexicon`, and `Annotator` ports, plus `LexicalAnnotator` (the
+    proper-noun heuristic with line-break and title-case guards, and structural
+    quote/punctuation classification).
   - `colorful-lexicon` — a compile-time perfect-hash closed-class function-word
-    set implementing `Tagger`.
-  - `colorful-parse` — a `logos` lexer and recursive-descent `Parser` adapter;
-    total (never panics) over arbitrary input.
+    set (including common contractions and negation) implementing `Lexicon`.
+  - `colorful-parse` — a `logos` lexer and sentence segmenter implementing
+    `Parser`; total (never panics) over arbitrary input, and it absorbs trailing
+    closing quotes/brackets.
   - `colorful-cli` — the `colorful` binary: ANSI prose coloring with `--no-color`
-    / `NO_COLOR` passthrough.
+    / `NO_COLOR` passthrough and `--` end-of-options.
   - `colorful-lsp` — the `colorful-lsp` binary: a `tower-lsp` server emitting
-    delta-encoded semantic tokens with UTF-16 column handling and incremental
-    `ropey`-backed edits.
+    skeleton semantic tokens with UTF-16 column handling (incl. CR/CRLF) and
+    incremental `ropey`-backed edits clamped to line bounds.
   - Topic docs for parsing, lexicon, and coloring with executable test plans.
+  - Hardened during a multi-reviewer pass before merge: the context-free `Tagger`
+    port was split into `Lexicon` + `Annotator` so Goalpost 2's contextual
+    disambiguation can slot in behind a port; an LSP cross-line edit-clamp bug was
+    fixed; coloring moved to skeleton mode (content left unstyled).
 
 [Unreleased]: https://github.com/flyingrobots/colorful-language/commits/main
