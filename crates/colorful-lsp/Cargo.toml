@@ -1,0 +1,27 @@
+[package]
+name = "colorful-lsp"
+description = "Language server emitting part-of-speech semantic tokens for English prose."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+default-run = "colorful-lsp"
+
+[lib]
+name = "colorful_lsp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "colorful-lsp"
+path = "src/main.rs"
+
+[dependencies]
+colorful-core = { workspace = true }
+colorful-parse = { workspace = true }
+colorful-lexicon = { workspace = true }
+ropey = { workspace = true }
+tower-lsp = { workspace = true }
+tokio = { workspace = true }
+dashmap = { workspace = true }
