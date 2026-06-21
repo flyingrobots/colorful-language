@@ -23,6 +23,14 @@ All cases are implemented.
   only mid-sentence capitals. *Oracle:* class vector equality. *Evidence:*
   `colorful-core` `tests::proper_noun_heuristic_upgrades_only_mid_sentence_capitals`.
   *Status:* implemented.
+- **COL-1c** — *Requirement:* COL-1. *Behavior:* a line break resets the
+  sentence-initial guard, so a line-initial capital is not upgraded. *Oracle:*
+  class vector equality. *Evidence:* `colorful-core`
+  `tests::line_break_resets_sentence_initial_guard`. *Status:* implemented.
+- **COL-1d** — *Requirement:* COL-1. *Behavior:* a title-case header line
+  suppresses proper-noun upgrades. *Oracle:* class vector equality. *Evidence:*
+  `colorful-core` `tests::title_case_line_suppresses_proper_nouns`. *Status:*
+  implemented.
 - **COL-2a** — *Requirement:* COL-2. *Behavior:* quotes and punctuation classified
   structurally. *Oracle:* class vector equality. *Evidence:* `colorful-core`
   `tests::punctuation_and_quotes_classified_structurally`. *Status:* implemented.

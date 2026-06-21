@@ -200,20 +200,41 @@ impl<L: Lexicon> Annotator for LexicalAnnotator<L> {
         let Node::Document(sentences) = &tree.root else {
             return tokens;
         };
+        let mut prev_end = 0usize;
+        let mut line_known = false;
+        let mut line_is_title = false;
         for sentence in sentences {
             let Node::Sentence { parts, .. } = sentence else {
                 continue;
             };
+            // A word is "sentence-initial" until the first word of the sentence
+            // is seen, and "line-initial" again after a line break.
             let mut seen_word = false;
             for part in parts {
                 match part {
                     Node::Word { span } => {
+                        let crossed_line = !line_known
+                            || source
+                                .get(prev_end..span.start)
+                                .is_some_and(|gap| gap.contains(['\n', '\r']));
+                        if crossed_line {
+                            seen_word = false;
+                            line_is_title =
+                                line_is_title_case(&self.lexicon, line_of(source, span.start));
+                            line_known = true;
+                        }
+
                         let text = span.slice(source);
                         let mut class = self.lexicon.classify(text);
-                        if class == PosClass::Content && seen_word && is_capitalized(text) {
+                        if class == PosClass::Content
+                            && seen_word
+                            && !line_is_title
+                            && is_capitalized(text)
+                        {
                             class = PosClass::ProperNoun;
                         }
                         seen_word = true;
+                        prev_end = span.end;
                         tokens.push(Token { span: *span, class });
                     }
                     Node::Punct { span } => {
@@ -222,6 +243,7 @@ impl<L: Lexicon> Annotator for LexicalAnnotator<L> {
                         } else {
                             PosClass::Punctuation
                         };
+                        prev_end = span.end;
                         tokens.push(Token { span: *span, class });
                     }
                     _ => {}
@@ -235,6 +257,38 @@ impl<L: Lexicon> Annotator for LexicalAnnotator<L> {
 /// Whether the first character of `word` is uppercase.
 fn is_capitalized(word: &str) -> bool {
     word.chars().next().is_some_and(char::is_uppercase)
+}
+
+/// The line (between line breaks) of `source` containing byte offset `byte`.
+fn line_of(source: &str, byte: usize) -> &str {
+    let start = source[..byte].rfind(['\n', '\r']).map_or(0, |i| i + 1);
+    let end = source[byte..]
+        .find(['\n', '\r'])
+        .map_or(source.len(), |i| byte + i);
+    &source[start..end]
+}
+
+/// Whether `line` looks like a title-case header: at least two words, at least
+/// two capitalized, and **no lowercase content word** (every lowercase word is a
+/// function word, as a title lowercases only short function words). On such a
+/// line the proper-noun heuristic is suppressed, so a `# Working Agreement for
+/// Agents` header is not painted as a row of proper nouns.
+fn line_is_title_case<L: Lexicon + ?Sized>(lexicon: &L, line: &str) -> bool {
+    let mut words = 0usize;
+    let mut capitalized = 0usize;
+    for word in line.split(|c: char| !(c.is_alphabetic() || c == '\'' || c == '\u{2019}')) {
+        if word.is_empty() {
+            continue;
+        }
+        words += 1;
+        if is_capitalized(word) {
+            capitalized += 1;
+        } else if !matches!(lexicon.classify(word), PosClass::Function(_)) {
+            // A lowercase content word means this is prose, not a title.
+            return false;
+        }
+    }
+    words >= 2 && capitalized >= 2
 }
 
 /// Whether `s` is composed entirely of quotation marks.
@@ -267,6 +321,7 @@ mod tests {
             match word.to_ascii_lowercase().as_str() {
                 "the" => PosClass::Function(FunctionKind::Article),
                 "and" => PosClass::Function(FunctionKind::Conjunction),
+                "for" => PosClass::Function(FunctionKind::Preposition),
                 _ if word.chars().all(|c| c.is_ascii_digit()) && !word.is_empty() => {
                     PosClass::Number
                 }
@@ -372,6 +427,44 @@ mod tests {
     fn empty_document_yields_no_tokens() {
         let tree = Tree::document(vec![]);
         assert!(annotate(&tree, "").is_empty());
+    }
+
+    #[test]
+    fn line_break_resets_sentence_initial_guard() {
+        // "Hello\nWorld" is one sentence (no terminator); the newline makes
+        // "World" line-initial, so it is not upgraded to a proper noun.
+        let src = "Hello\nWorld";
+        let tree = Tree::document(vec![sentence((0, 11), vec![word(0, 5), word(6, 11)])]);
+        assert_eq!(
+            annotate(&tree, src)
+                .iter()
+                .map(|t| t.class)
+                .collect::<Vec<_>>(),
+            vec![PosClass::Content, PosClass::Content]
+        );
+    }
+
+    #[test]
+    fn title_case_line_suppresses_proper_nouns() {
+        // A title-case header (capitalized content words around a lowercase
+        // function word) must not turn every word into a proper noun.
+        let src = "Working Agreement for Agents";
+        let tree = Tree::document(vec![sentence(
+            (0, 28),
+            vec![word(0, 7), word(8, 17), word(18, 21), word(22, 28)],
+        )]);
+        assert_eq!(
+            annotate(&tree, src)
+                .iter()
+                .map(|t| t.class)
+                .collect::<Vec<_>>(),
+            vec![
+                PosClass::Content,
+                PosClass::Content,
+                PosClass::Function(FunctionKind::Preposition),
+                PosClass::Content,
+            ]
+        );
     }
 
     #[test]

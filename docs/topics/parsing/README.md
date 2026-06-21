@@ -1,9 +1,10 @@
 # Parsing
 
 The `Parser` port turns source text into shallow prose structure. The
-implementation is `colorful_parse::ProseParser` (a `logos` lexer plus a
-recursive-descent grouping pass). It produces *structure only* and makes no
-part-of-speech decisions — that is the [lexicon](../lexicon/README.md)'s job.
+implementation is `colorful_parse::ProseParser` (a `logos` lexer plus a sentence
+segmenter — not a deep recursive-descent grammar). It produces *structure only*
+and makes no part-of-speech decisions — that is the
+[lexicon](../lexicon/README.md)'s job.
 
 ## Current behavior
 
@@ -16,9 +17,13 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
   emitted as word nodes; the lexicon decides they are numeric.
 - **Sentences.** A run of `.`/`!`/`?` ends a sentence (the terminator is the
   sentence's last child). Text with no terminator flushes as a single trailing
-  sentence.
+  sentence. A closing quote or bracket sitting *immediately* after the terminator
+  is absorbed into the sentence (`"Hi."`), while one separated by a space starts
+  the next sentence (an opening quote).
 - **Quotes and punctuation.** Quotation marks and other punctuation become
   `Punct` nodes.
+- **Whitespace.** ASCII and common Unicode spaces (NBSP, thin space, ideographic
+  space, …) separate tokens and are skipped, not emitted as nodes.
 - **Totality.** Parsing never panics. Any character the lexer cannot otherwise
   classify (an emoji, a stray symbol) becomes a `Punct` node, so no input is
   rejected and no bytes are dropped.

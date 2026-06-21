@@ -8,6 +8,9 @@ Requirements:
   sentence.
 - **PAR-3** Quotes and punctuation are punctuation nodes.
 - **PAR-4** Parsing is total and produces well-formed spans for any input.
+- **PAR-5** An adjacent trailing closer is absorbed into the sentence; a spaced
+  opening quote starts the next sentence.
+- **PAR-6** Common Unicode spaces separate tokens and are skipped.
 
 ## Cases
 
@@ -43,6 +46,15 @@ All cases are implemented. Evidence lives in `colorful-parse` unit tests
   tokens, mixed punctuation) do not panic and yield non-empty, in-bounds,
   ordered, char-boundary spans. *Oracle:* span invariant assertions. *Evidence:*
   `tests::parsing_is_total_and_spans_are_well_formed`. *Status:* implemented.
+- **PAR-5a** — *Requirement:* PAR-5. *Behavior:* `"Hi." Go.` keeps the closing
+  quote in sentence 1; `Hi. "Go."` starts sentence 2 at the opening quote.
+  *Oracle:* structural equality. *Evidence:*
+  `tests::sentence_absorbs_trailing_closing_quote`,
+  `tests::opening_quote_after_terminator_starts_new_sentence`. *Status:*
+  implemented.
+- **PAR-6a** — *Requirement:* PAR-6. *Behavior:* a thin space (U+2009) separates
+  two words and is skipped. *Oracle:* structural equality. *Evidence:*
+  `tests::unicode_spaces_are_skipped`. *Status:* implemented.
 
 ## Known gaps
 

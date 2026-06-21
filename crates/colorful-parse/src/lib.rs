@@ -1,9 +1,11 @@
 //! The structural prose parser — a [`Parser`] adapter.
 //!
 //! A `logos` lexer turns text into mechanical tokens (words, numbers, sentence
-//! terminators, quotes, punctuation), and a small recursive-descent pass groups
-//! them into [`Node::Sentence`] runs. The parser produces *structure only* — it
-//! makes no part-of-speech decisions; that is the lexicon and annotator's job.
+//! terminators, quotes, punctuation), and a small segmenter groups them into
+//! [`Node::Sentence`] runs (absorbing a trailing closing quote or bracket). It
+//! produces *structure only* — it makes no part-of-speech decisions; that is the
+//! lexicon and annotator's job. (This is sentence segmentation, not a deep
+//! recursive-descent grammar; the structure is intentionally shallow in `v0`.)
 //!
 //! Parsing is **total**: any input, including malformed or non-ASCII text,
 //! yields a [`Tree`] without panicking. Characters the lexer cannot otherwise
@@ -17,7 +19,7 @@ use logos::Logos;
 
 /// Mechanical token kinds produced by the lexer.
 #[derive(Logos, Debug, PartialEq, Eq)]
-#[logos(skip r"[ \t\r\n\u{000C}\u{00A0}]+")]
+#[logos(skip r"[ \t\r\n\u{000C}\u{00A0}\u{1680}\u{2000}-\u{200A}\u{202F}\u{205F}\u{3000}]+")]
 enum Tok {
     /// An alphabetic word, allowing internal apostrophes and hyphens
     /// (`don't`, `well-being`).
@@ -56,30 +58,47 @@ impl Parser for ProseParser {
         let mut parts: Vec<Node> = Vec::new();
         let mut sent_start: usize = 0;
         let mut sent_end: usize = 0;
+        // After a sentence terminator we defer the flush, so a closing quote or
+        // bracket sitting immediately after it is absorbed into the sentence
+        // rather than leaking into the next one.
+        let mut pending_flush = false;
 
         let mut lexer = Tok::lexer(text);
         while let Some(result) = lexer.next() {
             let range = lexer.span();
             let span = Span::new(range.start, range.end);
+            let is_closer =
+                matches!(result, Ok(Tok::Quote)) || matches!(span.slice(text), ")" | "]" | "}");
+
+            if pending_flush {
+                if is_closer && span.start == sent_end {
+                    // Adjacent trailing closer: keep it in the current sentence.
+                    parts.push(Node::Punct { span });
+                    sent_end = span.end;
+                    continue;
+                }
+                // The sentence is complete; flush it before this token.
+                sentences.push(Node::Sentence {
+                    span: Span::new(sent_start, sent_end),
+                    parts: std::mem::take(&mut parts),
+                });
+                pending_flush = false;
+            }
+
             if parts.is_empty() {
                 sent_start = span.start;
             }
             sent_end = span.end;
 
-            let (node, ends_sentence) = match result {
-                Ok(Tok::Word | Tok::Number) => (Node::Word { span }, false),
-                Ok(Tok::SentenceEnd) => (Node::Punct { span }, true),
+            match result {
+                Ok(Tok::Word | Tok::Number) => parts.push(Node::Word { span }),
+                Ok(Tok::SentenceEnd) => {
+                    parts.push(Node::Punct { span });
+                    pending_flush = true;
+                }
                 // Quotes, other punctuation, and any unrecognized character all
                 // become punctuation nodes — parsing stays total.
-                Ok(Tok::Quote | Tok::Punct) | Err(()) => (Node::Punct { span }, false),
-            };
-            parts.push(node);
-
-            if ends_sentence {
-                sentences.push(Node::Sentence {
-                    span: Span::new(sent_start, sent_end),
-                    parts: std::mem::take(&mut parts),
-                });
+                Ok(Tok::Quote | Tok::Punct) | Err(()) => parts.push(Node::Punct { span }),
             }
         }
 
@@ -166,6 +185,49 @@ mod tests {
         assert_eq!(
             parse("well-being"),
             vec![sentence(0, 10, vec![word(0, 10)])]
+        );
+    }
+
+    #[test]
+    fn sentence_absorbs_trailing_closing_quote() {
+        // The closing quote sitting right after the period stays in the first
+        // sentence; the next sentence starts at "Go".
+        assert_eq!(
+            parse("\"Hi.\" Go."),
+            vec![
+                sentence(
+                    0,
+                    5,
+                    vec![punct(0, 1), word(1, 3), punct(3, 4), punct(4, 5)]
+                ),
+                sentence(6, 9, vec![word(6, 8), punct(8, 9)]),
+            ]
+        );
+    }
+
+    #[test]
+    fn opening_quote_after_terminator_starts_new_sentence() {
+        // A quote separated from the terminator by a space is an opening quote
+        // and begins the next sentence (it is not absorbed).
+        assert_eq!(
+            parse("Hi. \"Go.\""),
+            vec![
+                sentence(0, 3, vec![word(0, 2), punct(2, 3)]),
+                sentence(
+                    4,
+                    9,
+                    vec![punct(4, 5), word(5, 7), punct(7, 8), punct(8, 9)]
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn unicode_spaces_are_skipped() {
+        // A thin space (U+2009, 3 bytes) separates words and is not punctuation.
+        assert_eq!(
+            parse("a\u{2009}b"),
+            vec![sentence(0, 5, vec![word(0, 1), word(4, 5)])]
         );
     }
 
