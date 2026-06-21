@@ -50,10 +50,26 @@ struct LineIndex<'a> {
 
 impl<'a> LineIndex<'a> {
     fn new(text: &'a str) -> Self {
+        // Recognize the LSP line-ending set: `\n`, `\r\n`, and a bare `\r`.
         let mut line_starts = vec![0usize];
-        for (i, b) in text.bytes().enumerate() {
-            if b == b'\n' {
-                line_starts.push(i + 1);
+        let bytes = text.as_bytes();
+        let mut i = 0;
+        while i < bytes.len() {
+            match bytes[i] {
+                b'\n' => {
+                    line_starts.push(i + 1);
+                    i += 1;
+                }
+                b'\r' => {
+                    let next = if bytes.get(i + 1) == Some(&b'\n') {
+                        2
+                    } else {
+                        1
+                    };
+                    line_starts.push(i + next);
+                    i += next;
+                }
+                _ => i += 1,
             }
         }
         Self { text, line_starts }
@@ -138,13 +154,25 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
     }
 }
 
-/// Convert an LSP [`Position`] (line, UTF-16 column) to a char index in `rope`,
-/// clamping anything out of range.
+/// Convert an LSP [`Position`] (line, UTF-16 column) to a char index in `rope`.
+///
+/// The line is clamped to the document, and the character is clamped to that
+/// line's content length (excluding its line terminator) — per the LSP spec, a
+/// character past the line's length clamps to the line's end, never spilling
+/// into the next line.
 fn position_to_char(rope: &Rope, pos: Position) -> usize {
     let last_line = rope.len_lines().saturating_sub(1);
     let line = (pos.line as usize).min(last_line);
-    let line_start_cu = rope.char_to_utf16_cu(rope.line_to_char(line));
-    let target_cu = (line_start_cu + pos.character as usize).min(rope.len_utf16_cu());
+    let line_start_char = rope.line_to_char(line);
+
+    // End of this line's *content*: the line slice minus any trailing line break.
+    let line_text = rope.line(line).to_string();
+    let content_chars = line_text.trim_end_matches(['\r', '\n']).chars().count();
+    let line_end_char = line_start_char + content_chars;
+
+    let line_start_cu = rope.char_to_utf16_cu(line_start_char);
+    let line_end_cu = rope.char_to_utf16_cu(line_end_char);
+    let target_cu = (line_start_cu + pos.character as usize).min(line_end_cu);
     rope.utf16_cu_to_char(target_cu)
 }
 
@@ -204,6 +232,29 @@ mod tests {
         // A leading emoji is 4 bytes but 2 UTF-16 code units; "ok" must report
         // column 3 (emoji=2 + space=1), not byte offset 5.
         assert_eq!(semantic_tokens("\u{1F600} ok"), vec![tok(0, 3, 2, 2)]);
+    }
+
+    #[test]
+    fn line_index_handles_bare_carriage_return() {
+        // A lone '\r' is a line break per the LSP spec, so "2" is on line 1.
+        // (Numbers survive skeleton coloring, keeping this assertion stable.)
+        assert_eq!(
+            semantic_tokens("1.\r2"),
+            vec![tok(0, 0, 1, 3), tok(1, 0, 1, 3)]
+        );
+    }
+
+    #[test]
+    fn apply_change_clamps_overlong_char_to_line_end_not_next_line() {
+        // An over-long character offset on line 0 must clamp to the end of line 0,
+        // not spill into line 1 (LSP: clamp to the line's length).
+        let mut rope = Rope::from_str("ab\ncd");
+        let range = Range {
+            start: Position::new(0, 99),
+            end: Position::new(0, 99),
+        };
+        apply_change(&mut rope, Some(range), "X");
+        assert_eq!(rope.to_string(), "abX\ncd");
     }
 
     #[test]
