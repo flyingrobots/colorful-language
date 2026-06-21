@@ -18,6 +18,8 @@ keywords, proper nouns, numbers, quotes, and undifferentiated content — both a
 ANSI in the terminal (CLI) and as semantic tokens in any LSP-speaking editor. No
 machine learning; pure lexing and shallow structure.
 
+**Status:** all five slices delivered (pending PR merge to `main`).
+
 | Slice | Crate | What it delivers |
 | --- | --- | --- |
 | [Workspace + core ports](https://github.com/flyingrobots/colorful-language/issues/1) | `colorful-core` | Cargo workspace; domain types (`Span`, `PosClass`, `Node`, `Tree`); the `Parser` and `Tagger` port traits. |

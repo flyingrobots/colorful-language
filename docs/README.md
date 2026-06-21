@@ -30,10 +30,11 @@ not pose as the current reference.
 
 ## Topics
 
-*No topic folders yet.* The first topics arrive with Goalpost 0:
-
-- `parsing` — how prose is lexed and shaped into structure (the `Parser` port).
-- `lexicon` — the closed-class word set and classification (the `Tagger` port).
-- `coloring` — how classification becomes ANSI output and LSP semantic tokens.
+- [parsing](topics/parsing/README.md) — how prose is lexed and shaped into
+  structure (the `Parser` port).
+- [lexicon](topics/lexicon/README.md) — the closed-class word set and
+  classification (the `Tagger` port).
+- [coloring](topics/coloring/README.md) — how classification becomes ANSI output
+  and LSP semantic tokens.
 
 See [`../ROADMAP.md`](../ROADMAP.md) for the release train.
