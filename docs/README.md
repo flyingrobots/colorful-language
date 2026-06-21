@@ -16,6 +16,18 @@ proven by deterministic executable evidence.
 | `design/` | Historical, proposal-era design documents. |
 | `goalposts/` | Delivery evidence for completed goalposts. |
 
+## Design records
+
+Proposal-era decisions, written before implementation. They explain *why* and do
+not pose as the current reference.
+
+- [ADR-0001](design/0001-scope-and-delivery.md) — scope and delivery model
+  (no-ML v0, LSP-first).
+- [ADR-0002](design/0002-hexagonal-ports.md) — hexagonal architecture and the
+  `Parser`/`Tagger` seam.
+- [ADR-0003](design/0003-pure-rust-parser.md) — a pure-Rust parser; tree-sitter
+  declined for the core.
+
 ## Topics
 
 *No topic folders yet.* The first topics arrive with Goalpost 0:
