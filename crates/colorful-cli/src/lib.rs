@@ -44,9 +44,9 @@ pub fn colorize(source: &str, color: bool) -> String {
     for token in tokens {
         // Emit the gap (whitespace and anything between tokens) verbatim.
         if token.span.start > prev {
-            out.push_str(&source[prev..token.span.start]);
+            out.push_str(source.get(prev..token.span.start).unwrap_or(""));
         }
-        let text = &source[token.span.start..token.span.end];
+        let text = token.span.slice(source);
         if let Some(code) = sgr(token.class) {
             out.push_str("\x1b[");
             out.push_str(code);
@@ -59,7 +59,7 @@ pub fn colorize(source: &str, color: bool) -> String {
         prev = token.span.end;
     }
     if prev < source.len() {
-        out.push_str(&source[prev..]);
+        out.push_str(source.get(prev..).unwrap_or(""));
     }
     out
 }
@@ -99,9 +99,15 @@ where
 {
     let mut no_color_flag = false;
     let mut path: Option<String> = None;
+    let mut end_of_options = false;
 
     for arg in args {
+        if end_of_options {
+            path = Some(arg);
+            continue;
+        }
         match arg.as_str() {
+            "--" => end_of_options = true,
             "--no-color" => no_color_flag = true,
             "-h" | "--help" => {
                 print!("{HELP}");
@@ -167,6 +173,17 @@ mod tests {
         let colored = colorize(src, true);
         let stripped = strip_ansi(&colored);
         assert_eq!(stripped, src);
+    }
+
+    #[test]
+    fn double_dash_allows_dash_prefixed_paths() {
+        // After `--`, a leading-dash argument is treated as a path: reading it
+        // fails with NotFound, not an "unknown option" InvalidInput.
+        let err = run(["--".to_string(), "-weird.txt".to_string()]).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::NotFound);
+        // Without `--`, the same argument is rejected as an unknown option.
+        let err = run(["-weird.txt".to_string()]).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
     }
 
     #[test]

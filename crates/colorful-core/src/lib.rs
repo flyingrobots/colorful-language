@@ -30,10 +30,12 @@ impl Span {
         Self { start, end }
     }
 
-    /// Length of the span in bytes.
+    /// Length of the span in bytes. Saturates to `0` for a malformed (reversed)
+    /// span rather than underflowing; a span from [`Parser::parse`] is always
+    /// well formed.
     #[must_use]
     pub fn len(self) -> usize {
-        self.end - self.start
+        self.end.saturating_sub(self.start)
     }
 
     /// Whether the span is empty.
@@ -362,6 +364,13 @@ mod tests {
         assert_eq!(Span::new(10, 20).slice(s), "");
         assert_eq!(Span::new(0, 5).len(), 5);
         assert!(Span::new(3, 3).is_empty());
+    }
+
+    #[test]
+    fn span_len_is_saturating_on_a_reversed_span() {
+        // A hand-built reversed span (bypassing `new`) must not underflow-panic.
+        let reversed = Span { start: 5, end: 2 };
+        assert_eq!(reversed.len(), 0);
     }
 
     #[test]
