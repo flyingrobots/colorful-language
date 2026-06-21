@@ -1,0 +1,13 @@
+[package]
+name = "colorful-parse"
+description = "Structural prose parser (logos + recursive descent): a Parser adapter."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+colorful-core = { workspace = true }
+logos = { workspace = true }
