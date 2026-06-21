@@ -1,0 +1,12 @@
+[package]
+name = "colorful-lexicon"
+description = "Closed-class function-word lexicon: a Lexicon adapter for colorful-language."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+colorful-core = { workspace = true }
+phf = { workspace = true }

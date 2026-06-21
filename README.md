@@ -60,7 +60,7 @@ No cloud. No ML. Blazing fast and 100% local.
 
 Most "parse English" projects go straight to heavy NLP. We took a smarter shortcut:
 
-English has a small, finite set of **closed-class words** (function words) that act exactly like programming keywords. By focusing on those + simple structural rules + a light proper-noun heuristic, we get something *immediately useful* without the complexity.
+English has a small, finite set of **closed-class words** (function words) that act exactly like programming keywords. By focusing on those + simple structural rules + a light proper-noun heuristic, we get something _immediately useful_ without the complexity.
 
 It's deterministic, auditable, and built to grow.
 
@@ -109,6 +109,6 @@ Contributions toward the **prose linter** (Goalpost 1) are especially welcome ri
 
 [Apache License 2.0](LICENSE)
 
-***
+---
 
 <div align="center"><h4>Made by <a href="https://github.com/flyingrobots">FLYING ROBOTS</a></h4></div>

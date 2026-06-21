@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/flyingrobots/colorful-language"
+authors = ["James Ross", "the colorful-language contributors"]
+# rust-version (MSRV) is intentionally unset until it is verified against a
+# pinned toolchain in CI; an unverified value is a misleading contract.
+
+[workspace.dependencies]
+colorful-core = { path = "crates/colorful-core", version = "0.1.0" }
+colorful-parse = { path = "crates/colorful-parse", version = "0.1.0" }
+colorful-lexicon = { path = "crates/colorful-lexicon", version = "0.1.0" }
+
+logos = "0.14"
+phf = { version = "0.11", features = ["macros"] }
+ropey = "1.6"
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std"] }
+dashmap = "6"

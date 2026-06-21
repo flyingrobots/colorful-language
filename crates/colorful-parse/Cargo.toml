@@ -1,0 +1,12 @@
+[package]
+name = "colorful-parse"
+description = "Structural prose parser (logos lexer + sentence segmenter): a Parser adapter."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+colorful-core = { workspace = true }
+logos = { workspace = true }

@@ -1,0 +1,22 @@
+[package]
+name = "colorful-cli"
+description = "Colorize English prose by part of speech in the terminal (ANSI)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+default-run = "colorful"
+
+[lib]
+name = "colorful_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "colorful"
+path = "src/main.rs"
+
+[dependencies]
+colorful-core = { workspace = true }
+colorful-parse = { workspace = true }
+colorful-lexicon = { workspace = true }
