@@ -51,7 +51,9 @@ explicitly unstable and may change in a later minor.
 - **The proper-noun heuristic is approximate.** A title-case line with no
   lowercase content word (e.g. `I am Groot`) can be read as a header and suppress
   a real proper noun. This is the deliberate conservative direction.
-- **No crates.io release yet.** Install is via `cargo install --git`.
+- **Published to crates.io** under flat names (`colorful-core`, `colorful-cli`,
+  `colorful-lsp`, …) owned by `flyingrobots`. Pre-1.0, so the public API is
+  unstable, but the crate versions are permanent (yank-only).
 - **Incrementality is `v0`-simple.** Each `semanticTokens/full` reparses the
   whole document; per-paragraph reparse is a later performance slice.
 - **No shipped editor extension or theme yet.** Coloring uses standard semantic

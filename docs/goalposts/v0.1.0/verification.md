@@ -32,6 +32,8 @@ Filled when the tag is cut on the merged `main`.
 - Tag `v0.1.0` SHA: _TBD_
 - `Release` workflow run: _TBD_
 - GitHub Release URL: _TBD_
+- crates.io (`colorful-core`, `colorful-lexicon`, `colorful-parse`,
+  `colorful-cli`, `colorful-lsp` @ 0.1.0): _TBD_
 
 ## Non-blocking notes
 

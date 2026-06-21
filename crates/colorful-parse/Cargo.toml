@@ -6,6 +6,8 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
+keywords = ["prose", "parser", "segmenter", "english", "tokenizer"]
+categories = ["text-processing", "parser-implementations"]
 
 [dependencies]
 colorful-core = { workspace = true }

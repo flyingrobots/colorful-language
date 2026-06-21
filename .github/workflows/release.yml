@@ -44,6 +44,19 @@ jobs:
       - run: cargo test --all --locked
       - run: cargo build --release --locked
 
+      # Publish in dependency order. `cargo publish` waits for each crate to land
+      # in the index before returning, so dependents resolve.
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          for crate in colorful-core colorful-lexicon colorful-parse colorful-cli colorful-lsp; do
+            echo "::group::publish $crate"
+            cargo publish -p "$crate" --locked
+            echo "::endgroup::"
+          done
+
       - name: Package binaries
         run: |
           set -euo pipefail

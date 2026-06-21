@@ -95,8 +95,29 @@ Copy into the release-prep PR body and complete before tagging:
 - [ ] **Version is justified.** The packet's version justification matches the
       SemVer impact of the diff.
 
-## Not yet automated (future)
+## crates.io
 
-- Publishing to crates.io. The crates currently install via `cargo install
-  --git`; crates.io publishing needs per-crate metadata (keywords, categories,
-  readme) and a dependency-ordered publish, and can be added as its own slice.
+The five crates publish to crates.io under flat, idiomatic names
+(`colorful-core`, `colorful-lexicon`, `colorful-parse`, `colorful-cli`,
+`colorful-lsp`) — crates.io has no `@scope/` namespacing; org identity comes from
+**ownership** and the `repository` link. The release workflow publishes them in
+dependency order: `colorful-core` → `colorful-lexicon`, `colorful-parse` →
+`colorful-cli`, `colorful-lsp`.
+
+**Prerequisites (one-time):**
+
+- A `CARGO_REGISTRY_TOKEN` repository secret holding a crates.io API token for
+  the `flyingrobots` account. Without it, the `Publish to crates.io` step fails
+  and no GitHub Release is created (the tag is harmless to re-run).
+- After the first publish, the crates are owned by `flyingrobots`. Add any
+  additional owners with `cargo owner --add <user-or-team> <crate>`.
+
+Validate locally before tagging:
+
+```bash
+cargo publish --dry-run -p colorful-core --locked
+```
+
+Dependent crates can only dry-run once their dependencies are already on
+crates.io; the workflow's ordered publish handles that on the real run. Note that
+crates.io versions are **immutable** (yank-only) — a tagged version is permanent.
