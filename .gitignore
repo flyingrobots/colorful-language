@@ -22,3 +22,5 @@
 
 # Agent / local config (not part of the contract)
 .claude/
+CLAUDE.md
+
