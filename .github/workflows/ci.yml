@@ -21,5 +21,15 @@ jobs:
         with:
           globs: "**/*.md"
 
-  # The Rust job (fmt, clippy, test) lands with the cargo workspace in
-  # Goalpost 0 — see issue #1 — and becomes the merge gate then.
+  rust:
+    name: Rust (fmt, clippy, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo test --all --locked
