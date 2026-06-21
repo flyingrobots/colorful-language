@@ -331,13 +331,14 @@ fn lookup(word: &str) -> Option<FunctionKind> {
     None
 }
 
-/// Whether `word` is a numeric token: it starts and ends with a digit, and every
-/// character is a digit or an internal `.`/`,` separator (`150`, `3.14`, `1,000`,
-/// but not `3.`, `.5`, or `.`).
+/// Whether `word` is a numeric token: it starts and ends with a Unicode numeric
+/// digit (matching the parser's `\p{N}`), and every character is numeric or an
+/// internal `.`/`,` separator (`150`, `3.14`, `1,000`, `\u{0663}`, but not `3.`,
+/// `.5`, or `.`).
 fn is_number(word: &str) -> bool {
-    let first_is_digit = word.chars().next().is_some_and(|c| c.is_ascii_digit());
-    let last_is_digit = word.chars().next_back().is_some_and(|c| c.is_ascii_digit());
-    first_is_digit && last_is_digit && word.chars().all(|c| matches!(c, '0'..='9' | '.' | ','))
+    let first_is_digit = word.chars().next().is_some_and(char::is_numeric);
+    let last_is_digit = word.chars().next_back().is_some_and(char::is_numeric);
+    first_is_digit && last_is_digit && word.chars().all(|c| c.is_numeric() || c == '.' || c == ',')
 }
 
 #[cfg(test)]
@@ -451,5 +452,13 @@ mod tests {
         assert_eq!(classify("3."), PosClass::Content);
         assert_eq!(classify(".5"), PosClass::Content);
         assert_eq!(classify("3.."), PosClass::Content);
+    }
+
+    #[test]
+    fn unicode_numerals_are_numbers() {
+        // The parser's `\p{N}` accepts non-ASCII digits, so the lexicon must too,
+        // or the pipeline disagrees with itself.
+        assert_eq!(classify("\u{0663}"), PosClass::Number); // Arabic-Indic three
+        assert_eq!(classify("\u{FF13}"), PosClass::Number); // full-width three
     }
 }
