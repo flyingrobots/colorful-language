@@ -1,0 +1,24 @@
+# Rust
+/target/
+**/target/
+*.pdb
+*.rs.bk
+
+# We ship binaries (CLI + LSP), so Cargo.lock IS committed — do not ignore it.
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Obsidian
+.obsidian/
+
+# Editor / tooling local state
+.idea/
+*.swp
+*.swo
+
+# Agent / local config (not part of the contract)
+.claude/
