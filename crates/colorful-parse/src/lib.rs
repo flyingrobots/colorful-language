@@ -21,9 +21,10 @@ use logos::Logos;
 #[derive(Logos, Debug, PartialEq, Eq)]
 #[logos(skip r"[ \t\r\n\u{000C}\u{00A0}\u{1680}\u{2000}-\u{200A}\u{202F}\u{205F}\u{3000}]+")]
 enum Tok {
-    /// An alphabetic word, allowing internal apostrophes and hyphens
-    /// (`don't`, `well-being`).
-    #[regex(r"\p{L}+(?:['\u{2019}\-]\p{L}+)*")]
+    /// A letter-initial word, allowing internal digits, apostrophes, and hyphens
+    /// (`don't`, `well-being`, `covid19`, `H2O`). A digit-initial token is a
+    /// [`Tok::Number`] instead.
+    #[regex(r"\p{L}[\p{L}\p{N}]*(?:['\u{2019}\-][\p{L}\p{N}]+)*")]
     Word,
     /// A numeric token with optional internal separators (`150`, `3.14`,
     /// `1,000`).
@@ -238,6 +239,16 @@ mod tests {
             parse("\"hi\""),
             vec![sentence(0, 4, vec![punct(0, 1), word(1, 3), punct(3, 4)])]
         );
+    }
+
+    #[test]
+    fn alphanumeric_words_stay_together() {
+        // A letter-initial word keeps its internal digits (it is one word, not
+        // word + number), so the lexicon sees `covid19`, not `covid` + `19`.
+        assert_eq!(parse("covid19"), vec![sentence(0, 7, vec![word(0, 7)])]);
+        assert_eq!(parse("H2O"), vec![sentence(0, 3, vec![word(0, 3)])]);
+        // A digit-initial token is still a number.
+        assert_eq!(parse("3.5"), vec![sentence(0, 3, vec![word(0, 3)])]);
     }
 
     #[test]
