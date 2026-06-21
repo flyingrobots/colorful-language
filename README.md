@@ -80,19 +80,25 @@ See [`docs/design/`](docs/design/) for the thinking.
 
 ## Project Status
 
-**Pre-release.** Goalpost 0 ("English lights up") is complete.
+**Pre-release — `v0.1.0`.** Goalpost 0 ("English lights up") is released.
 
-See the full [ROADMAP.md](ROADMAP.md) for what's next (prose linter is up next!).
+See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
+page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full
+[ROADMAP.md](ROADMAP.md) for what's next (prose linter is up next!).
 
 ---
 
 ## Installation
 
-**From source (recommended while pre-release):**
+**Prebuilt binaries:** download the archive for a tagged release from the
+[Releases](https://github.com/flyingrobots/colorful-language/releases) page (it
+contains the `colorful` CLI and the `colorful-lsp` language server).
+
+**From source** (installs the `colorful` and `colorful-lsp` binaries):
 
 ```bash
-cargo install --git https://github.com/flyingrobots/colorful-language.git --bin colorful
-cargo install --git https://github.com/flyingrobots/colorful-language.git --bin colorful-lsp
+cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-cli
+cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-lsp
 ```
 
 ---

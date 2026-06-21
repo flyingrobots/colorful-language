@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-21
+
+First public release — **Goalpost 0, "English lights up."**
+
 ### Added
 
 - Project scaffold: Apache-2.0 license, community files, documentation spine,
@@ -37,4 +41,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     semantic tokens were unified on the LSP line model; `is_number` accepts
     Unicode `\p{N}`; letter-initial alphanumeric words (`covid19`) stay whole.
 
-[Unreleased]: https://github.com/flyingrobots/colorful-language/commits/main
+[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/flyingrobots/colorful-language/releases/tag/v0.1.0

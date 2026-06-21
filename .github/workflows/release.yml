@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Verify the tag is on main
+        run: |
+          set -euo pipefail
+          git fetch -q origin main
+          tag_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "Tag ${GITHUB_REF_NAME} is not an ancestor of origin/main; refusing to release."
+            exit 1
+          fi
+
+      # The same gate as CI and the release runbook.
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - run: cargo test --all --locked
+      - run: cargo build --release --locked
+
+      - name: Package binaries
+        run: |
+          set -euo pipefail
+          dist="colorful-language-${GITHUB_REF_NAME}-x86_64-unknown-linux-gnu"
+          mkdir -p "$dist"
+          cp target/release/colorful target/release/colorful-lsp "$dist"/
+          cp README.md LICENSE NOTICE CHANGELOG.md "$dist"/
+          tar -czf "$dist.tar.gz" "$dist"
+          sha256sum "$dist.tar.gz" > "$dist.tar.gz.sha256"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes="docs/goalposts/${GITHUB_REF_NAME}/release.md"
+          if [ -f "$notes" ]; then
+            gh release create "$GITHUB_REF_NAME" \
+              --title "colorful-language ${GITHUB_REF_NAME}" \
+              --notes-file "$notes" \
+              ./*.tar.gz ./*.sha256
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "colorful-language ${GITHUB_REF_NAME}" \
+              --generate-notes \
+              ./*.tar.gz ./*.sha256
+          fi
