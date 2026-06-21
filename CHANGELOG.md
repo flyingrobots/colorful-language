@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Hardened during a multi-reviewer pass before merge: the context-free `Tagger`
     port was split into `Lexicon` + `Annotator` so Goalpost 2's contextual
     disambiguation can slot in behind a port; an LSP cross-line edit-clamp bug was
-    fixed; coloring moved to skeleton mode (content left unstyled).
+    fixed; coloring moved to skeleton mode (content left unstyled); edits and
+    semantic tokens were unified on the LSP line model; `is_number` accepts
+    Unicode `\p{N}`; letter-initial alphanumeric words (`covid19`) stay whole.
 
 [Unreleased]: https://github.com/flyingrobots/colorful-language/commits/main
