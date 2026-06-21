@@ -15,29 +15,32 @@ use colorful_core::{Annotator, Parser, PosClass};
 use ropey::Rope;
 use tower_lsp::lsp_types::{Position, Range, SemanticToken, SemanticTokenType};
 
-/// The semantic-token legend, in index order. `v0` maps onto standard token
-/// types so existing editor themes color prose without extra configuration.
+/// The semantic-token legend, in index order. `v0` is a *skeleton* highlighter:
+/// it accentuates the structure (function words, proper nouns, numbers, quotes)
+/// and leaves ordinary content unstyled, so a paragraph is not flooded with
+/// color. The types are standard, so existing editor themes color prose with no
+/// extra configuration.
 #[must_use]
 pub fn legend_token_types() -> Vec<SemanticTokenType> {
     vec![
-        SemanticTokenType::KEYWORD,  // 0: function words
-        SemanticTokenType::CLASS,    // 1: proper nouns
-        SemanticTokenType::VARIABLE, // 2: content words
-        SemanticTokenType::NUMBER,   // 3: numbers
-        SemanticTokenType::STRING,   // 4: quotes
+        SemanticTokenType::KEYWORD, // 0: function words
+        SemanticTokenType::CLASS,   // 1: proper nouns
+        SemanticTokenType::NUMBER,  // 2: numbers
+        SemanticTokenType::STRING,  // 3: quotes
     ]
 }
 
-/// The legend index for a class, or `None` for classes left unstyled
-/// (punctuation).
+/// The legend index for a class, or `None` for classes left unstyled.
+///
+/// Content words and punctuation emit no token (skeleton mode); per-function
+/// subtypes (article/conjunction/…) and a content layer arrive in Goalpost 2.
 fn token_type_index(class: PosClass) -> Option<u32> {
     Some(match class {
         PosClass::Function(_) => 0,
         PosClass::ProperNoun => 1,
-        PosClass::Content => 2,
-        PosClass::Number => 3,
-        PosClass::Quote => 4,
-        PosClass::Punctuation => return None,
+        PosClass::Number => 2,
+        PosClass::Quote => 3,
+        PosClass::Content | PosClass::Punctuation => return None,
     })
 }
 
@@ -97,8 +100,9 @@ fn utf16_len(s: &str) -> u32 {
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
 ///
-/// Words are classified through `parser` and `annotator`; punctuation is left
-/// unstyled. Token types index into [`legend_token_types`].
+/// Words are classified through `parser` and `annotator`; content words and
+/// punctuation are left unstyled (skeleton mode). Token types index into
+/// [`legend_token_types`].
 #[must_use]
 pub fn compute_semantic_tokens<P, A>(text: &str, parser: &P, annotator: &A) -> Vec<SemanticToken>
 where
@@ -203,44 +207,46 @@ mod tests {
 
     #[test]
     fn single_line_tokens_are_delta_encoded() {
-        // "The cat is 3." -> keyword, variable, keyword, number ('.' unstyled).
+        // "The cat is 3." -> keyword, keyword, number. "cat" is content and the
+        // '.' is punctuation, so both are unstyled (skeleton mode); the deltas
+        // skip over them.
         assert_eq!(
             semantic_tokens("The cat is 3."),
             vec![
-                tok(0, 0, 3, 0), // The
-                tok(0, 4, 3, 2), // cat
-                tok(0, 4, 2, 0), // is
-                tok(0, 3, 1, 3), // 3
+                tok(0, 0, 3, 0), // The (keyword)
+                tok(0, 8, 2, 0), // is  (keyword; delta over the skipped "cat")
+                tok(0, 3, 1, 2), // 3   (number)
             ]
         );
     }
 
     #[test]
     fn newlines_advance_the_line_delta() {
-        // Sentence-initial "Hi"/"Go" stay content; terminators are unstyled.
+        // Function words survive skeleton mode, so this exercises the line delta:
+        // "is" (auxiliary) on line 0, "not" (negator) on line 1.
         assert_eq!(
-            semantic_tokens("Hi.\nGo."),
+            semantic_tokens("is\nnot"),
             vec![
-                tok(0, 0, 2, 2), // Hi (line 0)
-                tok(1, 0, 2, 2), // Go (line 1, delta_start resets to absolute)
+                tok(0, 0, 2, 0), // is  (line 0)
+                tok(1, 0, 3, 0), // not (line 1, delta_start resets to absolute)
             ]
         );
     }
 
     #[test]
     fn columns_count_utf16_code_units_not_bytes() {
-        // A leading emoji is 4 bytes but 2 UTF-16 code units; "ok" must report
+        // A leading emoji is 4 bytes but 2 UTF-16 code units; "is" must report
         // column 3 (emoji=2 + space=1), not byte offset 5.
-        assert_eq!(semantic_tokens("\u{1F600} ok"), vec![tok(0, 3, 2, 2)]);
+        assert_eq!(semantic_tokens("\u{1F600} is"), vec![tok(0, 3, 2, 0)]);
     }
 
     #[test]
     fn line_index_handles_bare_carriage_return() {
         // A lone '\r' is a line break per the LSP spec, so "2" is on line 1.
-        // (Numbers survive skeleton coloring, keeping this assertion stable.)
+        // (Numbers survive skeleton coloring; number is token type 2.)
         assert_eq!(
             semantic_tokens("1.\r2"),
-            vec![tok(0, 0, 1, 3), tok(1, 0, 1, 3)]
+            vec![tok(0, 0, 1, 2), tok(1, 0, 1, 2)]
         );
     }
 

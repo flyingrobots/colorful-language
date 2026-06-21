@@ -11,6 +11,8 @@ Requirements:
   columns.
 - **COL-5** The LSP applies incremental and full document edits without panicking,
   including UTF-16 surrogate and out-of-range positions.
+- **COL-6** Skeleton mode: content words and punctuation emit no semantic token;
+  function words, proper nouns, numbers, and quotes do.
 
 ## Cases
 
@@ -56,7 +58,15 @@ All cases are implemented.
   `tests::apply_change_handles_utf16_surrogate_columns`,
   `tests::apply_change_clamps_out_of_range_positions`. *Status:* implemented.
 
+- **COL-6a** — *Requirement:* COL-6. *Behavior:* in `"The cat is 3."` the content
+  word `cat` and the `.` emit no token; the deltas skip them. *Oracle:*
+  `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
+  `tests::single_line_tokens_are_delta_encoded`. *Status:* implemented.
+
 ## Known gaps
 
 - The end-to-end LSP handshake (`initialize` → `semanticTokens/full`) is verified
   manually; an automated integration harness is a future addition.
+- The title-case proper-noun guard is heuristic: a short capitalized line with no
+  lowercase content word (for example `I am Groot`) can be read as a title and
+  suppress a genuine proper noun. Accepted in `v0` as the conservative direction.
