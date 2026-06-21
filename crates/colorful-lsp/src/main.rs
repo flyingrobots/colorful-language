@@ -5,7 +5,8 @@
 //! and answers `textDocument/semanticTokens/full` by classifying the text. All
 //! the real logic lives in the `colorful_lsp` library; this file is transport.
 
-use colorful_lexicon::ClosedClassTagger;
+use colorful_core::LexicalAnnotator;
+use colorful_lexicon::ClosedClassLexicon;
 use colorful_lsp::{apply_change, compute_semantic_tokens, legend_token_types};
 use colorful_parse::ProseParser;
 use dashmap::DashMap;
@@ -20,7 +21,7 @@ use tower_lsp::lsp_types::{
 };
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
-/// The language server: a document store plus the parser and tagger adapters.
+/// The language server: a document store plus the parser and annotator adapters.
 struct Backend {
     client: Client,
     documents: DashMap<Url, Rope>,
@@ -100,7 +101,11 @@ impl LanguageServer for Backend {
             return Ok(None);
         };
         let text = rope.to_string();
-        let data = compute_semantic_tokens(&text, &ProseParser::new(), &ClosedClassTagger::new());
+        let data = compute_semantic_tokens(
+            &text,
+            &ProseParser::new(),
+            &LexicalAnnotator::new(ClosedClassLexicon::new()),
+        );
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
             result_id: None,
             data,

@@ -11,7 +11,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{classify, Parser, PosClass, Tagger};
+use colorful_core::{Annotator, Parser, PosClass};
 use ropey::Rope;
 use tower_lsp::lsp_types::{Position, Range, SemanticToken, SemanticTokenType};
 
@@ -81,16 +81,16 @@ fn utf16_len(s: &str) -> u32 {
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
 ///
-/// Words are classified through `parser` and `tagger`; punctuation is left
+/// Words are classified through `parser` and `annotator`; punctuation is left
 /// unstyled. Token types index into [`legend_token_types`].
 #[must_use]
-pub fn compute_semantic_tokens<P, T>(text: &str, parser: &P, tagger: &T) -> Vec<SemanticToken>
+pub fn compute_semantic_tokens<P, A>(text: &str, parser: &P, annotator: &A) -> Vec<SemanticToken>
 where
     P: Parser,
-    T: Tagger,
+    A: Annotator,
 {
     let tree = parser.parse(text);
-    let tokens = classify(&tree, text, tagger);
+    let tokens = annotator.annotate(text, &tree);
     let index = LineIndex::new(text);
 
     let mut data = Vec::new();
@@ -151,7 +151,8 @@ fn position_to_char(rope: &Rope, pos: Position) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use colorful_lexicon::ClosedClassTagger;
+    use colorful_core::LexicalAnnotator;
+    use colorful_lexicon::ClosedClassLexicon;
     use colorful_parse::ProseParser;
 
     fn tok(delta_line: u32, delta_start: u32, length: u32, token_type: u32) -> SemanticToken {
@@ -165,7 +166,11 @@ mod tests {
     }
 
     fn semantic_tokens(text: &str) -> Vec<SemanticToken> {
-        compute_semantic_tokens(text, &ProseParser::new(), &ClosedClassTagger::new())
+        compute_semantic_tokens(
+            text,
+            &ProseParser::new(),
+            &LexicalAnnotator::new(ClosedClassLexicon::new()),
+        )
     }
 
     #[test]

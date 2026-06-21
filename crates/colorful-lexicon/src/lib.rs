@@ -1,4 +1,4 @@
-//! The closed-class function-word lexicon — a [`Tagger`] adapter.
+//! The closed-class function-word lexicon — a [`Lexicon`] adapter.
 //!
 //! This crate encodes the project's founding insight: English's closed-class
 //! words (articles, prepositions, conjunctions, pronouns, auxiliaries,
@@ -6,7 +6,7 @@
 //! programming-language keywords. They are stored in a compile-time perfect-hash
 //! map and looked up case-insensitively.
 //!
-//! [`ClosedClassTagger`] classifies a word as a [`PosClass::Function`] if it is
+//! [`ClosedClassLexicon`] classifies a word as a [`PosClass::Function`] if it is
 //! in the set, a [`PosClass::Number`] if it is numeric, and otherwise leaves it
 //! as undifferentiated [`PosClass::Content`]. The proper-noun heuristic is a
 //! context-dependent refinement applied by `colorful_core::classify`, not here.
@@ -14,7 +14,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{FunctionKind, PosClass, Tagger};
+use colorful_core::{FunctionKind, Lexicon, PosClass};
 use phf::phf_map;
 
 /// The closed-class word set. Each word is assigned to exactly one
@@ -225,12 +225,12 @@ static FUNCTION_WORDS: phf::Map<&'static str, FunctionKind> = phf_map! {
     "used" => FunctionKind::Auxiliary,
 };
 
-/// A [`Tagger`] backed by the closed-class [`FUNCTION_WORDS`] set.
+/// A [`Lexicon`] backed by the closed-class [`FUNCTION_WORDS`] set.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct ClosedClassTagger;
+pub struct ClosedClassLexicon;
 
-impl ClosedClassTagger {
-    /// Create a new tagger.
+impl ClosedClassLexicon {
+    /// Create a new lexicon.
     #[must_use]
     pub fn new() -> Self {
         Self
@@ -243,7 +243,7 @@ impl ClosedClassTagger {
     }
 }
 
-impl Tagger for ClosedClassTagger {
+impl Lexicon for ClosedClassLexicon {
     fn classify(&self, word: &str) -> PosClass {
         if let Some(kind) = lookup(word) {
             return PosClass::Function(kind);
@@ -287,7 +287,7 @@ mod tests {
     use super::*;
 
     fn classify(word: &str) -> PosClass {
-        ClosedClassTagger::new().classify(word)
+        ClosedClassLexicon::new().classify(word)
     }
 
     #[test]
@@ -322,7 +322,7 @@ mod tests {
     fn content_words_are_undifferentiated() {
         assert_eq!(classify("cat"), PosClass::Content);
         assert_eq!(classify("running"), PosClass::Content);
-        // Proper-noun detection is the caller's job, not the tagger's.
+        // Proper-noun detection is the caller's job, not the lexicon.s.
         assert_eq!(classify("Paris"), PosClass::Content);
     }
 
@@ -340,6 +340,6 @@ mod tests {
     #[test]
     fn set_is_nonempty_and_reasonably_sized() {
         // A sanity floor; the exact count is documented in the lexicon topic.
-        assert!(ClosedClassTagger::word_count() >= 150);
+        assert!(ClosedClassLexicon::word_count() >= 150);
     }
 }

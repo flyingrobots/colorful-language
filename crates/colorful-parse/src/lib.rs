@@ -3,7 +3,7 @@
 //! A `logos` lexer turns text into mechanical tokens (words, numbers, sentence
 //! terminators, quotes, punctuation), and a small recursive-descent pass groups
 //! them into [`Node::Sentence`] runs. The parser produces *structure only* — it
-//! makes no part-of-speech decisions; that is the `Tagger`'s job.
+//! makes no part-of-speech decisions; that is the lexicon and annotator's job.
 //!
 //! Parsing is **total**: any input, including malformed or non-ASCII text,
 //! yields a [`Tree`] without panicking. Characters the lexer cannot otherwise

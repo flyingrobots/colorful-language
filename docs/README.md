@@ -24,7 +24,7 @@ not pose as the current reference.
 - [ADR-0001](design/0001-scope-and-delivery.md) — scope and delivery model
   (no-ML v0, LSP-first).
 - [ADR-0002](design/0002-hexagonal-ports.md) — hexagonal architecture and the
-  `Parser`/`Tagger` seam.
+  `Parser`/`Lexicon`/`Annotator` seam.
 - [ADR-0003](design/0003-pure-rust-parser.md) — a pure-Rust parser; tree-sitter
   declined for the core.
 
@@ -33,7 +33,7 @@ not pose as the current reference.
 - [parsing](topics/parsing/README.md) — how prose is lexed and shaped into
   structure (the `Parser` port).
 - [lexicon](topics/lexicon/README.md) — the closed-class word set and
-  classification (the `Tagger` port).
+  classification (the `Lexicon` port).
 - [coloring](topics/coloring/README.md) — how classification becomes ANSI output
   and LSP semantic tokens.
 

@@ -1,6 +1,6 @@
 [package]
 name = "colorful-core"
-description = "Domain types and ports (Parser, Tagger) for colorful-language."
+description = "Domain types and ports (Parser, Lexicon, Annotator) for colorful-language."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

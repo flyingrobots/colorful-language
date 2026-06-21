@@ -1,12 +1,14 @@
 //! Domain types and ports for `colorful-language`.
 //!
 //! This crate is the pure core of the hexagon: it holds the vocabulary every
-//! adapter speaks (spans, parts of speech, the shallow syntax tree) and the two
-//! load-bearing ports — [`Parser`] (text to structure) and [`Tagger`] (a word to
-//! a part-of-speech class). It performs no I/O.
+//! adapter speaks (spans, parts of speech, the shallow syntax tree) and the
+//! load-bearing ports — [`Parser`] (text to structure), [`Lexicon`] (a word in
+//! isolation to a part-of-speech class), and [`Annotator`] (a parsed tree to a
+//! classified token stream, with context). It performs no I/O.
 //!
-//! The boundary between *structure* ([`Parser`]) and *classification*
-//! ([`Tagger`]) is the central design commitment; see `docs/design/0002`.
+//! The boundary between *structure* ([`Parser`]), context-free *lexical lookup*
+//! ([`Lexicon`]), and context-aware *classification* ([`Annotator`]) is the
+//! central design commitment; see `docs/design/0002`.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -145,62 +147,87 @@ pub trait Parser {
     fn parse(&self, text: &str) -> Tree;
 }
 
-/// Port: classify a single word into a [`PosClass`].
+/// Port: classify a single word's lexeme into a [`PosClass`], **in isolation**.
 ///
-/// Implementations classify a word in isolation. Context-dependent refinements
-/// (such as the proper-noun heuristic) are applied by [`classify`], not here.
-pub trait Tagger {
-    /// Classify `word`. Returns one of [`PosClass::Function`],
-    /// [`PosClass::Number`], or [`PosClass::Content`].
+/// A `Lexicon` is a dictionary: it sees one word with no surrounding context, so
+/// it returns [`PosClass::Function`], [`PosClass::Number`], or
+/// [`PosClass::Content`]. Context-dependent decisions — the proper-noun
+/// heuristic, and (in a future contextual or ML implementation) telling a noun
+/// from a verb — are the job of an [`Annotator`], not a `Lexicon`.
+pub trait Lexicon {
+    /// Classify `word` in isolation.
     fn classify(&self, word: &str) -> PosClass;
 }
 
-/// Walk a [`Tree`] and produce the classified [`Token`] stream for `source`.
+/// Port: annotate a parsed [`Tree`] with a classified [`Token`] stream, using
+/// whatever context the implementation needs.
 ///
-/// This is the application service that ties the two ports together:
+/// This is the seam that keeps the architecture honest. The `v0`
+/// [`LexicalAnnotator`] composes a [`Lexicon`] with shallow heuristics, but a
+/// future contextual or machine-learning annotator can replace it behind this
+/// port — distinguishing noun from verb using the surrounding [`Tree`] — without
+/// touching the parser, the CLI, or the language server.
+pub trait Annotator {
+    /// Produce the classified tokens for `source`, given its parsed `tree`, in
+    /// source order.
+    fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token>;
+}
+
+/// The `v0` [`Annotator`]: a [`Lexicon`] plus shallow, deterministic heuristics.
 ///
-/// - [`Node::Word`] spans are classified by `tagger`, then a proper-noun
+/// - [`Node::Word`] spans are classified by the lexicon, then a proper-noun
 ///   heuristic upgrades a capitalized, non-sentence-initial [`PosClass::Content`]
 ///   word to [`PosClass::ProperNoun`].
 /// - [`Node::Punct`] spans are classified structurally as [`PosClass::Quote`] or
 ///   [`PosClass::Punctuation`].
-///
-/// Tokens are returned in source order.
-#[must_use]
-pub fn classify<T: Tagger + ?Sized>(tree: &Tree, source: &str, tagger: &T) -> Vec<Token> {
-    let mut tokens = Vec::new();
-    let Node::Document(sentences) = &tree.root else {
-        return tokens;
-    };
-    for sentence in sentences {
-        let Node::Sentence { parts, .. } = sentence else {
-            continue;
+#[derive(Debug, Default, Clone, Copy)]
+pub struct LexicalAnnotator<L> {
+    lexicon: L,
+}
+
+impl<L: Lexicon> LexicalAnnotator<L> {
+    /// Create an annotator over `lexicon`.
+    pub fn new(lexicon: L) -> Self {
+        Self { lexicon }
+    }
+}
+
+impl<L: Lexicon> Annotator for LexicalAnnotator<L> {
+    fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token> {
+        let mut tokens = Vec::new();
+        let Node::Document(sentences) = &tree.root else {
+            return tokens;
         };
-        let mut seen_word = false;
-        for part in parts {
-            match part {
-                Node::Word { span } => {
-                    let text = span.slice(source);
-                    let mut class = tagger.classify(text);
-                    if class == PosClass::Content && seen_word && is_capitalized(text) {
-                        class = PosClass::ProperNoun;
+        for sentence in sentences {
+            let Node::Sentence { parts, .. } = sentence else {
+                continue;
+            };
+            let mut seen_word = false;
+            for part in parts {
+                match part {
+                    Node::Word { span } => {
+                        let text = span.slice(source);
+                        let mut class = self.lexicon.classify(text);
+                        if class == PosClass::Content && seen_word && is_capitalized(text) {
+                            class = PosClass::ProperNoun;
+                        }
+                        seen_word = true;
+                        tokens.push(Token { span: *span, class });
                     }
-                    seen_word = true;
-                    tokens.push(Token { span: *span, class });
+                    Node::Punct { span } => {
+                        let class = if is_quote(span.slice(source)) {
+                            PosClass::Quote
+                        } else {
+                            PosClass::Punctuation
+                        };
+                        tokens.push(Token { span: *span, class });
+                    }
+                    _ => {}
                 }
-                Node::Punct { span } => {
-                    let class = if is_quote(span.slice(source)) {
-                        PosClass::Quote
-                    } else {
-                        PosClass::Punctuation
-                    };
-                    tokens.push(Token { span: *span, class });
-                }
-                _ => {}
             }
         }
+        tokens
     }
-    tokens
 }
 
 /// Whether the first character of `word` is uppercase.
@@ -229,11 +256,11 @@ fn is_quote(s: &str) -> bool {
 mod tests {
     use super::*;
 
-    /// A tagger stub: function words from a tiny table, digits as numbers, else
-    /// content. Lets the core test [`classify`] without the real lexicon.
-    struct StubTagger;
+    /// A lexicon stub: function words from a tiny table, digits as numbers, else
+    /// content. Lets the core test [`LexicalAnnotator`] without the real lexicon.
+    struct StubLexicon;
 
-    impl Tagger for StubTagger {
+    impl Lexicon for StubLexicon {
         fn classify(&self, word: &str) -> PosClass {
             match word.to_ascii_lowercase().as_str() {
                 "the" => PosClass::Function(FunctionKind::Article),
@@ -244,6 +271,11 @@ mod tests {
                 _ => PosClass::Content,
             }
         }
+    }
+
+    /// Annotate `tree`/`source` with the stub lexicon.
+    fn annotate(tree: &Tree, source: &str) -> Vec<Token> {
+        LexicalAnnotator::new(StubLexicon).annotate(source, tree)
     }
 
     fn word(start: usize, end: usize) -> Node {
@@ -283,7 +315,7 @@ mod tests {
             (0, 13),
             vec![word(0, 3), word(4, 7), word(8, 11), word(12, 13)],
         )]);
-        let toks = classify(&tree, src, &StubTagger);
+        let toks = annotate(&tree, src);
         let classes: Vec<PosClass> = toks.iter().map(|t| t.class).collect();
         assert_eq!(
             classes,
@@ -305,7 +337,7 @@ mod tests {
             (0, 15),
             vec![word(0, 4), word(5, 9), word(10, 15)],
         )]);
-        let toks = classify(&tree, src, &StubTagger);
+        let toks = annotate(&tree, src);
         let classes: Vec<PosClass> = toks.iter().map(|t| t.class).collect();
         assert_eq!(
             classes,
@@ -321,7 +353,7 @@ mod tests {
             (0, 5),
             vec![punct(0, 1), word(1, 3), punct(3, 4), punct(4, 5)],
         )]);
-        let toks = classify(&tree, src, &StubTagger);
+        let toks = annotate(&tree, src);
         let classes: Vec<PosClass> = toks.iter().map(|t| t.class).collect();
         assert_eq!(
             classes,
@@ -337,6 +369,49 @@ mod tests {
     #[test]
     fn empty_document_yields_no_tokens() {
         let tree = Tree::document(vec![]);
-        assert!(classify(&tree, "", &StubTagger).is_empty());
+        assert!(annotate(&tree, "").is_empty());
+    }
+
+    #[test]
+    fn annotator_port_is_independently_implementable() {
+        // Proves the seam is real: a contextual annotator can replace the
+        // lexical one behind the `Annotator` port with no lexicon at all. This is
+        // exactly what Goalpost 2's noun/verb disambiguation needs.
+        struct ContextOnly;
+        impl Annotator for ContextOnly {
+            fn annotate(&self, _source: &str, tree: &Tree) -> Vec<Token> {
+                let Node::Document(sentences) = &tree.root else {
+                    return vec![];
+                };
+                // A stand-in that uses tree position, not the word: first word of
+                // each sentence is "Content", the rest "ProperNoun".
+                let mut out = Vec::new();
+                for sentence in sentences {
+                    let Node::Sentence { parts, .. } = sentence else {
+                        continue;
+                    };
+                    let mut first = true;
+                    for part in parts {
+                        if let Node::Word { span } = part {
+                            let class = if first {
+                                PosClass::Content
+                            } else {
+                                PosClass::ProperNoun
+                            };
+                            first = false;
+                            out.push(Token { span: *span, class });
+                        }
+                    }
+                }
+                out
+            }
+        }
+
+        let tree = Tree::document(vec![sentence((0, 9), vec![word(0, 3), word(4, 9)])]);
+        let toks = ContextOnly.annotate("abc defgh", &tree);
+        assert_eq!(
+            toks.iter().map(|t| t.class).collect::<Vec<_>>(),
+            vec![PosClass::Content, PosClass::ProperNoun]
+        );
     }
 }

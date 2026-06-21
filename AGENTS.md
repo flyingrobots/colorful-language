@@ -50,8 +50,9 @@ implementation, honest current reference.
 - `colorful-core` stays pure: domain types and port traits, **no I/O**.
 - Everything outside (parsing, lexicon lookup, terminal output, the LSP) is an
   adapter behind a port.
-- `Parser` (structure) and `Tagger` (classification) are **separate ports**.
-  Keep them separate — that seam is what makes future goalposts cheap.
+- `Parser` (structure), `Lexicon` (context-free word lookup), and `Annotator`
+  (context-aware classification) are **separate ports**. Keep them separate —
+  that seam is what makes future goalposts cheap.
 - Need a new capability? Add a port + adapter. Do not thread a concrete
   outside dependency through the core.
 

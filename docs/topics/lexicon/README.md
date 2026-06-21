@@ -1,8 +1,8 @@
 # Lexicon
 
-The `Tagger` port classifies a single word into a `PosClass`. The implementation
-is `colorful_lexicon::ClosedClassTagger`, backed by a compile-time perfect-hash
-set of closed-class function words.
+The `Lexicon` port classifies a single word, in isolation, into a `PosClass`.
+The implementation is `colorful_lexicon::ClosedClassLexicon`, backed by a
+compile-time perfect-hash set of closed-class function words.
 
 ## Current behavior
 
@@ -14,9 +14,10 @@ set of closed-class function words.
    internal `.`/`,` separators — return `Number`.
 3. Otherwise return `Content` (open-class, undifferentiated in `v0`).
 
-The set holds the finite closed-class vocabulary across six `FunctionKind`s:
-`Article`, `Preposition`, `Conjunction`, `Pronoun`, `Auxiliary`, `Determiner`.
-`ClosedClassTagger::word_count()` reports the current size (at least 150).
+The set holds the finite closed-class vocabulary across the `FunctionKind`s:
+`Article`, `Preposition`, `Conjunction`, `Pronoun`, `Auxiliary`, `Determiner`,
+and `Negator`, plus common contractions. `ClosedClassLexicon::word_count()` is
+the authoritative current size.
 
 ## Design notes
 
@@ -25,7 +26,7 @@ The set holds the finite closed-class vocabulary across six `FunctionKind`s:
   `docs/design/0001`.
 - **Proper nouns are not decided here.** Detecting a proper noun needs sentence
   context (is the word capitalized *and* not sentence-initial?), so it is applied
-  by `colorful_core::classify`, not by the tagger. See the
+  by `colorful_core::LexicalAnnotator`, not by the lexicon. See the
   [coloring](../coloring/README.md) topic.
 
 ## Known limitations (v0)

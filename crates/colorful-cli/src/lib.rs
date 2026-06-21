@@ -1,17 +1,17 @@
 //! Colorize English prose by part of speech in the terminal.
 //!
 //! This is a driving adapter: it wires the [`ProseParser`] and
-//! [`ClosedClassTagger`] together through `colorful_core::classify` and renders
-//! the classified token stream as ANSI-colored text. The same classification
-//! feeds the LSP server; here it lands as color in a terminal with no editor.
+//! [`ClosedClassLexicon`] together through a `LexicalAnnotator` and renders the
+//! classified token stream as ANSI-colored text. The same classification feeds
+//! the LSP server; here it lands as color in a terminal with no editor.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
 use std::io::{self, Read, Write};
 
-use colorful_core::{classify, Parser, PosClass};
-use colorful_lexicon::ClosedClassTagger;
+use colorful_core::{Annotator, LexicalAnnotator, Parser, PosClass};
+use colorful_lexicon::ClosedClassLexicon;
 use colorful_parse::ProseParser;
 
 /// The ANSI SGR parameter used to color a class, or `None` to leave it plain.
@@ -37,7 +37,7 @@ pub fn colorize(source: &str, color: bool) -> String {
     }
 
     let tree = ProseParser::new().parse(source);
-    let tokens = classify(&tree, source, &ClosedClassTagger::new());
+    let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, &tree);
 
     let mut out = String::with_capacity(source.len() + tokens.len() * 8);
     let mut prev = 0;

@@ -10,7 +10,7 @@ English. Open a `.txt`, an essay draft, or a design doc and watch the grammar
 light up: function words as keywords, proper nouns as types, quotes as strings,
 the skeleton of every sentence made visible.
 
-> **Status:** pre-release. Building toward **Goalpost 0 — "English lights up"**
+> **Status:** pre-release. **Goalpost 0 — "English lights up"** is delivered
 > (closed-class + structural coloring via a CLI and an LSP). See
 > [`ROADMAP.md`](ROADMAP.md).
 
@@ -23,8 +23,10 @@ editor wants.
 
 The wedge is that **English's closed-class words form a finite, enumerable
 list** — articles, prepositions, conjunctions, pronouns, auxiliaries,
-determiners. Roughly 150 words. Those behave *exactly* like programming-language
-keywords: fixed lexemes, unambiguous, the skeleton of every sentence. So the
+determiners. A few hundred words. Those behave much like programming-language
+keywords: a fixed, enumerable set forming the skeleton of every sentence. (They
+are not perfectly unambiguous — `that` and `for` wear several hats — so `v0` is
+honestly *closed-class lexical highlighting*, not contextual POS tagging.) So the
 first version needs no machine learning at all — it lexes the keywords, marks
 structure (sentences, quotes, numbers, proper-noun heuristics), and colors the
 rest as undifferentiated "content." Telling a noun from a verb is a *later*
@@ -34,18 +36,21 @@ escalation, not a prerequisite.
 
 A Rust [hexagon](https://en.wikipedia.org/wiki/Hexagonal_architecture_%28software%29).
 The domain core is pure and tiny; everything that touches the outside world is
-an adapter behind a port. The two load-bearing ports:
+an adapter behind a port. The three load-bearing ports:
 
-- **`Parser`** — text → a structural tree (sentences, clauses, word/punct
-  spans). Knows nothing about meaning.
-- **`Tagger`** — a word span → a part-of-speech class. The *swappable* one:
-  a compile-time closed-class set today, a real lexicon or an ML model later,
+- **`Parser`** — text → a structural tree (sentences, word/punct spans). Knows
+  nothing about meaning.
+- **`Lexicon`** — a single word, *in isolation*, → a part-of-speech class. The
+  context-free dictionary (a closed-class set today, a richer one later).
+- **`Annotator`** — a parsed tree → a classified token stream, *with context*.
+  The *swappable* one: today a `LexicalAnnotator` over the lexicon plus shallow
+  heuristics; later a contextual or ML annotator that tells noun from verb,
   **without touching the parser or the server.**
 
-The seam between *structure* and *classification* is the whole design — it is
-what lets every future ambition (a prose linter, noun/verb disambiguation, an
-"English-as-code" interpreter) arrive as "add an adapter behind a port" rather
-than "rewrite the core."
+The seam between *structure*, context-free *lookup*, and context-aware
+*classification* is the whole design — it is what lets every future ambition (a
+prose linter, noun/verb disambiguation, an "English-as-code" interpreter) arrive
+as "add an adapter behind a port" rather than "rewrite the core."
 
 Delivery is **LSP-first**: a single local language server emits
 [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens),
@@ -55,13 +60,13 @@ your terminal for instant gratification with no editor setup.
 
 The only TypeScript in this stack is the word "TypeScript."
 
-## Workspace (planned)
+## Workspace
 
 | Crate | Job |
 | --- | --- |
-| `colorful-core` | Domain types + the `Parser` / `Tagger` port traits. Zero I/O. |
-| `colorful-parse` | `Parser` adapter: a `logos` lexer + recursive descent over prose structure. |
-| `colorful-lexicon` | `Tagger` adapter: the compile-time closed-class function-word set. |
+| `colorful-core` | Domain types + the `Parser` / `Lexicon` / `Annotator` port traits. Zero I/O. |
+| `colorful-parse` | `Parser` adapter: a `logos` lexer + sentence segmenter over prose structure. |
+| `colorful-lexicon` | `Lexicon` adapter: the compile-time closed-class function-word set. |
 | `colorful-cli` | Colorize a file to ANSI in the terminal. |
 | `colorful-lsp` | A `ropey`-backed document mirror and a semantic-tokens server. |
 
