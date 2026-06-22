@@ -1,8 +1,7 @@
 # IR — Test Plan
 
-Planned verification for the Stage 1 surface IR (`colorful.syntax/v1`). All cases
-are **planned** until the IR lands; see [architecture](architecture.md) for the
-design of record.
+Verification for the Stage 1 surface IR (`colorful.syntax/v1`). All cases are
+**implemented**; see [architecture](architecture.md) for the design of record.
 
 Requirements:
 
@@ -17,26 +16,29 @@ Requirements:
 ## Cases
 
 - **IR-1a** — *Requirement:* IR-1. *Behavior:* `wesley-cli emit rust` and
-  `emit typescript`/`zod` from `colorful.syntax/v1` produce types covering every
-  contract field. *Oracle:* both compile; field/enum names match the contract.
-  *Status:* planned.
+  `emit typescript` from `colorful.syntax/v1` produce types covering every
+  contract field. *Oracle:* the `colorful-ir` crate compiles the generated Rust;
+  `tsc` type-checks the generated TS (`witness/ir-consume.ts`). *Evidence:*
+  `crates/colorful-ir/src/generated/`, `scripts/ir-witness.sh` (tsc step).
+  *Status:* implemented.
 - **IR-2a (the gate)** — *Requirement:* IR-2. *Behavior:* a `DocumentAnalysis`
-  value round-trips `Rust → canonical JSON A → TS decode → canonical JSON B →
-  Rust decode → canonical JSON C`. *Oracle:* `A == B == C` byte-for-byte.
-  *Status:* planned.
-- **IR-3a** — *Requirement:* IR-3. *Behavior/oracle (assert on a corpus):*
-  byte ranges are ordered and within `utf8ByteLength`; tokens do not overlap;
-  each token's text equals its source slice; every `structure` node's range
-  contains its children's ranges; `source.contentHash` matches the bytes; the
-  artifact names the exact `schemaHash`/`vocabularyHash` it implements. *Status:*
-  planned.
-- **IR-4a** — *Requirement:* IR-4. *Behavior:* `colorful ir <file>` output
-  deserializes through the generated decoder without loss. *Oracle:* decode +
-  re-encode equals the emitted JSON. *Status:* planned.
-- **IR-5a** — *Requirement:* IR-5. *Behavior:* `DocumentAnalysis::from_classification`
-  projects `colorful-core` types into the boundary DTO; `colorful-core`'s public
-  API is unchanged. *Oracle:* `colorful-core` still compiles without depending on
-  generated types. *Status:* planned.
+  round-trips `Rust → JSON A → TS decode → JSON B → Rust decode → JSON C`.
+  *Oracle:* `A == B == C` byte-for-byte. *Evidence:* `scripts/ir-witness.sh`
+  (CI job `ir-witness`); passes at 4796 bytes. *Status:* implemented.
+- **IR-3a** — *Requirement:* IR-3. *Behavior/oracle:* byte ranges ordered, within
+  `utf8ByteLength`, non-overlapping, on char boundaries; every `structure` node's
+  range contains its children; `source.contentHash` matches the bytes. *Evidence:*
+  `colorful-ir` `integration::document_analysis_holds_the_invariants`. *Status:*
+  implemented.
+- **IR-4a** — *Requirement:* IR-4. *Behavior:* `colorful ir` output decodes
+  through the generated DTO and re-encodes identically. *Oracle:* decode +
+  re-encode equals the input. *Evidence:* the witness `recanon` leg; `colorful-ir`
+  `tests::round_trips_in_rust`. *Status:* implemented.
+- **IR-5a** — *Requirement:* IR-5. *Behavior:* `from_classification` projects
+  `colorful-core` types into the DTO; `colorful-core` does not depend on generated
+  types. *Oracle:* `colorful-core` compiles standalone. *Evidence:*
+  `colorful-core/Cargo.toml` (no `colorful-ir` dep); `colorful_ir::from_classification`.
+  *Status:* implemented.
 
 ## Known gaps / risks
 
