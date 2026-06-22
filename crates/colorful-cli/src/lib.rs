@@ -97,6 +97,19 @@ pub fn run<I>(args: I) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
 {
+    let args: Vec<String> = args.into_iter().collect();
+    match args.first().map(String::as_str) {
+        Some("ir") => run_ir(args.iter().skip(1).cloned()),
+        Some("color") => run_color(args.iter().skip(1).cloned()),
+        _ => run_color(args),
+    }
+}
+
+/// Colorize prose to ANSI in the terminal (the default subcommand).
+fn run_color<I>(args: I) -> io::Result<()>
+where
+    I: IntoIterator<Item = String>,
+{
     let mut no_color_flag = false;
     let mut path: Option<String> = None;
     let mut end_of_options = false;
@@ -136,6 +149,62 @@ where
     let color = decide_color(no_color_flag, std::env::var_os("NO_COLOR").is_some());
     let mut stdout = io::stdout().lock();
     stdout.write_all(colorize(&input, color).as_bytes())?;
+    stdout.flush()
+}
+
+/// Emit the `colorful.syntax/v1` IR (`DocumentAnalysis`) as canonical JSON.
+///
+/// `colorful ir [FILE]` — reads the file (or stdin), parses and classifies it,
+/// and prints the IR a back-end (graft, jedit, an editor) can consume.
+fn run_ir<I>(args: I) -> io::Result<()>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut path: Option<String> = None;
+    let mut end_of_options = false;
+    for arg in args {
+        if end_of_options {
+            path = Some(arg);
+            continue;
+        }
+        match arg.as_str() {
+            "--" => end_of_options = true,
+            "-h" | "--help" => {
+                print!("colorful ir [FILE]\n\nEmit the colorful.syntax/v1 IR as canonical JSON (stdin if no FILE).\n");
+                return Ok(());
+            }
+            "-" => path = None,
+            other if other.starts_with('-') && other.len() > 1 => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("unknown option: {other}"),
+                ));
+            }
+            other => path = Some(other.to_string()),
+        }
+    }
+
+    let (unit_id, input) = match path {
+        Some(p) => {
+            let contents = std::fs::read_to_string(&p)?;
+            (p, contents)
+        }
+        None => {
+            let mut buf = String::new();
+            io::stdin().read_to_string(&mut buf)?;
+            ("stdin".to_string(), buf)
+        }
+    };
+
+    let tree = ProseParser::new().parse(&input);
+    let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(&input, &tree);
+    let document = colorful_ir::from_classification(&unit_id, &input, &tree, &tokens);
+    let json = colorful_ir::canonical_json(&document)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+
+    let mut stdout = io::stdout().lock();
+    stdout.write_all(json.as_bytes())?;
+    stdout.write_all(b"\n")?;
     stdout.flush()
 }
 

@@ -1,0 +1,20 @@
+[package]
+name = "colorful-ir"
+description = "Boundary DTOs (Wesley-generated) for the colorful.syntax/v1 IR, plus the projection from colorful-core."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["prose", "ir", "english", "graphql", "wesley"]
+categories = ["text-processing", "encoding"]
+
+[dependencies]
+colorful-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+
+[dev-dependencies]
+colorful-parse = { workspace = true }
+colorful-lexicon = { workspace = true }

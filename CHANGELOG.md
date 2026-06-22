@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **IR Spine (Phase 1).** `colorful.syntax/v1` — a Wesley-generated GraphQL
+  contract emitted as canonical JSON by `colorful ir [FILE]`. New `colorful-ir`
+  crate holds the generated Rust + TypeScript boundary DTOs (pinned wesley
+  `0.0.5`) and the `from_classification` projection; `colorful-core` stays free of
+  generated types. A cross-language round-trip witness (`scripts/ir-witness.sh`,
+  CI-enforced) proves the IR survives `Rust → JSON → TypeScript → JSON → Rust`
+  byte-for-byte. The contracts split `PosClass` into orthogonal
+  `TokenKind`/`LexicalClass`/`FunctionKind` axes, use UTF-8 `ByteRange`, and carry
+  source digests + provenance steps.
+
 ## [0.1.0] - 2026-06-21
 
 First public release — **Goalpost 0, "English lights up."**
