@@ -1,75 +1,64 @@
 # Roadmap
 
-This is the release train. **Goalposts** are milestones (a coherent, shippable
-increment); **slices** are the issues that make a goalpost real. The roadmap
-describes intent and sequence — it does not describe unbuilt behavior as if it
-already exists. Current behavior always lives in `docs/topics/` and the crate
-READMEs.
+The release train for `colorful-language`. It advances along **two axes**:
 
-GitHub milestones and issues are the source of truth for status; this file is
-the human-readable map.
+- **Depth** — how much meaning Colorful extracts from English: lexical
+  highlighting → linting → part of speech → an **intermediate representation** →
+  Controlled Natural English → capability-proven execution.
+- **Reach** — what can consume it: CLI → LSP → agents (graft) → editors (jedit,
+  VS Code, the wide net) → web.
 
----
+The depth axis has hard ordering. The reach axis floats — a surface can be built
+as soon as the depth it needs exists. **Milestones** are phases and **epic
+issues** track them; the board is the
+[Colorful Language — Roadmap project](https://github.com/users/flyingrobots/projects/17).
 
-## Goalpost 0 — "English lights up" (v0.1.0)
+Governing law of the deep end: *Colorful may describe anything, but it may
+compile only what the target can prove.*
 
-**Outcome:** open a prose file and see it colored — closed-class words as
-keywords, proper nouns, numbers, quotes, and undifferentiated content — both as
-ANSI in the terminal (CLI) and as semantic tokens in any LSP-speaking editor. No
-machine learning; pure lexing and shallow structure.
+## Phases
 
-**Status:** ✅ released in **v0.1.0** (all five slices merged to `main`).
+| # | Depth | Reach | Milestone / epic | Status |
+| --- | --- | --- | --- | --- |
+| 0 | Closed-class lexical highlighting | CLI (ANSI) + LSP (semantic tokens) | [Goalpost 0](https://github.com/flyingrobots/colorful-language/milestone/1) | ✅ released v0.1.0 |
+| 1 | **Surface IR** — `colorful.syntax/v1`, a Wesley-generated GraphQL contract (Rust + TS) | graft (agent reads), jedit | [IR Spine](https://github.com/flyingrobots/colorful-language/milestone/4) · [#11](https://github.com/flyingrobots/colorful-language/issues/11) | 🚧 in progress |
+| 2 | Prose linter (Analyzer: passive voice, run-ons, weak words) | LSP diagnostics + CLI warnings | [Goalpost 1](https://github.com/flyingrobots/colorful-language/milestone/2) · [#6](https://github.com/flyingrobots/colorful-language/issues/6) | next |
+| 3 | — | **VS Code extension** + Neovim / Helix / Zed / Emacs / JetBrains recipes | [Editor Reach](https://github.com/flyingrobots/colorful-language/milestone/5) · [#12](https://github.com/flyingrobots/colorful-language/issues/12) | planned |
+| 4 | Open-class POS disambiguation (noun/verb/adj/adv) + custom legend + theme | richer color in every surface | [Goalpost 2](https://github.com/flyingrobots/colorful-language/milestone/3) · [#7](https://github.com/flyingrobots/colorful-language/issues/7) | planned |
+| 5 | Contract English (CNL → canonical GraphQL SDL → Wesley) | first honest English → Wesley proof | [Contract English](https://github.com/flyingrobots/colorful-language/milestone/6) · [#13](https://github.com/flyingrobots/colorful-language/issues/13) | horizon |
+| 6 | Intent English (CNL → Edict surface AST) | — | [Intent English](https://github.com/flyingrobots/colorful-language/milestone/7) · [#14](https://github.com/flyingrobots/colorful-language/issues/14) | horizon |
+| 7 | Proof-carrying compilation → Edict Core IR → sealed bundle + echo provenance | nutrition labels; counterfactual "what would this sentence do?" | [Edict](https://github.com/flyingrobots/colorful-language/milestone/8) · [#15](https://github.com/flyingrobots/colorful-language/issues/15) | horizon |
+| 8 | Ouroboros — Colorful's own contract written in English, compiled through Colorful to the same Wesley hash | — | [Ouroboros](https://github.com/flyingrobots/colorful-language/milestone/9) · [#16](https://github.com/flyingrobots/colorful-language/issues/16) | the moon |
+| ∞ | LLM elaboration tier (freeform English → CNL); other targets (SQL, UI trees, test plans, build graphs) | English → anything provable | — | beyond |
 
-| Slice | Crate | What it delivers |
-| --- | --- | --- |
-| [Workspace + core ports](https://github.com/flyingrobots/colorful-language/issues/1) | `colorful-core` | Cargo workspace; domain types (`Span`, `PosClass`, `Node`, `Tree`); the `Parser`, `Lexicon`, and `Annotator` port traits. |
-| [Closed-class lexicon](https://github.com/flyingrobots/colorful-language/issues/2) | `colorful-lexicon` | A compile-time perfect-hash set of closed-class function words and common contractions implementing `Lexicon`. |
-| [Structural parser](https://github.com/flyingrobots/colorful-language/issues/3) | `colorful-parse` | A `logos` lexer + sentence segmenter producing sentence / word / punctuation structure, implementing `Parser`. |
-| [Terminal colorizer](https://github.com/flyingrobots/colorful-language/issues/4) | `colorful-cli` | ANSI rendering over `core` + `parse` + `lexicon`; golden fixtures as the test oracle. |
-| [Semantic-tokens server](https://github.com/flyingrobots/colorful-language/issues/5) | `colorful-lsp` | A `ropey` document mirror, incremental `didChange` handling, and a semantic-tokens response mapped onto standard token types. |
+## Where VS Code falls
 
-**Done when:** the CLI colors a sample document deterministically against golden
-fixtures, and the LSP serves semantic tokens to at least one editor.
+Three milestones at three distances — the basic one is essentially adjacent to
+now, the deep one is near the top of the cathedral:
 
----
+1. **Highlighting** (Phase 3, the minimal extension) — spawns the
+   **already-shipped** `colorful-lsp` for plaintext/markdown. Zero dependency on
+   the IR/CNL tower; pullable forward to "this week" anytime.
+2. **Prose tool** — also surfaces the linter (Phase 2) as diagnostics and the IR
+   (Phase 1) as an outline / structured navigation.
+3. **English-as-code IDE** — live CNL squiggles and autocomplete that keep authors
+   on the controlled-English "paved road," with inline Edict nutrition labels
+   (Phases 5–7).
 
-## Goalpost 1 — "Prose linter" (v0.2.0)
+## The ecosystem (the deep end)
 
-**Outcome:** an `Analyzer` port and a rule pack that flags structural prose
-issues a shallow parse can already see — passive-voice candidates, run-on
-sentences, sentence-length outliers, weak/filler words. Surfaced as LSP
-diagnostics and CLI warnings.
+The moonshot threads five flyingrobots systems, each owning exactly one layer:
 
-Tracked in [#6](https://github.com/flyingrobots/colorful-language/issues/6).
-Detailed slices are defined when the goalpost opens.
+- **Colorful** owns what the source text *means* (surface + semantic IR).
+- **Wesley** owns domain-empty schema/compiler facts (GraphQL → L1 → Rust/TS).
+- **Edict** owns executable semantics, verification, and sealing.
+- **echo** owns hosted admission and witnessed, replayable evidence.
+- **continuum** owns the *proven* shared contract boundary.
 
----
+## Now
 
-## Goalpost 2 — "Open-class disambiguation" (v0.3.0)
-
-**Outcome:** content words stop being undifferentiated. A richer `Annotator`
-(dictionary-backed, later optionally ML) distinguishes noun / verb / adjective /
-adverb, behind the *same port*. Ships a custom semantic-token legend and a theme
-so the distinctions are visible.
-
-This is the goalpost that demonstrates the hexagon paying off: the parser and
-the server do not change. Tracked in
-[#7](https://github.com/flyingrobots/colorful-language/issues/7).
-
----
-
-## Horizon (not yet scheduled)
-
-These are directions, not commitments. They exist so the architecture stays
-honest about where it is headed.
-
-- **Offline structural highlighting.** A deliberately *shallow* tree-sitter
-  grammar (closed-class + structure only) for editors that highlight natively
-  with no server, layered *under* the LSP. Kept shallow so it never becomes a
-  second source of truth.
-- **English as code.** An `Interpreter` port over a *constrained* grammar —
-  English sentences as an executable, rule-style language.
-- **Controlled Natural Language.** A constrained, unambiguous English subset for
-  specs, contracts, and requirements.
-- **Semantic tier.** An LLM adapter behind a `Semantics` port for the deep
-  parses where a CFG bottoms out.
+Phase 0 is released (v0.1.0 — see [`CHANGELOG.md`](CHANGELOG.md) and the
+[v0.1.0 release packet](docs/goalposts/v0.1.0/release.md)). Phase 1, the IR spine,
+is in progress — the pivot every later phase consumes. Its design of record is the
+`ir` topic under `docs/` and epic
+[#11](https://github.com/flyingrobots/colorful-language/issues/11).
