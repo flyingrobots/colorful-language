@@ -46,3 +46,21 @@ jobs:
           node-version: "22"
       - run: npm install -g typescript@5
       - run: bash scripts/ir-witness.sh
+
+  editors:
+    name: Editor integrations (compile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: editors/vscode
+      - run: npm run compile
+        working-directory: editors/vscode
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1

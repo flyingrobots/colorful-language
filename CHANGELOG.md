@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Editor Reach (Phase 3).** A VS Code extension (`editors/vscode/`) and a Zed
+  extension (`editors/zed/`, Rust→WASM) that drive `colorful-lsp`, plus
+  copy-paste config recipes (`editors/README.md`) for Neovim, Helix, Emacs,
+  Sublime, and Kate. One LSP engine, thin per-editor adapters. CI compiles both
+  extensions.
 - **IR Spine (Phase 1).** `colorful.syntax/v1` — a Wesley-generated GraphQL
   contract emitted as canonical JSON by `colorful ir [FILE]`. New `colorful-ir`
   crate holds the generated Rust + TypeScript boundary DTOs (pinned wesley
