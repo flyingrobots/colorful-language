@@ -1,0 +1,17 @@
+# colorful.vocabulary/v1 — abstract presentation vocabulary.
+#
+# This is a SEPARATE contract from colorful.syntax because Wesley L1 drops
+# enum-value directives, so render intent cannot ride on the syntax enums.
+# VisualRole is the one abstract source of visual intent; concrete projections
+# (LSP token type, jedit role, graft class) are generated/derived from it, so no
+# editor brand names ever appear in the linguistic syntax contract.
+
+"Abstract visual role — the single source of presentation intent. A LexicalClass/TokenKind maps to one VisualRole; each surface projects VisualRole onto its own theme."
+enum VisualRole {
+  STRUCTURAL_KEYWORD
+  TYPE_LIKE
+  LITERAL
+  QUOTED
+  MUTED
+  UNSTYLED
+}

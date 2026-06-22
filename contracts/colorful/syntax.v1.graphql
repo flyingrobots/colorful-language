@@ -1,0 +1,103 @@
+# colorful.syntax/v1 — the surface document-analysis IR.
+#
+# Generated types (via Wesley) are BOUNDARY DTOs, not colorful-core's domain
+# model. UTF-8 byte offsets are authoritative; UTF-16 line/column are derived
+# adapter projections (LSP only) and are NOT part of this contract.
+
+"A UTF-8 byte range, half-open `[startUtf8, endUtf8)`. Offsets are authoritative."
+type ByteRange {
+  startUtf8: Int!
+  endUtf8: Int!
+}
+
+"Mechanical token kind — the shape the lexer saw."
+enum TokenKind {
+  WORD
+  NUMBER
+  PUNCTUATION
+  QUOTE
+}
+
+"Lexical family — open vs. closed class (only meaningful for WORD tokens)."
+enum LexicalClass {
+  FUNCTION
+  CONTENT
+  PROPER_NOUN_CANDIDATE
+}
+
+"Closed-class function-word subtype (present only when lexicalClass is FUNCTION)."
+enum FunctionKind {
+  ARTICLE
+  PREPOSITION
+  CONJUNCTION
+  PRONOUN
+  AUXILIARY
+  DETERMINER
+  NEGATOR
+}
+
+"A classified token occurrence."
+type Token {
+  occurrenceId: Int!
+  byteRange: ByteRange!
+  tokenKind: TokenKind!
+  lexicalClass: LexicalClass
+  functionKind: FunctionKind
+}
+
+"Structural outline node kind."
+enum OutlineKind {
+  PARAGRAPH
+  SENTENCE
+}
+
+"An outline node. The outline is a flattened tree; children are referenced by childNodeIds (indices into DocumentAnalysis.structure)."
+type OutlineNode {
+  nodeId: Int!
+  kind: OutlineKind!
+  byteRange: ByteRange!
+  depth: Int!
+  childNodeIds: [Int!]!
+}
+
+"Diagnostic severity."
+enum DiagnosticSeverity {
+  ERROR
+  WARNING
+  INFO
+}
+
+"A diagnostic emitted during analysis."
+type Diagnostic {
+  byteRange: ByteRange!
+  severity: DiagnosticSeverity!
+  code: String!
+  message: String!
+}
+
+"The analyzed source artifact. A span without a named source is a coordinate without a planet."
+type SourceArtifact {
+  unitId: String!
+  contentHash: String!
+  utf8ByteLength: Int!
+}
+
+"A single derivation step, for provenance and replay."
+type DerivationStep {
+  passId: String!
+  ruleId: String!
+  sourceRanges: [ByteRange!]!
+  compilerBuildHash: String!
+}
+
+"The root analysis artifact for one document."
+type DocumentAnalysis {
+  contractVersion: String!
+  schemaHash: String!
+  vocabularyHash: String!
+  source: SourceArtifact!
+  tokens: [Token!]!
+  structure: [OutlineNode!]!
+  diagnostics: [Diagnostic!]!
+  derivation: [DerivationStep!]!
+}
