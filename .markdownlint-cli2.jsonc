@@ -1,0 +1,10 @@
+{
+  // Rule config lives in .markdownlint.jsonc; this file adds cli2 ignores so
+  // dependency/build dirs (e.g. the VS Code extension's node_modules) are never
+  // linted.
+  "ignores": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/target/**"
+  ]
+}

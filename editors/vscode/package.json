@@ -1,0 +1,60 @@
+{
+  "name": "colorful-language",
+  "displayName": "Colorful Language",
+  "description": "Part-of-speech syntax highlighting for English prose, via the colorful-lsp language server.",
+  "version": "0.1.0",
+  "publisher": "flyingrobots",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/colorful-language"
+  },
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "prose",
+    "english",
+    "syntax highlighting",
+    "part of speech"
+  ],
+  "activationEvents": [
+    "onLanguage:plaintext",
+    "onLanguage:markdown"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Colorful Language",
+      "properties": {
+        "colorful.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Colorful prose highlighting."
+        },
+        "colorful.serverPath": {
+          "type": "string",
+          "default": "colorful-lsp",
+          "description": "Path to the colorful-lsp binary. Install it with `cargo install colorful-lsp`; must be on PATH or an absolute path."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/vscode": "^1.84.0",
+    "typescript": "^5.4"
+  }
+}

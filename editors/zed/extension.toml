@@ -1,0 +1,11 @@
+id = "colorful-language"
+name = "Colorful Language"
+version = "0.1.0"
+schema_version = 1
+authors = ["James Ross and the colorful-language contributors"]
+description = "Part-of-speech syntax highlighting for English prose, via colorful-lsp."
+repository = "https://github.com/flyingrobots/colorful-language"
+
+[language_servers.colorful-lsp]
+name = "Colorful Language"
+languages = ["Markdown", "Plain Text"]

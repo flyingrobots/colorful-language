@@ -1,0 +1,16 @@
+[package]
+name = "colorful-language-zed"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "Apache-2.0"
+
+# Standalone: not part of the colorful-language cargo workspace (it compiles to
+# wasm via Zed's extension tooling).
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.7"
