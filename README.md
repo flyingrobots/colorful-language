@@ -10,8 +10,8 @@ _Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar 
 cargo install colorful-cli
 
 # Color a file (or pipe stdin)
-cat README.md | colorful --help
 colorful my-essay.txt
+cat README.md | colorful
 
 # Lint it for weak words, run-ons, and passives (exits non-zero on findings)
 colorful lint my-essay.txt
@@ -32,17 +32,20 @@ It works on any text file and respects `NO_COLOR`.
 ## Editor Support (LSP)
 
 > [!note]
-> COMING SOON!
+> The integrations exist and build in CI; they are **not yet published** as
+> editor packages. Install from source today; marketplace/registry packages come
+> with a tagged release.
 
-The real magic is the **Language Server**. Install once and get live coloring in:
+The real magic is the **Language Server** (`colorful-lsp`), which gives live
+coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
 
-- **VS Code** / **Cursor**
-- **Neovim**
-- **Helix**, **Zed**, **Emacs**, **JetBrains**, etc.
+- **VS Code** / **Cursor** — source extension in [`editors/vscode/`](editors/vscode/)
+- **Zed** — source extension in [`editors/zed/`](editors/zed/)
+- **Neovim**, **Helix**, **Emacs**, **Sublime**, **Kate** — copy-paste config
+  recipes in [`editors/README.md`](editors/README.md)
 
-**Quick VS Code setup:**
-
-(Full setup instructions coming with first release; currently in pre-release.)
+Build the server with `cargo install colorful-lsp` (or from source) and point your
+editor at it per the recipes above.
 
 ---
 
@@ -138,7 +141,9 @@ cargo install --git https://github.com/flyingrobots/colorful-language.git colorf
 
 This project has high documentation and testing standards. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Contributions toward the **prose linter** (Goalpost 1) are especially welcome right now.
+The **prose linter** (Goalpost 1) has landed on `main`; contributions that grow
+its rule pack, or that start **open-class disambiguation** (noun/verb/adjective,
+Goalpost 2), are especially welcome right now.
 
 ---
 

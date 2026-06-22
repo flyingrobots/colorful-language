@@ -97,12 +97,14 @@ Copy into the release-prep PR body and complete before tagging:
 
 ## crates.io
 
-The five crates publish to crates.io under flat, idiomatic names
-(`colorful-core`, `colorful-lexicon`, `colorful-parse`, `colorful-cli`,
-`colorful-lsp`) — crates.io has no `@scope/` namespacing; org identity comes from
-**ownership** and the `repository` link. The release workflow publishes them in
-dependency order: `colorful-core` → `colorful-lexicon`, `colorful-parse` →
-`colorful-cli`, `colorful-lsp`.
+The seven crates publish to crates.io under flat, idiomatic names
+(`colorful-core`, `colorful-lexicon`, `colorful-parse`, `colorful-ir`,
+`colorful-lint`, `colorful-cli`, `colorful-lsp`) — crates.io has no `@scope/`
+namespacing; org identity comes from **ownership** and the `repository` link. The
+release workflow publishes them in dependency order: `colorful-core` →
+`colorful-lexicon`, `colorful-parse` → `colorful-ir`, `colorful-lint` →
+`colorful-cli`, `colorful-lsp`. (`colorful-ir` and `colorful-lint` arrived after
+v0.1.0, which shipped only the first five.)
 
 **Prerequisites (one-time):**
 
