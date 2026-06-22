@@ -11,9 +11,12 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{Annotator, Parser, PosClass};
+use colorful_core::{Analyzer, Annotator, Parser, PosClass, Severity};
 use ropey::Rope;
-use tower_lsp::lsp_types::{Range, SemanticToken, SemanticTokenType};
+use tower_lsp::lsp_types::{
+    Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range, SemanticToken,
+    SemanticTokenType,
+};
 
 /// The semantic-token legend, in index order. `v0` is a *skeleton* highlighter:
 /// it accentuates the structure (function words, proper nouns, numbers, quotes)
@@ -164,6 +167,55 @@ where
     data
 }
 
+/// Compute the LSP diagnostics for `text` from the prose linter.
+///
+/// `text` is parsed and classified through `parser`/`annotator` (the same path
+/// the semantic tokens take), then `analyzer` reports the findings, which are
+/// mapped to [`Diagnostic`]s: each carries its rule code, a `colorful` source
+/// tag, and a severity (warnings as [`DiagnosticSeverity::WARNING`], advisory
+/// findings as [`DiagnosticSeverity::INFORMATION`]). Kept transport-free so the
+/// position arithmetic is unit-testable.
+#[must_use]
+pub fn compute_diagnostics<P, A, An>(
+    text: &str,
+    parser: &P,
+    annotator: &A,
+    analyzer: &An,
+) -> Vec<Diagnostic>
+where
+    P: Parser,
+    A: Annotator,
+    An: Analyzer,
+{
+    let tree = parser.parse(text);
+    let tokens = annotator.annotate(text, &tree);
+    let findings = analyzer.analyze(text, &tree, &tokens);
+    let index = LineIndex::new(text);
+
+    findings
+        .into_iter()
+        .map(|finding| {
+            let (start_line, start_col) = index.position(finding.span.start);
+            let (end_line, end_col) = index.position(finding.span.end);
+            let severity = match finding.severity {
+                Severity::Warning => DiagnosticSeverity::WARNING,
+                Severity::Info => DiagnosticSeverity::INFORMATION,
+            };
+            Diagnostic {
+                range: Range {
+                    start: Position::new(start_line, start_col),
+                    end: Position::new(end_line, end_col),
+                },
+                severity: Some(severity),
+                code: Some(NumberOrString::String(finding.rule.code().to_string())),
+                source: Some("colorful".to_string()),
+                message: finding.message,
+                ..Diagnostic::default()
+            }
+        })
+        .collect()
+}
+
 /// Apply one LSP content change to a [`Rope`] document mirror.
 ///
 /// A change with no range replaces the whole document; otherwise the range
@@ -215,6 +267,64 @@ mod tests {
             &ProseParser::new(),
             &LexicalAnnotator::new(ClosedClassLexicon::new()),
         )
+    }
+
+    fn diagnostics(text: &str) -> Vec<Diagnostic> {
+        compute_diagnostics(
+            text,
+            &ProseParser::new(),
+            &LexicalAnnotator::new(ClosedClassLexicon::new()),
+            &colorful_lint::ProseLinter::new(),
+        )
+    }
+
+    #[test]
+    fn diagnostic_carries_range_severity_code_and_source() {
+        // "just" is a weak word on line 0, columns 8..12.
+        let diags = diagnostics("This is just wrong.");
+        assert_eq!(diags.len(), 1, "{diags:?}");
+        let d = &diags[0];
+        assert_eq!(d.range.start, Position::new(0, 8));
+        assert_eq!(d.range.end, Position::new(0, 12));
+        assert_eq!(d.severity, Some(DiagnosticSeverity::INFORMATION));
+        assert_eq!(
+            d.code,
+            Some(NumberOrString::String("weak-word".to_string()))
+        );
+        assert_eq!(d.source.as_deref(), Some("colorful"));
+        assert_eq!(d.message, "weak word 'just'");
+    }
+
+    #[test]
+    fn run_on_diagnostic_is_a_warning() {
+        let body = std::iter::repeat_n("word", 41)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let diags = diagnostics(&format!("{body}."));
+        let run_on = diags
+            .iter()
+            .find(|d| d.code == Some(NumberOrString::String("run-on".to_string())))
+            .expect("a run-on diagnostic");
+        assert_eq!(run_on.severity, Some(DiagnosticSeverity::WARNING));
+    }
+
+    #[test]
+    fn clean_prose_yields_no_diagnostics() {
+        assert!(diagnostics("The cat sat on the mat.").is_empty());
+    }
+
+    #[test]
+    fn diagnostic_range_uses_utf16_columns() {
+        // A multibyte em-dash before the weak word shifts byte offsets but the
+        // LSP column is UTF-16, so the weak word's column counts code units.
+        let diags = diagnostics("Café — this is just wrong.");
+        let weak = diags
+            .iter()
+            .find(|d| d.code == Some(NumberOrString::String("weak-word".to_string())))
+            .expect("a weak-word diagnostic");
+        // "Café — this is " is 15 UTF-16 units before "just".
+        assert_eq!(weak.range.start, Position::new(0, 15));
+        assert_eq!(weak.range.end, Position::new(0, 19));
     }
 
     #[test]

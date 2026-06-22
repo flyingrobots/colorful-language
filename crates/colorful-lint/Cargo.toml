@@ -1,0 +1,17 @@
+[package]
+name = "colorful-lint"
+description = "Prose-linting rule pack: an Analyzer adapter for colorful-language."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["prose", "english", "linter", "writing", "nlp"]
+categories = ["text-processing"]
+
+[dependencies]
+colorful-core = { workspace = true }
+
+[dev-dependencies]
+colorful-parse = { workspace = true }
+colorful-lexicon = { workspace = true }

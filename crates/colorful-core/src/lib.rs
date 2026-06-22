@@ -144,6 +144,58 @@ pub struct Token {
     pub class: PosClass,
 }
 
+/// How serious a [`Finding`] is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Severity {
+    /// A problem worth fixing (a run-on sentence, say).
+    Warning,
+    /// An advisory observation (a filler word, say).
+    Info,
+}
+
+/// The rule that produced a [`Finding`].
+///
+/// Each rule carries a stable [`code`](Rule::code) that both surfaces use
+/// verbatim — the CLI prints it as a `[tag]`, the language server sets it as the
+/// diagnostic `code` — so a rule is identified the same way everywhere.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Rule {
+    /// A weak or filler word (`very`, `really`, `just`, ...).
+    WeakWord,
+    /// A sentence longer than the run-on threshold.
+    RunOn,
+    /// A sentence far longer than the document's mean sentence length.
+    LengthOutlier,
+    /// A passive-voice candidate: a `be`-auxiliary then a past participle.
+    PassiveVoice,
+}
+
+impl Rule {
+    /// The stable, machine-readable code for this rule (e.g. `"run-on"`).
+    #[must_use]
+    pub fn code(self) -> &'static str {
+        match self {
+            Rule::WeakWord => "weak-word",
+            Rule::RunOn => "run-on",
+            Rule::LengthOutlier => "length-outlier",
+            Rule::PassiveVoice => "passive-voice",
+        }
+    }
+}
+
+/// A single lint finding: a span of source flagged by a [`Rule`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Finding {
+    /// The span the finding covers.
+    pub span: Span,
+    /// The rule that produced the finding.
+    pub rule: Rule,
+    /// How serious the finding is.
+    pub severity: Severity,
+    /// A human-readable description of what was flagged.
+    pub message: String,
+}
+
 /// Port: turn source text into shallow structure. Knows nothing about meaning.
 pub trait Parser {
     /// Parse `text` into a [`Tree`]. Implementations must be total: any input,
@@ -175,6 +227,20 @@ pub trait Annotator {
     /// Produce the classified tokens for `source`, given its parsed `tree`, in
     /// source order.
     fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token>;
+}
+
+/// Port: inspect a classified document and report prose [`Finding`]s.
+///
+/// An `Analyzer` sees the `source`, its parsed [`Tree`], and the classified
+/// [`Token`] stream an [`Annotator`] produced, so a rule can reason about both
+/// structure (sentences) and part of speech (auxiliaries, function words)
+/// without re-parsing. Like the other ports it performs no I/O; the rule pack
+/// that implements it is an adapter (the `colorful-lint` crate), so new rules
+/// never touch the parser, the lexicon, or the surfaces.
+pub trait Analyzer {
+    /// Produce the findings for `source`, given its parsed `tree` and the
+    /// classified `tokens`, in source order.
+    fn analyze(&self, source: &str, tree: &Tree, tokens: &[Token]) -> Vec<Finding>;
 }
 
 /// The `v0` [`Annotator`]: a [`Lexicon`] plus shallow, deterministic heuristics.
@@ -536,5 +602,70 @@ mod tests {
             toks.iter().map(|t| t.class).collect::<Vec<_>>(),
             vec![PosClass::Content, PosClass::ProperNoun]
         );
+    }
+
+    #[test]
+    fn rule_codes_are_stable_and_distinct() {
+        let rules = [
+            Rule::WeakWord,
+            Rule::RunOn,
+            Rule::LengthOutlier,
+            Rule::PassiveVoice,
+        ];
+        let codes: Vec<&str> = rules.iter().map(|r| r.code()).collect();
+        assert_eq!(
+            codes,
+            ["weak-word", "run-on", "length-outlier", "passive-voice"]
+        );
+        // Codes are the public contract both surfaces key on; they must be unique.
+        let mut sorted = codes.clone();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(sorted.len(), codes.len());
+    }
+
+    #[test]
+    fn finding_carries_span_rule_severity_and_message() {
+        let f = Finding {
+            span: Span::new(0, 4),
+            rule: Rule::RunOn,
+            severity: Severity::Warning,
+            message: "sentence runs to 47 words".to_string(),
+        };
+        assert_eq!(f.span, Span::new(0, 4));
+        assert_eq!(f.rule.code(), "run-on");
+        assert_eq!(f.severity, Severity::Warning);
+        assert!(f.message.contains("47"));
+    }
+
+    #[test]
+    fn analyzer_port_is_independently_implementable() {
+        // Proves the seam is real: an analyzer can be written against the port
+        // alone. This trivial one flags every sentence whose span is non-empty.
+        struct EverySentence;
+        impl Analyzer for EverySentence {
+            fn analyze(&self, _source: &str, tree: &Tree, _tokens: &[Token]) -> Vec<Finding> {
+                let Node::Document(sentences) = &tree.root else {
+                    return vec![];
+                };
+                sentences
+                    .iter()
+                    .filter_map(|node| match node {
+                        Node::Sentence { span, .. } if !span.is_empty() => Some(Finding {
+                            span: *span,
+                            rule: Rule::RunOn,
+                            severity: Severity::Warning,
+                            message: "stub".to_string(),
+                        }),
+                        _ => None,
+                    })
+                    .collect()
+            }
+        }
+
+        let tree = Tree::document(vec![sentence((0, 5), vec![word(0, 5)])]);
+        let findings = EverySentence.analyze("hello", &tree, &[]);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].span, Span::new(0, 5));
     }
 }

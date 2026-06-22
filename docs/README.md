@@ -37,6 +37,8 @@ not pose as the current reference.
   classification (the `Lexicon` port).
 - [coloring](topics/coloring/README.md) — how classification becomes ANSI output
   and LSP semantic tokens.
+- [linting](topics/linting/README.md) — the `Analyzer` port and the prose rule
+  pack (CLI warnings + LSP diagnostics).
 - [ir](topics/ir/README.md) — the intermediate representation
   (`colorful.syntax/v1`, a Wesley-generated contract) and the
   [compiler ladder](topics/ir/architecture.md).

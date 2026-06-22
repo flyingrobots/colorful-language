@@ -16,6 +16,7 @@ colorful-core = { path = "crates/colorful-core", version = "0.1.0" }
 colorful-parse = { path = "crates/colorful-parse", version = "0.1.0" }
 colorful-lexicon = { path = "crates/colorful-lexicon", version = "0.1.0" }
 colorful-ir = { path = "crates/colorful-ir", version = "0.1.0" }
+colorful-lint = { path = "crates/colorful-lint", version = "0.1.0" }
 
 logos = "0.14"
 phf = { version = "0.11", features = ["macros"] }
