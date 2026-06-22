@@ -68,6 +68,7 @@ name = "colorful-cli"
 version = "0.1.0"
 dependencies = [
  "colorful-core",
+ "colorful-ir",
  "colorful-lexicon",
  "colorful-parse",
 ]
@@ -81,6 +82,8 @@ name = "colorful-ir"
 version = "0.1.0"
 dependencies = [
  "colorful-core",
+ "colorful-lexicon",
+ "colorful-parse",
  "serde",
  "serde_json",
  "sha2",

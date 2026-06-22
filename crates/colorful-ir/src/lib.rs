@@ -258,3 +258,58 @@ mod tests {
         assert_eq!(hash, syntax_schema_hash());
     }
 }
+
+#[cfg(test)]
+mod integration {
+    use super::*;
+    use colorful_core::{Annotator, LexicalAnnotator, Parser};
+    use colorful_lexicon::ClosedClassLexicon;
+    use colorful_parse::ProseParser;
+    use std::collections::HashMap;
+
+    fn analyze(source: &str) -> syntax_v1::DocumentAnalysis {
+        let tree = ProseParser::new().parse(source);
+        let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, &tree);
+        from_classification("test", source, &tree, &tokens)
+    }
+
+    #[test]
+    fn document_analysis_holds_the_invariants() {
+        let source = "The cat sat on the mat. Paris is nice.\n\nDogs run fast.";
+        let doc = analyze(source);
+        let len = i32::try_from(source.len()).unwrap();
+
+        // Source digest + length.
+        assert_eq!(doc.source.content_hash, sha256_hex(source.as_bytes()));
+        assert_eq!(doc.source.utf8_byte_length, len);
+        assert_eq!(doc.contract_version, CONTRACT_VERSION);
+
+        // Tokens: ordered, in-bounds, non-overlapping, on char boundaries
+        // (slicing would panic otherwise), non-empty.
+        let mut prev_end = 0;
+        for token in &doc.tokens {
+            let (start, end) = (token.byte_range.start_utf8, token.byte_range.end_utf8);
+            assert!(start <= end && end <= len, "out of bounds");
+            assert!(start >= prev_end, "overlapping tokens");
+            let text = &source[start as usize..end as usize];
+            assert!(!text.is_empty());
+            prev_end = end;
+        }
+
+        // Structure: every node's range contains each child's range.
+        let by_id: HashMap<i32, &syntax_v1::OutlineNode> =
+            doc.structure.iter().map(|n| (n.node_id, n)).collect();
+        for node in &doc.structure {
+            for child_id in &node.child_node_ids {
+                let child = by_id[child_id];
+                assert!(node.byte_range.start_utf8 <= child.byte_range.start_utf8);
+                assert!(child.byte_range.end_utf8 <= node.byte_range.end_utf8);
+            }
+        }
+
+        // Canonical JSON decodes back and re-encodes identically (Rust round-trip).
+        let a = canonical_json(&doc).unwrap();
+        let decoded: syntax_v1::DocumentAnalysis = serde_json::from_str(&a).unwrap();
+        assert_eq!(a, canonical_json(&decoded).unwrap());
+    }
+}
