@@ -24,7 +24,7 @@ generates the Rust and TS types from it.
 Each system owns exactly one layer; nothing is poured into a single omniscient
 `ColorfulIR` object.
 
-```
+```text
 freeform English        (later: untrusted LLM elaboration — a separate tier)
    ▼
 Controlled Natural English (CNL)         ── colorful owns surface syntax
