@@ -70,6 +70,7 @@ dependencies = [
  "colorful-core",
  "colorful-ir",
  "colorful-lexicon",
+ "colorful-lint",
  "colorful-parse",
 ]
 
@@ -98,11 +99,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "colorful-lint"
+version = "0.1.0"
+dependencies = [
+ "colorful-core",
+ "colorful-lexicon",
+ "colorful-parse",
+]
+
+[[package]]
 name = "colorful-lsp"
 version = "0.1.0"
 dependencies = [
  "colorful-core",
  "colorful-lexicon",
+ "colorful-lint",
  "colorful-parse",
  "dashmap 6.2.1",
  "ropey",

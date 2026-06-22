@@ -7,7 +7,10 @@
 
 use colorful_core::LexicalAnnotator;
 use colorful_lexicon::ClosedClassLexicon;
-use colorful_lsp::{apply_change, compute_semantic_tokens, legend_token_types};
+use colorful_lint::ProseLinter;
+use colorful_lsp::{
+    apply_change, compute_diagnostics, compute_semantic_tokens, legend_token_types,
+};
 use colorful_parse::ProseParser;
 use dashmap::DashMap;
 use ropey::Rope;
@@ -33,6 +36,20 @@ impl Backend {
             client,
             documents: DashMap::new(),
         }
+    }
+
+    /// Lint `text` and publish the diagnostics for `uri`. Called after every
+    /// open and change so an editor's "Problems" view tracks the document.
+    async fn publish_diagnostics(&self, uri: Url, text: &str, version: Option<i32>) {
+        let diagnostics = compute_diagnostics(
+            text,
+            &ProseParser::new(),
+            &LexicalAnnotator::new(ClosedClassLexicon::new()),
+            &ProseLinter::new(),
+        );
+        self.client
+            .publish_diagnostics(uri, diagnostics, version)
+            .await;
     }
 }
 
@@ -78,19 +95,34 @@ impl LanguageServer for Backend {
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let doc = params.text_document;
-        self.documents.insert(doc.uri, Rope::from_str(&doc.text));
+        self.documents
+            .insert(doc.uri.clone(), Rope::from_str(&doc.text));
+        self.publish_diagnostics(doc.uri, &doc.text, Some(doc.version))
+            .await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        if let Some(mut rope) = self.documents.get_mut(&params.text_document.uri) {
+        let uri = params.text_document.uri;
+        let version = params.text_document.version;
+        // Apply the edits, then drop the document lock before awaiting the
+        // publish so the async call never holds the DashMap guard.
+        let text = {
+            let Some(mut rope) = self.documents.get_mut(&uri) else {
+                return;
+            };
             for change in params.content_changes {
                 apply_change(rope.value_mut(), change.range, &change.text);
             }
-        }
+            rope.to_string()
+        };
+        self.publish_diagnostics(uri, &text, Some(version)).await;
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        self.documents.remove(&params.text_document.uri);
+        let uri = params.text_document.uri;
+        self.documents.remove(&uri);
+        // Clear the document's diagnostics when it closes.
+        self.client.publish_diagnostics(uri, vec![], None).await;
     }
 
     async fn semantic_tokens_full(

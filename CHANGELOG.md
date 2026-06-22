@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Prose linter (Goalpost 1).** A new `Analyzer` port in `colorful-core`
+  (`Tree` + classified tokens → `Vec<Finding>`) and a `colorful-lint` crate that
+  implements it as `ProseLinter` — a configurable, deterministic rule pack:
+  `weak-word` (filler words), `run-on` (overlong sentences), `length-outlier`
+  (sentences far past the document mean), and `passive-voice` (be-auxiliary +
+  past participle). Surfaced two ways: `colorful lint [FILE]` prints
+  compiler-style warnings and exits non-zero when any are found, and
+  `colorful-lsp` publishes them as live diagnostics on open/change. See
+  `docs/topics/linting/`.
 - **Editor Reach (Phase 3).** A VS Code extension (`editors/vscode/`) and a Zed
   extension (`editors/zed/`, Rust→WASM) that drive `colorful-lsp`, plus
   copy-paste config recipes (`editors/README.md`) for Neovim, Helix, Emacs,

@@ -22,6 +22,7 @@ path = "src/main.rs"
 colorful-core = { workspace = true }
 colorful-parse = { workspace = true }
 colorful-lexicon = { workspace = true }
+colorful-lint = { workspace = true }
 ropey = { workspace = true }
 tower-lsp = { workspace = true }
 tokio = { workspace = true }

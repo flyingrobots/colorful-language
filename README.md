@@ -12,6 +12,9 @@ cargo install colorful-cli
 # Color a file (or pipe stdin)
 cat README.md | colorful --help
 colorful my-essay.txt
+
+# Lint it for weak words, run-ons, and passives (exits non-zero on findings)
+colorful lint my-essay.txt
 ```
 
 Or just:
@@ -56,6 +59,27 @@ No cloud. No ML. Blazing fast and 100% local.
 
 ---
 
+## Lint your prose (Goalpost 1)
+
+`colorful lint` turns the same parse into a writing linter that flags what a
+shallow read can already see:
+
+- **Weak / filler words** — `very`, `really`, `just`, `actually`, …
+- **Run-on sentences** — past a word-count threshold
+- **Length outliers** — sentences far longer than the document's average
+- **Passive-voice candidates** — `was reviewed`, `is broken`, …
+
+```text
+$ colorful lint draft.txt
+draft.txt:3:12: warning [run-on]: sentence runs to 47 words
+draft.txt:5:1: info [weak-word]: weak word 'really'
+```
+
+It exits non-zero when it finds anything, so you can drop it straight into a CI
+gate. The same findings show up live as editor diagnostics through `colorful-lsp`.
+
+---
+
 ## Why this actually works
 
 Most "parse English" projects go straight to heavy NLP. We took a smarter shortcut:
@@ -84,7 +108,8 @@ See [`docs/design/`](docs/design/) for the thinking.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
 page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full
-[ROADMAP.md](ROADMAP.md) for what's next (prose linter is up next!).
+[ROADMAP.md](ROADMAP.md) for what's next (the prose linter has landed on `main`
+and ships in the next release).
 
 ---
 
