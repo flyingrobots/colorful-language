@@ -37,6 +37,8 @@ not pose as the current reference.
   classification (the `Lexicon` port).
 - [coloring](topics/coloring/README.md) — how classification becomes ANSI output
   and LSP semantic tokens.
+- [ir](topics/ir/architecture.md) — the intermediate representation and the
+  compiler ladder (*in progress*; Wesley-generated contract).
 
 ## Releases
 
