@@ -404,6 +404,13 @@ impl std::error::Error for ValidationErrors {}
 /// Some(bytes)`, the content hash, byte length, and UTF-8 character boundaries
 /// are checked against the real bytes as well.
 ///
+/// **Out of scope:** *inter-token* layout — source ordering, non-overlap, and
+/// non-emptiness of token ranges — is a producer guarantee (pinned by
+/// `from_classification`'s own tests), not a property of the wire contract, so it
+/// is deliberately not enforced on a received artifact. A future contextual
+/// re-tagger may legitimately emit a different layout. Per-token range validity
+/// (order, bounds, boundaries) *is* checked.
+///
 /// # Errors
 ///
 /// Returns [`ValidationErrors`] listing every broken invariant if the document
@@ -516,7 +523,10 @@ pub fn validate_document(
         }
     };
 
-    // Tokens: ranges, axis legality, id uniqueness.
+    // Tokens: each token's own range validity, axis legality, and id uniqueness.
+    // Inter-token layout (ordering, non-overlap, non-emptiness) is intentionally
+    // *not* checked here — it is a producer guarantee, not a wire invariant (see
+    // this function's docs).
     let mut seen_token_ids = std::collections::HashSet::new();
     for token in &document.tokens {
         check_range(
