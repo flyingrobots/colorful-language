@@ -305,6 +305,12 @@ pub enum ValidationError {
         /// The actual source length.
         actual: usize,
     },
+    /// `source.utf8ByteLength` is negative, which no byte length can be. Checked
+    /// even without a source, so a nonsensical length never passes silently.
+    NegativeByteLength {
+        /// The offending declared length.
+        value: i32,
+    },
     /// The supplied source bytes are not valid UTF-8.
     SourceNotUtf8,
     /// A byte offset was negative.
@@ -425,6 +431,14 @@ pub fn validate_document(
         errors.push(ValidationError::VocabularyHashMismatch {
             expected: expected_vocab,
             found: document.vocabulary_hash.clone(),
+        });
+    }
+
+    // A declared length is meaningful with or without a source; a negative one
+    // is never valid and would otherwise be clamped away below.
+    if document.source.utf8_byte_length < 0 {
+        errors.push(ValidationError::NegativeByteLength {
+            value: document.source.utf8_byte_length,
         });
     }
 
@@ -888,6 +902,22 @@ mod integration {
         doc.tokens[0].byte_range.start_utf8 = -5;
         let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
         assert!(errors.0.len() >= 2, "expected several errors: {errors:?}");
+    }
+
+    #[test]
+    fn negative_declared_byte_length_is_rejected_without_a_source() {
+        // Without a source we cannot check the length against real bytes, but a
+        // negative declared length is nonsense on its face and must be rejected.
+        let mut doc = analyze(VALID_SOURCE);
+        doc.source.utf8_byte_length = -1;
+        let errors = validate_document(&doc, None).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(
+                e,
+                ValidationError::NegativeByteLength { .. }
+            )),
+            "{errors:?}"
+        );
     }
 
     #[test]
