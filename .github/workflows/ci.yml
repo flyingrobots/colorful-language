@@ -46,6 +46,8 @@ jobs:
           node-version: "22"
       - run: npm install -g typescript@5
       - run: bash scripts/ir-witness.sh
+      - name: graft reference consumer coordinate test
+        run: node consumers/graft-projection.test.mjs
 
   editors:
     name: Editor integrations (compile)
