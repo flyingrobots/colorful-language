@@ -266,6 +266,369 @@ pub fn from_classification(
     })
 }
 
+/// One reason a [`syntax_v1::DocumentAnalysis`] failed validation.
+///
+/// The variants name the broken invariant precisely so a consumer (or the
+/// witness) can report exactly which lie it rejected.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ValidationError {
+    /// `contractVersion` is not the one this build understands.
+    UnsupportedContractVersion {
+        /// The version the document declared.
+        found: String,
+    },
+    /// `schemaHash` does not match this build's `colorful.syntax/v1` SDL.
+    SchemaHashMismatch {
+        /// The hash this build expects.
+        expected: String,
+        /// The hash the document declared.
+        found: String,
+    },
+    /// `vocabularyHash` is not a vocabulary this build recognizes.
+    VocabularyHashMismatch {
+        /// The hash this build expects.
+        expected: String,
+        /// The hash the document declared.
+        found: String,
+    },
+    /// `source.contentHash` does not match the supplied source bytes.
+    ContentHashMismatch {
+        /// The hash of the supplied source.
+        expected: String,
+        /// The hash the document declared.
+        found: String,
+    },
+    /// `source.utf8ByteLength` does not match the supplied source bytes.
+    ByteLengthMismatch {
+        /// The declared length.
+        declared: i32,
+        /// The actual source length.
+        actual: usize,
+    },
+    /// `source.utf8ByteLength` is negative, which no byte length can be. Checked
+    /// even without a source, so a nonsensical length never passes silently.
+    NegativeByteLength {
+        /// The offending declared length.
+        value: i32,
+    },
+    /// The supplied source bytes are not valid UTF-8.
+    SourceNotUtf8,
+    /// A byte offset was negative.
+    NegativeOffset {
+        /// Where the offset came from.
+        what: String,
+        /// The offending value.
+        value: i32,
+    },
+    /// A range's start is past its end.
+    RangeOutOfOrder {
+        /// Where the range came from.
+        what: String,
+        /// The start offset.
+        start: i32,
+        /// The end offset.
+        end: i32,
+    },
+    /// A range extends past the end of the source.
+    RangeOutOfBounds {
+        /// Where the range came from.
+        what: String,
+        /// The end offset.
+        end: i32,
+        /// The source length the range exceeded.
+        length: i64,
+    },
+    /// A range edge does not fall on a UTF-8 character boundary.
+    RangeNotOnCharBoundary {
+        /// Where the range came from.
+        what: String,
+        /// The offending offset.
+        offset: i32,
+    },
+    /// A token's `tokenKind` / `lexicalClass` / `functionKind` axes are an
+    /// illegal combination under the `colorful.syntax/v1` contract.
+    IllegalTokenAxes {
+        /// The token's occurrence id.
+        occurrence_id: i32,
+        /// What is wrong with the combination.
+        detail: &'static str,
+    },
+    /// Two tokens share an `occurrenceId`.
+    DuplicateTokenId {
+        /// The duplicated id.
+        occurrence_id: i32,
+    },
+    /// Two outline nodes share a `nodeId`.
+    DuplicateNodeId {
+        /// The duplicated id.
+        node_id: i32,
+    },
+    /// An outline node's `childNodeIds` references a node that does not exist.
+    DanglingChildRef {
+        /// The parent node.
+        node_id: i32,
+        /// The missing child id.
+        child: i32,
+    },
+}
+
+/// The non-empty set of reasons a document failed validation. Validation runs
+/// every check and collects all failures rather than stopping at the first, so a
+/// consumer sees the whole truth about a malformed artifact.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidationErrors(pub Vec<ValidationError>);
+
+impl core::fmt::Display for ValidationErrors {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "document failed validation ({} issue(s)):", self.0.len())?;
+        for error in &self.0 {
+            write!(f, "\n  - {error:?}")?;
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for ValidationErrors {}
+
+/// Validate a received [`syntax_v1::DocumentAnalysis`] against the
+/// `colorful.syntax/v1` contract, and — when `source` is supplied — against the
+/// exact bytes it claims to describe.
+///
+/// This is the hostile-consumer guard: a document built by
+/// [`from_classification`] always passes, but an artifact received over a
+/// boundary may lie. Every check runs; all failures are returned together.
+///
+/// With `source = None`, structural and self-consistent-hash checks run (schema,
+/// vocabulary, contract version, range order/bounds against the declared length,
+/// token-axis legality, id uniqueness, child references). With `source =
+/// Some(bytes)`, the content hash, byte length, and UTF-8 character boundaries
+/// are checked against the real bytes as well.
+///
+/// **Out of scope:** *inter-token* layout — source ordering, non-overlap, and
+/// non-emptiness of token ranges — is a producer guarantee (pinned by
+/// `from_classification`'s own tests), not a property of the wire contract, so it
+/// is deliberately not enforced on a received artifact. A future contextual
+/// re-tagger may legitimately emit a different layout. Per-token range validity
+/// (order, bounds, boundaries) *is* checked.
+///
+/// # Errors
+///
+/// Returns [`ValidationErrors`] listing every broken invariant if the document
+/// is invalid.
+pub fn validate_document(
+    document: &syntax_v1::DocumentAnalysis,
+    source: Option<&[u8]>,
+) -> Result<(), ValidationErrors> {
+    let mut errors = Vec::new();
+
+    if document.contract_version != CONTRACT_VERSION {
+        errors.push(ValidationError::UnsupportedContractVersion {
+            found: document.contract_version.clone(),
+        });
+    }
+    let expected_schema = syntax_schema_hash();
+    if document.schema_hash != expected_schema {
+        errors.push(ValidationError::SchemaHashMismatch {
+            expected: expected_schema,
+            found: document.schema_hash.clone(),
+        });
+    }
+    let expected_vocab = vocabulary_schema_hash();
+    if document.vocabulary_hash != expected_vocab {
+        errors.push(ValidationError::VocabularyHashMismatch {
+            expected: expected_vocab,
+            found: document.vocabulary_hash.clone(),
+        });
+    }
+
+    // A declared length is meaningful with or without a source; a negative one
+    // is never valid and would otherwise be clamped away below.
+    if document.source.utf8_byte_length < 0 {
+        errors.push(ValidationError::NegativeByteLength {
+            value: document.source.utf8_byte_length,
+        });
+    }
+
+    // Resolve the source text (for hash, length, and char-boundary checks) and
+    // the effective length every range is bounded against.
+    let source_str = match source {
+        Some(bytes) => {
+            // The byte length is known regardless of UTF-8 validity, so check the
+            // length lie before the decode decision — a hostile artifact must not
+            // hide a fabricated `utf8ByteLength` behind non-UTF-8 bytes.
+            if document.source.utf8_byte_length as i64 != bytes.len() as i64 {
+                errors.push(ValidationError::ByteLengthMismatch {
+                    declared: document.source.utf8_byte_length,
+                    actual: bytes.len(),
+                });
+            }
+            match std::str::from_utf8(bytes) {
+                Ok(text) => {
+                    let expected_hash = sha256_hex(bytes);
+                    if document.source.content_hash != expected_hash {
+                        errors.push(ValidationError::ContentHashMismatch {
+                            expected: expected_hash,
+                            found: document.source.content_hash.clone(),
+                        });
+                    }
+                    Some(text)
+                }
+                Err(_) => {
+                    errors.push(ValidationError::SourceNotUtf8);
+                    None
+                }
+            }
+        }
+        None => None,
+    };
+    let length: i64 = match source {
+        Some(bytes) => bytes.len() as i64,
+        None => document.source.utf8_byte_length.max(0) as i64,
+    };
+
+    let check_range = |what: &str, range: &syntax_v1::ByteRange, errors: &mut Vec<_>| {
+        for (edge, value) in [("start", range.start_utf8), ("end", range.end_utf8)] {
+            if value < 0 {
+                errors.push(ValidationError::NegativeOffset {
+                    what: format!("{what} {edge}"),
+                    value,
+                });
+            }
+        }
+        if range.start_utf8 > range.end_utf8 {
+            errors.push(ValidationError::RangeOutOfOrder {
+                what: what.to_string(),
+                start: range.start_utf8,
+                end: range.end_utf8,
+            });
+        }
+        if range.end_utf8 as i64 > length {
+            errors.push(ValidationError::RangeOutOfBounds {
+                what: what.to_string(),
+                end: range.end_utf8,
+                length,
+            });
+        }
+        if let Some(text) = source_str {
+            for (edge, value) in [("start", range.start_utf8), ("end", range.end_utf8)] {
+                if let Ok(offset) = usize::try_from(value) {
+                    if offset <= text.len() && !text.is_char_boundary(offset) {
+                        errors.push(ValidationError::RangeNotOnCharBoundary {
+                            what: format!("{what} {edge}"),
+                            offset: value,
+                        });
+                    }
+                }
+            }
+        }
+    };
+
+    // Tokens: each token's own range validity, axis legality, and id uniqueness.
+    // Inter-token layout (ordering, non-overlap, non-emptiness) is intentionally
+    // *not* checked here — it is a producer guarantee, not a wire invariant (see
+    // this function's docs).
+    let mut seen_token_ids = std::collections::HashSet::new();
+    for token in &document.tokens {
+        check_range(
+            &format!("token {} range", token.occurrence_id),
+            &token.byte_range,
+            &mut errors,
+        );
+        if let Some(detail) = token_axes_violation(token) {
+            errors.push(ValidationError::IllegalTokenAxes {
+                occurrence_id: token.occurrence_id,
+                detail,
+            });
+        }
+        if !seen_token_ids.insert(token.occurrence_id) {
+            errors.push(ValidationError::DuplicateTokenId {
+                occurrence_id: token.occurrence_id,
+            });
+        }
+    }
+
+    // Structure: ranges, node-id uniqueness, child references.
+    let node_ids: std::collections::HashSet<i32> =
+        document.structure.iter().map(|n| n.node_id).collect();
+    let mut seen_node_ids = std::collections::HashSet::new();
+    for node in &document.structure {
+        check_range(
+            &format!("outline node {} range", node.node_id),
+            &node.byte_range,
+            &mut errors,
+        );
+        if !seen_node_ids.insert(node.node_id) {
+            errors.push(ValidationError::DuplicateNodeId {
+                node_id: node.node_id,
+            });
+        }
+        for child in &node.child_node_ids {
+            if !node_ids.contains(child) {
+                errors.push(ValidationError::DanglingChildRef {
+                    node_id: node.node_id,
+                    child: *child,
+                });
+            }
+        }
+    }
+
+    // Diagnostics and derivation ranges are part of the artifact too.
+    for diagnostic in &document.diagnostics {
+        check_range("diagnostic range", &diagnostic.byte_range, &mut errors);
+    }
+    for step in &document.derivation {
+        for range in &step.source_ranges {
+            check_range(
+                &format!("derivation '{}' range", step.pass_id),
+                range,
+                &mut errors,
+            );
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(ValidationErrors(errors))
+    }
+}
+
+/// Return why a token's axes are illegal under `colorful.syntax/v1`, or `None`
+/// if they are legal. Mirrors the producer mapping in [`token_axes`]: a `WORD`
+/// carries a `lexicalClass`, and only a `FUNCTION` word carries a
+/// `functionKind`; every other `tokenKind` carries neither.
+fn token_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
+    use syntax_v1::{LexicalClass, TokenKind};
+    match token.token_kind {
+        TokenKind::Word => match token.lexical_class {
+            None => Some("a WORD token must carry a lexicalClass"),
+            Some(LexicalClass::Function) => {
+                if token.function_kind.is_none() {
+                    Some("a FUNCTION word must carry a functionKind")
+                } else {
+                    None
+                }
+            }
+            Some(_) => {
+                if token.function_kind.is_some() {
+                    Some("only a FUNCTION word may carry a functionKind")
+                } else {
+                    None
+                }
+            }
+        },
+        TokenKind::Number | TokenKind::Punctuation | TokenKind::Quote => {
+            if token.lexical_class.is_some() {
+                Some("a non-word token must not carry a lexicalClass")
+            } else if token.function_kind.is_some() {
+                Some("a non-word token must not carry a functionKind")
+            } else {
+                None
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -370,5 +733,222 @@ mod integration {
         let a = canonical_json(&doc).unwrap();
         let decoded: syntax_v1::DocumentAnalysis = serde_json::from_str(&a).unwrap();
         assert_eq!(a, canonical_json(&decoded).unwrap());
+    }
+
+    // ---- validate_document ----
+
+    const VALID_SOURCE: &str = "The cat sat on the mat. Paris is nice.\n\nDogs run fast.";
+
+    /// Whether `errors` contains a variant matching `pred`.
+    fn has(errors: &ValidationErrors, pred: impl Fn(&ValidationError) -> bool) -> bool {
+        errors.0.iter().any(pred)
+    }
+
+    #[test]
+    fn a_produced_document_validates_with_and_without_source() {
+        let doc = analyze(VALID_SOURCE);
+        validate_document(&doc, Some(VALID_SOURCE.as_bytes())).expect("valid with source");
+        validate_document(&doc, None).expect("valid without source");
+    }
+
+    #[test]
+    fn rejects_wrong_contract_schema_and_vocabulary() {
+        let mut doc = analyze(VALID_SOURCE);
+        doc.contract_version = "colorful.syntax/v2".to_string();
+        doc.schema_hash = "sha256:deadbeef".to_string();
+        doc.vocabulary_hash = "sha256:feedface".to_string();
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::UnsupportedContractVersion { .. }
+        )));
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::SchemaHashMismatch { .. }
+        )));
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::VocabularyHashMismatch { .. }
+        )));
+    }
+
+    #[test]
+    fn rejects_content_hash_and_byte_length_against_the_real_source() {
+        let doc = analyze(VALID_SOURCE);
+        // A different source: the document's hash and length no longer describe it.
+        let other = "Completely different prose here.";
+        let errors = validate_document(&doc, Some(other.as_bytes())).unwrap_err();
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::ContentHashMismatch { .. }
+        )));
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::ByteLengthMismatch { .. }
+        )));
+    }
+
+    #[test]
+    fn rejects_a_range_out_of_order_and_out_of_bounds() {
+        let mut doc = analyze(VALID_SOURCE);
+        doc.tokens[0].byte_range = syntax_v1::ByteRange {
+            start_utf8: 9,
+            end_utf8: 2,
+        };
+        doc.tokens[1].byte_range = syntax_v1::ByteRange {
+            start_utf8: 0,
+            end_utf8: 100_000,
+        };
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::RangeOutOfOrder { .. }
+        )));
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::RangeOutOfBounds { .. }
+        )));
+    }
+
+    #[test]
+    fn rejects_a_negative_offset() {
+        let mut doc = analyze(VALID_SOURCE);
+        doc.tokens[0].byte_range.start_utf8 = -1;
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::NegativeOffset { .. }
+        )));
+    }
+
+    #[test]
+    fn rejects_a_range_off_a_utf8_char_boundary() {
+        // "é" is two bytes; a range ending at byte 1 splits the character.
+        let source = "é is here.";
+        let mut doc = analyze(source);
+        doc.tokens[0].byte_range = syntax_v1::ByteRange {
+            start_utf8: 0,
+            end_utf8: 1,
+        };
+        let errors = validate_document(&doc, Some(source.as_bytes())).unwrap_err();
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::RangeNotOnCharBoundary { .. }
+        )));
+    }
+
+    #[test]
+    fn rejects_illegal_token_axes() {
+        use syntax_v1::{LexicalClass, TokenKind};
+        // A WORD without a lexicalClass.
+        let mut doc = analyze(VALID_SOURCE);
+        let word = doc
+            .tokens
+            .iter_mut()
+            .find(|t| t.token_kind == TokenKind::Word)
+            .unwrap();
+        word.lexical_class = None;
+        word.function_kind = None;
+        assert!(has(
+            &validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err(),
+            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+        ));
+
+        // A NUMBER carrying a lexicalClass.
+        let mut doc = analyze("I have 3 cats.");
+        let number = doc
+            .tokens
+            .iter_mut()
+            .find(|t| t.token_kind == TokenKind::Number)
+            .unwrap();
+        number.lexical_class = Some(LexicalClass::Content);
+        assert!(has(
+            &validate_document(&doc, None).unwrap_err(),
+            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+        ));
+
+        // A FUNCTION word missing its functionKind.
+        let mut doc = analyze(VALID_SOURCE);
+        let function = doc
+            .tokens
+            .iter_mut()
+            .find(|t| t.lexical_class == Some(LexicalClass::Function))
+            .unwrap();
+        function.function_kind = None;
+        assert!(has(
+            &validate_document(&doc, None).unwrap_err(),
+            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+        ));
+    }
+
+    #[test]
+    fn rejects_duplicate_ids_and_dangling_child_refs() {
+        let mut doc = analyze(VALID_SOURCE);
+        // Duplicate a token id.
+        let dup = doc.tokens[1].occurrence_id;
+        doc.tokens[0].occurrence_id = dup;
+        // Point a paragraph at a nonexistent child node.
+        let paragraph = doc
+            .structure
+            .iter_mut()
+            .find(|n| n.kind == syntax_v1::OutlineKind::Paragraph)
+            .unwrap();
+        paragraph.child_node_ids.push(9_999);
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::DuplicateTokenId { .. }
+        )));
+        assert!(has(&errors, |e| matches!(
+            e,
+            ValidationError::DanglingChildRef { .. }
+        )));
+    }
+
+    #[test]
+    fn collects_every_failure_rather_than_the_first() {
+        let mut doc = analyze(VALID_SOURCE);
+        doc.contract_version = "wrong".to_string();
+        doc.tokens[0].byte_range.start_utf8 = -5;
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(errors.0.len() >= 2, "expected several errors: {errors:?}");
+    }
+
+    #[test]
+    fn negative_declared_byte_length_is_rejected_without_a_source() {
+        // Without a source we cannot check the length against real bytes, but a
+        // negative declared length is nonsense on its face and must be rejected.
+        let mut doc = analyze(VALID_SOURCE);
+        doc.source.utf8_byte_length = -1;
+        let errors = validate_document(&doc, None).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(
+                e,
+                ValidationError::NegativeByteLength { .. }
+            )),
+            "{errors:?}"
+        );
+    }
+
+    #[test]
+    fn byte_length_mismatch_is_reported_even_for_non_utf8_source() {
+        // A hostile artifact pairs non-UTF-8 bytes with a fabricated length.
+        // `bytes.len()` is known regardless of UTF-8 validity, so the length lie
+        // must be surfaced *alongside* SourceNotUtf8 — not dropped because the
+        // bytes failed to decode.
+        let doc = analyze(VALID_SOURCE); // declares len = VALID_SOURCE.len()
+        let non_utf8: &[u8] = &[0xff, 0xfe]; // invalid UTF-8, length 2
+        let errors = validate_document(&doc, Some(non_utf8)).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(e, ValidationError::SourceNotUtf8)),
+            "{errors:?}"
+        );
+        assert!(
+            has(&errors, |e| matches!(
+                e,
+                ValidationError::ByteLengthMismatch { .. }
+            )),
+            "{errors:?}"
+        );
     }
 }

@@ -26,8 +26,10 @@ printf '%s' "$(./target/debug/colorful ir witness/fixture.txt)" > "$work/a.json"
 echo "B: TypeScript decode → canonical JSON"
 node witness/ir-canonicalize.mjs < "$work/a.json" > "$work/b.json"
 
-echo "C: Rust decode → canonical JSON"
-./target/debug/examples/recanon < "$work/b.json" > "$work/c.json"
+echo "C: Rust decode → validate → canonical JSON"
+# Pass the source so recanon validates the decoded document against the real
+# bytes (content hash, byte length, UTF-8 boundaries) before re-emitting.
+./target/debug/examples/recanon witness/fixture.txt < "$work/b.json" > "$work/c.json"
 
 echo "Comparing A == B == C (byte-for-byte)..."
 if cmp -s "$work/a.json" "$work/b.json" && cmp -s "$work/b.json" "$work/c.json"; then
