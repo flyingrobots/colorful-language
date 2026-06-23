@@ -18,33 +18,36 @@ use tower_lsp::lsp_types::{
     SemanticTokenType,
 };
 
-/// The semantic-token legend, in index order. `v0` is a *skeleton* highlighter:
-/// it accentuates the structure (function words, proper nouns, numbers, quotes)
-/// and leaves ordinary content unstyled, so a paragraph is not flooded with
-/// color. The types are standard, so existing editor themes color prose with no
-/// extra configuration.
+/// The semantic-token legend, in index order, derived from the
+/// `colorful.vocabulary/v1` manifest (the distinct LSP token types its roles
+/// project to). `v0` is a *skeleton* highlighter: it accentuates structure
+/// (function words, proper nouns, numbers, quotes) and leaves ordinary content
+/// unstyled. The types are standard, so existing editor themes color prose with
+/// no extra configuration, and they stay in lock-step with the CLI and graft
+/// because all three read the same manifest.
 #[must_use]
 pub fn legend_token_types() -> Vec<SemanticTokenType> {
-    vec![
-        SemanticTokenType::KEYWORD, // 0: function words
-        SemanticTokenType::CLASS,   // 1: proper nouns
-        SemanticTokenType::NUMBER,  // 2: numbers
-        SemanticTokenType::STRING,  // 3: quotes
-    ]
+    colorful_ir::vocabulary::lsp_legend()
+        .into_iter()
+        .map(SemanticTokenType::new)
+        .collect()
 }
 
 /// The legend index for a class, or `None` for classes left unstyled.
 ///
-/// Content words and punctuation emit no token (skeleton mode); per-function
-/// subtypes (article/conjunction/…) and a content layer arrive in Goalpost 2.
+/// The class maps to a `VisualRole`, the manifest projects that role onto an LSP
+/// token-type name (or nothing), and the index is that name's position in
+/// [`legend_token_types`]. Content words and punctuation project to no token
+/// (skeleton mode).
 fn token_type_index(class: PosClass) -> Option<u32> {
-    Some(match class {
-        PosClass::Function(_) => 0,
-        PosClass::ProperNoun => 1,
-        PosClass::Number => 2,
-        PosClass::Quote => 3,
-        PosClass::Content | PosClass::Punctuation => return None,
-    })
+    let role = colorful_ir::vocabulary::visual_role_for(class);
+    let name = colorful_ir::vocabulary::projection(&role)
+        .lsp_token_type
+        .as_deref()?;
+    colorful_ir::vocabulary::lsp_legend()
+        .iter()
+        .position(|t| *t == name)
+        .map(|i| i as u32)
 }
 
 /// Maps byte offsets to `(line, UTF-16 column)` positions over a fixed string.

@@ -9,6 +9,7 @@
 #![forbid(unsafe_code)]
 
 mod generated;
+pub mod vocabulary;
 
 pub use generated::{syntax_v1, vocabulary_v1};
 
@@ -21,7 +22,6 @@ pub const CONTRACT_VERSION: &str = "colorful.syntax/v1";
 pub const WESLEY_VERSION: &str = "0.0.5";
 
 const SYNTAX_V1_SDL: &str = include_str!("../../../contracts/colorful/syntax.v1.graphql");
-const VOCABULARY_V1_SDL: &str = include_str!("../../../contracts/colorful/vocabulary.v1.graphql");
 
 /// Canonical JSON: compact, with object keys sorted lexicographically. Both the
 /// Rust and TS sides use this exact form so a round-trip is byte-for-byte.
@@ -52,10 +52,14 @@ pub fn syntax_schema_hash() -> String {
     sha256_hex(SYNTAX_V1_SDL.as_bytes())
 }
 
-/// The hash of the `colorful.vocabulary/v1` contract.
+/// The hash of the `colorful.vocabulary/v1` **manifest** — the concrete
+/// presentation mapping in `contracts/colorful/vocabulary.v1.json`, not merely
+/// the `VisualRole` enum SDL. This is what the IR carries as `vocabularyHash`, so
+/// the hash certifies presentation behavior: change a color or a role mapping and
+/// the hash changes. See [`vocabulary`].
 #[must_use]
-pub fn vocabulary_schema_hash() -> String {
-    sha256_hex(VOCABULARY_V1_SDL.as_bytes())
+pub fn vocabulary_hash() -> String {
+    vocabulary::hash()
 }
 
 fn build_hash() -> String {
@@ -121,7 +125,7 @@ fn map_function_kind(kind: colorful_core::FunctionKind) -> syntax_v1::FunctionKi
 }
 
 /// Project a `PosClass` onto the IR's orthogonal axes.
-fn token_axes(
+pub(crate) fn token_axes(
     class: PosClass,
 ) -> (
     syntax_v1::TokenKind,
@@ -250,7 +254,7 @@ pub fn from_classification(
     Ok(syntax_v1::DocumentAnalysis {
         contract_version: CONTRACT_VERSION.to_string(),
         schema_hash: syntax_schema_hash(),
-        vocabulary_hash: vocabulary_schema_hash(),
+        vocabulary_hash: vocabulary_hash(),
         source: syntax_v1::SourceArtifact {
             unit_id: unit_id.to_string(),
             content_hash: sha256_hex(source.as_bytes()),
@@ -433,7 +437,7 @@ pub fn validate_document(
             found: document.schema_hash.clone(),
         });
     }
-    let expected_vocab = vocabulary_schema_hash();
+    let expected_vocab = vocabulary_hash();
     if document.vocabulary_hash != expected_vocab {
         errors.push(ValidationError::VocabularyHashMismatch {
             expected: expected_vocab,

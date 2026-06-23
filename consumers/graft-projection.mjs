@@ -19,13 +19,61 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
-// colorful.syntax/v1 token -> graft syntax class (skeleton: content/punct unstyled).
+// The colorful.vocabulary/v1 manifest is the single source of presentation
+// intent, shared with the CLI and the LSP. We load it once (and remember its
+// hash) instead of hardcoding a className table that could drift from the
+// producer's vocabulary.
+const MANIFEST_URL = new URL("../contracts/colorful/vocabulary.v1.json", import.meta.url);
+
+function loadVocabulary() {
+  const bytes = readFileSync(MANIFEST_URL); // raw bytes, so the hash matches the producer
+  const manifest = JSON.parse(bytes.toString("utf8"));
+  return {
+    hash: `sha256:${createHash("sha256").update(bytes).digest("hex")}`,
+    classRoles: manifest.classRoles,
+    projectionByRole: new Map(manifest.roleProjections.map((p) => [p.visualRole, p])),
+  };
+}
+
+const VOCABULARY = loadVocabulary();
+
+// The abstract VisualRole for a token's axes, per the manifest (a WORD is keyed
+// by lexicalClass; every other tokenKind ignores it).
+function visualRole(token) {
+  for (const rule of VOCABULARY.classRoles) {
+    const kindMatches = rule.tokenKind === token.tokenKind;
+    const classMatches =
+      rule.lexicalClass == null || rule.lexicalClass === (token.lexicalClass ?? null);
+    if (kindMatches && classMatches) return rule.visualRole;
+  }
+  return "UNSTYLED";
+}
+
+// colorful.syntax/v1 token -> graft syntax class, via the manifest's role
+// projection (skeleton: content/punct project to no class).
 export function className(token) {
-  if (token.lexicalClass === "FUNCTION") return "keyword";
-  if (token.lexicalClass === "PROPER_NOUN_CANDIDATE") return "type";
-  if (token.tokenKind === "NUMBER") return "number";
-  if (token.tokenKind === "QUOTE") return "string";
-  return undefined;
+  const projection = VOCABULARY.projectionByRole.get(visualRole(token));
+  return projection?.graftClass ?? undefined;
+}
+
+// Reject an artifact whose vocabularyHash does not match the manifest this
+// consumer holds — its colors would otherwise be projected through a different
+// vocabulary than the producer intended.
+export function verifyVocabularyHash(ir) {
+  const expected = ir?.vocabularyHash;
+  if (typeof expected !== "string") {
+    throw new Error("IR is missing vocabularyHash; refusing to project.");
+  }
+  if (expected !== VOCABULARY.hash) {
+    throw new Error(
+      `IR vocabularyHash (${expected}) does not match this consumer's manifest (${VOCABULARY.hash}); refusing to project.`,
+    );
+  }
+}
+
+// The hash of the vocabulary manifest this consumer is bound to.
+export function vocabularyHash() {
+  return VOCABULARY.hash;
 }
 
 // Build a UTF-8 byte offset -> { row, column } mapper over the raw source bytes.
@@ -73,6 +121,7 @@ export function verifyContentHash(buffer, ir) {
 // projection-bundle shape (the thing jedit's adapter reads).
 export function project(buffer, ir) {
   verifyContentHash(buffer, ir);
+  verifyVocabularyHash(ir);
   const byteToPoint = makeByteToPoint(buffer);
   const spans = ir.tokens
     .map((token) => {

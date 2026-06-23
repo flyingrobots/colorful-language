@@ -31,7 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CI-enforced) proves the IR survives `Rust → JSON → TypeScript → JSON → Rust`
   byte-for-byte. The contracts split `PosClass` into orthogonal
   `TokenKind`/`LexicalClass`/`FunctionKind` axes, use UTF-8 `ByteRange`, and carry
-  source digests + provenance steps.
+  source digests + a derivation trace seed (not yet replayable provenance).
+- **Vocabulary manifest (`colorful.vocabulary/v1`).** Presentation now lives in
+  one versioned manifest (`contracts/colorful/vocabulary.v1.json`): token axes →
+  `VisualRole` → `{ANSI, LSP token type, graft class}`. Its hash **is** the IR's
+  `vocabularyHash`, so the hash certifies presentation behavior, and the CLI
+  (`sgr`), the language server (legend + token indices), and the graft reference
+  consumer (`className`) all derive their colors from it instead of keeping
+  private copies. The graft consumer rejects an artifact whose `vocabularyHash`
+  does not match its manifest.
 
 - **IR boundary validation.** `colorful_ir::validate_document(&DocumentAnalysis,
   Option<&[u8]>)` checks a received artifact against the `colorful.syntax/v1`

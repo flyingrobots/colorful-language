@@ -112,6 +112,7 @@ name = "colorful-lsp"
 version = "0.1.0"
 dependencies = [
  "colorful-core",
+ "colorful-ir",
  "colorful-lexicon",
  "colorful-lint",
  "colorful-parse",

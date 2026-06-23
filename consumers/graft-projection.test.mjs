@@ -8,7 +8,14 @@
 // byte-correct behavior and the contentHash guard.
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
-import { makeByteToPoint, project, verifyContentHash } from "./graft-projection.mjs";
+import {
+  className,
+  makeByteToPoint,
+  project,
+  verifyContentHash,
+  verifyVocabularyHash,
+  vocabularyHash,
+} from "./graft-projection.mjs";
 
 function contentHash(buffer) {
   return `sha256:${createHash("sha256").update(buffer).digest("hex")}`;
@@ -24,6 +31,7 @@ const ir = {
     contentHash: contentHash(source),
     utf8ByteLength: source.length,
   },
+  vocabularyHash: vocabularyHash(),
   tokens: [
     { byteRange: { startUtf8: 3, endUtf8: 5 }, tokenKind: "WORD", lexicalClass: "FUNCTION" },
     { byteRange: { startUtf8: 11, endUtf8: 12 }, tokenKind: "NUMBER" },
@@ -61,5 +69,20 @@ const mixed = Buffer.from("a\r\nb\rc", "utf8");
 const atMixed = makeByteToPoint(mixed);
 assert.deepEqual(atMixed(3), { row: 1, column: 0 }, "'b' after CRLF");
 assert.deepEqual(atMixed(5), { row: 2, column: 0 }, "'c' after lone CR");
+
+// className derives from the vocabulary manifest, including a WORD disambiguated
+// by lexicalClass and the unstyled (content/punct) fall-through.
+assert.equal(className({ tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE" }), "type");
+assert.equal(className({ tokenKind: "QUOTE" }), "string");
+assert.equal(className({ tokenKind: "WORD", lexicalClass: "CONTENT" }), undefined);
+assert.equal(className({ tokenKind: "PUNCTUATION" }), undefined);
+
+// An artifact whose vocabularyHash does not match the consumer's manifest is
+// rejected — its colors would otherwise come from a different vocabulary.
+assert.throws(
+  () => verifyVocabularyHash({ vocabularyHash: "sha256:deadbeef" }),
+  /vocabularyHash/,
+  "vocabulary drift must be rejected",
+);
 
 console.log("graft-projection: all assertions passed");

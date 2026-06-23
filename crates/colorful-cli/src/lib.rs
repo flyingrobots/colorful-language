@@ -17,15 +17,13 @@ use colorful_lint::ProseLinter;
 use colorful_parse::ProseParser;
 
 /// The ANSI SGR parameter used to color a class, or `None` to leave it plain.
+///
+/// The colors are not chosen here: the class maps to an abstract `VisualRole`,
+/// which the `colorful.vocabulary/v1` manifest projects onto ANSI. The same
+/// manifest drives the LSP and the graft consumer, so all three surfaces agree.
 fn sgr(class: PosClass) -> Option<&'static str> {
-    match class {
-        PosClass::Function(_) => Some("1;35"), // bold magenta — the "keywords"
-        PosClass::ProperNoun => Some("1;33"),  // bold yellow
-        PosClass::Number => Some("36"),        // cyan
-        PosClass::Quote => Some("32"),         // green
-        PosClass::Punctuation => Some("90"),   // bright black
-        PosClass::Content => None,             // default foreground
-    }
+    let role = colorful_ir::vocabulary::visual_role_for(class);
+    colorful_ir::vocabulary::projection(&role).ansi.as_deref()
 }
 
 /// Render `source` with ANSI color per part of speech.
