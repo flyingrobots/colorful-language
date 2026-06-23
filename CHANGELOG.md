@@ -33,6 +33,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TokenKind`/`LexicalClass`/`FunctionKind` axes, use UTF-8 `ByteRange`, and carry
   source digests + provenance steps.
 
+### Fixed
+
+- **IR projection rejects oversized input instead of wrapping.**
+  `colorful_ir::from_classification` now returns `Result<_, ProjectionError>`:
+  every narrowing of a byte offset, source length, token index, or outline id to
+  the contract's `i32` goes through `i32::try_from`, so a document past the
+  ~2 GB wire range is refused rather than silently wrapped negative. `colorful
+  ir` surfaces the error instead of emitting a corrupt artifact.
+- **graft reference consumer coordinates.** `consumers/graft-projection.mjs`
+  read the source as a JavaScript string and indexed it in UTF-16 code units
+  while comparing against the IR's UTF-8 byte offsets, corrupting every token
+  position after a non-ASCII character; it also recognized only `\n`. It now
+  indexes the source as raw bytes, derives columns by decoding only the line
+  prefix, recognizes the LSP line-ending set (`\n`, `\r\n`, `\r`), and verifies
+  the source against the IR's `contentHash` before projecting. Pinned by
+  `consumers/graft-projection.test.mjs` (CI-enforced).
+
 ## [0.1.0] - 2026-06-21
 
 First public release — **Goalpost 0, "English lights up."**
