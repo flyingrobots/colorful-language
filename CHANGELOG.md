@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TokenKind`/`LexicalClass`/`FunctionKind` axes, use UTF-8 `ByteRange`, and carry
   source digests + provenance steps.
 
+- **IR boundary validation.** `colorful_ir::validate_document(&DocumentAnalysis,
+  Option<&[u8]>)` checks a received artifact against the `colorful.syntax/v1`
+  contract — contract version, schema/vocabulary hashes, content hash and byte
+  length against the supplied source, byte-range order/bounds/UTF-8 boundaries,
+  token-axis legality, occurrence/node id uniqueness, and outline child
+  references — collecting every failure rather than the first. The witness
+  `recanon` leg now validates against the real source before re-emitting, so the
+  round-trip rejects a malformed document instead of laundering it.
+
 ### Fixed
 
 - **IR projection rejects oversized input instead of wrapping.**
