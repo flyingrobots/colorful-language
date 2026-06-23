@@ -63,11 +63,47 @@ fn build_hash() -> String {
     format!("colorful-ir@{}", env!("CARGO_PKG_VERSION"))
 }
 
-fn byte_range(span: Span) -> syntax_v1::ByteRange {
-    syntax_v1::ByteRange {
-        start_utf8: span.start as i32,
-        end_utf8: span.end as i32,
+/// An error projecting a `colorful-core` classification into the IR.
+///
+/// The `colorful.syntax/v1` contract carries offsets, lengths, and ids as
+/// GraphQL `Int` (Rust `i32`, ~2 GB). Projection **rejects** an input whose
+/// offsets or counts exceed that wire range instead of silently wrapping them
+/// negative — "bounded to ~2 GB" is only true if oversized input is refused.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProjectionError {
+    /// A byte offset, length, or id did not fit the IR's `i32` wire range.
+    Overflow {
+        /// What was being converted (e.g. `"source length"`, `"token index"`).
+        what: &'static str,
+        /// The value that overflowed.
+        value: usize,
+    },
+}
+
+impl core::fmt::Display for ProjectionError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            ProjectionError::Overflow { what, value } => write!(
+                f,
+                "{what} ({value}) exceeds the colorful.syntax/v1 i32 range; \
+                 the document is too large to project"
+            ),
+        }
     }
+}
+
+impl std::error::Error for ProjectionError {}
+
+/// Narrow a `usize` offset, length, or id to the IR's `i32`, or fail loudly.
+fn to_i32(what: &'static str, value: usize) -> Result<i32, ProjectionError> {
+    i32::try_from(value).map_err(|_| ProjectionError::Overflow { what, value })
+}
+
+fn byte_range(span: Span) -> Result<syntax_v1::ByteRange, ProjectionError> {
+    Ok(syntax_v1::ByteRange {
+        start_utf8: to_i32("byte range start", span.start)?,
+        end_utf8: to_i32("byte range end", span.end)?,
+    })
 }
 
 fn map_function_kind(kind: colorful_core::FunctionKind) -> syntax_v1::FunctionKind {
@@ -113,9 +149,12 @@ fn token_axes(
 
 /// Build the outline: a flattened paragraph → sentence tree. Paragraphs are
 /// separated by a blank line (a gap containing two or more newlines).
-fn build_structure(source: &str, tree: &Tree) -> Vec<syntax_v1::OutlineNode> {
+fn build_structure(
+    source: &str,
+    tree: &Tree,
+) -> Result<Vec<syntax_v1::OutlineNode>, ProjectionError> {
     let Node::Document(sentences) = &tree.root else {
-        return Vec::new();
+        return Ok(Vec::new());
     };
     let spans: Vec<Span> = sentences
         .iter()
@@ -125,7 +164,7 @@ fn build_structure(source: &str, tree: &Tree) -> Vec<syntax_v1::OutlineNode> {
         })
         .collect();
     if spans.is_empty() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
 
     // Group sentence indices into paragraphs.
@@ -140,61 +179,66 @@ fn build_structure(source: &str, tree: &Tree) -> Vec<syntax_v1::OutlineNode> {
     }
 
     let paragraph_count = paragraphs.len();
-    let sentence_id = |s: usize| (paragraph_count + s) as i32;
+    // Sentence node ids follow the paragraph ids, so they never collide.
+    let sentence_id = |s: usize| to_i32("sentence id", paragraph_count + s);
     let mut nodes = Vec::with_capacity(paragraph_count + spans.len());
 
     for (p, sentence_idxs) in paragraphs.iter().enumerate() {
         let first = spans[sentence_idxs[0]];
         let last = spans[sentence_idxs[sentence_idxs.len() - 1]];
         nodes.push(syntax_v1::OutlineNode {
-            node_id: p as i32,
+            node_id: to_i32("paragraph id", p)?,
             kind: syntax_v1::OutlineKind::Paragraph,
-            byte_range: syntax_v1::ByteRange {
-                start_utf8: first.start as i32,
-                end_utf8: last.end as i32,
-            },
+            byte_range: byte_range(Span::new(first.start, last.end))?,
             depth: 0,
-            child_node_ids: sentence_idxs.iter().map(|s| sentence_id(*s)).collect(),
+            child_node_ids: sentence_idxs
+                .iter()
+                .map(|s| sentence_id(*s))
+                .collect::<Result<Vec<_>, _>>()?,
         });
     }
     for (s, span) in spans.iter().enumerate() {
         nodes.push(syntax_v1::OutlineNode {
-            node_id: sentence_id(s),
+            node_id: sentence_id(s)?,
             kind: syntax_v1::OutlineKind::Sentence,
-            byte_range: byte_range(*span),
+            byte_range: byte_range(*span)?,
             depth: 1,
             child_node_ids: Vec::new(),
         });
     }
-    nodes
+    Ok(nodes)
 }
 
 /// Project a `colorful-core` classification into a `DocumentAnalysis` DTO.
-#[must_use]
+///
+/// # Errors
+///
+/// Returns [`ProjectionError::Overflow`] if a byte offset, the source length, a
+/// token index, or an outline id exceeds the IR's `i32` wire range (~2 GB).
 pub fn from_classification(
     unit_id: &str,
     source: &str,
     tree: &Tree,
     tokens: &[CoreToken],
-) -> syntax_v1::DocumentAnalysis {
+) -> Result<syntax_v1::DocumentAnalysis, ProjectionError> {
     let ir_tokens = tokens
         .iter()
         .enumerate()
         .map(|(i, token)| {
             let (token_kind, lexical_class, function_kind) = token_axes(token.class);
-            syntax_v1::Token {
-                occurrence_id: i as i32,
-                byte_range: byte_range(token.span),
+            Ok(syntax_v1::Token {
+                occurrence_id: to_i32("token index", i)?,
+                byte_range: byte_range(token.span)?,
                 token_kind,
                 lexical_class,
                 function_kind,
-            }
+            })
         })
-        .collect();
+        .collect::<Result<Vec<_>, ProjectionError>>()?;
 
     let whole = syntax_v1::ByteRange {
         start_utf8: 0,
-        end_utf8: source.len() as i32,
+        end_utf8: to_i32("source length", source.len())?,
     };
     let step = |pass: &str, rule: &str| syntax_v1::DerivationStep {
         pass_id: pass.to_string(),
@@ -203,23 +247,23 @@ pub fn from_classification(
         compiler_build_hash: build_hash(),
     };
 
-    syntax_v1::DocumentAnalysis {
+    Ok(syntax_v1::DocumentAnalysis {
         contract_version: CONTRACT_VERSION.to_string(),
         schema_hash: syntax_schema_hash(),
         vocabulary_hash: vocabulary_schema_hash(),
         source: syntax_v1::SourceArtifact {
             unit_id: unit_id.to_string(),
             content_hash: sha256_hex(source.as_bytes()),
-            utf8_byte_length: source.len() as i32,
+            utf8_byte_length: to_i32("source length", source.len())?,
         },
         tokens: ir_tokens,
-        structure: build_structure(source, tree),
+        structure: build_structure(source, tree)?,
         diagnostics: Vec::new(),
         derivation: vec![
             step("segment", "prose-segmenter"),
             step("classify", "lexical-annotator"),
         ],
-    }
+    })
 }
 
 #[cfg(test)]
@@ -270,7 +314,22 @@ mod integration {
     fn analyze(source: &str) -> syntax_v1::DocumentAnalysis {
         let tree = ProseParser::new().parse(source);
         let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, &tree);
-        from_classification("test", source, &tree, &tokens)
+        from_classification("test", source, &tree, &tokens).expect("projection within i32 range")
+    }
+
+    #[test]
+    fn to_i32_rejects_values_past_the_wire_range() {
+        // The narrowing conversion every offset/length/id goes through must fail
+        // loudly past i32::MAX rather than wrap negative.
+        assert_eq!(to_i32("x", 0), Ok(0));
+        assert_eq!(to_i32("x", i32::MAX as usize), Ok(i32::MAX));
+        assert_eq!(
+            to_i32("source length", i32::MAX as usize + 1),
+            Err(ProjectionError::Overflow {
+                what: "source length",
+                value: i32::MAX as usize + 1,
+            })
+        );
     }
 
     #[test]

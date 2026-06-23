@@ -211,7 +211,8 @@ where
 
     let tree = ProseParser::new().parse(&input);
     let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(&input, &tree);
-    let document = colorful_ir::from_classification(&unit_id, &input, &tree, &tokens);
+    let document = colorful_ir::from_classification(&unit_id, &input, &tree, &tokens)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
     let json = colorful_ir::canonical_json(&document)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
 
