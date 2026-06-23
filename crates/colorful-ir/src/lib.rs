@@ -431,28 +431,33 @@ pub fn validate_document(
     // Resolve the source text (for hash, length, and char-boundary checks) and
     // the effective length every range is bounded against.
     let source_str = match source {
-        Some(bytes) => match std::str::from_utf8(bytes) {
-            Ok(text) => {
-                let expected_hash = sha256_hex(bytes);
-                if document.source.content_hash != expected_hash {
-                    errors.push(ValidationError::ContentHashMismatch {
-                        expected: expected_hash,
-                        found: document.source.content_hash.clone(),
-                    });
-                }
-                if document.source.utf8_byte_length as i64 != bytes.len() as i64 {
-                    errors.push(ValidationError::ByteLengthMismatch {
-                        declared: document.source.utf8_byte_length,
-                        actual: bytes.len(),
-                    });
-                }
-                Some(text)
+        Some(bytes) => {
+            // The byte length is known regardless of UTF-8 validity, so check the
+            // length lie before the decode decision — a hostile artifact must not
+            // hide a fabricated `utf8ByteLength` behind non-UTF-8 bytes.
+            if document.source.utf8_byte_length as i64 != bytes.len() as i64 {
+                errors.push(ValidationError::ByteLengthMismatch {
+                    declared: document.source.utf8_byte_length,
+                    actual: bytes.len(),
+                });
             }
-            Err(_) => {
-                errors.push(ValidationError::SourceNotUtf8);
-                None
+            match std::str::from_utf8(bytes) {
+                Ok(text) => {
+                    let expected_hash = sha256_hex(bytes);
+                    if document.source.content_hash != expected_hash {
+                        errors.push(ValidationError::ContentHashMismatch {
+                            expected: expected_hash,
+                            found: document.source.content_hash.clone(),
+                        });
+                    }
+                    Some(text)
+                }
+                Err(_) => {
+                    errors.push(ValidationError::SourceNotUtf8);
+                    None
+                }
             }
-        },
+        }
         None => None,
     };
     let length: i64 = match source {
@@ -883,5 +888,27 @@ mod integration {
         doc.tokens[0].byte_range.start_utf8 = -5;
         let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
         assert!(errors.0.len() >= 2, "expected several errors: {errors:?}");
+    }
+
+    #[test]
+    fn byte_length_mismatch_is_reported_even_for_non_utf8_source() {
+        // A hostile artifact pairs non-UTF-8 bytes with a fabricated length.
+        // `bytes.len()` is known regardless of UTF-8 validity, so the length lie
+        // must be surfaced *alongside* SourceNotUtf8 — not dropped because the
+        // bytes failed to decode.
+        let doc = analyze(VALID_SOURCE); // declares len = VALID_SOURCE.len()
+        let non_utf8: &[u8] = &[0xff, 0xfe]; // invalid UTF-8, length 2
+        let errors = validate_document(&doc, Some(non_utf8)).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(e, ValidationError::SourceNotUtf8)),
+            "{errors:?}"
+        );
+        assert!(
+            has(&errors, |e| matches!(
+                e,
+                ValidationError::ByteLengthMismatch { .. }
+            )),
+            "{errors:?}"
+        );
     }
 }
