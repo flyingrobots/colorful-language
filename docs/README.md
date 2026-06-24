@@ -12,6 +12,7 @@ proven by deterministic executable evidence.
 
 | Path | Contains |
 | --- | --- |
+| [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) | The project-local documentation corpus standard: page types, examples, visuals, style, and enforcement. |
 | `topics/<topic>/` | The living reference for a durable concept (behavior, test plan, optional architecture and rationale). |
 | `design/` | Historical, proposal-era design documents. |
 | `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |

@@ -41,6 +41,17 @@ given piece of prose produces an exact, stable token stream. "This sentence
 classifies these spans as these parts of speech" is a deterministic golden
 fixture, not a matter of taste.
 
+## Documentation Standard
+
+The project-local documentation standard lives at
+[`docs/DOCUMENTATION_STANDARDS.md`](docs/DOCUMENTATION_STANDARDS.md). It defines
+the page types, example rules, visual accessibility requirements, writing style,
+and objective/advisory checks for the corpus.
+
+Use it for new pages and substantial edits. The existing topic/test-plan model
+remains the backbone of the corpus; the standard adds reader-task routing around
+that backbone rather than replacing it.
+
 ## Where Documentation Lives
 
 Durable concepts that evolve across more than one pull request live in a topic
@@ -49,6 +60,7 @@ like a chapter in a technical book.
 
 | Path | Use it for |
 | --- | --- |
+| `docs/DOCUMENTATION_STANDARDS.md` | Corpus maintenance standard: page types, examples, visuals, style, and enforcement. |
 | `docs/topics/<topic>/README.md` | Current behavior, invariants, public contract, supported usage. |
 | `docs/topics/<topic>/test-plan.md` | Requirements, planned cases, implemented evidence, fixtures, oracles, known gaps. |
 | `docs/topics/<topic>/architecture.md` | Optional structure, data flow, and module boundaries when the topic is large. |
@@ -80,6 +92,30 @@ For a meaningful behavior change, follow this sequence:
 
 Small fixes scale this down but keep the same shape: make the claim clear,
 identify or add evidence, implement, and keep the current reference honest.
+
+## How To Maintain The Documentation Corpus
+
+When you create or substantially change documentation:
+
+1. Identify the page's primary job: learn, do, look up, understand,
+   troubleshoot, or contribute.
+2. Use `docs/topics/<topic>/README.md` for durable current behavior and
+   invariants.
+3. Use `docs/topics/<topic>/test-plan.md` for requirements, planned cases,
+   evidence, exact oracles, status, and known gaps.
+4. Add a tutorial, how-to guide, reference page, or troubleshooting page only
+   when a reader task is not served well by the topic reference.
+5. Link every new durable page from `docs/README.md`.
+6. Keep examples honest: runnable examples should run, illustrative examples
+   should be labeled, and abridged examples should say what was omitted.
+7. Separate copyable commands from expected output, and avoid shell prompts in
+   copyable command blocks.
+8. Place warnings before destructive, privileged, costly, or irreversible
+   commands, including scope and verification guidance.
+9. Give informative visuals alt text or a nearby textual equivalent, and do not
+   put essential instructions only in screenshots.
+10. Update `CHANGELOG.md` and `ROADMAP.md` when the documentation change reflects
+    release-visible behavior or shifts project posture.
 
 ## Test Plans Are Contracts
 
@@ -152,7 +188,7 @@ For documentation changes:
 
 ```bash
 markdownlint-cli2 "**/*.md"
-git diff --check
+git diff --check "$(git hash-object -t tree /dev/null)" HEAD
 ```
 
 GitHub Actions runs the same checks as the merge gate.

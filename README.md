@@ -3,6 +3,21 @@
 
 _Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotes glow as **strings**, and the skeleton of every sentence becomes visible._
 
+## Why?
+
+Programmers get rich feedback from their editors because code has visible
+structure. Prose usually gets spellcheck, grammar guesses, or a wall of plain
+text. That leaves the structure of a sentence — the little words that carry
+logic, emphasis, negation, scope, and rhythm — harder to see than it should be.
+
+Colorful makes English visible as a local, deterministic syntax surface. No
+cloud, no model, no hidden judgment. It shows the shape of prose the way a code
+highlighter shows the shape of a program. The same parse feeds CLI highlighting,
+lint warnings, LSP diagnostics, and the `colorful.syntax/v1` surface IR.
+
+That is the current contract. Future phases are tracked in the
+[roadmap](ROADMAP.md), not promised by this README.
+
 ## Try it now (30 seconds)
 
 ```bash
@@ -72,8 +87,15 @@ shallow read can already see:
 - **Length outliers** — sentences far longer than the document's average
 - **Passive-voice candidates** — `was reviewed`, `is broken`, …
 
+Run:
+
+```bash
+colorful lint draft.txt
+```
+
+Representative output:
+
 ```text
-$ colorful lint draft.txt
 draft.txt:3:12: warning [run-on]: sentence runs to 47 words
 draft.txt:5:1: info [weak-word]: weak word 'really'
 ```

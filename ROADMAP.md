@@ -55,6 +55,12 @@ The moonshot threads five flyingrobots systems, each owning exactly one layer:
 - **echo** owns hosted admission and witnessed, replayable evidence.
 - **continuum** owns the *proven* shared contract boundary.
 
+The deep-end vision is English that can become more than text without becoming
+magic. Controlled English may eventually compile into contracts, schemas, or
+executable intent, but only when the target can prove what the sentence means.
+Freeform language must not secretly execute; it can only feed a checked,
+bounded, proof-carrying structure.
+
 ## Now
 
 Phase 0 is released (v0.1.0 — see [`CHANGELOG.md`](CHANGELOG.md) and the
