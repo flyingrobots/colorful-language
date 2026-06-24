@@ -54,13 +54,28 @@ contract sources byte-for-byte.
 
 ## Tag and publish
 
-Pending until the release-prep PR is merged and `v0.2.1` is tagged on `main`.
+Observed after PR #33 merged and tag `v0.2.1` was pushed.
 
-- Release commit SHA: Pending
-- Tag `v0.2.1` SHA: Pending
-- `Release` workflow run: Pending
-- GitHub Release: Pending
-- crates.io @ 0.2.1: Pending
+- Release PR: [PR #33](https://github.com/flyingrobots/colorful-language/pull/33)
+- Release commit SHA: `3ff6a1d317cd8df30a8ac86a30077f4282484544`
+- Tag `v0.2.1` object SHA: `212e9fc984310dffbd2c24bc209a40b718aa6383`
+- Tag target commit SHA: `3ff6a1d317cd8df30a8ac86a30077f4282484544`
+- `Release` workflow run: ✅ pass; [run 28114921733](https://github.com/flyingrobots/colorful-language/actions/runs/28114921733)
+- GitHub Release: ✅ published at `2026-06-24T16:53:10Z`; [release v0.2.1](https://github.com/flyingrobots/colorful-language/releases/tag/v0.2.1)
+- Release assets:
+  - `colorful-language-v0.2.1-x86_64-unknown-linux-gnu.tar.gz`
+  - `colorful-language-v0.2.1-x86_64-unknown-linux-gnu.tar.gz.sha256`
+- crates.io @ 0.2.1: ✅ all seven workspace crates visible.
+
+| Crate | crates.io checksum |
+| --- | --- |
+| `colorful-core` | `8727f9b235a4943b03b4dfe28a584816983c4b3b855f0b404e3c681d26aa8cc1` |
+| `colorful-lexicon` | `8a7c45364a0d090e77a404bda0d6fc09f8ff46ca734b4cabf4cd18cf6b76639d` |
+| `colorful-parse` | `bb123b66ef04c43a752b2ad9997b8a11886b39ccfdbf785062ecd2546990e77b` |
+| `colorful-ir` | `401bd382504109f6e8101f8068e649ff333c8671159cf67f99c0d35228bc6302` |
+| `colorful-lint` | `2fea14229717b5d26ac6b07afd90ee191b8be1129af733fabbb1e74ec806746e` |
+| `colorful-cli` | `f323c30fd47037aad375f2bead7d1408e401a28bd9b7bf0de988730637f3789d` |
+| `colorful-lsp` | `39b638d5e75244070864edc206579e014ade955b984d8fd33f11e49698b6e926` |
 
 ## Non-blocking notes
 
