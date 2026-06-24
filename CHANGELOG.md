@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-24
+
+`v0.2.1` is the public recovery release for the failed `v0.2.0` tag workflow.
+The `v0.2.0` tag published only `colorful-core`, `colorful-lexicon`, and
+`colorful-parse` before `colorful-ir` failed package verification; no GitHub
+Release was created for `v0.2.0`.
+
+### Fixed
+
+- **colorful-ir package contents.** `colorful-ir` now carries package-local copies
+  of the GraphQL and vocabulary contract inputs it embeds with `include_str!`.
+  The crate tarball can compile on its own, instead of depending on root-level
+  workspace files that are not present during crates.io verification.
+- **Release package witness.** CI and the tag-triggered `Release` workflow now
+  run `scripts/package-witness.sh`, which packages all publishable crates,
+  extracts the tarballs, and checks the extracted package workspace before any
+  release publish can proceed.
+
 ## [0.2.0] - 2026-06-24
 
 ### Added
@@ -103,6 +121,7 @@ First public release — **Goalpost 0, "English lights up."**
     semantic tokens were unified on the LSP line model; `is_number` accepts
     Unicode `\p{N}`; letter-initial alphanumeric words (`covid19`) stay whole.
 
-[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/flyingrobots/colorful-language/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/flyingrobots/colorful-language/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/flyingrobots/colorful-language/releases/tag/v0.1.0

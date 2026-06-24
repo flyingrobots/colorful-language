@@ -57,6 +57,7 @@ Run, in order, and stop on the first failure:
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --all --locked
+bash scripts/package-witness.sh
 cargo build --release --locked
 markdownlint-cli2 "**/*.md"
 actionlint .github/workflows/*.yml
@@ -67,9 +68,10 @@ Do not claim success from queued or in-progress CI. This is the full pre-merge
 release gate.
 
 The tag-triggered `Release` workflow verifies that the tag is on `main` and then
-repeats the Rust fmt, clippy, test, and release-build guard. It does not repeat
-Markdown lint, workflow lint, whitespace checks, the IR witness, or editor
-integration compilation; those surfaces must already be green on the merged PR.
+repeats the Rust fmt, clippy, test, release-build, and package-witness guards. It
+does not repeat Markdown lint, workflow lint, whitespace checks, the IR witness,
+or editor integration compilation; those surfaces must already be green on the
+merged PR.
 
 ### Phase 4 — Commit, tag, publish
 
@@ -79,9 +81,9 @@ integration compilation; those surfaces must already be green on the merged PR.
 3. Verify the tag points at the release commit.
 4. Push the tag: `git push origin vX.Y.Z`. This triggers
    [`.github/workflows/release.yml`](../.github/workflows/release.yml), which
-   verifies the tag is on `main`, repeats the Rust final guard, publishes the
-   crates, builds the `colorful` and `colorful-lsp` binaries, and creates the
-   GitHub Release.
+   verifies the tag is on `main`, repeats the Rust and package final guards,
+   publishes the crates, builds the `colorful` and `colorful-lsp` binaries, and
+   creates the GitHub Release.
 5. Record the witness in `docs/goalposts/vX.Y.Z/verification.md`: commands,
    results, tag/commit SHAs, and the Release URL.
 

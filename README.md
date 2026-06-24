@@ -129,7 +129,7 @@ See [`docs/design/`](docs/design/) for the thinking.
 
 ## Project Status
 
-**Current release — `v0.2.0`.** Goalpost 1 ("prose linter") is released.
+**Current release — `v0.2.1`.** Goalpost 1 ("prose linter") is released.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
 page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full

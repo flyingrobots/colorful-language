@@ -34,6 +34,15 @@ jobs:
       - run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - run: cargo test --all --locked
 
+  package:
+    name: Cargo package witness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: bash scripts/package-witness.sh
+
   ir-witness:
     name: IR cross-language round-trip witness
     runs-on: ubuntu-latest

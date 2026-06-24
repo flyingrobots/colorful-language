@@ -23,7 +23,7 @@ use crate::sha256_hex;
 use crate::syntax_v1::{LexicalClass, TokenKind};
 use crate::vocabulary_v1::VisualRole;
 
-const MANIFEST_JSON: &str = include_str!("../../../contracts/colorful/vocabulary.v1.json");
+const MANIFEST_JSON: &str = include_str!("../contracts/vocabulary.v1.json");
 const MANIFEST_VERSION: &str = "colorful.vocabulary/v1";
 
 #[derive(Debug, Deserialize)]

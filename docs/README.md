@@ -46,9 +46,12 @@ not pose as the current reference.
 
 ## Releases
 
+- [v0.2.1](goalposts/v0.2.1/release.md) — Goalpost 1, "prose linter", plus the
+  surface IR, vocabulary manifest, source editor integrations, and release
+  package recovery ([verification](goalposts/v0.2.1/verification.md)).
 - [v0.2.0](goalposts/v0.2.0/release.md) — Goalpost 1, "prose linter", plus the
   surface IR, vocabulary manifest, and source editor integrations
-  ([verification](goalposts/v0.2.0/verification.md)).
+  ([failed publish attempt](goalposts/v0.2.0/verification.md)).
 - [v0.1.0](goalposts/v0.1.0/release.md) — Goalpost 0, "English lights up"
   ([verification](goalposts/v0.1.0/verification.md)).
 

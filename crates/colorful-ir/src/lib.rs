@@ -21,7 +21,7 @@ pub const CONTRACT_VERSION: &str = "colorful.syntax/v1";
 /// The Wesley version the committed generated types were emitted with.
 pub const WESLEY_VERSION: &str = "0.0.5";
 
-const SYNTAX_V1_SDL: &str = include_str!("../../../contracts/colorful/syntax.v1.graphql");
+const SYNTAX_V1_SDL: &str = include_str!("../contracts/syntax.v1.graphql");
 
 /// Canonical JSON: compact, with object keys sorted lexicographically. Both the
 /// Rust and TS sides use this exact form so a round-trip is byte-for-byte.

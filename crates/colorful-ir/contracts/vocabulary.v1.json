@@ -1,0 +1,19 @@
+{
+  "version": "colorful.vocabulary/v1",
+  "classRoles": [
+    { "tokenKind": "WORD", "lexicalClass": "FUNCTION", "visualRole": "STRUCTURAL_KEYWORD" },
+    { "tokenKind": "WORD", "lexicalClass": "PROPER_NOUN_CANDIDATE", "visualRole": "TYPE_LIKE" },
+    { "tokenKind": "WORD", "lexicalClass": "CONTENT", "visualRole": "UNSTYLED" },
+    { "tokenKind": "NUMBER", "lexicalClass": null, "visualRole": "LITERAL" },
+    { "tokenKind": "PUNCTUATION", "lexicalClass": null, "visualRole": "MUTED" },
+    { "tokenKind": "QUOTE", "lexicalClass": null, "visualRole": "QUOTED" }
+  ],
+  "roleProjections": [
+    { "visualRole": "STRUCTURAL_KEYWORD", "ansi": "1;35", "lspTokenType": "keyword", "graftClass": "keyword" },
+    { "visualRole": "TYPE_LIKE", "ansi": "1;33", "lspTokenType": "class", "graftClass": "type" },
+    { "visualRole": "LITERAL", "ansi": "36", "lspTokenType": "number", "graftClass": "number" },
+    { "visualRole": "QUOTED", "ansi": "32", "lspTokenType": "string", "graftClass": "string" },
+    { "visualRole": "MUTED", "ansi": "90", "lspTokenType": null, "graftClass": null },
+    { "visualRole": "UNSTYLED", "ansi": null, "lspTokenType": null, "graftClass": null }
+  ]
+}
