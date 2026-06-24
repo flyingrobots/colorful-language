@@ -21,9 +21,9 @@ compile only what the target can prove.*
 | # | Depth | Reach | Milestone / epic | Status |
 | --- | --- | --- | --- | --- |
 | 0 | Closed-class lexical highlighting | CLI (ANSI) + LSP (semantic tokens) | [Goalpost 0](https://github.com/flyingrobots/colorful-language/milestone/1) | ✅ released v0.1.0 |
-| 1 | **Surface IR** — `colorful.syntax/v1`, a Wesley-generated GraphQL contract (Rust + TS) | graft (agent reads), jedit | [IR Spine](https://github.com/flyingrobots/colorful-language/milestone/4) · [#11](https://github.com/flyingrobots/colorful-language/issues/11) | 🚧 in progress |
-| 2 | Prose linter (Analyzer: passive voice, run-ons, weak words) | LSP diagnostics + CLI warnings | [Goalpost 1](https://github.com/flyingrobots/colorful-language/milestone/2) · [#6](https://github.com/flyingrobots/colorful-language/issues/6) | 🚧 in progress |
-| 3 | — | **VS Code extension** + Neovim / Helix / Zed / Emacs / JetBrains recipes | [Editor Reach](https://github.com/flyingrobots/colorful-language/milestone/5) · [#12](https://github.com/flyingrobots/colorful-language/issues/12) | planned |
+| 1 | **Surface IR** — `colorful.syntax/v1`, a Wesley-generated GraphQL contract (Rust + TS) | graft (agent reads), jedit | [IR Spine](https://github.com/flyingrobots/colorful-language/milestone/4) · [#11](https://github.com/flyingrobots/colorful-language/issues/11) | 🚧 core IR released v0.2.0; consumers open |
+| 2 | Prose linter (Analyzer: passive voice, run-ons, weak words) | LSP diagnostics + CLI warnings | [Goalpost 1](https://github.com/flyingrobots/colorful-language/milestone/2) · [#6](https://github.com/flyingrobots/colorful-language/issues/6) | ✅ released v0.2.0 |
+| 3 | — | **VS Code extension** + Neovim / Helix / Zed / Emacs / JetBrains recipes | [Editor Reach](https://github.com/flyingrobots/colorful-language/milestone/5) · [#12](https://github.com/flyingrobots/colorful-language/issues/12) | 🚧 source integrations released v0.2.0; packaging open |
 | 4 | Open-class POS disambiguation (noun/verb/adj/adv) + custom legend + theme | richer color in every surface | [Goalpost 2](https://github.com/flyingrobots/colorful-language/milestone/3) · [#7](https://github.com/flyingrobots/colorful-language/issues/7) | planned |
 | 5 | Contract English (CNL → canonical GraphQL SDL → Wesley) | first honest English → Wesley proof | [Contract English](https://github.com/flyingrobots/colorful-language/milestone/6) · [#13](https://github.com/flyingrobots/colorful-language/issues/13) | horizon |
 | 6 | Intent English (CNL → Edict surface AST) | — | [Intent English](https://github.com/flyingrobots/colorful-language/milestone/7) · [#14](https://github.com/flyingrobots/colorful-language/issues/14) | horizon |
@@ -63,8 +63,9 @@ bounded, proof-carrying structure.
 
 ## Now
 
-Phase 0 is released (v0.1.0 — see [`CHANGELOG.md`](CHANGELOG.md) and the
-[v0.1.0 release packet](docs/goalposts/v0.1.0/release.md)). Phase 1, the IR spine,
-is in progress — the pivot every later phase consumes. Its design of record is the
-`ir` topic under `docs/` and epic
-[#11](https://github.com/flyingrobots/colorful-language/issues/11).
+Phase 0 is released in v0.1.0, and Goalpost 1 ships in v0.2.0. The v0.2.0
+release also publishes the core `colorful.syntax/v1` IR, the vocabulary manifest,
+and source editor integrations, but the IR consumer slices and editor-package
+publishing remain open. See [`CHANGELOG.md`](CHANGELOG.md), the
+[v0.1.0 release packet](docs/goalposts/v0.1.0/release.md), and the
+[v0.2.0 release packet](docs/goalposts/v0.2.0/release.md).

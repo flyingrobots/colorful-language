@@ -1,6 +1,6 @@
 id = "colorful-language"
 name = "Colorful Language"
-version = "0.1.0"
+version = "0.2.0"
 schema_version = 1
 authors = ["James Ross and the colorful-language contributors"]
 description = "Part-of-speech syntax highlighting for English prose, via colorful-lsp."
