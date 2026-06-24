@@ -6,6 +6,15 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
+echo "Checking package-local contract copies..."
+for contract in syntax.v1.graphql vocabulary.v1.graphql vocabulary.v1.json; do
+  if ! cmp -s "contracts/colorful/$contract" "crates/colorful-ir/contracts/$contract"; then
+    printf 'contract copy is stale: crates/colorful-ir/contracts/%s\n' "$contract" >&2
+    printf 'refresh it from contracts/colorful/%s before packaging\n' "$contract" >&2
+    exit 1
+  fi
+done
+
 packages=(
   colorful-core
   colorful-lexicon

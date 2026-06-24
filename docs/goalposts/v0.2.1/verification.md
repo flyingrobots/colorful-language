@@ -22,7 +22,7 @@ Run on the prep branch before opening the release PR. Record exit status.
 | Format | `cargo fmt --all -- --check` | ✅ pass |
 | Clippy | `cargo clippy --locked --all-targets --all-features -- -D warnings` | ✅ pass |
 | Tests | `cargo test --all --locked` | ✅ pass (100 unit tests) |
-| Package witness | `bash scripts/package-witness.sh` | ✅ pass; packaged all seven publishable crates, extracted the tarballs, and checked the extracted package workspace. |
+| Package witness | `bash scripts/package-witness.sh` | ✅ pass; checked package-local contract copies, packaged all seven publishable crates, extracted the tarballs, and checked the extracted package workspace. |
 | Release build | `cargo build --release --locked` | ✅ pass |
 | Markdown | `markdownlint-cli2 "**/*.md"` | ✅ pass (0 errors) |
 | Workflows | `actionlint .github/workflows/*.yml` | ✅ pass |
@@ -48,7 +48,9 @@ release workflow.
 
 Dependent crate dry-runs cannot complete before `colorful-core v0.2.1` exists on
 crates.io. The package witness verifies every crate from extracted package
-tarballs before the release PR merges and before the tag workflow publishes.
+tarballs before the release PR merges and before the tag workflow publishes. It
+also verifies that the package-local `colorful-ir` contract inputs match the root
+contract sources byte-for-byte.
 
 ## Tag and publish
 
