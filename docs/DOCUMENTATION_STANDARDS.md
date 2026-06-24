@@ -405,7 +405,7 @@ Run the repository documentation gate for documentation changes:
 
 ```bash
 markdownlint-cli2 "**/*.md"
-git diff --check
+git diff --check "$(git hash-object -t tree /dev/null)" HEAD
 ```
 
 When workflows change, also run:

@@ -188,7 +188,7 @@ For documentation changes:
 
 ```bash
 markdownlint-cli2 "**/*.md"
-git diff --check
+git diff --check "$(git hash-object -t tree /dev/null)" HEAD
 ```
 
 GitHub Actions runs the same checks as the merge gate.
