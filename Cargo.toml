@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/flyingrobots/colorful-language"
@@ -12,11 +12,11 @@ authors = ["James Ross", "the colorful-language contributors"]
 # pinned toolchain in CI; an unverified value is a misleading contract.
 
 [workspace.dependencies]
-colorful-core = { path = "crates/colorful-core", version = "0.1.0" }
-colorful-parse = { path = "crates/colorful-parse", version = "0.1.0" }
-colorful-lexicon = { path = "crates/colorful-lexicon", version = "0.1.0" }
-colorful-ir = { path = "crates/colorful-ir", version = "0.1.0" }
-colorful-lint = { path = "crates/colorful-lint", version = "0.1.0" }
+colorful-core = { path = "crates/colorful-core", version = "0.2.0" }
+colorful-parse = { path = "crates/colorful-parse", version = "0.2.0" }
+colorful-lexicon = { path = "crates/colorful-lexicon", version = "0.2.0" }
+colorful-ir = { path = "crates/colorful-ir", version = "0.2.0" }
+colorful-lint = { path = "crates/colorful-lint", version = "0.2.0" }
 
 logos = "0.14"
 phf = { version = "0.11", features = ["macros"] }

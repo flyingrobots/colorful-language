@@ -48,8 +48,8 @@ It works on any text file and respects `NO_COLOR`.
 
 > [!note]
 > The integrations exist and build in CI; they are **not yet published** as
-> editor packages. Install from source today; marketplace/registry packages come
-> with a tagged release.
+> editor marketplace packages. Install from source today; marketplace/registry
+> publishing is tracked separately.
 
 The real magic is the **Language Server** (`colorful-lsp`), which gives live
 coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
@@ -129,12 +129,11 @@ See [`docs/design/`](docs/design/) for the thinking.
 
 ## Project Status
 
-**Pre-release — `v0.1.0`.** Goalpost 0 ("English lights up") is released.
+**Current release — `v0.2.0`.** Goalpost 1 ("prose linter") is released.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
 page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full
-[ROADMAP.md](ROADMAP.md) for what's next (the prose linter has landed on `main`
-and ships in the next release).
+[ROADMAP.md](ROADMAP.md) for what's next.
 
 ---
 
