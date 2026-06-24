@@ -24,7 +24,7 @@ Run on the prep branch before opening the release PR. Record exit status.
 | Release build | `cargo build --release --locked` | ✅ pass |
 | Markdown | `markdownlint-cli2 "**/*.md"` | ✅ pass (0 errors) |
 | Workflows | `actionlint .github/workflows/*.yml` | ✅ pass |
-| Whitespace | `git diff --check <empty-tree> HEAD` | ✅ pass |
+| Whitespace | `git diff --check "$(git hash-object -t tree /dev/null)" HEAD` | ✅ pass |
 
 ## Supplemental witnesses
 
