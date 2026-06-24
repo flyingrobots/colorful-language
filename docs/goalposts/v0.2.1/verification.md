@@ -19,14 +19,14 @@ Run on the prep branch before opening the release PR. Record exit status.
 
 | Step | Command | Result |
 | --- | --- | --- |
-| Format | `cargo fmt --all -- --check` | Pending |
-| Clippy | `cargo clippy --locked --all-targets --all-features -- -D warnings` | Pending |
-| Tests | `cargo test --all --locked` | Pending |
-| Package witness | `bash scripts/package-witness.sh` | Pending |
-| Release build | `cargo build --release --locked` | Pending |
-| Markdown | `markdownlint-cli2 "**/*.md"` | Pending |
-| Workflows | `actionlint .github/workflows/*.yml` | Pending |
-| Whitespace | `git diff --check "$(git hash-object -t tree /dev/null)" HEAD` | Pending |
+| Format | `cargo fmt --all -- --check` | ✅ pass |
+| Clippy | `cargo clippy --locked --all-targets --all-features -- -D warnings` | ✅ pass |
+| Tests | `cargo test --all --locked` | ✅ pass (100 unit tests) |
+| Package witness | `bash scripts/package-witness.sh` | ✅ pass; packaged all seven publishable crates, extracted the tarballs, and checked the extracted package workspace. |
+| Release build | `cargo build --release --locked` | ✅ pass |
+| Markdown | `markdownlint-cli2 "**/*.md"` | ✅ pass (0 errors) |
+| Workflows | `actionlint .github/workflows/*.yml` | ✅ pass |
+| Whitespace | `git diff --check "$(git hash-object -t tree /dev/null)" HEAD` | ✅ pass |
 
 ## Supplemental witnesses
 
@@ -35,16 +35,16 @@ release workflow.
 
 | Surface | Command | Result |
 | --- | --- | --- |
-| IR round-trip | `bash scripts/ir-witness.sh` | Pending |
-| graft reference consumer | `node consumers/graft-projection.test.mjs` | Pending |
-| VS Code extension | `npm run compile` in `editors/vscode` | Pending |
-| Zed extension | `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1` | Pending |
+| IR round-trip | `bash scripts/ir-witness.sh` | ✅ pass; Rust, TypeScript, and Rust re-canonicalized JSON were byte-identical (`4796` bytes). |
+| graft reference consumer | `node consumers/graft-projection.test.mjs` | ✅ pass |
+| VS Code extension | `npm run compile` in `editors/vscode` | ✅ pass; package version `0.2.1`. |
+| Zed extension | `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1` | ✅ pass; package version `0.2.1`. |
 
 ## crates.io dry-run
 
 | Crate | Command | Result |
 | --- | --- | --- |
-| `colorful-core` | `cargo publish --dry-run -p colorful-core --locked` | Pending |
+| `colorful-core` | `cargo publish --dry-run -p colorful-core --locked` | ✅ pass; packaged 5 files and verified `colorful-core v0.2.1`. |
 
 Dependent crate dry-runs cannot complete before `colorful-core v0.2.1` exists on
 crates.io. The package witness verifies every crate from extracted package
