@@ -11,6 +11,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
 use colorful_core::{Analyzer, Annotator, Parser, PosClass, Severity};
 use ropey::Rope;
 use tower_lsp::lsp_types::{
@@ -39,12 +42,21 @@ pub fn legend_token_types() -> Vec<SemanticTokenType> {
 /// token-type name (or nothing), and the index is that name's position in
 /// [`legend_token_types`]. Content words and punctuation project to no token
 /// (skeleton mode).
-fn token_type_index(class: PosClass, legend: &[&str]) -> Option<u32> {
+fn token_type_index(class: PosClass) -> Option<u32> {
+    static TOKEN_TYPE_INDEX: OnceLock<HashMap<&'static str, u32>> = OnceLock::new();
+    let token_type_index = TOKEN_TYPE_INDEX.get_or_init(|| {
+        colorful_ir::vocabulary::lsp_legend()
+            .into_iter()
+            .enumerate()
+            .map(|(i, token_type)| (token_type, i as u32))
+            .collect()
+    });
+
     let role = colorful_ir::vocabulary::visual_role_for(class);
     let name = colorful_ir::vocabulary::projection(&role)
         .lsp_token_type
         .as_deref()?;
-    legend.iter().position(|t| *t == name).map(|i| i as u32)
+    token_type_index.get(name).copied()
 }
 
 /// Maps byte offsets to `(line, UTF-16 column)` positions over a fixed string.
@@ -138,13 +150,12 @@ where
     let tree = parser.parse(text);
     let tokens = annotator.annotate(text, &tree);
     let index = LineIndex::new(text);
-    let legend = colorful_ir::vocabulary::lsp_legend();
 
     let mut data = Vec::new();
     let mut prev_line = 0u32;
     let mut prev_start = 0u32;
     for token in tokens {
-        let Some(token_type) = token_type_index(token.class, &legend) else {
+        let Some(token_type) = token_type_index(token.class) else {
             continue;
         };
         let (line, start) = index.position(token.span.start);

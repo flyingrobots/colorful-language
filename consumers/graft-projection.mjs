@@ -150,8 +150,10 @@ function visualRole(token) {
 // colorful.syntax/v1 token -> graft syntax class, via the manifest's role
 // projection (skeleton: content/punct project to no class).
 export function className(token) {
-  const projection = VOCABULARY.projectionByRole.get(visualRole(token));
-  return projection?.graftClass ?? undefined;
+  const role = visualRole(token);
+  const projection = VOCABULARY.projectionByRole.get(role);
+  if (!projection) throw new Error(`vocabulary role ${role} has no projection`);
+  return projection.graftClass ?? undefined;
 }
 
 // Reject an artifact whose vocabularyHash does not match the manifest this

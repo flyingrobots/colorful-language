@@ -90,6 +90,11 @@ assert.throws(
   /vocabularyHash/,
   "vocabulary drift must be rejected",
 );
+assert.throws(
+  () => verifyVocabularyHash({}),
+  /missing vocabularyHash/,
+  "missing vocabularyHash must be rejected",
+);
 
 const manifest = {
   version: "colorful.vocabulary/v1",
