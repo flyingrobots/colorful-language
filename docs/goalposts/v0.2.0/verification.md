@@ -46,13 +46,27 @@ release workflow.
 
 ## Tag and publish
 
-Pending until the release-prep PR is merged and `v0.2.0` is tagged on `main`.
+Failed on 2026-06-24. The tag workflow verified the tag was on `main`, passed the
+Rust final guard, and then stopped during `Publish to crates.io` while verifying
+the `colorful-ir` package tarball.
 
-- Release commit SHA: Pending
-- Tag `v0.2.0` SHA: Pending
-- `Release` workflow run: Pending
-- GitHub Release: Pending
-- crates.io @ 0.2.0: Pending
+- Release commit SHA: `088b7b7281d5e246ce8b61911ee7792aaa007d2e`
+- Tag `v0.2.0` SHA: `d88381ed063b8b9c01f82209a6a114d79b8188ec`
+- `Release` workflow run:
+  <https://github.com/flyingrobots/colorful-language/actions/runs/28085545997>
+- Failed job:
+  <https://github.com/flyingrobots/colorful-language/actions/runs/28085545997/job/83150525231>
+- Failure: `colorful-ir` used `include_str!` for root-level `contracts/` files
+  that were not present in the crate package tarball.
+- crates.io @ 0.2.0:
+  [colorful-core](https://crates.io/crates/colorful-core),
+  [colorful-lexicon](https://crates.io/crates/colorful-lexicon), and
+  [colorful-parse](https://crates.io/crates/colorful-parse) published before the
+  workflow stopped.
+- Not published at 0.2.0:
+  `colorful-ir`, `colorful-lint`, `colorful-cli`, and `colorful-lsp`.
+- GitHub Release: not created.
+- Recovery: `v0.2.1`.
 
 ## Non-blocking notes
 

@@ -1,5 +1,9 @@
 # colorful-language v0.2.0 — Release Packet
 
+> [!WARNING]
+> The `v0.2.0` tag workflow failed during crates.io publishing before a GitHub
+> Release was created. Use `v0.2.1` as the public Goalpost 1 release.
+
 ## Summary
 
 `v0.2.0` completes **Goalpost 1, "prose linter."** Colorful now turns the same
