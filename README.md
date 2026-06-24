@@ -3,6 +3,28 @@
 
 _Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotes glow as **strings**, and the skeleton of every sentence becomes visible._
 
+## Why?
+
+Programmers get rich feedback from their editors because code has visible
+structure. Prose usually gets spellcheck, grammar guesses, or a wall of plain
+text. That leaves the structure of a sentence — the little words that carry
+logic, emphasis, negation, scope, and rhythm — harder to see than it should be.
+
+Colorful starts with the smallest useful move: make English visible as a local,
+deterministic syntax surface. No cloud, no model, no hidden judgment. It shows
+the shape of prose the way a code highlighter shows the shape of a program, then
+builds from the same parse toward linting, editor diagnostics, and a portable IR.
+
+The deep-end vision is English that can become more than text without becoming
+magic. Colorful may eventually help controlled English compile into contracts,
+schemas, or executable intent — but only when the target can prove what the
+sentence means. The project is not trying to make freeform language secretly
+execute. It is building a ladder from readable prose to inspected, bounded,
+proof-carrying structure.
+
+See the [roadmap](ROADMAP.md) for the path from lexical highlighting to IR,
+Controlled Natural English, and capability-proven execution.
+
 ## Try it now (30 seconds)
 
 ```bash
