@@ -62,6 +62,17 @@ pub fn vocabulary_hash() -> String {
     vocabulary::hash()
 }
 
+/// Compatibility alias for the IR vocabulary hash.
+///
+/// Earlier Stage 1 code used this name while `vocabularyHash` pointed at the
+/// generated vocabulary SDL. The hash now intentionally points at the concrete
+/// `colorful.vocabulary/v1` manifest; keep the symbol so downstream callers do
+/// not break while they migrate to [`vocabulary_hash`].
+#[must_use]
+pub fn vocabulary_schema_hash() -> String {
+    vocabulary_hash()
+}
+
 fn build_hash() -> String {
     // A stand-in identity for Stage 1; a real reproducible build hash comes later.
     format!("colorful-ir@{}", env!("CARGO_PKG_VERSION"))
@@ -667,6 +678,11 @@ mod tests {
         let hash = syntax_schema_hash();
         assert!(hash.starts_with("sha256:"));
         assert_eq!(hash, syntax_schema_hash());
+    }
+
+    #[test]
+    fn legacy_vocabulary_schema_hash_alias_matches_manifest_hash() {
+        assert_eq!(vocabulary_schema_hash(), vocabulary_hash());
     }
 }
 
