@@ -38,6 +38,12 @@ release workflow.
 | VS Code extension | `npm run compile` in `editors/vscode` | ✅ pass; package version `0.2.0`. |
 | Zed extension | `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1` | ✅ pass; package version `0.2.0`. |
 
+## crates.io dry-run
+
+| Crate | Command | Result |
+| --- | --- | --- |
+| `colorful-core` | `cargo publish --dry-run -p colorful-core --locked` | ✅ pass; packaged 5 files and verified `colorful-core v0.2.0`. |
+
 ## Tag and publish
 
 Pending until the release-prep PR is merged and `v0.2.0` is tagged on `main`.
