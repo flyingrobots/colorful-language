@@ -90,6 +90,12 @@ function classRoleKey(rule) {
   return `${rule.tokenKind}/<none>`;
 }
 
+function requireStringOrNull(value, label) {
+  if (value !== null && typeof value !== "string") {
+    throw new Error(`${label} must be a string or null`);
+  }
+}
+
 // Validate the manifest before any projection can use it. Silent fall-through
 // would make a matching vocabularyHash certify a broken presentation vocabulary.
 export function validateVocabularyManifest(manifest) {
@@ -124,6 +130,9 @@ export function validateVocabularyManifest(manifest) {
     if (!VISUAL_ROLES.has(projection.visualRole)) {
       throw new Error(`unknown projection visualRole ${projection.visualRole}`);
     }
+    requireStringOrNull(projection.ansi, `roleProjections[${index}].ansi`);
+    requireStringOrNull(projection.lspTokenType, `roleProjections[${index}].lspTokenType`);
+    requireStringOrNull(projection.graftClass, `roleProjections[${index}].graftClass`);
     if (projectionRoles.has(projection.visualRole)) {
       throw new Error(`duplicate projection for ${projection.visualRole}`);
     }

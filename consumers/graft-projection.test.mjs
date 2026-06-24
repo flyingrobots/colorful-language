@@ -151,6 +151,18 @@ assert.throws(
   () =>
     validateVocabularyManifest({
       ...manifest,
+      roleProjections: [
+        { ...manifest.roleProjections[0], graftClass: 42 },
+        ...manifest.roleProjections.slice(1),
+      ],
+    }),
+  /graftClass/,
+  "non-string projection fields must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
       classRoles: [manifest.classRoles[0], ...manifest.classRoles],
     }),
   /duplicate class role/,
