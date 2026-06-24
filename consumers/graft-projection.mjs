@@ -24,10 +24,30 @@ import { pathToFileURL } from "node:url";
 // hash) instead of hardcoding a className table that could drift from the
 // producer's vocabulary.
 const MANIFEST_URL = new URL("../contracts/colorful/vocabulary.v1.json", import.meta.url);
+const MANIFEST_VERSION = "colorful.vocabulary/v1";
+const TOKEN_KINDS = new Set(["WORD", "NUMBER", "PUNCTUATION", "QUOTE"]);
+const LEXICAL_CLASSES = new Set(["FUNCTION", "CONTENT", "PROPER_NOUN_CANDIDATE"]);
+const VISUAL_ROLES = new Set([
+  "STRUCTURAL_KEYWORD",
+  "TYPE_LIKE",
+  "LITERAL",
+  "QUOTED",
+  "MUTED",
+  "UNSTYLED",
+]);
+const EXPECTED_CLASS_KEYS = new Set([
+  "WORD/FUNCTION",
+  "WORD/CONTENT",
+  "WORD/PROPER_NOUN_CANDIDATE",
+  "NUMBER/<none>",
+  "PUNCTUATION/<none>",
+  "QUOTE/<none>",
+]);
 
 function loadVocabulary() {
   const bytes = readFileSync(MANIFEST_URL); // raw bytes, so the hash matches the producer
   const manifest = JSON.parse(bytes.toString("utf8"));
+  validateVocabularyManifest(manifest);
   return {
     hash: `sha256:${createHash("sha256").update(bytes).digest("hex")}`,
     classRoles: manifest.classRoles,
@@ -37,16 +57,94 @@ function loadVocabulary() {
 
 const VOCABULARY = loadVocabulary();
 
+function requireKeys(object, keys, label) {
+  if (!object || typeof object !== "object" || Array.isArray(object)) {
+    throw new Error(`${label} must be an object`);
+  }
+  const allowed = new Set(keys);
+  for (const key of Object.keys(object)) {
+    if (!allowed.has(key)) throw new Error(`${label} has unknown field ${key}`);
+  }
+  for (const key of keys) {
+    if (!Object.hasOwn(object, key)) throw new Error(`${label} is missing ${key}`);
+  }
+}
+
+function classRoleKey(rule) {
+  if (!TOKEN_KINDS.has(rule.tokenKind)) {
+    throw new Error(`unknown tokenKind ${rule.tokenKind}`);
+  }
+  if (rule.lexicalClass !== null && !LEXICAL_CLASSES.has(rule.lexicalClass)) {
+    throw new Error(`unknown lexicalClass ${rule.lexicalClass}`);
+  }
+  if (!VISUAL_ROLES.has(rule.visualRole)) {
+    throw new Error(`unknown visualRole ${rule.visualRole}`);
+  }
+  if (rule.tokenKind === "WORD") {
+    if (rule.lexicalClass === null) throw new Error("WORD class role must declare lexicalClass");
+    return `${rule.tokenKind}/${rule.lexicalClass}`;
+  }
+  if (rule.lexicalClass !== null) {
+    throw new Error(`${rule.tokenKind} class role must not declare lexicalClass`);
+  }
+  return `${rule.tokenKind}/<none>`;
+}
+
+// Validate the manifest before any projection can use it. Silent fall-through
+// would make a matching vocabularyHash certify a broken presentation vocabulary.
+export function validateVocabularyManifest(manifest) {
+  requireKeys(manifest, ["version", "classRoles", "roleProjections"], "vocabulary manifest");
+  if (manifest.version !== MANIFEST_VERSION) {
+    throw new Error(`vocabulary manifest version ${manifest.version} is not ${MANIFEST_VERSION}`);
+  }
+  if (!Array.isArray(manifest.classRoles)) throw new Error("classRoles must be an array");
+  if (!Array.isArray(manifest.roleProjections)) throw new Error("roleProjections must be an array");
+
+  const classKeys = new Set();
+  for (const [index, rule] of manifest.classRoles.entries()) {
+    requireKeys(rule, ["tokenKind", "lexicalClass", "visualRole"], `classRoles[${index}]`);
+    const key = classRoleKey(rule);
+    if (classKeys.has(key)) throw new Error(`duplicate class role ${key}`);
+    classKeys.add(key);
+  }
+  if (classKeys.size !== EXPECTED_CLASS_KEYS.size) {
+    throw new Error("classRoles does not cover the expected token axes");
+  }
+  for (const expected of EXPECTED_CLASS_KEYS) {
+    if (!classKeys.has(expected)) throw new Error(`classRoles is missing ${expected}`);
+  }
+
+  const projectionRoles = new Set();
+  for (const [index, projection] of manifest.roleProjections.entries()) {
+    requireKeys(
+      projection,
+      ["visualRole", "ansi", "lspTokenType", "graftClass"],
+      `roleProjections[${index}]`,
+    );
+    if (!VISUAL_ROLES.has(projection.visualRole)) {
+      throw new Error(`unknown projection visualRole ${projection.visualRole}`);
+    }
+    if (projectionRoles.has(projection.visualRole)) {
+      throw new Error(`duplicate projection for ${projection.visualRole}`);
+    }
+    projectionRoles.add(projection.visualRole);
+  }
+  for (const expected of VISUAL_ROLES) {
+    if (!projectionRoles.has(expected)) throw new Error(`roleProjections is missing ${expected}`);
+  }
+}
+
 // The abstract VisualRole for a token's axes, per the manifest (a WORD is keyed
 // by lexicalClass; every other tokenKind ignores it).
 function visualRole(token) {
   for (const rule of VOCABULARY.classRoles) {
     const kindMatches = rule.tokenKind === token.tokenKind;
-    const classMatches =
-      rule.lexicalClass == null || rule.lexicalClass === (token.lexicalClass ?? null);
+    const classMatches = rule.lexicalClass === (token.lexicalClass ?? null);
     if (kindMatches && classMatches) return rule.visualRole;
   }
-  return "UNSTYLED";
+  throw new Error(
+    `no vocabulary role for token axes ${token.tokenKind}/${token.lexicalClass ?? "<none>"}`,
+  );
 }
 
 // colorful.syntax/v1 token -> graft syntax class, via the manifest's role

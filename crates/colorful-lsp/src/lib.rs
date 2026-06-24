@@ -39,15 +39,12 @@ pub fn legend_token_types() -> Vec<SemanticTokenType> {
 /// token-type name (or nothing), and the index is that name's position in
 /// [`legend_token_types`]. Content words and punctuation project to no token
 /// (skeleton mode).
-fn token_type_index(class: PosClass) -> Option<u32> {
+fn token_type_index(class: PosClass, legend: &[&str]) -> Option<u32> {
     let role = colorful_ir::vocabulary::visual_role_for(class);
     let name = colorful_ir::vocabulary::projection(&role)
         .lsp_token_type
         .as_deref()?;
-    colorful_ir::vocabulary::lsp_legend()
-        .iter()
-        .position(|t| *t == name)
-        .map(|i| i as u32)
+    legend.iter().position(|t| *t == name).map(|i| i as u32)
 }
 
 /// Maps byte offsets to `(line, UTF-16 column)` positions over a fixed string.
@@ -141,12 +138,13 @@ where
     let tree = parser.parse(text);
     let tokens = annotator.annotate(text, &tree);
     let index = LineIndex::new(text);
+    let legend = colorful_ir::vocabulary::lsp_legend();
 
     let mut data = Vec::new();
     let mut prev_line = 0u32;
     let mut prev_start = 0u32;
     for token in tokens {
-        let Some(token_type) = token_type_index(token.class) else {
+        let Some(token_type) = token_type_index(token.class, &legend) else {
             continue;
         };
         let (line, start) = index.position(token.span.start);

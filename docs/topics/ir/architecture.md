@@ -3,9 +3,10 @@
 > Status: **in progress** (Stage 1). This describes the intended structure of
 > colorful's intermediate representation and the compiler ladder it sits in. The
 > surface IR (`colorful.syntax/v1`) exists on `main`; its current-truth is in this
-> topic's [`README.md`](README.md). Treat this file as the design of record for
-> the deeper ladder (boundary validation, a versioned vocabulary manifest, and
-> replayable provenance) that is **not yet** fully implemented.
+> topic's [`README.md`](README.md). Boundary validation and the versioned
+> vocabulary manifest are implemented for Stage 1. Treat this file as the design
+> of record for the deeper ladder that is still in progress, especially
+> replayable provenance and the future semantic IR.
 
 ## Why an IR
 

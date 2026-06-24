@@ -14,6 +14,7 @@ import {
   project,
   verifyContentHash,
   verifyVocabularyHash,
+  validateVocabularyManifest,
   vocabularyHash,
 } from "./graft-projection.mjs";
 
@@ -76,6 +77,11 @@ assert.equal(className({ tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE
 assert.equal(className({ tokenKind: "QUOTE" }), "string");
 assert.equal(className({ tokenKind: "WORD", lexicalClass: "CONTENT" }), undefined);
 assert.equal(className({ tokenKind: "PUNCTUATION" }), undefined);
+assert.throws(
+  () => className({ tokenKind: "WORD" }),
+  /no vocabulary role/,
+  "invalid token axes must not silently fall through",
+);
 
 // An artifact whose vocabularyHash does not match the consumer's manifest is
 // rejected — its colors would otherwise come from a different vocabulary.
@@ -83,6 +89,67 @@ assert.throws(
   () => verifyVocabularyHash({ vocabularyHash: "sha256:deadbeef" }),
   /vocabularyHash/,
   "vocabulary drift must be rejected",
+);
+
+const manifest = {
+  version: "colorful.vocabulary/v1",
+  classRoles: [
+    { tokenKind: "WORD", lexicalClass: "FUNCTION", visualRole: "STRUCTURAL_KEYWORD" },
+    { tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE", visualRole: "TYPE_LIKE" },
+    { tokenKind: "WORD", lexicalClass: "CONTENT", visualRole: "UNSTYLED" },
+    { tokenKind: "NUMBER", lexicalClass: null, visualRole: "LITERAL" },
+    { tokenKind: "PUNCTUATION", lexicalClass: null, visualRole: "MUTED" },
+    { tokenKind: "QUOTE", lexicalClass: null, visualRole: "QUOTED" },
+  ],
+  roleProjections: [
+    {
+      visualRole: "STRUCTURAL_KEYWORD",
+      ansi: "1;35",
+      lspTokenType: "keyword",
+      graftClass: "keyword",
+    },
+    { visualRole: "TYPE_LIKE", ansi: "1;33", lspTokenType: "class", graftClass: "type" },
+    { visualRole: "LITERAL", ansi: "36", lspTokenType: "number", graftClass: "number" },
+    { visualRole: "QUOTED", ansi: "32", lspTokenType: "string", graftClass: "string" },
+    { visualRole: "MUTED", ansi: "90", lspTokenType: null, graftClass: null },
+    { visualRole: "UNSTYLED", ansi: null, lspTokenType: null, graftClass: null },
+  ],
+};
+assert.doesNotThrow(() => validateVocabularyManifest(manifest));
+assert.throws(
+  () => validateVocabularyManifest({ ...manifest, version: "colorful.vocabulary/v2" }),
+  /version/,
+  "wrong manifest version must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
+      classRoles: [
+        { tokenKind: "WORD", lexicalClass: "FUNCTION", visualRole: "STRUCTURAL_KEYWROD" },
+        ...manifest.classRoles.slice(1),
+      ],
+    }),
+  /unknown visualRole/,
+  "unknown roles must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
+      roleProjections: manifest.roleProjections.slice(0, -1),
+    }),
+  /roleProjections is missing/,
+  "missing role projections must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
+      classRoles: [manifest.classRoles[0], ...manifest.classRoles],
+    }),
+  /duplicate class role/,
+  "duplicate class rules must be rejected",
 );
 
 console.log("graft-projection: all assertions passed");
