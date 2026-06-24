@@ -23,6 +23,30 @@ The four artifacts and their one job each:
 | Executable evidence (tests, doctests, fixtures, goldens) | Proof the behavior is real. |
 | Historical reasoning (`docs/design/`, `rationale.md`) | Why a decision was made, without posing as the current reference. |
 
+## Documentation Corpus Standard
+
+[`docs/DOCUMENTATION_STANDARDS.md`](docs/DOCUMENTATION_STANDARDS.md) is the
+project-local standard for maintaining the documentation corpus. Follow it for
+new and substantially changed docs.
+
+Operational rules:
+
+- Give every page one primary reader job: learn, do, look up, understand,
+  troubleshoot, or contribute.
+- Keep durable current behavior in `docs/topics/<topic>/README.md`; keep planned
+  verification and known gaps in `docs/topics/<topic>/test-plan.md`.
+- Add tutorials, how-to guides, reference pages, or troubleshooting pages only
+  when the topic reference does not serve the reader's task.
+- Link any new durable documentation page from `docs/README.md`.
+- Use runnable examples when practical; separate copyable commands from expected
+  output; do not use shell prompts in copyable command blocks.
+- Put warnings before destructive, privileged, costly, or irreversible commands.
+- Give informative visuals useful alt text or a nearby textual equivalent; never
+  put essential instructions only in a screenshot.
+- Treat prose metrics as editorial signals, not universal merge gates. Hard
+  gates are facts: links, examples, generated reference, evidence, Markdown,
+  whitespace, and contract coverage.
+
 ## The Delivery Loop
 
 For any meaningful behavior change, do these in order:
