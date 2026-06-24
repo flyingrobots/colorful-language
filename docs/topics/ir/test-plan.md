@@ -13,6 +13,9 @@ Requirements:
   given the source, the real bytes — so a malformed artifact is rejected, not
   re-emitted.
 - **IR-5** Generated types are a boundary, not the domain model.
+- **IR-6** Presentation lives in one versioned manifest: token axes → `VisualRole`
+  → per-surface projection is authored once, hashed into `vocabularyHash`, and the
+  CLI, LSP, and graft consumer all derive from it.
 
 ## Cases
 
@@ -53,11 +56,27 @@ Requirements:
   types. *Oracle:* `colorful-core` compiles standalone. *Evidence:*
   `colorful-core/Cargo.toml` (no `colorful-ir` dep); `colorful_ir::from_classification`.
   *Status:* implemented.
+- **IR-6a** — *Requirement:* IR-6. *Behavior:* the manifest maps each `PosClass`
+  to the expected `VisualRole` and each role to its ANSI / LSP / graft projection;
+  the LSP legend order and `vocabularyHash` derive from it. *Oracle:* table
+  equality. *Evidence:* `colorful-ir` `vocabulary::tests::*`. *Status:* implemented.
+- **IR-6b** — *Requirement:* IR-6. *Behavior:* CLI ANSI, LSP legend/indices, and
+  graft `className` all derive from the manifest (no private copies). *Oracle:*
+  the surfaces' golden tests still hold after rewiring to the manifest. *Evidence:*
+  `colorful-cli` `tests::golden_*`; `colorful-lsp` semantic-token tests;
+  `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **IR-6c** — *Requirement:* IR-6. *Behavior:* the graft consumer rejects an
+  artifact whose `vocabularyHash` does not match its manifest. *Oracle:*
+  `verifyVocabularyHash` throws. *Evidence:* `consumers/graft-projection.test.mjs`.
+  *Status:* implemented.
 
 ## Known gaps / risks
 
-- Enum-value directives are lossy in Wesley L1, so `VisualRole` projections are
-  verified against the separate `colorful.vocabulary` manifest, not the syntax
-  enum.
+- Enum-value directives are lossy in Wesley L1, so the `VisualRole` *projections*
+  live in the separate `colorful.vocabulary/v1` JSON manifest (the hashed source
+  of truth), not as syntax-enum directives.
+- The derivation trace is a **trace seed**, not replayable provenance: steps carry
+  `passId`/`ruleId`/`sourceRanges` and a stand-in `compilerBuildHash`; node-level
+  input/output ids and artifact hashes are deferred.
 - Canonical JSON rules (key order, number formatting) must be specified and
   enforced on both sides for IR-2a to be meaningful.

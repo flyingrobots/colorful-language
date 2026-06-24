@@ -25,7 +25,8 @@ A `DocumentAnalysis` carries:
 - `structure` — a flattened outline tree: paragraphs (depth 0) containing
   sentences (depth 1), children referenced by `childNodeIds`.
 - `diagnostics` — empty in `v0` (the linter is a later phase).
-- `derivation` — a provenance step per pass.
+- `derivation` — a trace seed per pass (`passId`, `ruleId`, `sourceRanges`,
+  `compilerBuildHash`), not yet replayable provenance.
 - `contractVersion`, `schemaHash`, `vocabularyHash` — the exact contract identity.
 
 All offsets are **UTF-8 byte offsets** (`ByteRange { startUtf8, endUtf8 }`);
@@ -34,16 +35,23 @@ IR.
 
 ## How it is built
 
-The contracts (`contracts/colorful/*.graphql`) are the source of truth. Wesley
-(pinned `0.0.5`) generates the boundary DTOs — Rust (serde) and TypeScript — into
-the `colorful-ir` crate (`crates/colorful-ir/{src/generated,ts}/`). Regenerate
-with `scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`). The generated types are a
+The contracts (`contracts/colorful/*.graphql`) and vocabulary manifest
+(`contracts/colorful/vocabulary.v1.json`) are the source of truth. Wesley (pinned
+`0.0.5`) generates the boundary DTOs — Rust (serde) and TypeScript — into the
+`colorful-ir` crate (`crates/colorful-ir/{src/generated,ts}/`). Regenerate with
+`scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`). The generated types are a
 **wire boundary**: `colorful-core` stays free of them, and
 `colorful_ir::from_classification` is the one-way projection from the domain model
 into the DTO.
 
 `colorful_ir::canonical_json` is the shared canonical serializer (compact, sorted
 keys); the TypeScript side uses the identical algorithm.
+
+Presentation is authored once in `contracts/colorful/vocabulary.v1.json`: token
+axes map to `VisualRole`, then each role projects to ANSI, LSP token type, and
+graft class. `vocabularyHash` is the hash of that manifest, so changing a color
+or role mapping changes the contract identity. The CLI, LSP, and graft reference
+consumer all derive from this manifest.
 
 ## Guarantees
 
@@ -58,10 +66,11 @@ keys); the TypeScript side uses the identical algorithm.
 
 - The outline is paragraphs + sentences only; Markdown headings and deeper
   structure come later.
-- `VisualRole` (the abstract presentation vocabulary) is generated, but the
-  `LexicalClass → VisualRole → {LSP, jedit, graft}` projection maps are not yet
-  generated everywhere (a follow-up; Wesley drops the enum-value directives that
-  would carry them).
+- `VisualRole` is generated from GraphQL, but concrete projection maps live in
+  the JSON vocabulary manifest because Wesley drops enum-value directives that
+  would otherwise carry them.
+- The derivation record is a trace seed, not replayable provenance; node-level
+  input/output ids and artifact hashes come later.
 - GraphQL `Int` lowers to `i32`, bounding documents to ~2 GB.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

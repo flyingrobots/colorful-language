@@ -8,7 +8,15 @@
 // byte-correct behavior and the contentHash guard.
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
-import { makeByteToPoint, project, verifyContentHash } from "./graft-projection.mjs";
+import {
+  className,
+  makeByteToPoint,
+  project,
+  verifyContentHash,
+  verifyVocabularyHash,
+  validateVocabularyManifest,
+  vocabularyHash,
+} from "./graft-projection.mjs";
 
 function contentHash(buffer) {
   return `sha256:${createHash("sha256").update(buffer).digest("hex")}`;
@@ -24,6 +32,7 @@ const ir = {
     contentHash: contentHash(source),
     utf8ByteLength: source.length,
   },
+  vocabularyHash: vocabularyHash(),
   tokens: [
     { byteRange: { startUtf8: 3, endUtf8: 5 }, tokenKind: "WORD", lexicalClass: "FUNCTION" },
     { byteRange: { startUtf8: 11, endUtf8: 12 }, tokenKind: "NUMBER" },
@@ -61,5 +70,103 @@ const mixed = Buffer.from("a\r\nb\rc", "utf8");
 const atMixed = makeByteToPoint(mixed);
 assert.deepEqual(atMixed(3), { row: 1, column: 0 }, "'b' after CRLF");
 assert.deepEqual(atMixed(5), { row: 2, column: 0 }, "'c' after lone CR");
+
+// className derives from the vocabulary manifest, including a WORD disambiguated
+// by lexicalClass and the unstyled (content/punct) fall-through.
+assert.equal(className({ tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE" }), "type");
+assert.equal(className({ tokenKind: "QUOTE" }), "string");
+assert.equal(className({ tokenKind: "WORD", lexicalClass: "CONTENT" }), undefined);
+assert.equal(className({ tokenKind: "PUNCTUATION" }), undefined);
+assert.throws(
+  () => className({ tokenKind: "WORD" }),
+  /no vocabulary role/,
+  "invalid token axes must not silently fall through",
+);
+
+// An artifact whose vocabularyHash does not match the consumer's manifest is
+// rejected — its colors would otherwise come from a different vocabulary.
+assert.throws(
+  () => verifyVocabularyHash({ vocabularyHash: "sha256:deadbeef" }),
+  /vocabularyHash/,
+  "vocabulary drift must be rejected",
+);
+assert.throws(
+  () => verifyVocabularyHash({}),
+  /missing vocabularyHash/,
+  "missing vocabularyHash must be rejected",
+);
+
+const manifest = {
+  version: "colorful.vocabulary/v1",
+  classRoles: [
+    { tokenKind: "WORD", lexicalClass: "FUNCTION", visualRole: "STRUCTURAL_KEYWORD" },
+    { tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE", visualRole: "TYPE_LIKE" },
+    { tokenKind: "WORD", lexicalClass: "CONTENT", visualRole: "UNSTYLED" },
+    { tokenKind: "NUMBER", lexicalClass: null, visualRole: "LITERAL" },
+    { tokenKind: "PUNCTUATION", lexicalClass: null, visualRole: "MUTED" },
+    { tokenKind: "QUOTE", lexicalClass: null, visualRole: "QUOTED" },
+  ],
+  roleProjections: [
+    {
+      visualRole: "STRUCTURAL_KEYWORD",
+      ansi: "1;35",
+      lspTokenType: "keyword",
+      graftClass: "keyword",
+    },
+    { visualRole: "TYPE_LIKE", ansi: "1;33", lspTokenType: "class", graftClass: "type" },
+    { visualRole: "LITERAL", ansi: "36", lspTokenType: "number", graftClass: "number" },
+    { visualRole: "QUOTED", ansi: "32", lspTokenType: "string", graftClass: "string" },
+    { visualRole: "MUTED", ansi: "90", lspTokenType: null, graftClass: null },
+    { visualRole: "UNSTYLED", ansi: null, lspTokenType: null, graftClass: null },
+  ],
+};
+assert.doesNotThrow(() => validateVocabularyManifest(manifest));
+assert.throws(
+  () => validateVocabularyManifest({ ...manifest, version: "colorful.vocabulary/v2" }),
+  /version/,
+  "wrong manifest version must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
+      classRoles: [
+        { tokenKind: "WORD", lexicalClass: "FUNCTION", visualRole: "STRUCTURAL_KEYWROD" },
+        ...manifest.classRoles.slice(1),
+      ],
+    }),
+  /unknown visualRole/,
+  "unknown roles must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
+      roleProjections: manifest.roleProjections.slice(0, -1),
+    }),
+  /roleProjections is missing/,
+  "missing role projections must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
+      roleProjections: [
+        { ...manifest.roleProjections[0], graftClass: 42 },
+        ...manifest.roleProjections.slice(1),
+      ],
+    }),
+  /graftClass/,
+  "non-string projection fields must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest({
+      ...manifest,
+      classRoles: [manifest.classRoles[0], ...manifest.classRoles],
+    }),
+  /duplicate class role/,
+  "duplicate class rules must be rejected",
+);
 
 console.log("graft-projection: all assertions passed");

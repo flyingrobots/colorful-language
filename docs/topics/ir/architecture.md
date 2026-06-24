@@ -3,9 +3,10 @@
 > Status: **in progress** (Stage 1). This describes the intended structure of
 > colorful's intermediate representation and the compiler ladder it sits in. The
 > surface IR (`colorful.syntax/v1`) exists on `main`; its current-truth is in this
-> topic's [`README.md`](README.md). Treat this file as the design of record for
-> the deeper ladder (boundary validation, a versioned vocabulary manifest, and
-> replayable provenance) that is **not yet** fully implemented.
+> topic's [`README.md`](README.md). Boundary validation and the versioned
+> vocabulary manifest are implemented for Stage 1. Treat this file as the design
+> of record for the deeper ladder that is still in progress, especially
+> replayable provenance and the future semantic IR.
 
 ## Why an IR
 
@@ -106,8 +107,20 @@ Design commitments (frozen before the ecosystem depends on them):
 
 Generated Rust/TS types are **boundary DTOs**, not the internal model. Keep
 `colorful-core`'s ergonomic domain types; bridge with a projection
-`DocumentAnalysis::from_classification(source, tree, tokens)`. Emit a
-`DerivationStep` provenance record per pass from day one
-(`passId, ruleId, inputNodeIds, outputNodeIds, sourceRanges, inputArtifactHashes,
-outputArtifactHashes, compilerBuildHash`) so explanation and replay are built in,
-not retrofitted.
+`DocumentAnalysis::from_classification(source, tree, tokens)`. Each pass emits a
+`DerivationStep`, but Stage 1 records a **trace seed**, not replayable
+provenance: every step currently carries `passId`, `ruleId`, `sourceRanges`, and
+a `compilerBuildHash` that is itself a stand-in (the crate version). The richer
+fields that make derivation *replayable* — `inputNodeIds`, `outputNodeIds`, and
+input/output artifact hashes — are deferred; the trace seed reserves the shape so
+they can land without a contract break, but the IR does not yet claim replay.
+
+### Presentation lives in a versioned manifest
+
+`VisualRole` is an abstract enum; the concrete mapping — token axes → `VisualRole`
+→ `{ANSI, LSP token type, graft class}` — is authored once in
+`contracts/colorful/vocabulary.v1.json`. That manifest's hash **is** the IR's
+`vocabularyHash`, so the hash certifies presentation behavior, and the CLI, the
+language server, and the graft consumer all derive their colors from it rather
+than each keeping a private copy. A consumer can compare its manifest hash to an
+artifact's `vocabularyHash` to detect vocabulary drift.
