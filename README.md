@@ -94,8 +94,15 @@ shallow read can already see:
 - **Length outliers** — sentences far longer than the document's average
 - **Passive-voice candidates** — `was reviewed`, `is broken`, …
 
+Run:
+
+```bash
+colorful lint draft.txt
+```
+
+Representative output:
+
 ```text
-$ colorful lint draft.txt
 draft.txt:3:12: warning [run-on]: sentence runs to 47 words
 draft.txt:5:1: info [weak-word]: weak word 'really'
 ```
