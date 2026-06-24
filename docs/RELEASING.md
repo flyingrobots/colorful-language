@@ -57,6 +57,7 @@ Run, in order, and stop on the first failure:
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --all --locked
+bash scripts/package-witness.sh
 cargo build --release --locked
 markdownlint-cli2 "**/*.md"
 actionlint .github/workflows/*.yml
@@ -68,8 +69,9 @@ release gate.
 
 The tag-triggered `Release` workflow verifies that the tag is on `main` and then
 repeats the Rust fmt, clippy, test, and release-build guard. It does not repeat
-Markdown lint, workflow lint, whitespace checks, the IR witness, or editor
-integration compilation; those surfaces must already be green on the merged PR.
+the package witness, Markdown lint, workflow lint, whitespace checks, the IR
+witness, or editor integration compilation; those surfaces must already be green
+on the merged PR.
 
 ### Phase 4 — Commit, tag, publish
 

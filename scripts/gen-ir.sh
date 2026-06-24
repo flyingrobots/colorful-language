@@ -16,10 +16,14 @@ wesley() { cargo run -q --manifest-path "$wcli" -- "$@"; }
 contracts="$root/contracts/colorful"
 gen_rs="$root/crates/colorful-ir/src/generated"
 gen_ts="$root/crates/colorful-ir/ts"
+crate_contracts="$root/crates/colorful-ir/contracts"
 
 wesley emit rust       --schema "$contracts/syntax.v1.graphql"     --out "$gen_rs/syntax_v1.rs"
 wesley emit rust       --schema "$contracts/vocabulary.v1.graphql" --out "$gen_rs/vocabulary_v1.rs"
 wesley emit typescript --schema "$contracts/syntax.v1.graphql"     --out "$gen_ts/syntax_v1.ts"
 wesley emit typescript --schema "$contracts/vocabulary.v1.graphql" --out "$gen_ts/vocabulary_v1.ts"
+cp "$contracts/syntax.v1.graphql" "$crate_contracts/syntax.v1.graphql"
+cp "$contracts/vocabulary.v1.graphql" "$crate_contracts/vocabulary.v1.graphql"
+cp "$contracts/vocabulary.v1.json" "$crate_contracts/vocabulary.v1.json"
 
 echo "Regenerated from contracts (wesley 0.0.5). Review the diff and commit."
