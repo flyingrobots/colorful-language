@@ -74,16 +74,37 @@ pub enum FunctionKind {
     Negator,
 }
 
+/// The broad open-class part of speech for content words.
+///
+/// Open-class words are the productive content classes that can accept new
+/// members over time. Ambiguous words may remain [`PosClass::Content`] until an
+/// annotator has enough context to choose one of these kinds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum OpenClassKind {
+    /// A common noun.
+    Noun,
+    /// A lexical verb.
+    Verb,
+    /// An adjective.
+    Adjective,
+    /// An adverb.
+    Adverb,
+}
+
 /// The part-of-speech class assigned to a token.
 ///
-/// `v0` is deliberately coarse: open-class words are undifferentiated
-/// [`Content`](PosClass::Content). Telling nouns from verbs is a later goalpost.
+/// [`Content`](PosClass::Content) means an open-class word whose specific kind
+/// is still unknown. [`Open`](PosClass::Open) carries an explicit noun, verb,
+/// adjective, or adverb decision from a richer dictionary or contextual
+/// annotator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PosClass {
     /// A closed-class function word, tagged with its [`FunctionKind`].
     Function(FunctionKind),
-    /// An open-class word, undifferentiated in `v0`.
+    /// An open-class word whose noun/verb/adjective/adverb role is unknown.
     Content,
+    /// An open-class word tagged as noun, verb, adjective, or adverb.
+    Open(OpenClassKind),
     /// A capitalized, mid-sentence word treated as a proper noun (heuristic).
     ProperNoun,
     /// A numeric token.
@@ -206,10 +227,10 @@ pub trait Parser {
 /// Port: classify a single word's lexeme into a [`PosClass`], **in isolation**.
 ///
 /// A `Lexicon` is a dictionary: it sees one word with no surrounding context, so
-/// it returns [`PosClass::Function`], [`PosClass::Number`], or
-/// [`PosClass::Content`]. Context-dependent decisions — the proper-noun
-/// heuristic, and (in a future contextual or ML implementation) telling a noun
-/// from a verb — are the job of an [`Annotator`], not a `Lexicon`.
+/// it can return closed-class words, numbers, unknown content, or an open-class
+/// tag for unambiguous entries. Context-dependent decisions — the proper-noun
+/// heuristic, and telling ambiguous words such as `book` or `record` apart as a
+/// noun or verb — are the job of an [`Annotator`], not a `Lexicon`.
 pub trait Lexicon {
     /// Classify `word` in isolation.
     fn classify(&self, word: &str) -> PosClass;
@@ -601,6 +622,58 @@ mod tests {
         assert_eq!(
             toks.iter().map(|t| t.class).collect::<Vec<_>>(),
             vec![PosClass::Content, PosClass::ProperNoun]
+        );
+    }
+
+    #[test]
+    fn open_class_pos_contract_is_representable_by_annotator_port() {
+        struct OpenClassOnly;
+
+        impl Annotator for OpenClassOnly {
+            fn annotate(&self, _source: &str, tree: &Tree) -> Vec<Token> {
+                let Node::Document(sentences) = &tree.root else {
+                    return vec![];
+                };
+                let mut classes = [
+                    OpenClassKind::Noun,
+                    OpenClassKind::Verb,
+                    OpenClassKind::Adjective,
+                    OpenClassKind::Adverb,
+                ]
+                .into_iter();
+                let mut out = Vec::new();
+                for sentence in sentences {
+                    let Node::Sentence { parts, .. } = sentence else {
+                        continue;
+                    };
+                    for part in parts {
+                        if let (Node::Word { span }, Some(kind)) = (part, classes.next()) {
+                            out.push(Token {
+                                span: *span,
+                                class: PosClass::Open(kind),
+                            });
+                        }
+                    }
+                }
+                out
+            }
+        }
+
+        let source = "cats sprint quick silently";
+        let tree = Tree::document(vec![sentence(
+            (0, source.len()),
+            vec![word(0, 4), word(5, 11), word(12, 17), word(18, 26)],
+        )]);
+
+        let tokens = OpenClassOnly.annotate(source, &tree);
+        assert_eq!(
+            tokens.iter().map(|t| t.class).collect::<Vec<_>>(),
+            vec![
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Open(OpenClassKind::Adjective),
+                PosClass::Open(OpenClassKind::Adverb),
+            ]
         );
     }
 

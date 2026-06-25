@@ -343,6 +343,10 @@ mod tests {
         assert_eq!(visual_role_for(PosClass::Quote), VisualRole::Quoted);
         assert_eq!(visual_role_for(PosClass::Punctuation), VisualRole::Muted);
         assert_eq!(visual_role_for(PosClass::Content), VisualRole::Unstyled);
+        assert_eq!(
+            visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Noun)),
+            VisualRole::Unstyled
+        );
     }
 
     #[test]

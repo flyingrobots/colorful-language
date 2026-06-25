@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Open-class POS contract.** `colorful-core` now has explicit
+  `OpenClassKind::{Noun, Verb, Adjective, Adverb}` carried by
+  `PosClass::Open`, plus an opt-in `SeedOpenClassLexicon` adapter in
+  `colorful-lexicon`. The default CLI/LSP/IR path remains on the closed-class
+  lexicon until a later Goalpost 2 slice switches surfaces deliberately.
 - **Local source install.** `scripts/install-local.sh` installs or upgrades the
   local `colorful` CLI into `$HOME/.colorful-language/bin` with
   `cargo install --path ... --root ... --force`, giving Graft and jedit a stable
