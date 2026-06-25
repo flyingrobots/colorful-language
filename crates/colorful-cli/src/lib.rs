@@ -71,9 +71,7 @@ pub fn decide_color(no_color_flag: bool, no_color_env: bool) -> bool {
     !no_color_flag && !no_color_env
 }
 
-const HELP: &str = "\
-colorful — color English prose by part of speech
-
+const HELP_BODY: &str = "\
 USAGE:
     colorful [OPTIONS] [FILE]
     colorful lint [FILE]
@@ -83,8 +81,9 @@ ARGS:
     FILE          Path to read; omit or use \"-\" to read standard input.
 
 OPTIONS:
-    --no-color    Pass the text through without ANSI color.
-    -h, --help    Show this help.
+    --no-color     Pass the text through without ANSI color.
+    -V, --version  Print the colorful CLI version.
+    -h, --help     Show this help.
 
 SUBCOMMANDS:
     lint          Report prose problems (weak words, run-ons, passives); exits
@@ -93,6 +92,13 @@ SUBCOMMANDS:
 
 Color is disabled automatically when the NO_COLOR environment variable is set.
 ";
+
+fn help_text() -> String {
+    format!(
+        "colorful {} — color English prose by part of speech\n\n{HELP_BODY}",
+        env!("CARGO_PKG_VERSION")
+    )
+}
 
 /// Run the CLI over `args` (the program's arguments, excluding `argv[0]`).
 ///
@@ -109,11 +115,27 @@ where
 {
     let args: Vec<String> = args.into_iter().collect();
     match args.first().map(String::as_str) {
+        Some("-V" | "--version") => run_version(&args[1..]),
         Some("ir") => run_ir(args.iter().skip(1).cloned()).map(|()| ExitCode::SUCCESS),
         Some("lint") => run_lint(args.iter().skip(1).cloned()),
         Some("color") => run_color(args.iter().skip(1).cloned()).map(|()| ExitCode::SUCCESS),
         _ => run_color(args).map(|()| ExitCode::SUCCESS),
     }
+}
+
+fn run_version(args: &[String]) -> io::Result<ExitCode> {
+    if let Some(extra) = args.first() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("unexpected argument after version flag: {extra}"),
+        ));
+    }
+    print!("{}", version_output());
+    Ok(ExitCode::SUCCESS)
+}
+
+fn version_output() -> String {
+    format!("colorful {}\n", env!("CARGO_PKG_VERSION"))
 }
 
 /// Colorize prose to ANSI in the terminal (the default subcommand).
@@ -134,7 +156,7 @@ where
             "--" => end_of_options = true,
             "--no-color" => no_color_flag = true,
             "-h" | "--help" => {
-                print!("{HELP}");
+                print!("{}", help_text());
                 return Ok(());
             }
             "-" => path = None,
@@ -371,6 +393,30 @@ mod tests {
         assert_eq!(err.kind(), io::ErrorKind::NotFound);
         // Without `--`, the same argument is rejected as an unknown option.
         let err = run(["-weird.txt".to_string()]).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn version_flag_reports_package_version() {
+        let want = format!("colorful {}\n", env!("CARGO_PKG_VERSION"));
+        assert_eq!(version_output(), want);
+        assert!(run(["--version".to_string()]).is_ok());
+        assert!(run(["-V".to_string()]).is_ok());
+    }
+
+    #[test]
+    fn help_text_reports_package_version() {
+        let help = help_text();
+        assert!(help.starts_with(&format!(
+            "colorful {} — color English prose by part of speech\n\n",
+            env!("CARGO_PKG_VERSION")
+        )));
+        assert!(help.contains("-V, --version"));
+    }
+
+    #[test]
+    fn version_flag_rejects_extra_arguments() {
+        let err = run(["--version".to_string(), "extra".to_string()]).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
     }
 

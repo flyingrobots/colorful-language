@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Local source install.** `scripts/install-local.sh` installs or upgrades the
+  local `colorful` CLI into `$HOME/.colorful-language/bin` with
+  `cargo install --path ... --root ... --force`, giving Graft and jedit a stable
+  development-time binary path.
+
+### Fixed
+
+- **CLI version probe.** `colorful --version` and `colorful -V` now print the CLI
+  package version, so Graft can enforce its `colorful >= 0.2.1` prose projection
+  contract before shelling through `colorful ir -`.
+
 ## [0.2.1] - 2026-06-24
 
 `v0.2.1` is the public recovery release for the failed `v0.2.0` tag workflow.
