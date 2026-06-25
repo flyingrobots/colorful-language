@@ -36,6 +36,7 @@ Or just:
 
 ```bash
 colorful --help
+colorful --version
 ```
 
 It works on any text file and respects `NO_COLOR`.
@@ -61,6 +62,36 @@ coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
 
 Build the server with `cargo install colorful-lsp` (or from source) and point your
 editor at it per the recipes above.
+
+---
+
+## Use with jedit and graft
+
+jedit receives prose structure through Graft. Graft discovers Colorful by finding
+a `colorful` CLI on `PATH`, checking that `colorful --version` reports version
+`0.2.1` or newer, and then projecting `.txt` buffers through `colorful ir -`.
+
+For source-checkout development, install the local CLI into a stable user
+directory:
+
+```bash
+scripts/install-local.sh
+export PATH="$HOME/.colorful-language/bin:$PATH"
+colorful --version
+```
+
+Re-run `scripts/install-local.sh` after pulling new Colorful commits. The script
+uses `cargo install --force`, so install and upgrade are the same operation.
+
+Then launch jedit with that `PATH`:
+
+```bash
+cd ~/git/jim/jedit
+PATH="$HOME/.colorful-language/bin:$PATH" npm run dev
+```
+
+Open a `.txt` file in jedit. When Graft can find the CLI, the buffer is projected
+from the same `colorful.syntax/v1` IR that `colorful ir` prints at the terminal.
 
 ---
 
@@ -154,6 +185,13 @@ cargo install colorful-lsp
 ```bash
 cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-cli
 cargo install --git https://github.com/flyingrobots/colorful-language.git colorful-lsp
+```
+
+**From a local checkout** (best for Graft or jedit development):
+
+```bash
+scripts/install-local.sh
+export PATH="$HOME/.colorful-language/bin:$PATH"
 ```
 
 ---
