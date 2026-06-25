@@ -71,9 +71,7 @@ pub fn decide_color(no_color_flag: bool, no_color_env: bool) -> bool {
     !no_color_flag && !no_color_env
 }
 
-const HELP: &str = "\
-colorful — color English prose by part of speech
-
+const HELP_BODY: &str = "\
 USAGE:
     colorful [OPTIONS] [FILE]
     colorful lint [FILE]
@@ -94,6 +92,13 @@ SUBCOMMANDS:
 
 Color is disabled automatically when the NO_COLOR environment variable is set.
 ";
+
+fn help_text() -> String {
+    format!(
+        "colorful {} — color English prose by part of speech\n\n{HELP_BODY}",
+        env!("CARGO_PKG_VERSION")
+    )
+}
 
 /// Run the CLI over `args` (the program's arguments, excluding `argv[0]`).
 ///
@@ -151,7 +156,7 @@ where
             "--" => end_of_options = true,
             "--no-color" => no_color_flag = true,
             "-h" | "--help" => {
-                print!("{HELP}");
+                print!("{}", help_text());
                 return Ok(());
             }
             "-" => path = None,
@@ -397,6 +402,16 @@ mod tests {
         assert_eq!(version_output(), want);
         assert!(run(["--version".to_string()]).is_ok());
         assert!(run(["-V".to_string()]).is_ok());
+    }
+
+    #[test]
+    fn help_text_reports_package_version() {
+        let help = help_text();
+        assert!(help.starts_with(&format!(
+            "colorful {} — color English prose by part of speech\n\n",
+            env!("CARGO_PKG_VERSION")
+        )));
+        assert!(help.contains("-V, --version"));
     }
 
     #[test]
