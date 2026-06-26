@@ -25,19 +25,23 @@ marketplaces or registries.
 ## Token and theme behavior
 
 Highlighting uses LSP semantic tokens. The default skeleton highlighter uses
-standard token types that existing themes usually understand:
+standard token types that existing themes usually understand for structural
+roles, plus Colorful-owned token types for seeded open-class words:
 
 | Colorful role | LSP token type |
 | --- | --- |
 | Structural keyword | `keyword` |
+| Seeded noun | `noun` |
+| Seeded verb | `verb` |
+| Seeded adjective | `adjective` |
+| Seeded adverb | `adverb` |
 | Proper noun candidate | `class` |
 | Literal number | `number` |
 | Quoted text | `string` |
 
-The vocabulary manifest also declares Colorful-owned open-class token types:
-`noun`, `verb`, `adjective`, and `adverb`. Those token types are available to the
-LSP legend when an annotator emits open-class decisions, but the default CLI and
-LSP path still use the closed-class lexicon and do not emit them yet.
+The default LSP path uses `SeedOpenClassLexicon`, so it emits `noun`, `verb`,
+`adjective`, and `adverb` for the small deterministic seed table. Unlisted
+content words remain unstyled.
 
 Themes that do not style the custom token types may need explicit user rules
 until Colorful ships a theme package.

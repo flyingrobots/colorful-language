@@ -22,10 +22,11 @@ put it on your `PATH`).
 | **Neovim**, **Helix**, **Emacs**, **Sublime**, **Kate** | config recipes below |
 
 > Highlighting uses **LSP semantic tokens**. The default skeleton highlighter
-> uses standard token types (`keyword`, `class`, `number`, `string`), and the
-> legend also declares Colorful-owned open-class types (`noun`, `verb`,
-> `adjective`, `adverb`) for callers that emit them. Themes may need explicit
-> rules for custom token types until Colorful ships a theme package.
+> uses standard token types (`keyword`, `class`, `number`, `string`) for
+> structure and Colorful-owned open-class types (`noun`, `verb`, `adjective`,
+> `adverb`) for seeded content words. Unlisted content stays unstyled. Themes may
+> need explicit rules for custom token types until Colorful ships a theme
+> package.
 
 ## Neovim (0.8+)
 

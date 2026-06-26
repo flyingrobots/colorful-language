@@ -11,9 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Open-class POS contract.** `colorful-core` now has explicit
   `OpenClassKind::{Noun, Verb, Adjective, Adverb}` carried by
-  `PosClass::Open`, plus an opt-in `SeedOpenClassLexicon` adapter in
-  `colorful-lexicon`. The default CLI/LSP/IR path remains on the closed-class
-  lexicon until a later Goalpost 2 slice switches surfaces deliberately.
+  `PosClass::Open`, plus a deterministic `SeedOpenClassLexicon` adapter in
+  `colorful-lexicon`.
 - **Open-class IR/vocabulary axes.** `colorful.syntax/v1` now carries optional
   `openClassKind` on `WORD` / `CONTENT` tokens, and the
   `colorful.vocabulary/v1` manifest maps noun, verb, adjective, and adverb axes
@@ -28,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking API queued for v0.3.0.** `PosClass` is a public enum and now includes
   `PosClass::Open(OpenClassKind)`. Downstream crates that exhaustively match on
   `PosClass` must handle the new variant before adopting the `0.3.x` line.
+- **Default open-class seed path.** The CLI colorizer, `colorful ir`, and
+  `colorful-lsp` now use `SeedOpenClassLexicon` by default, so representative
+  noun, verb, adjective, and adverb words carry distinct ANSI colors,
+  `openClassKind` values, and LSP semantic token types. Unlisted content words
+  remain `Content`.
 - **IR generator pin.** The committed Wesley-generated Rust and TypeScript DTOs
   are now recorded as emitted with `wesley 0.1.1`.
 

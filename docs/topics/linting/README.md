@@ -36,7 +36,7 @@ here, never in the core or the surfaces.
 
 | Rule | Severity | Heuristic |
 | --- | --- | --- |
-| `weak-word` | Info | A `Content` token whose lexeme is in the filler list (`very`, `really`, `just`, `actually`, …). |
+| `weak-word` | Info | A `Content` or `Open(_)` token whose lexeme is in the filler list (`very`, `really`, `just`, `actually`, …). |
 | `run-on` | Warning | A sentence with more than `run_on_words` (default 40) words. |
 | `length-outlier` | Info | A sentence at least `outlier_ratio`× (default 2×) the document's mean sentence length, past an absolute floor (default 25 words) — and **under** the run-on cap, so the two rules never double-report. |
 | `passive-voice` | Info | A `be`-auxiliary (`is`/`are`/`was`/`were`/…) followed by a past participle (an `-ed` word or a known irregular), optionally one `-ly` adverb between (`was carefully reviewed`). |

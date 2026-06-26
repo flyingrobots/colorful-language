@@ -12,10 +12,10 @@
 //! context-dependent refinement applied by `colorful_core::LexicalAnnotator`,
 //! not here.
 //!
-//! [`SeedOpenClassLexicon`] is an opt-in Goalpost 2 adapter that layers a tiny
+//! [`SeedOpenClassLexicon`] is a Goalpost 2 adapter that layers a tiny
 //! deterministic noun/verb/adjective/adverb seed table behind the same
-//! [`Lexicon`] port. It proves the contract without changing the default CLI,
-//! LSP, or IR behavior.
+//! [`Lexicon`] port. The shipped CLI, LSP, and IR surfaces use it by default to
+//! prove the open-class contract without committing to a full dictionary.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -288,7 +288,7 @@ static FUNCTION_WORDS: phf::Map<&'static str, FunctionKind> = phf_map! {
     "they'd" => FunctionKind::Pronoun,
 };
 
-/// Representative, unambiguous open-class entries for the opt-in seed lexicon.
+/// Representative, unambiguous open-class entries for the seed lexicon.
 ///
 /// This is deliberately small. It is executable evidence for the Goalpost 2
 /// contract, not an attempt at a production dictionary.
@@ -344,7 +344,7 @@ impl Lexicon for ClosedClassLexicon {
     }
 }
 
-/// An opt-in seed lexicon for Goalpost 2 open-class POS experiments.
+/// A seed lexicon for Goalpost 2 open-class POS experiments.
 ///
 /// It preserves [`ClosedClassLexicon`] precedence: function words and numbers are
 /// classified before the seed noun/verb/adjective/adverb table is considered.

@@ -12,9 +12,8 @@ Requirements:
   apostrophe matches a straight one.
 - **LEX-7** Negators (`not`, `never`) classify as `Negator`.
 - **LEX-8** A numeric token must start and end with a digit.
-- **LEX-9** The opt-in open-class seed lexicon tags representative noun, verb,
-  adjective, and adverb words while preserving closed-class and number
-  precedence.
+- **LEX-9** The open-class seed lexicon tags representative noun, verb,
+  adjective, and adverb words while preserving closed-class and number precedence.
 
 ## Cases
 

@@ -6,7 +6,7 @@
 //! the real logic lives in the `colorful_lsp` library; this file is transport.
 
 use colorful_core::LexicalAnnotator;
-use colorful_lexicon::ClosedClassLexicon;
+use colorful_lexicon::SeedOpenClassLexicon;
 use colorful_lint::ProseLinter;
 use colorful_lsp::{
     apply_change, compute_diagnostics, compute_semantic_tokens, legend_token_types,
@@ -44,7 +44,7 @@ impl Backend {
         let diagnostics = compute_diagnostics(
             text,
             &ProseParser::new(),
-            &LexicalAnnotator::new(ClosedClassLexicon::new()),
+            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
             &ProseLinter::new(),
         );
         self.client
@@ -136,7 +136,7 @@ impl LanguageServer for Backend {
         let data = compute_semantic_tokens(
             &text,
             &ProseParser::new(),
-            &LexicalAnnotator::new(ClosedClassLexicon::new()),
+            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
         );
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
             result_id: None,

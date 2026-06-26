@@ -1,18 +1,28 @@
 # Lexicon
 
 The `Lexicon` port classifies a single word, in isolation, into a `PosClass`.
-The implementation is `colorful_lexicon::ClosedClassLexicon`, backed by a
-compile-time perfect-hash set of closed-class function words.
+The core implementations are `colorful_lexicon::ClosedClassLexicon`, backed by a
+compile-time perfect-hash set of closed-class function words, and
+`SeedOpenClassLexicon`, which preserves closed-class precedence before checking a
+small deterministic open-class seed table.
 
 ## Current behavior
 
-`classify(word) -> PosClass`:
+For `ClosedClassLexicon`, `classify(word) -> PosClass`:
 
 1. If the word is in the closed-class set (matched case-insensitively), return
    `Function(kind)` with its `FunctionKind`.
 2. Otherwise, if the word is numeric — at least one digit and only digits or
    internal `.`/`,` separators — return `Number`.
-3. Otherwise return `Content` (open-class, undifferentiated in `v0`).
+3. Otherwise return `Content` (open-class, undifferentiated).
+
+`SeedOpenClassLexicon` applies the same first two steps, then maps a small
+representative set of unambiguous content words to
+`PosClass::Open(OpenClassKind::Noun)`,
+`PosClass::Open(OpenClassKind::Verb)`,
+`PosClass::Open(OpenClassKind::Adjective)`, or
+`PosClass::Open(OpenClassKind::Adverb)`. Unlisted content words still return
+`Content`.
 
 The set holds the finite closed-class vocabulary across the `FunctionKind`s:
 `Article`, `Preposition`, `Conjunction`, `Pronoun`, `Auxiliary`, `Determiner`,
@@ -29,7 +39,7 @@ the authoritative current size.
   by `colorful_core::LexicalAnnotator`, not by the lexicon. See the
   [coloring](../coloring/README.md) topic.
 
-## Known limitations (v0)
+## Known limitations
 
 - **Single assignment.** Each word maps to exactly one `FunctionKind`. Genuinely
   ambiguous words (`that` as determiner / pronoun / conjunction; `for` as
@@ -40,17 +50,10 @@ the authoritative current size.
 
 ## Goalpost 2 seed adapter
 
-`SeedOpenClassLexicon` is an opt-in adapter for the first open-class POS slice.
-It preserves `ClosedClassLexicon` precedence, then classifies a small
-representative seed set as `PosClass::Open(OpenClassKind::Noun)`,
-`PosClass::Open(OpenClassKind::Verb)`,
-`PosClass::Open(OpenClassKind::Adjective)`, or
-`PosClass::Open(OpenClassKind::Adverb)`.
-
-The seed adapter is not wired into the default CLI, LSP, or `colorful ir` command
+The seed adapter is wired into the default CLI, LSP, and `colorful ir` command
 path. It exists to prove the port contract before the project commits to a larger
-dictionary or contextual disambiguator. When a caller does opt into an annotator
-that emits `PosClass::Open`, the IR and vocabulary layers can now carry and
-project those noun/verb/adjective/adverb distinctions.
+dictionary or contextual disambiguator. The IR and vocabulary layers carry and
+project those noun/verb/adjective/adverb distinctions across ANSI, LSP, and Graft
+surfaces.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

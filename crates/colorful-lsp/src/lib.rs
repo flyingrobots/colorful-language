@@ -23,11 +23,11 @@ use tower_lsp::lsp_types::{
 
 /// The semantic-token legend, in index order, derived from the
 /// `colorful.vocabulary/v1` manifest (the distinct LSP token types its roles
-/// project to). The default closed-class path is a *skeleton* highlighter: it
-/// accentuates structure (function words, proper nouns, numbers, quotes) and
-/// leaves undifferentiated content unstyled. Open-class noun/verb/adjective/
-/// adverb roles append after the original skeleton types, and every surface
-/// stays in lock-step because all three read the same manifest.
+/// project to). The default seed path is a *skeleton* highlighter: it
+/// accentuates structure (function words, proper nouns, numbers, quotes) plus
+/// seeded open-class noun/verb/adjective/adverb decisions, while unlisted
+/// content stays unstyled. Every surface stays in lock-step because all three
+/// read the same manifest.
 #[must_use]
 pub fn legend_token_types() -> Vec<SemanticTokenType> {
     colorful_ir::vocabulary::lsp_legend()
@@ -138,9 +138,10 @@ fn utf16_len(s: &str) -> u32 {
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
 ///
-/// Words are classified through `parser` and `annotator`; undifferentiated
-/// content words and punctuation are left unstyled (skeleton mode). Token types
-/// index into [`legend_token_types`].
+/// Words are classified through `parser` and `annotator`; seed open-class roles
+/// emit semantic tokens, while undifferentiated content words and punctuation
+/// are left unstyled (skeleton mode). Token types index into
+/// [`legend_token_types`].
 #[must_use]
 pub fn compute_semantic_tokens<P, A>(text: &str, parser: &P, annotator: &A) -> Vec<SemanticToken>
 where
@@ -259,7 +260,7 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
 mod tests {
     use super::*;
     use colorful_core::LexicalAnnotator;
-    use colorful_lexicon::{ClosedClassLexicon, SeedOpenClassLexicon};
+    use colorful_lexicon::SeedOpenClassLexicon;
     use colorful_parse::ProseParser;
     use tower_lsp::lsp_types::Position;
 
@@ -277,14 +278,6 @@ mod tests {
         compute_semantic_tokens(
             text,
             &ProseParser::new(),
-            &LexicalAnnotator::new(ClosedClassLexicon::new()),
-        )
-    }
-
-    fn semantic_tokens_with_seed_open_class(text: &str) -> Vec<SemanticToken> {
-        compute_semantic_tokens(
-            text,
-            &ProseParser::new(),
             &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
         )
     }
@@ -293,7 +286,7 @@ mod tests {
         compute_diagnostics(
             text,
             &ProseParser::new(),
-            &LexicalAnnotator::new(ClosedClassLexicon::new()),
+            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
             &colorful_lint::ProseLinter::new(),
         )
     }
@@ -349,15 +342,29 @@ mod tests {
 
     #[test]
     fn single_line_tokens_are_delta_encoded() {
-        // "The cat is 3." -> keyword, keyword, number. "cat" is content and the
-        // '.' is punctuation, so both are unstyled (skeleton mode); the deltas
-        // skip over them.
+        // "The cat is 3." -> keyword, noun, keyword, number. The '.' is
+        // punctuation, so it is unstyled in LSP output.
         assert_eq!(
             semantic_tokens("The cat is 3."),
             vec![
                 tok(0, 0, 3, 0), // The (keyword)
-                tok(0, 8, 2, 0), // is  (keyword; delta over the skipped "cat")
+                tok(0, 4, 3, 4), // cat (noun)
+                tok(0, 4, 2, 0), // is  (keyword)
                 tok(0, 3, 1, 2), // 3   (number)
+            ]
+        );
+    }
+
+    #[test]
+    fn unlisted_content_and_punctuation_are_unstyled() {
+        // "zebra" is not in the seed lexicon, and punctuation never emits an LSP
+        // semantic token.
+        assert_eq!(
+            semantic_tokens("The zebra is 3."),
+            vec![
+                tok(0, 0, 3, 0),  // The (keyword)
+                tok(0, 10, 2, 0), // is  (keyword; delta skips "zebra")
+                tok(0, 3, 1, 2),  // 3   (number)
             ]
         );
     }
@@ -367,7 +374,20 @@ mod tests {
         // Existing closed-class token indices stay at the front of the legend;
         // open-class noun/verb/adjective/adverb roles append after them.
         assert_eq!(
-            semantic_tokens_with_seed_open_class("cat connects quick silently."),
+            semantic_tokens("cat connects quick silently."),
+            vec![
+                tok(0, 0, 3, 4), // noun
+                tok(0, 4, 8, 5), // verb
+                tok(0, 9, 5, 6), // adjective
+                tok(0, 6, 8, 7), // adverb
+            ]
+        );
+    }
+
+    #[test]
+    fn default_semantic_tokens_emit_seed_open_class_roles() {
+        assert_eq!(
+            semantic_tokens("cat connects quick silently."),
             vec![
                 tok(0, 0, 3, 4), // noun
                 tok(0, 4, 8, 5), // verb

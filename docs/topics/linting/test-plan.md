@@ -5,8 +5,9 @@ Requirements:
 - **LINT-1** The `Analyzer` port is independently implementable, and `Finding`
   carries a span, rule, severity, and message; each `Rule` has a stable, unique
   `code()`.
-- **LINT-2** The `weak-word` rule flags filler `Content` lexemes as `Info` and
-  leaves clean prose alone.
+- **LINT-2** The `weak-word` rule flags filler content lexemes as `Info`,
+  including undifferentiated `Content` and tagged `Open(_)` tokens, and leaves
+  clean prose alone.
 - **LINT-3** The `run-on` rule flags a sentence over the word threshold as a
   `Warning`, and only over the threshold.
 - **LINT-4** The `length-outlier` rule flags a sentence far longer than the
@@ -44,6 +45,10 @@ All cases are implemented.
 - **LINT-2c** — *Requirement:* LINT-2. *Behavior:* clean prose has no findings.
   *Oracle:* empty findings. *Evidence:* `colorful-lint`
   `tests::clean_prose_has_no_findings`. *Status:* implemented.
+- **LINT-2d** — *Requirement:* LINT-2. *Behavior:* weak-word matching still
+  applies to open-class `Open(_)` content tokens. *Oracle:* finding count, rule,
+  and message. *Evidence:* `colorful-lint`
+  `tests::weak_words_still_apply_to_open_class_tokens`. *Status:* implemented.
 - **LINT-3a** — *Requirement:* LINT-3. *Behavior:* a 41-word sentence is a
   `run-on` warning. *Oracle:* count, severity, message. *Evidence:* `colorful-lint`
   `tests::run_on_sentence_over_threshold_is_a_warning`. *Status:* implemented.
