@@ -76,11 +76,12 @@ Requirements:
   *Oracle:* `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
   `tests::default_semantic_tokens_emit_seed_open_class_roles`. *Status:*
   implemented.
-- **POS-8a** — *Requirement:* POS-8. *Behavior:* context disambiguates ambiguous
-  words: `book` is a noun after an article and a verb after a pronoun, while
-  `fast` is an adjective before a noun and an adverb after a verb. *Oracle:*
-  class vector equality. *Evidence:* `colorful-lexicon`
-  `tests::contextual_annotator_disambiguates_ambiguous_open_class_words`.
+- **POS-8a** — *Requirement:* POS-8. *Behavior:* context disambiguates the
+  supported ambiguous set: `book` and `record` as noun/verb, `lead` as
+  noun/verb/adjective, and `fast` as adjective/adverb. *Oracle:* class vector
+  equality. *Evidence:* `colorful-lexicon`
+  `tests::contextual_annotator_disambiguates_ambiguous_open_class_words`,
+  `tests::contextual_annotator_covers_record_and_lead_roles`.
   *Status:* implemented.
 - **POS-8b** — *Requirement:* POS-8. *Behavior:* contextual disambiguation keeps
   function-word, number, seed-open-class, punctuation, and unlisted-content

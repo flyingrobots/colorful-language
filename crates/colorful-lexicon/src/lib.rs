@@ -682,6 +682,45 @@ mod tests {
     }
 
     #[test]
+    fn contextual_annotator_covers_record_and_lead_roles() {
+        let source = "the record I record notes the lead river they lead teams the lead";
+        let spans = [
+            (0, 3),
+            (4, 10),
+            (11, 12),
+            (13, 19),
+            (20, 25),
+            (26, 29),
+            (30, 34),
+            (35, 40),
+            (41, 45),
+            (46, 50),
+            (51, 56),
+            (57, 60),
+            (61, 65),
+        ];
+
+        assert_eq!(
+            contextual_classes(source, &spans),
+            vec![
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Function(FunctionKind::Pronoun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Content,
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Adjective),
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Function(FunctionKind::Pronoun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Content,
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Noun),
+            ]
+        );
+    }
+
+    #[test]
     fn contextual_annotator_preserves_existing_precedence() {
         let source = "the cat writes 3 unlisted.";
         let spans = [(0, 3), (4, 7), (8, 14), (15, 16), (17, 25), (25, 26)];

@@ -60,8 +60,9 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
 - **LEX-10a** — *Requirement:* LEX-10. *Behavior:* `ContextualOpenClassAnnotator`
   classifies supported ambiguous words from local context. *Oracle:* class vector
   equality. *Evidence:*
-  `tests::contextual_annotator_disambiguates_ambiguous_open_class_words`.
-  *Status:* implemented.
+  `tests::contextual_annotator_disambiguates_ambiguous_open_class_words`,
+  `tests::contextual_annotator_covers_record_and_lead_roles`. *Status:*
+  implemented.
 - **LEX-10b** — *Requirement:* LEX-10. *Behavior:* contextual classification
   preserves function-word, number, seed-open-class, punctuation, and
   unlisted-content behavior. *Oracle:* class vector equality. *Evidence:*
