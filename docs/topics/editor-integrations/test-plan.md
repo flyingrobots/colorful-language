@@ -1,0 +1,47 @@
+# Editor integrations test plan
+
+Verification for editor adapters and the `colorful-lsp` surface.
+
+## Requirements
+
+- **EDIT-1** One `colorful-lsp` engine serves every editor integration.
+- **EDIT-2** Semantic tokens use the shared vocabulary manifest and the LSP
+  legend.
+- **EDIT-3** Lint findings are published as LSP diagnostics.
+- **EDIT-4** Source editor integrations compile in CI.
+- **EDIT-5** Editor recipe docs stay honest about source installs,
+  marketplace status, and theme caveats.
+
+## Cases
+
+- **EDIT-1a** — *Requirement:* EDIT-1. *Behavior:* the VS Code extension starts
+  `colorful-lsp` over stdio instead of reimplementing analysis. *Oracle:*
+  extension source review and TypeScript compile. *Evidence:*
+  `editors/vscode/src/extension.ts`; `.github/workflows/ci.yml` editor job.
+  *Status:* implemented.
+- **EDIT-1b** — *Requirement:* EDIT-1. *Behavior:* the Zed extension delegates
+  to `colorful-lsp`. *Oracle:* extension build succeeds for `wasm32-wasip1`.
+  *Evidence:* `.github/workflows/ci.yml` editor job. *Status:* implemented.
+- **EDIT-2a** — *Requirement:* EDIT-2. *Behavior:* semantic-token output follows
+  the vocabulary-backed legend, including the open-class token types when the
+  classifier emits them. *Oracle:* Rust assertions. *Evidence:*
+  `crates/colorful-lsp/src/lib.rs`; `docs/topics/coloring/test-plan.md`.
+  *Status:* implemented for the server surface.
+- **EDIT-3a** — *Requirement:* EDIT-3. *Behavior:* lint findings become LSP
+  diagnostics with ranges, severity, source, and rule code. *Oracle:* Rust
+  assertions. *Evidence:* `crates/colorful-lsp/src/main.rs`;
+  `docs/topics/linting/test-plan.md`. *Status:* implemented.
+- **EDIT-4a** — *Requirement:* EDIT-4. *Behavior:* source editor integrations
+  compile on every PR. *Oracle:* CI editor job exits zero. *Evidence:*
+  `.github/workflows/ci.yml`. *Status:* implemented.
+- **EDIT-5a** — *Requirement:* EDIT-5. *Behavior:* recipe docs state that
+  marketplace packages are not published and that custom open-class token types
+  may need theme rules. *Oracle:* documentation review. *Evidence:*
+  `README.md`; `editors/README.md`; `docs/topics/editor-integrations/README.md`.
+  *Status:* implemented.
+
+## Open verification gaps
+
+- Marketplace package install smoke tests belong with the future marketplace
+  publishing slice.
+- A shipped theme package needs its own topic and fixtures once Colorful owns one.
