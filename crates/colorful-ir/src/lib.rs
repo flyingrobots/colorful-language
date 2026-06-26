@@ -19,7 +19,7 @@ use std::fmt::Write as _;
 /// The contract identity this crate produces.
 pub const CONTRACT_VERSION: &str = "colorful.syntax/v1";
 /// The Wesley version the committed generated types were emitted with.
-pub const WESLEY_VERSION: &str = "0.0.5";
+pub const WESLEY_VERSION: &str = "0.1.1";
 
 const SYNTAX_V1_SDL: &str = include_str!("../contracts/syntax.v1.graphql");
 
@@ -135,6 +135,17 @@ fn map_function_kind(kind: colorful_core::FunctionKind) -> syntax_v1::FunctionKi
     }
 }
 
+fn map_open_class_kind(kind: colorful_core::OpenClassKind) -> syntax_v1::OpenClassKind {
+    use colorful_core::OpenClassKind as Core;
+    use syntax_v1::OpenClassKind as Ir;
+    match kind {
+        Core::Noun => Ir::Noun,
+        Core::Verb => Ir::Verb,
+        Core::Adjective => Ir::Adjective,
+        Core::Adverb => Ir::Adverb,
+    }
+}
+
 /// Project a `PosClass` onto the IR's orthogonal axes.
 pub(crate) fn token_axes(
     class: PosClass,
@@ -142,6 +153,7 @@ pub(crate) fn token_axes(
     syntax_v1::TokenKind,
     Option<syntax_v1::LexicalClass>,
     Option<syntax_v1::FunctionKind>,
+    Option<syntax_v1::OpenClassKind>,
 ) {
     use syntax_v1::{LexicalClass, TokenKind};
     match class {
@@ -149,18 +161,24 @@ pub(crate) fn token_axes(
             TokenKind::Word,
             Some(LexicalClass::Function),
             Some(map_function_kind(kind)),
+            None,
         ),
-        PosClass::Content | PosClass::Open(_) => {
-            (TokenKind::Word, Some(LexicalClass::Content), None)
-        }
+        PosClass::Content => (TokenKind::Word, Some(LexicalClass::Content), None, None),
+        PosClass::Open(kind) => (
+            TokenKind::Word,
+            Some(LexicalClass::Content),
+            None,
+            Some(map_open_class_kind(kind)),
+        ),
         PosClass::ProperNoun => (
             TokenKind::Word,
             Some(LexicalClass::ProperNounCandidate),
             None,
+            None,
         ),
-        PosClass::Number => (TokenKind::Number, None, None),
-        PosClass::Punctuation => (TokenKind::Punctuation, None, None),
-        PosClass::Quote => (TokenKind::Quote, None, None),
+        PosClass::Number => (TokenKind::Number, None, None, None),
+        PosClass::Punctuation => (TokenKind::Punctuation, None, None, None),
+        PosClass::Quote => (TokenKind::Quote, None, None, None),
     }
 }
 
@@ -242,13 +260,15 @@ pub fn from_classification(
         .iter()
         .enumerate()
         .map(|(i, token)| {
-            let (token_kind, lexical_class, function_kind) = token_axes(token.class);
+            let (token_kind, lexical_class, function_kind, open_class_kind) =
+                token_axes(token.class);
             Ok(syntax_v1::Token {
                 occurrence_id: to_i32("token index", i)?,
                 byte_range: byte_range(token.span)?,
                 token_kind,
                 lexical_class,
                 function_kind,
+                open_class_kind,
             })
         })
         .collect::<Result<Vec<_>, ProjectionError>>()?;
@@ -362,8 +382,9 @@ pub enum ValidationError {
         /// The offending offset.
         offset: i32,
     },
-    /// A token's `tokenKind` / `lexicalClass` / `functionKind` axes are an
-    /// illegal combination under the `colorful.syntax/v1` contract.
+    /// A token's `tokenKind` / `lexicalClass` / `functionKind` /
+    /// `openClassKind` axes are an illegal combination under the
+    /// `colorful.syntax/v1` contract.
     IllegalTokenAxes {
         /// The token's occurrence id.
         occurrence_id: i32,
@@ -612,8 +633,9 @@ pub fn validate_document(
 
 /// Return why a token's axes are illegal under `colorful.syntax/v1`, or `None`
 /// if they are legal. Mirrors the producer mapping in [`token_axes`]: a `WORD`
-/// carries a `lexicalClass`, and only a `FUNCTION` word carries a
-/// `functionKind`; every other `tokenKind` carries neither.
+/// carries a `lexicalClass`; only a `FUNCTION` word carries a `functionKind`;
+/// only a `CONTENT` word may carry an `openClassKind`; every other `tokenKind`
+/// carries none of those optional axes.
 fn token_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
     use syntax_v1::{LexicalClass, TokenKind};
     match token.token_kind {
@@ -622,13 +644,24 @@ fn token_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
             Some(LexicalClass::Function) => {
                 if token.function_kind.is_none() {
                     Some("a FUNCTION word must carry a functionKind")
+                } else if token.open_class_kind.is_some() {
+                    Some("only a CONTENT word may carry an openClassKind")
                 } else {
                     None
                 }
             }
-            Some(_) => {
+            Some(LexicalClass::Content) => {
                 if token.function_kind.is_some() {
                     Some("only a FUNCTION word may carry a functionKind")
+                } else {
+                    None
+                }
+            }
+            Some(LexicalClass::ProperNounCandidate) => {
+                if token.function_kind.is_some() {
+                    Some("only a FUNCTION word may carry a functionKind")
+                } else if token.open_class_kind.is_some() {
+                    Some("only a CONTENT word may carry an openClassKind")
                 } else {
                     None
                 }
@@ -639,6 +672,8 @@ fn token_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
                 Some("a non-word token must not carry a lexicalClass")
             } else if token.function_kind.is_some() {
                 Some("a non-word token must not carry a functionKind")
+            } else if token.open_class_kind.is_some() {
+                Some("a non-word token must not carry an openClassKind")
             } else {
                 None
             }
@@ -861,7 +896,7 @@ mod integration {
 
     #[test]
     fn rejects_illegal_token_axes() {
-        use syntax_v1::{LexicalClass, TokenKind};
+        use syntax_v1::{LexicalClass, OpenClassKind, TokenKind};
         // A WORD without a lexicalClass.
         let mut doc = analyze(VALID_SOURCE);
         let word = doc
@@ -889,6 +924,19 @@ mod integration {
             |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
         ));
 
+        // A NUMBER carrying an openClassKind.
+        let mut doc = analyze("I have 3 cats.");
+        let number = doc
+            .tokens
+            .iter_mut()
+            .find(|t| t.token_kind == TokenKind::Number)
+            .unwrap();
+        number.open_class_kind = Some(OpenClassKind::Noun);
+        assert!(has(
+            &validate_document(&doc, None).unwrap_err(),
+            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+        ));
+
         // A FUNCTION word missing its functionKind.
         let mut doc = analyze(VALID_SOURCE);
         let function = doc
@@ -901,22 +949,53 @@ mod integration {
             &validate_document(&doc, None).unwrap_err(),
             |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
         ));
+
+        // A FUNCTION word carrying an openClassKind.
+        let mut doc = analyze(VALID_SOURCE);
+        let function = doc
+            .tokens
+            .iter_mut()
+            .find(|t| t.lexical_class == Some(LexicalClass::Function))
+            .unwrap();
+        function.open_class_kind = Some(OpenClassKind::Verb);
+        assert!(has(
+            &validate_document(&doc, None).unwrap_err(),
+            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+        ));
+
+        // A proper-noun candidate carrying an openClassKind.
+        let mut doc = analyze("I saw Paris.");
+        let proper_noun = doc
+            .tokens
+            .iter_mut()
+            .find(|t| t.lexical_class == Some(LexicalClass::ProperNounCandidate))
+            .unwrap();
+        proper_noun.open_class_kind = Some(OpenClassKind::Noun);
+        assert!(has(
+            &validate_document(&doc, None).unwrap_err(),
+            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+        ));
     }
 
     #[test]
-    fn open_class_pos_projects_as_content_in_syntax_v1() {
+    fn open_class_pos_projects_with_explicit_open_class_kind() {
         use colorful_core::OpenClassKind;
-        use syntax_v1::{LexicalClass, TokenKind};
+        use syntax_v1::{LexicalClass, OpenClassKind as IrOpenClassKind, TokenKind};
 
-        for kind in [
-            OpenClassKind::Noun,
-            OpenClassKind::Verb,
-            OpenClassKind::Adjective,
-            OpenClassKind::Adverb,
+        for (kind, ir_kind) in [
+            (OpenClassKind::Noun, IrOpenClassKind::Noun),
+            (OpenClassKind::Verb, IrOpenClassKind::Verb),
+            (OpenClassKind::Adjective, IrOpenClassKind::Adjective),
+            (OpenClassKind::Adverb, IrOpenClassKind::Adverb),
         ] {
             assert_eq!(
                 token_axes(PosClass::Open(kind)),
-                (TokenKind::Word, Some(LexicalClass::Content), None)
+                (
+                    TokenKind::Word,
+                    Some(LexicalClass::Content),
+                    None,
+                    Some(ir_kind)
+                )
             );
         }
     }

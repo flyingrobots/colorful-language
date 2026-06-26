@@ -21,7 +21,9 @@ A `DocumentAnalysis` carries:
   `utf8ByteLength`.
 - `tokens` — each classified occurrence: a `byteRange` plus the orthogonal axes
   `tokenKind` (WORD/NUMBER/PUNCTUATION/QUOTE), `lexicalClass`
-  (FUNCTION/CONTENT/PROPER_NOUN_CANDIDATE), and `functionKind`.
+  (FUNCTION/CONTENT/PROPER_NOUN_CANDIDATE), `functionKind`, and
+  `openClassKind` (NOUN/VERB/ADJECTIVE/ADVERB for explicitly tagged content
+  words).
 - `structure` — a flattened outline tree: paragraphs (depth 0) containing
   sentences (depth 1), children referenced by `childNodeIds`.
 - `diagnostics` — empty in `v0` (the linter is a later phase).
@@ -37,10 +39,11 @@ IR.
 
 The contracts (`contracts/colorful/*.graphql`) and vocabulary manifest
 (`contracts/colorful/vocabulary.v1.json`) are the source of truth. Wesley (pinned
-`0.0.5`) generates the boundary DTOs — Rust (serde) and TypeScript — into the
+`0.1.1`) generates the boundary DTOs — Rust (serde) and TypeScript — into the
 `colorful-ir` crate (`crates/colorful-ir/{src/generated,ts}/`). Regenerate with
-`scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`). The generated types are a
-**wire boundary**: `colorful-core` stays free of them, and
+`scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`; the script rejects any Wesley
+CLI version other than `0.1.1`). The generated types are a **wire boundary**:
+`colorful-core` stays free of them, and
 `colorful_ir::from_classification` is the one-way projection from the domain model
 into the DTO.
 
@@ -48,9 +51,10 @@ into the DTO.
 keys); the TypeScript side uses the identical algorithm.
 
 Presentation is authored once in `contracts/colorful/vocabulary.v1.json`: token
-axes map to `VisualRole`, then each role projects to ANSI, LSP token type, and
-graft class. `vocabularyHash` is the hash of that manifest, so changing a color
-or role mapping changes the contract identity. The CLI, LSP, and graft reference
+axes (`tokenKind`, `lexicalClass`, optional `openClassKind`) map to
+`VisualRole`, then each role projects to ANSI, LSP token type, and graft class.
+`vocabularyHash` is the hash of that manifest, so changing a color or role
+mapping changes the contract identity. The CLI, LSP, and graft reference
 consumer all derive from this manifest.
 
 ## Guarantees

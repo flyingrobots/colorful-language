@@ -27,6 +27,7 @@ const MANIFEST_URL = new URL("../contracts/colorful/vocabulary.v1.json", import.
 const MANIFEST_VERSION = "colorful.vocabulary/v1";
 const TOKEN_KINDS = new Set(["WORD", "NUMBER", "PUNCTUATION", "QUOTE"]);
 const LEXICAL_CLASSES = new Set(["FUNCTION", "CONTENT", "PROPER_NOUN_CANDIDATE"]);
+const OPEN_CLASS_KINDS = new Set(["NOUN", "VERB", "ADJECTIVE", "ADVERB"]);
 const VISUAL_ROLES = new Set([
   "STRUCTURAL_KEYWORD",
   "TYPE_LIKE",
@@ -34,14 +35,22 @@ const VISUAL_ROLES = new Set([
   "QUOTED",
   "MUTED",
   "UNSTYLED",
+  "NOUN",
+  "VERB",
+  "ADJECTIVE",
+  "ADVERB",
 ]);
 const EXPECTED_CLASS_KEYS = new Set([
-  "WORD/FUNCTION",
-  "WORD/CONTENT",
-  "WORD/PROPER_NOUN_CANDIDATE",
-  "NUMBER/<none>",
-  "PUNCTUATION/<none>",
-  "QUOTE/<none>",
+  "WORD/FUNCTION/<none>",
+  "WORD/CONTENT/<none>",
+  "WORD/CONTENT/NOUN",
+  "WORD/CONTENT/VERB",
+  "WORD/CONTENT/ADJECTIVE",
+  "WORD/CONTENT/ADVERB",
+  "WORD/PROPER_NOUN_CANDIDATE/<none>",
+  "NUMBER/<none>/<none>",
+  "PUNCTUATION/<none>/<none>",
+  "QUOTE/<none>/<none>",
 ]);
 
 function loadVocabulary() {
@@ -77,17 +86,26 @@ function classRoleKey(rule) {
   if (rule.lexicalClass !== null && !LEXICAL_CLASSES.has(rule.lexicalClass)) {
     throw new Error(`unknown lexicalClass ${rule.lexicalClass}`);
   }
+  if (rule.openClassKind !== null && !OPEN_CLASS_KINDS.has(rule.openClassKind)) {
+    throw new Error(`unknown openClassKind ${rule.openClassKind}`);
+  }
   if (!VISUAL_ROLES.has(rule.visualRole)) {
     throw new Error(`unknown visualRole ${rule.visualRole}`);
   }
   if (rule.tokenKind === "WORD") {
     if (rule.lexicalClass === null) throw new Error("WORD class role must declare lexicalClass");
-    return `${rule.tokenKind}/${rule.lexicalClass}`;
+    if (rule.lexicalClass !== "CONTENT" && rule.openClassKind !== null) {
+      throw new Error(`WORD/${rule.lexicalClass} class role must not declare openClassKind`);
+    }
+    return `${rule.tokenKind}/${rule.lexicalClass}/${rule.openClassKind ?? "<none>"}`;
   }
   if (rule.lexicalClass !== null) {
     throw new Error(`${rule.tokenKind} class role must not declare lexicalClass`);
   }
-  return `${rule.tokenKind}/<none>`;
+  if (rule.openClassKind !== null) {
+    throw new Error(`${rule.tokenKind} class role must not declare openClassKind`);
+  }
+  return `${rule.tokenKind}/<none>/<none>`;
 }
 
 function requireStringOrNull(value, label) {
@@ -108,7 +126,11 @@ export function validateVocabularyManifest(manifest) {
 
   const classKeys = new Set();
   for (const [index, rule] of manifest.classRoles.entries()) {
-    requireKeys(rule, ["tokenKind", "lexicalClass", "visualRole"], `classRoles[${index}]`);
+    requireKeys(
+      rule,
+      ["tokenKind", "lexicalClass", "openClassKind", "visualRole"],
+      `classRoles[${index}]`,
+    );
     const key = classRoleKey(rule);
     if (classKeys.has(key)) throw new Error(`duplicate class role ${key}`);
     classKeys.add(key);
@@ -143,21 +165,23 @@ export function validateVocabularyManifest(manifest) {
   }
 }
 
-// The abstract VisualRole for a token's axes, per the manifest (a WORD is keyed
-// by lexicalClass; every other tokenKind ignores it).
+// The abstract VisualRole for a token's axes, per the manifest. A WORD is keyed
+// by lexicalClass and, for CONTENT words, the optional openClassKind.
 function visualRole(token) {
   for (const rule of VOCABULARY.classRoles) {
     const kindMatches = rule.tokenKind === token.tokenKind;
     const classMatches = rule.lexicalClass === (token.lexicalClass ?? null);
-    if (kindMatches && classMatches) return rule.visualRole;
+    const openClassMatches = rule.openClassKind === (token.openClassKind ?? null);
+    if (kindMatches && classMatches && openClassMatches) return rule.visualRole;
   }
   throw new Error(
-    `no vocabulary role for token axes ${token.tokenKind}/${token.lexicalClass ?? "<none>"}`,
+    `no vocabulary role for token axes ${token.tokenKind}/${token.lexicalClass ?? "<none>"}/${token.openClassKind ?? "<none>"}`,
   );
 }
 
 // colorful.syntax/v1 token -> graft syntax class, via the manifest's role
-// projection (skeleton: content/punct project to no class).
+// projection. Undifferentiated content and punctuation project to no class;
+// explicit open-class content can project to noun/verb/adjective/adverb classes.
 export function className(token) {
   const role = visualRole(token);
   const projection = VOCABULARY.projectionByRole.get(role);

@@ -36,6 +36,14 @@ enum FunctionKind {
   NEGATOR
 }
 
+"Open-class subtype (present only when lexicalClass is CONTENT and a specific role is known)."
+enum OpenClassKind {
+  NOUN
+  VERB
+  ADJECTIVE
+  ADVERB
+}
+
 "A classified token occurrence."
 type Token {
   occurrenceId: Int!
@@ -43,6 +51,7 @@ type Token {
   tokenKind: TokenKind!
   lexicalClass: LexicalClass
   functionKind: FunctionKind
+  openClassKind: OpenClassKind
 }
 
 "Structural outline node kind."

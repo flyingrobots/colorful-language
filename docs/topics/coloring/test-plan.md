@@ -13,6 +13,8 @@ Requirements:
   including UTF-16 surrogate and out-of-range positions.
 - **COL-6** Skeleton mode: content words and punctuation emit no semantic token;
   function words, proper nouns, numbers, and quotes do.
+- **COL-7** An annotator that emits open-class POS tags projects noun, verb,
+  adjective, and adverb tokens through the manifest-backed LSP legend.
 
 ## Cases
 
@@ -62,6 +64,11 @@ All cases are implemented.
   word `cat` and the `.` emit no token; the deltas skip them. *Oracle:*
   `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
   `tests::single_line_tokens_are_delta_encoded`. *Status:* implemented.
+- **COL-7a** — *Requirement:* COL-7. *Behavior:* the opt-in seed open-class
+  lexicon emits noun, verb, adjective, and adverb semantic tokens at the manifest
+  legend tail. *Oracle:* `SemanticToken` vector equality. *Evidence:*
+  `colorful-lsp` `tests::seed_open_class_tokens_use_manifest_legend_tail`.
+  *Status:* implemented.
 
 ## Known gaps
 

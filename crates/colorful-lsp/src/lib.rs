@@ -23,11 +23,11 @@ use tower_lsp::lsp_types::{
 
 /// The semantic-token legend, in index order, derived from the
 /// `colorful.vocabulary/v1` manifest (the distinct LSP token types its roles
-/// project to). `v0` is a *skeleton* highlighter: it accentuates structure
-/// (function words, proper nouns, numbers, quotes) and leaves ordinary content
-/// unstyled. The types are standard, so existing editor themes color prose with
-/// no extra configuration, and they stay in lock-step with the CLI and graft
-/// because all three read the same manifest.
+/// project to). The default closed-class path is a *skeleton* highlighter: it
+/// accentuates structure (function words, proper nouns, numbers, quotes) and
+/// leaves undifferentiated content unstyled. Open-class noun/verb/adjective/
+/// adverb roles append after the original skeleton types, and every surface
+/// stays in lock-step because all three read the same manifest.
 #[must_use]
 pub fn legend_token_types() -> Vec<SemanticTokenType> {
     colorful_ir::vocabulary::lsp_legend()
@@ -40,8 +40,8 @@ pub fn legend_token_types() -> Vec<SemanticTokenType> {
 ///
 /// The class maps to a `VisualRole`, the manifest projects that role onto an LSP
 /// token-type name (or nothing), and the index is that name's position in
-/// [`legend_token_types`]. Content words and punctuation project to no token
-/// (skeleton mode).
+/// [`legend_token_types`]. Undifferentiated content words and punctuation project
+/// to no token (skeleton mode).
 fn token_type_index(class: PosClass) -> Option<u32> {
     static TOKEN_TYPE_INDEX: OnceLock<HashMap<&'static str, u32>> = OnceLock::new();
     let token_type_index = TOKEN_TYPE_INDEX.get_or_init(|| {
@@ -138,9 +138,9 @@ fn utf16_len(s: &str) -> u32 {
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
 ///
-/// Words are classified through `parser` and `annotator`; content words and
-/// punctuation are left unstyled (skeleton mode). Token types index into
-/// [`legend_token_types`].
+/// Words are classified through `parser` and `annotator`; undifferentiated
+/// content words and punctuation are left unstyled (skeleton mode). Token types
+/// index into [`legend_token_types`].
 #[must_use]
 pub fn compute_semantic_tokens<P, A>(text: &str, parser: &P, annotator: &A) -> Vec<SemanticToken>
 where
@@ -259,7 +259,7 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
 mod tests {
     use super::*;
     use colorful_core::LexicalAnnotator;
-    use colorful_lexicon::ClosedClassLexicon;
+    use colorful_lexicon::{ClosedClassLexicon, SeedOpenClassLexicon};
     use colorful_parse::ProseParser;
     use tower_lsp::lsp_types::Position;
 
@@ -278,6 +278,14 @@ mod tests {
             text,
             &ProseParser::new(),
             &LexicalAnnotator::new(ClosedClassLexicon::new()),
+        )
+    }
+
+    fn semantic_tokens_with_seed_open_class(text: &str) -> Vec<SemanticToken> {
+        compute_semantic_tokens(
+            text,
+            &ProseParser::new(),
+            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
         )
     }
 
@@ -350,6 +358,21 @@ mod tests {
                 tok(0, 0, 3, 0), // The (keyword)
                 tok(0, 8, 2, 0), // is  (keyword; delta over the skipped "cat")
                 tok(0, 3, 1, 2), // 3   (number)
+            ]
+        );
+    }
+
+    #[test]
+    fn seed_open_class_tokens_use_manifest_legend_tail() {
+        // Existing closed-class token indices stay at the front of the legend;
+        // open-class noun/verb/adjective/adverb roles append after them.
+        assert_eq!(
+            semantic_tokens_with_seed_open_class("cat connects quick silently."),
+            vec![
+                tok(0, 0, 3, 4), // noun
+                tok(0, 4, 8, 5), // verb
+                tok(0, 9, 5, 6), // adjective
+                tok(0, 6, 8, 7), // adverb
             ]
         );
     }

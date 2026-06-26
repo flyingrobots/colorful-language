@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PosClass::Open`, plus an opt-in `SeedOpenClassLexicon` adapter in
   `colorful-lexicon`. The default CLI/LSP/IR path remains on the closed-class
   lexicon until a later Goalpost 2 slice switches surfaces deliberately.
+- **Open-class IR/vocabulary axes.** `colorful.syntax/v1` now carries optional
+  `openClassKind` on `WORD` / `CONTENT` tokens, and the
+  `colorful.vocabulary/v1` manifest maps noun, verb, adjective, and adverb axes
+  to distinct ANSI, LSP, and graft projections.
 - **Local source install.** `scripts/install-local.sh` installs or upgrades the
   local `colorful` CLI into `$HOME/.colorful-language/bin` with
   `cargo install --path ... --root ... --force`, giving Graft and jedit a stable
@@ -24,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking API queued for v0.3.0.** `PosClass` is a public enum and now includes
   `PosClass::Open(OpenClassKind)`. Downstream crates that exhaustively match on
   `PosClass` must handle the new variant before adopting the `0.3.x` line.
+- **IR generator pin.** The committed Wesley-generated Rust and TypeScript DTOs
+  are now recorded as emitted with `wesley 0.1.1`.
 
 ### Fixed
 

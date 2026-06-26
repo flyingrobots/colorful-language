@@ -12,9 +12,11 @@ Requirements:
 - **POS-4** An opt-in deterministic seed lexicon can tag representative
   unambiguous open-class words as noun, verb, adjective, and adverb while
   preserving function-word and number precedence.
-- **POS-5** The `colorful.syntax/v1` IR boundary remains honest: until the IR
-  contract grows explicit open-class axes, open-class domain tags project as
-  `CONTENT` rather than inventing unsupported wire values.
+- **POS-5** The `colorful.syntax/v1` IR boundary carries open-class noun, verb,
+  adjective, and adverb decisions as an explicit optional axis on `WORD` /
+  `CONTENT` tokens.
+- **POS-6** The vocabulary manifest maps explicit open-class axes to distinct
+  presentation roles without changing the default closed-class path.
 
 ## Cases
 
@@ -43,9 +45,19 @@ Requirements:
   `tests::seed_open_class_lexicon_preserves_closed_class_and_number_precedence`.
   *Status:* implemented.
 - **POS-5a** — *Requirement:* POS-5. *Behavior:* `colorful.syntax/v1` projects
-  open-class domain tags as `WORD` / `CONTENT` until the IR contract grows
-  explicit open-class axes. *Oracle:* token-axis equality. *Evidence:*
-  `colorful-ir` `integration::open_class_pos_projects_as_content_in_syntax_v1`.
+  `PosClass::Open(Noun|Verb|Adjective|Adverb)` as `WORD` / `CONTENT` plus the
+  matching `openClassKind`. *Oracle:* token-axis equality. *Evidence:*
+  `colorful-ir`
+  `integration::open_class_pos_projects_with_explicit_open_class_kind`. *Status:*
+  implemented.
+- **POS-5b** — *Requirement:* POS-5. *Behavior:* IR validation rejects
+  `openClassKind` on function words, proper-noun candidates, and non-word tokens.
+  *Oracle:* `ValidationError::IllegalTokenAxes`. *Evidence:* `colorful-ir`
+  `integration::rejects_illegal_token_axes`. *Status:* implemented.
+- **POS-6a** — *Requirement:* POS-6. *Behavior:* open-class noun, verb,
+  adjective, and adverb classes map to distinct `VisualRole` values and
+  per-surface projections. *Oracle:* manifest table equality. *Evidence:*
+  `colorful-ir` `vocabulary::tests::pos_classes_map_to_the_expected_roles`.
   *Status:* implemented.
 
 ## Known gaps
@@ -53,7 +65,6 @@ Requirements:
 - Context disambiguation for ambiguous words such as `book`, `record`, and
   `lead` is not implemented yet. This first slice establishes the domain
   contract and a deterministic seed adapter only.
-- The IR and vocabulary contracts do not yet expose distinct noun, verb,
-  adjective, or adverb axes. A later Goalpost 2 slice must expand the
-  `colorful.syntax` / `colorful.vocabulary` contracts and regenerate boundary
-  DTOs before downstream consumers can receive distinct open-class tags.
+- The default CLI and LSP still use `ClosedClassLexicon`, so ordinary content
+  words remain undifferentiated unless a caller chooses an annotator/lexicon that
+  emits `PosClass::Open`.

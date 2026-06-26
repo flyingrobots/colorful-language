@@ -34,8 +34,20 @@ const ir = {
   },
   vocabularyHash: vocabularyHash(),
   tokens: [
-    { byteRange: { startUtf8: 3, endUtf8: 5 }, tokenKind: "WORD", lexicalClass: "FUNCTION" },
-    { byteRange: { startUtf8: 11, endUtf8: 12 }, tokenKind: "NUMBER" },
+    {
+      byteRange: { startUtf8: 3, endUtf8: 5 },
+      tokenKind: "WORD",
+      lexicalClass: "FUNCTION",
+      functionKind: "AUXILIARY",
+      openClassKind: null,
+    },
+    {
+      byteRange: { startUtf8: 11, endUtf8: 12 },
+      tokenKind: "NUMBER",
+      lexicalClass: null,
+      functionKind: null,
+      openClassKind: null,
+    },
   ],
 };
 
@@ -72,10 +84,20 @@ assert.deepEqual(atMixed(3), { row: 1, column: 0 }, "'b' after CRLF");
 assert.deepEqual(atMixed(5), { row: 2, column: 0 }, "'c' after lone CR");
 
 // className derives from the vocabulary manifest, including a WORD disambiguated
-// by lexicalClass and the unstyled (content/punct) fall-through.
+// by lexicalClass, optional openClassKind, and the unstyled fall-through.
 assert.equal(className({ tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE" }), "type");
 assert.equal(className({ tokenKind: "QUOTE" }), "string");
 assert.equal(className({ tokenKind: "WORD", lexicalClass: "CONTENT" }), undefined);
+assert.equal(className({ tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: "NOUN" }), "noun");
+assert.equal(className({ tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: "VERB" }), "verb");
+assert.equal(
+  className({ tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: "ADJECTIVE" }),
+  "adjective",
+);
+assert.equal(
+  className({ tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: "ADVERB" }),
+  "adverb",
+);
 assert.equal(className({ tokenKind: "PUNCTUATION" }), undefined);
 assert.throws(
   () => className({ tokenKind: "WORD" }),
@@ -99,12 +121,31 @@ assert.throws(
 const manifest = {
   version: "colorful.vocabulary/v1",
   classRoles: [
-    { tokenKind: "WORD", lexicalClass: "FUNCTION", visualRole: "STRUCTURAL_KEYWORD" },
-    { tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE", visualRole: "TYPE_LIKE" },
-    { tokenKind: "WORD", lexicalClass: "CONTENT", visualRole: "UNSTYLED" },
-    { tokenKind: "NUMBER", lexicalClass: null, visualRole: "LITERAL" },
-    { tokenKind: "PUNCTUATION", lexicalClass: null, visualRole: "MUTED" },
-    { tokenKind: "QUOTE", lexicalClass: null, visualRole: "QUOTED" },
+    {
+      tokenKind: "WORD",
+      lexicalClass: "FUNCTION",
+      openClassKind: null,
+      visualRole: "STRUCTURAL_KEYWORD",
+    },
+    {
+      tokenKind: "WORD",
+      lexicalClass: "PROPER_NOUN_CANDIDATE",
+      openClassKind: null,
+      visualRole: "TYPE_LIKE",
+    },
+    { tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: null, visualRole: "UNSTYLED" },
+    { tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: "NOUN", visualRole: "NOUN" },
+    { tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: "VERB", visualRole: "VERB" },
+    {
+      tokenKind: "WORD",
+      lexicalClass: "CONTENT",
+      openClassKind: "ADJECTIVE",
+      visualRole: "ADJECTIVE",
+    },
+    { tokenKind: "WORD", lexicalClass: "CONTENT", openClassKind: "ADVERB", visualRole: "ADVERB" },
+    { tokenKind: "NUMBER", lexicalClass: null, openClassKind: null, visualRole: "LITERAL" },
+    { tokenKind: "PUNCTUATION", lexicalClass: null, openClassKind: null, visualRole: "MUTED" },
+    { tokenKind: "QUOTE", lexicalClass: null, openClassKind: null, visualRole: "QUOTED" },
   ],
   roleProjections: [
     {
@@ -118,8 +159,29 @@ const manifest = {
     { visualRole: "QUOTED", ansi: "32", lspTokenType: "string", graftClass: "string" },
     { visualRole: "MUTED", ansi: "90", lspTokenType: null, graftClass: null },
     { visualRole: "UNSTYLED", ansi: null, lspTokenType: null, graftClass: null },
+    { visualRole: "NOUN", ansi: "34", lspTokenType: "noun", graftClass: "noun" },
+    { visualRole: "VERB", ansi: "31", lspTokenType: "verb", graftClass: "verb" },
+    { visualRole: "ADJECTIVE", ansi: "33", lspTokenType: "adjective", graftClass: "adjective" },
+    { visualRole: "ADVERB", ansi: "35", lspTokenType: "adverb", graftClass: "adverb" },
   ],
 };
+
+function withClassRolePatch(source, axes, patch) {
+  const index = source.classRoles.findIndex(
+    (rule) =>
+      rule.tokenKind === axes.tokenKind &&
+      rule.lexicalClass === axes.lexicalClass &&
+      rule.openClassKind === axes.openClassKind,
+  );
+  assert.notEqual(index, -1, `missing class role ${JSON.stringify(axes)}`);
+  return {
+    ...source,
+    classRoles: source.classRoles.map((rule, ruleIndex) =>
+      ruleIndex === index ? { ...rule, ...patch } : rule,
+    ),
+  };
+}
+
 assert.doesNotThrow(() => validateVocabularyManifest(manifest));
 assert.throws(
   () => validateVocabularyManifest({ ...manifest, version: "colorful.vocabulary/v2" }),
@@ -131,7 +193,7 @@ assert.throws(
     validateVocabularyManifest({
       ...manifest,
       classRoles: [
-        { tokenKind: "WORD", lexicalClass: "FUNCTION", visualRole: "STRUCTURAL_KEYWROD" },
+        { ...manifest.classRoles[0], visualRole: "STRUCTURAL_KEYWROD" },
         ...manifest.classRoles.slice(1),
       ],
     }),
@@ -167,6 +229,30 @@ assert.throws(
     }),
   /duplicate class role/,
   "duplicate class rules must be rejected",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest(
+      withClassRolePatch(
+        manifest,
+        { tokenKind: "WORD", lexicalClass: "FUNCTION", openClassKind: null },
+        { openClassKind: "NOUN" },
+      ),
+    ),
+  /openClassKind/,
+  "closed-class roles must not carry openClassKind",
+);
+assert.throws(
+  () =>
+    validateVocabularyManifest(
+      withClassRolePatch(
+        manifest,
+        { tokenKind: "NUMBER", lexicalClass: null, openClassKind: null },
+        { openClassKind: "NOUN" },
+      ),
+    ),
+  /openClassKind/,
+  "non-word roles must not carry openClassKind",
 );
 
 console.log("graft-projection: all assertions passed");

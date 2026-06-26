@@ -1,12 +1,16 @@
 {
   "version": "colorful.vocabulary/v1",
   "classRoles": [
-    { "tokenKind": "WORD", "lexicalClass": "FUNCTION", "visualRole": "STRUCTURAL_KEYWORD" },
-    { "tokenKind": "WORD", "lexicalClass": "PROPER_NOUN_CANDIDATE", "visualRole": "TYPE_LIKE" },
-    { "tokenKind": "WORD", "lexicalClass": "CONTENT", "visualRole": "UNSTYLED" },
-    { "tokenKind": "NUMBER", "lexicalClass": null, "visualRole": "LITERAL" },
-    { "tokenKind": "PUNCTUATION", "lexicalClass": null, "visualRole": "MUTED" },
-    { "tokenKind": "QUOTE", "lexicalClass": null, "visualRole": "QUOTED" }
+    { "tokenKind": "WORD", "lexicalClass": "FUNCTION", "openClassKind": null, "visualRole": "STRUCTURAL_KEYWORD" },
+    { "tokenKind": "WORD", "lexicalClass": "PROPER_NOUN_CANDIDATE", "openClassKind": null, "visualRole": "TYPE_LIKE" },
+    { "tokenKind": "WORD", "lexicalClass": "CONTENT", "openClassKind": null, "visualRole": "UNSTYLED" },
+    { "tokenKind": "WORD", "lexicalClass": "CONTENT", "openClassKind": "NOUN", "visualRole": "NOUN" },
+    { "tokenKind": "WORD", "lexicalClass": "CONTENT", "openClassKind": "VERB", "visualRole": "VERB" },
+    { "tokenKind": "WORD", "lexicalClass": "CONTENT", "openClassKind": "ADJECTIVE", "visualRole": "ADJECTIVE" },
+    { "tokenKind": "WORD", "lexicalClass": "CONTENT", "openClassKind": "ADVERB", "visualRole": "ADVERB" },
+    { "tokenKind": "NUMBER", "lexicalClass": null, "openClassKind": null, "visualRole": "LITERAL" },
+    { "tokenKind": "PUNCTUATION", "lexicalClass": null, "openClassKind": null, "visualRole": "MUTED" },
+    { "tokenKind": "QUOTE", "lexicalClass": null, "openClassKind": null, "visualRole": "QUOTED" }
   ],
   "roleProjections": [
     { "visualRole": "STRUCTURAL_KEYWORD", "ansi": "1;35", "lspTokenType": "keyword", "graftClass": "keyword" },
@@ -14,6 +18,10 @@
     { "visualRole": "LITERAL", "ansi": "36", "lspTokenType": "number", "graftClass": "number" },
     { "visualRole": "QUOTED", "ansi": "32", "lspTokenType": "string", "graftClass": "string" },
     { "visualRole": "MUTED", "ansi": "90", "lspTokenType": null, "graftClass": null },
-    { "visualRole": "UNSTYLED", "ansi": null, "lspTokenType": null, "graftClass": null }
+    { "visualRole": "UNSTYLED", "ansi": null, "lspTokenType": null, "graftClass": null },
+    { "visualRole": "NOUN", "ansi": "34", "lspTokenType": "noun", "graftClass": "noun" },
+    { "visualRole": "VERB", "ansi": "31", "lspTokenType": "verb", "graftClass": "verb" },
+    { "visualRole": "ADJECTIVE", "ansi": "33", "lspTokenType": "adjective", "graftClass": "adjective" },
+    { "visualRole": "ADVERB", "ansi": "35", "lspTokenType": "adverb", "graftClass": "adverb" }
   ]
 }

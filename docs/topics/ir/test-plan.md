@@ -16,6 +16,9 @@ Requirements:
 - **IR-6** Presentation lives in one versioned manifest: token axes → `VisualRole`
   → per-surface projection is authored once, hashed into `vocabularyHash`, and the
   CLI, LSP, and graft consumer all derive from it.
+- **IR-7** The surface IR carries open-class noun, verb, adjective, and adverb as
+  an optional `openClassKind` axis on `WORD` / `CONTENT` tokens, and the
+  vocabulary manifest projects those axes without private surface copies.
 
 ## Cases
 
@@ -28,7 +31,7 @@ Requirements:
 - **IR-2a (the gate)** — *Requirement:* IR-2. *Behavior:* a `DocumentAnalysis`
   round-trips `Rust → JSON A → TS decode → JSON B → Rust decode → JSON C`.
   *Oracle:* `A == B == C` byte-for-byte. *Evidence:* `scripts/ir-witness.sh`
-  (CI job `ir-witness`); passes at 4796 bytes. *Status:* implemented.
+  (CI job `ir-witness`). *Status:* implemented.
 - **IR-3a** — *Requirement:* IR-3. *Behavior/oracle:* byte ranges ordered, within
   `utf8ByteLength`, non-overlapping, on char boundaries; every `structure` node's
   range contains its children; `source.contentHash` matches the bytes. *Evidence:*
@@ -69,6 +72,20 @@ Requirements:
   artifact whose `vocabularyHash` does not match its manifest. *Oracle:*
   `verifyVocabularyHash` throws. *Evidence:* `consumers/graft-projection.test.mjs`.
   *Status:* implemented.
+- **IR-7a** — *Requirement:* IR-7. *Behavior:* `PosClass::Open` projects into the
+  generated DTO as `tokenKind: WORD`, `lexicalClass: CONTENT`, and a matching
+  `openClassKind`. *Oracle:* token-axis equality and `DocumentAnalysis`
+  serialization. *Evidence:* `colorful-ir`
+  `integration::open_class_pos_projects_with_explicit_open_class_kind`. *Status:*
+  implemented.
+- **IR-7b** — *Requirement:* IR-7. *Behavior:* validation accepts only legal
+  `openClassKind` combinations and rejects malformed token axes. *Oracle:*
+  `ValidationError::IllegalTokenAxes`. *Evidence:* `colorful-ir`
+  `integration::rejects_illegal_token_axes`. *Status:* implemented.
+- **IR-7c** — *Requirement:* IR-7. *Behavior:* the graft consumer validates the
+  manifest's open-class axis and projects noun/verb/adjective/adverb classes
+  through `graftClass`. *Oracle:* JavaScript assertions. *Evidence:*
+  `consumers/graft-projection.test.mjs`. *Status:* implemented.
 
 ## Known gaps / risks
 

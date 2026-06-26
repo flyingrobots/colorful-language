@@ -36,6 +36,8 @@ export type FunctionKind = "ARTICLE" | "PREPOSITION" | "CONJUNCTION" | "PRONOUN"
 
 export type LexicalClass = "FUNCTION" | "CONTENT" | "PROPER_NOUN_CANDIDATE";
 
+export type OpenClassKind = "NOUN" | "VERB" | "ADJECTIVE" | "ADVERB";
+
 export type OutlineKind = "PARAGRAPH" | "SENTENCE";
 
 export interface OutlineNode {
@@ -58,6 +60,7 @@ export interface Token {
   tokenKind: TokenKind;
   lexicalClass: LexicalClass | null;
   functionKind: FunctionKind | null;
+  openClassKind: OpenClassKind | null;
 }
 
 export type TokenKind = "WORD" | "NUMBER" | "PUNCTUATION" | "QUOTE";
