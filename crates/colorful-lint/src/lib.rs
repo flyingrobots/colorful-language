@@ -114,12 +114,12 @@ impl Analyzer for ProseLinter {
 }
 
 impl ProseLinter {
-    /// [`Rule::WeakWord`]: flag a `Content` token whose lexeme is in the filler
-    /// list. Requiring `Content` keeps a capitalized name (a proper noun) or a
-    /// quoted word from being mistaken for filler.
+    /// [`Rule::WeakWord`]: flag a lexical content token whose lexeme is in the
+    /// filler list. Requiring `Content` or `Open(_)` keeps a capitalized name (a
+    /// proper noun) or a quoted word from being mistaken for filler.
     fn weak_words(&self, source: &str, tokens: &[Token], out: &mut Vec<Finding>) {
         for token in tokens {
-            if token.class != PosClass::Content {
+            if !matches!(token.class, PosClass::Content | PosClass::Open(_)) {
                 continue;
             }
             let word = token.span.slice(source).to_ascii_lowercase();
@@ -297,6 +297,20 @@ mod tests {
             weak.iter().map(|f| f.span.slice(src)).collect::<Vec<_>>(),
             vec!["really", "just", "very"]
         );
+    }
+
+    #[test]
+    fn weak_words_still_apply_to_open_class_tokens() {
+        let src = "really";
+        let tree = Tree::document(vec![]);
+        let tokens = vec![Token {
+            span: Span::new(0, src.len()),
+            class: PosClass::Open(colorful_core::OpenClassKind::Adverb),
+        }];
+        let findings = ProseLinter::new().analyze(src, &tree, &tokens);
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        assert_eq!(findings[0].rule, Rule::WeakWord);
+        assert_eq!(findings[0].message, "weak word 'really'");
     }
 
     #[test]

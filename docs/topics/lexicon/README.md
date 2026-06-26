@@ -38,4 +38,17 @@ the authoritative current size.
 - **Semi-modals.** Words like `need`, `dare`, and `used` are tagged as
   auxiliaries; their content-verb uses are mis-tagged.
 
+## Goalpost 2 seed adapter
+
+`SeedOpenClassLexicon` is an opt-in adapter for the first open-class POS slice.
+It preserves `ClosedClassLexicon` precedence, then classifies a small
+representative seed set as `PosClass::Open(OpenClassKind::Noun)`,
+`PosClass::Open(OpenClassKind::Verb)`,
+`PosClass::Open(OpenClassKind::Adjective)`, or
+`PosClass::Open(OpenClassKind::Adverb)`.
+
+The seed adapter is not wired into the default CLI, LSP, or IR emission path. It
+exists to prove the port contract before the project commits to a larger
+dictionary or contextual disambiguator.
+
 See the [test plan](test-plan.md) for the cases that pin this behavior.

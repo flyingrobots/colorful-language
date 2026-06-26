@@ -40,6 +40,8 @@ not pose as the current reference.
   and LSP semantic tokens.
 - [linting](topics/linting/README.md) — the `Analyzer` port and the prose rule
   pack (CLI warnings + LSP diagnostics).
+- [open-class POS](topics/open-class-pos/README.md) — the Goalpost 2 domain
+  contract for noun, verb, adjective, and adverb tagging.
 - [ir](topics/ir/README.md) — the intermediate representation
   (`colorful.syntax/v1`, a Wesley-generated contract) and the
   [compiler ladder](topics/ir/architecture.md).

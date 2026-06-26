@@ -12,6 +12,9 @@ Requirements:
   apostrophe matches a straight one.
 - **LEX-7** Negators (`not`, `never`) classify as `Negator`.
 - **LEX-8** A numeric token must start and end with a digit.
+- **LEX-9** The opt-in open-class seed lexicon tags representative noun, verb,
+  adjective, and adverb words while preserving closed-class and number
+  precedence.
 
 ## Cases
 
@@ -43,6 +46,16 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
 - **LEX-8a** — *Requirement:* LEX-8. *Behavior:* `3.`, `.5`, `3..` are not
   numbers. *Oracle:* equality of `PosClass`. *Evidence:*
   `tests::malformed_numbers_are_not_numbers`. *Status:* implemented.
+- **LEX-9a** — *Requirement:* LEX-9. *Behavior:* `SeedOpenClassLexicon` tags
+  representative content words as noun, verb, adjective, and adverb. *Oracle:*
+  equality of `PosClass::Open` values. *Evidence:*
+  `tests::seed_open_class_lexicon_tags_representative_content_words`. *Status:*
+  implemented.
+- **LEX-9b** — *Requirement:* LEX-9. *Behavior:* `SeedOpenClassLexicon` keeps
+  function-word and number precedence before checking the seed table. *Oracle:*
+  equality of `PosClass`. *Evidence:*
+  `tests::seed_open_class_lexicon_preserves_closed_class_and_number_precedence`.
+  *Status:* implemented.
 
 ## Known gaps
 

@@ -9,12 +9,18 @@
 //! [`ClosedClassLexicon`] classifies a word as a [`PosClass::Function`] if it is
 //! in the set, a [`PosClass::Number`] if it is numeric, and otherwise leaves it
 //! as undifferentiated [`PosClass::Content`]. The proper-noun heuristic is a
-//! context-dependent refinement applied by `colorful_core::classify`, not here.
+//! context-dependent refinement applied by `colorful_core::LexicalAnnotator`,
+//! not here.
+//!
+//! [`SeedOpenClassLexicon`] is an opt-in Goalpost 2 adapter that layers a tiny
+//! deterministic noun/verb/adjective/adverb seed table behind the same
+//! [`Lexicon`] port. It proves the contract without changing the default CLI,
+//! LSP, or IR behavior.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{FunctionKind, Lexicon, PosClass};
+use colorful_core::{FunctionKind, Lexicon, OpenClassKind, PosClass};
 use phf::phf_map;
 
 /// The closed-class word set. Each word is assigned to exactly one
@@ -282,6 +288,32 @@ static FUNCTION_WORDS: phf::Map<&'static str, FunctionKind> = phf_map! {
     "they'd" => FunctionKind::Pronoun,
 };
 
+/// Representative, unambiguous open-class entries for the opt-in seed lexicon.
+///
+/// This is deliberately small. It is executable evidence for the Goalpost 2
+/// contract, not an attempt at a production dictionary.
+static OPEN_CLASS_WORDS: phf::Map<&'static str, OpenClassKind> = phf_map! {
+    "cat" => OpenClassKind::Noun,
+    "dog" => OpenClassKind::Noun,
+    "mountain" => OpenClassKind::Noun,
+    "river" => OpenClassKind::Noun,
+
+    "connects" => OpenClassKind::Verb,
+    "glows" => OpenClassKind::Verb,
+    "renders" => OpenClassKind::Verb,
+    "writes" => OpenClassKind::Verb,
+
+    "careful" => OpenClassKind::Adjective,
+    "quick" => OpenClassKind::Adjective,
+    "silent" => OpenClassKind::Adjective,
+    "structural" => OpenClassKind::Adjective,
+
+    "carefully" => OpenClassKind::Adverb,
+    "quickly" => OpenClassKind::Adverb,
+    "silently" => OpenClassKind::Adverb,
+    "slowly" => OpenClassKind::Adverb,
+};
+
 /// A [`Lexicon`] backed by the closed-class [`FUNCTION_WORDS`] set.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ClosedClassLexicon;
@@ -312,6 +344,37 @@ impl Lexicon for ClosedClassLexicon {
     }
 }
 
+/// An opt-in seed lexicon for Goalpost 2 open-class POS experiments.
+///
+/// It preserves [`ClosedClassLexicon`] precedence: function words and numbers are
+/// classified before the seed noun/verb/adjective/adverb table is considered.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct SeedOpenClassLexicon;
+
+impl SeedOpenClassLexicon {
+    /// Create a new seed lexicon.
+    #[must_use]
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// The number of words in the open-class seed table.
+    #[must_use]
+    pub fn word_count() -> usize {
+        OPEN_CLASS_WORDS.len()
+    }
+}
+
+impl Lexicon for SeedOpenClassLexicon {
+    fn classify(&self, word: &str) -> PosClass {
+        let closed = ClosedClassLexicon::new().classify(word);
+        if closed != PosClass::Content {
+            return closed;
+        }
+        lookup_open_class(word).map_or(PosClass::Content, PosClass::Open)
+    }
+}
+
 /// Look a word up in the closed-class set, case-insensitively and tolerant of a
 /// typographic apostrophe (U+2019) in contractions.
 fn lookup(word: &str) -> Option<FunctionKind> {
@@ -327,6 +390,18 @@ fn lookup(word: &str) -> Option<FunctionKind> {
             .collect::<String>()
             .to_ascii_lowercase();
         return FUNCTION_WORDS.get(normalized.as_str()).copied();
+    }
+    None
+}
+
+/// Look a word up in the open-class seed set, case-insensitively.
+fn lookup_open_class(word: &str) -> Option<OpenClassKind> {
+    if let Some(kind) = OPEN_CLASS_WORDS.get(word) {
+        return Some(*kind);
+    }
+    if word.bytes().any(|b| b.is_ascii_uppercase()) {
+        let normalized = word.to_ascii_lowercase();
+        return OPEN_CLASS_WORDS.get(normalized.as_str()).copied();
     }
     None
 }
@@ -347,6 +422,10 @@ mod tests {
 
     fn classify(word: &str) -> PosClass {
         ClosedClassLexicon::new().classify(word)
+    }
+
+    fn seed_classify(word: &str) -> PosClass {
+        SeedOpenClassLexicon::new().classify(word)
     }
 
     #[test]
@@ -383,6 +462,35 @@ mod tests {
         assert_eq!(classify("running"), PosClass::Content);
         // Proper-noun detection is the caller's job, not the lexicon's.
         assert_eq!(classify("Paris"), PosClass::Content);
+    }
+
+    #[test]
+    fn seed_open_class_lexicon_tags_representative_content_words() {
+        assert_eq!(seed_classify("cat"), PosClass::Open(OpenClassKind::Noun));
+        assert_eq!(
+            seed_classify("connects"),
+            PosClass::Open(OpenClassKind::Verb)
+        );
+        assert_eq!(
+            seed_classify("quick"),
+            PosClass::Open(OpenClassKind::Adjective)
+        );
+        assert_eq!(
+            seed_classify("silently"),
+            PosClass::Open(OpenClassKind::Adverb)
+        );
+        assert_eq!(seed_classify("CAT"), PosClass::Open(OpenClassKind::Noun));
+        assert!(SeedOpenClassLexicon::word_count() >= 12);
+    }
+
+    #[test]
+    fn seed_open_class_lexicon_preserves_closed_class_and_number_precedence() {
+        assert_eq!(
+            seed_classify("the"),
+            PosClass::Function(FunctionKind::Article)
+        );
+        assert_eq!(seed_classify("150"), PosClass::Number);
+        assert_eq!(seed_classify("unlisted"), PosClass::Content);
     }
 
     #[test]

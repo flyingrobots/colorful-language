@@ -150,7 +150,9 @@ pub(crate) fn token_axes(
             Some(LexicalClass::Function),
             Some(map_function_kind(kind)),
         ),
-        PosClass::Content => (TokenKind::Word, Some(LexicalClass::Content), None),
+        PosClass::Content | PosClass::Open(_) => {
+            (TokenKind::Word, Some(LexicalClass::Content), None)
+        }
         PosClass::ProperNoun => (
             TokenKind::Word,
             Some(LexicalClass::ProperNounCandidate),
@@ -899,6 +901,24 @@ mod integration {
             &validate_document(&doc, None).unwrap_err(),
             |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
         ));
+    }
+
+    #[test]
+    fn open_class_pos_projects_as_content_in_syntax_v1() {
+        use colorful_core::OpenClassKind;
+        use syntax_v1::{LexicalClass, TokenKind};
+
+        for kind in [
+            OpenClassKind::Noun,
+            OpenClassKind::Verb,
+            OpenClassKind::Adjective,
+            OpenClassKind::Adverb,
+        ] {
+            assert_eq!(
+                token_axes(PosClass::Open(kind)),
+                (TokenKind::Word, Some(LexicalClass::Content), None)
+            );
+        }
     }
 
     #[test]
