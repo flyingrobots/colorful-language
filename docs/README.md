@@ -36,15 +36,23 @@ not pose as the current reference.
   structure (the `Parser` port).
 - [lexicon](topics/lexicon/README.md) — the closed-class word set and
   classification (the `Lexicon` port).
+- [open-class POS](topics/open-class-pos/README.md) — the Goalpost 2 domain
+  contract for noun, verb, adjective, and adverb tagging.
 - [coloring](topics/coloring/README.md) — how classification becomes ANSI output
   and LSP semantic tokens.
 - [linting](topics/linting/README.md) — the `Analyzer` port and the prose rule
   pack (CLI warnings + LSP diagnostics).
-- [open-class POS](topics/open-class-pos/README.md) — the Goalpost 2 domain
-  contract for noun, verb, adjective, and adverb tagging.
 - [ir](topics/ir/README.md) — the intermediate representation
   (`colorful.syntax/v1`, a Wesley-generated contract) and the
   [compiler ladder](topics/ir/architecture.md).
+- [downstream consumers](topics/downstream-consumers/README.md) — how Graft,
+  jedit, and other tools consume `colorful.syntax/v1`.
+- [editor integrations](topics/editor-integrations/README.md) — how
+  `colorful-lsp` reaches VS Code, Zed, and generic LSP clients.
+- [distribution](topics/distribution/README.md) — install paths, package
+  boundaries, and release artifacts.
+- [release process](topics/release-process/README.md) — the release runbook,
+  automation boundary, and witness discipline.
 
 ## Releases
 

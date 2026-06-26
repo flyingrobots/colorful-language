@@ -61,7 +61,9 @@ coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
   recipes in [`editors/README.md`](editors/README.md)
 
 Build the server with `cargo install colorful-lsp` (or from source) and point your
-editor at it per the recipes above.
+editor at it per the recipes above. See
+[`docs/topics/editor-integrations/`](docs/topics/editor-integrations/) for the
+current integration boundary, evidence, and theme caveats.
 
 ---
 
@@ -92,6 +94,8 @@ PATH="$HOME/.colorful-language/bin:$PATH" npm run dev
 
 Open a `.txt` file in jedit. When Graft can find the CLI, the buffer is projected
 from the same `colorful.syntax/v1` IR that `colorful ir` prints at the terminal.
+See [`docs/topics/downstream-consumers/`](docs/topics/downstream-consumers/) for
+the consumer boundary.
 
 ---
 
@@ -193,6 +197,9 @@ cargo install --git https://github.com/flyingrobots/colorful-language.git colorf
 scripts/install-local.sh
 export PATH="$HOME/.colorful-language/bin:$PATH"
 ```
+
+See [`docs/topics/distribution/`](docs/topics/distribution/) for install-path
+boundaries and packaging evidence.
 
 ---
 
