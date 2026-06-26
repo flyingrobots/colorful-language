@@ -37,6 +37,12 @@ Requirements:
   suppresses proper-noun upgrades. *Oracle:* class vector equality. *Evidence:*
   `colorful-core` `tests::title_case_line_suppresses_proper_nouns`. *Status:*
   implemented.
+- **COL-1e** — *Requirement:* COL-1. *Behavior:* a sentence-initial seed
+  open-class word keeps its `Open(_)` class instead of being forced to
+  `Content` or upgraded to `ProperNoun`. *Oracle:* class vector equality.
+  *Evidence:* `colorful-core`
+  `tests::sentence_initial_open_class_seed_keeps_open_class`. *Status:*
+  implemented.
 - **COL-2a** — *Requirement:* COL-2. *Behavior:* quotes and punctuation classified
   structurally. *Oracle:* class vector equality. *Evidence:* `colorful-core`
   `tests::punctuation_and_quotes_classified_structurally`. *Status:* implemented.

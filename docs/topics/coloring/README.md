@@ -10,13 +10,14 @@ The `Annotator` port produces the classified `Vec<Token>` for a parsed tree. The
 `v0` `LexicalAnnotator::annotate(source, tree)` walks the tree in source order
 and assigns each leaf a `PosClass`:
 
-- **Words** are classified by the `Lexicon`. Then a proper-noun heuristic upgrades
-  a capitalized `Content` word to `ProperNoun` *only* when it is not the first
-  word of its sentence or line, and the line is not a title-case run (a
-  sentence-initial capital, or a header, cannot be told from a common noun, so it
-  stays `Content`). The shipped default lexicon is `SeedOpenClassLexicon`, so
-  representative unambiguous content words can become `Open(Noun)`,
-  `Open(Verb)`, `Open(Adjective)`, or `Open(Adverb)`.
+- **Words** are classified by the `Lexicon`. The shipped default lexicon is
+  `SeedOpenClassLexicon`, so representative unambiguous content words can become
+  `Open(Noun)`, `Open(Verb)`, `Open(Adjective)`, or `Open(Adverb)` before any
+  contextual heuristic runs. Then a proper-noun heuristic upgrades a capitalized
+  `Content` or `Open(_)` word to `ProperNoun` *only* when it is not the first word
+  of its sentence or line, and the line is not a title-case run. Sentence- or
+  line-initial words keep the class returned by the lexicon: unlisted words stay
+  `Content`, and seeded words stay `Open(_)`.
 - **Punctuation** is classified structurally: quotation marks become `Quote`, all
   other punctuation becomes `Punctuation`.
 

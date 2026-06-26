@@ -267,8 +267,9 @@ pub trait Analyzer {
 /// The `v0` [`Annotator`]: a [`Lexicon`] plus shallow, deterministic heuristics.
 ///
 /// - [`Node::Word`] spans are classified by the lexicon, then a proper-noun
-///   heuristic upgrades a capitalized, non-sentence-initial [`PosClass::Content`]
-///   word to [`PosClass::ProperNoun`].
+///   heuristic upgrades a capitalized, non-sentence-initial
+///   [`PosClass::Content`] or [`PosClass::Open`] word to [`PosClass::ProperNoun`].
+///   Sentence- or line-initial words keep the class the lexicon returned.
 /// - [`Node::Punct`] spans are classified structurally as [`PosClass::Quote`] or
 ///   [`PosClass::Punctuation`].
 #[derive(Debug, Default, Clone, Copy)]
@@ -526,6 +527,30 @@ mod tests {
         assert_eq!(
             classes,
             vec![PosClass::Content, PosClass::Content, PosClass::ProperNoun]
+        );
+    }
+
+    #[test]
+    fn sentence_initial_open_class_seed_keeps_open_class() {
+        struct SeedStub;
+
+        impl Lexicon for SeedStub {
+            fn classify(&self, word: &str) -> PosClass {
+                if word.eq_ignore_ascii_case("cat") {
+                    PosClass::Open(OpenClassKind::Noun)
+                } else {
+                    PosClass::Content
+                }
+            }
+        }
+
+        let src = "Cat sleeps";
+        let tree = Tree::document(vec![sentence((0, 10), vec![word(0, 3), word(4, 10)])]);
+        let toks = LexicalAnnotator::new(SeedStub).annotate(src, &tree);
+        let classes: Vec<PosClass> = toks.iter().map(|t| t.class).collect();
+        assert_eq!(
+            classes,
+            vec![PosClass::Open(OpenClassKind::Noun), PosClass::Content]
         );
     }
 
