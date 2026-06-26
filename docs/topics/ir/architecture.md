@@ -61,8 +61,9 @@ Two contracts:
 
 - `colorful.syntax/v1` — `DocumentAnalysis`: `contractVersion`, `schemaHash`,
   `vocabularyHash`, `source { unitId, contentHash, utf8ByteLength }`,
-  `tokens [{ occurrenceId, byteRange, tokenKind, lexicalClass?, functionKind? }]`,
-  `structure` (outline nodes with `byteRange` + children), `diagnostics`.
+  `tokens [{ occurrenceId, byteRange, tokenKind, lexicalClass?, functionKind?,
+  openClassKind? }]`, `structure` (outline nodes with `byteRange` + children),
+  `diagnostics`.
 - `colorful.vocabulary/v1` — the enums and their *render intent*.
 
 Design commitments (frozen before the ecosystem depends on them):
