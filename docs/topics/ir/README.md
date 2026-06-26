@@ -41,8 +41,9 @@ The contracts (`contracts/colorful/*.graphql`) and vocabulary manifest
 (`contracts/colorful/vocabulary.v1.json`) are the source of truth. Wesley (pinned
 `0.1.1`) generates the boundary DTOs — Rust (serde) and TypeScript — into the
 `colorful-ir` crate (`crates/colorful-ir/{src/generated,ts}/`). Regenerate with
-`scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`). The generated types are a
-**wire boundary**: `colorful-core` stays free of them, and
+`scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`; the script rejects any Wesley
+CLI version other than `0.1.1`). The generated types are a **wire boundary**:
+`colorful-core` stays free of them, and
 `colorful_ir::from_classification` is the one-way projection from the domain model
 into the DTO.
 
