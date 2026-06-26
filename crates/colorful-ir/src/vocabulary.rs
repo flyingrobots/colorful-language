@@ -339,6 +339,31 @@ mod tests {
         serde_json::to_string(value).expect("manifest fixture serializes")
     }
 
+    fn optional_string_matches(value: &serde_json::Value, expected: Option<&str>) -> bool {
+        match expected {
+            Some(expected) => value.as_str() == Some(expected),
+            None => value.is_null(),
+        }
+    }
+
+    fn class_role_mut<'a>(
+        manifest: &'a mut serde_json::Value,
+        token_kind: &str,
+        lexical_class: Option<&str>,
+        open_class_kind: Option<&str>,
+    ) -> &'a mut serde_json::Value {
+        manifest["classRoles"]
+            .as_array_mut()
+            .expect("classRoles is an array")
+            .iter_mut()
+            .find(|rule| {
+                rule["tokenKind"].as_str() == Some(token_kind)
+                    && optional_string_matches(&rule["lexicalClass"], lexical_class)
+                    && optional_string_matches(&rule["openClassKind"], open_class_kind)
+            })
+            .expect("class role exists")
+    }
+
     #[test]
     fn manifest_rejects_wrong_version() {
         let mut value = manifest_value();
@@ -390,12 +415,14 @@ mod tests {
     #[test]
     fn manifest_rejects_open_class_on_non_content_axes() {
         let mut value = manifest_value();
-        value["classRoles"][0]["openClassKind"] = serde_json::Value::String("NOUN".to_string());
+        class_role_mut(&mut value, "WORD", Some("FUNCTION"), None)["openClassKind"] =
+            serde_json::Value::String("NOUN".to_string());
         let err = parse_manifest(&manifest_string(&value)).unwrap_err();
         assert!(err.contains("openClassKind"), "{err}");
 
         let mut value = manifest_value();
-        value["classRoles"][7]["openClassKind"] = serde_json::Value::String("NOUN".to_string());
+        class_role_mut(&mut value, "NUMBER", None, None)["openClassKind"] =
+            serde_json::Value::String("NOUN".to_string());
         let err = parse_manifest(&manifest_string(&value)).unwrap_err();
         assert!(err.contains("openClassKind"), "{err}");
     }

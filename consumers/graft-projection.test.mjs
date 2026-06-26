@@ -165,6 +165,23 @@ const manifest = {
     { visualRole: "ADVERB", ansi: "35", lspTokenType: "adverb", graftClass: "adverb" },
   ],
 };
+
+function withClassRolePatch(source, axes, patch) {
+  const index = source.classRoles.findIndex(
+    (rule) =>
+      rule.tokenKind === axes.tokenKind &&
+      rule.lexicalClass === axes.lexicalClass &&
+      rule.openClassKind === axes.openClassKind,
+  );
+  assert.notEqual(index, -1, `missing class role ${JSON.stringify(axes)}`);
+  return {
+    ...source,
+    classRoles: source.classRoles.map((rule, ruleIndex) =>
+      ruleIndex === index ? { ...rule, ...patch } : rule,
+    ),
+  };
+}
+
 assert.doesNotThrow(() => validateVocabularyManifest(manifest));
 assert.throws(
   () => validateVocabularyManifest({ ...manifest, version: "colorful.vocabulary/v2" }),
@@ -215,26 +232,25 @@ assert.throws(
 );
 assert.throws(
   () =>
-    validateVocabularyManifest({
-      ...manifest,
-      classRoles: [
-        { ...manifest.classRoles[0], openClassKind: "NOUN" },
-        ...manifest.classRoles.slice(1),
-      ],
-    }),
+    validateVocabularyManifest(
+      withClassRolePatch(
+        manifest,
+        { tokenKind: "WORD", lexicalClass: "FUNCTION", openClassKind: null },
+        { openClassKind: "NOUN" },
+      ),
+    ),
   /openClassKind/,
   "closed-class roles must not carry openClassKind",
 );
 assert.throws(
   () =>
-    validateVocabularyManifest({
-      ...manifest,
-      classRoles: [
-        ...manifest.classRoles.slice(0, 7),
-        { ...manifest.classRoles[7], openClassKind: "NOUN" },
-        ...manifest.classRoles.slice(8),
-      ],
-    }),
+    validateVocabularyManifest(
+      withClassRolePatch(
+        manifest,
+        { tokenKind: "NUMBER", lexicalClass: null, openClassKind: null },
+        { openClassKind: "NOUN" },
+      ),
+    ),
   /openClassKind/,
   "non-word roles must not carry openClassKind",
 );
