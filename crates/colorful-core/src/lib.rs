@@ -315,7 +315,7 @@ impl<L: Lexicon> Annotator for LexicalAnnotator<L> {
 
                         let text = span.slice(source);
                         let mut class = self.lexicon.classify(text);
-                        if class == PosClass::Content
+                        if matches!(class, PosClass::Content | PosClass::Open(_))
                             && seen_word
                             && !line_is_title
                             && is_capitalized(text)
@@ -495,6 +495,33 @@ mod tests {
             vec![word(0, 4), word(5, 9), word(10, 15)],
         )]);
         let toks = annotate(&tree, src);
+        let classes: Vec<PosClass> = toks.iter().map(|t| t.class).collect();
+        assert_eq!(
+            classes,
+            vec![PosClass::Content, PosClass::Content, PosClass::ProperNoun]
+        );
+    }
+
+    #[test]
+    fn proper_noun_heuristic_upgrades_mid_sentence_open_class_capitals() {
+        struct SeedStub;
+
+        impl Lexicon for SeedStub {
+            fn classify(&self, word: &str) -> PosClass {
+                if word.eq_ignore_ascii_case("cat") {
+                    PosClass::Open(OpenClassKind::Noun)
+                } else {
+                    PosClass::Content
+                }
+            }
+        }
+
+        let src = "we saw Cat";
+        let tree = Tree::document(vec![sentence(
+            (0, 10),
+            vec![word(0, 2), word(3, 6), word(7, 10)],
+        )]);
+        let toks = LexicalAnnotator::new(SeedStub).annotate(src, &tree);
         let classes: Vec<PosClass> = toks.iter().map(|t| t.class).collect();
         assert_eq!(
             classes,
