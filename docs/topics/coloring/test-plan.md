@@ -11,14 +11,16 @@ Requirements:
   columns.
 - **COL-5** The LSP applies incremental and full document edits without panicking,
   including UTF-16 surrogate and out-of-range positions.
-- **COL-6** Skeleton mode: content words and punctuation emit no semantic token;
-  function words, proper nouns, numbers, and quotes do.
+- **COL-6** Skeleton mode: unlisted content words and punctuation emit no
+  semantic token; function words, seeded open-class words, proper nouns, numbers,
+  and quotes do.
 - **COL-7** An annotator that emits open-class POS tags projects noun, verb,
   adjective, and adverb tokens through the manifest-backed LSP legend.
+- **COL-8** The default shipped surfaces use the seed open-class annotator so
+  representative noun, verb, adjective, and adverb words are visible without
+  custom caller wiring.
 
 ## Cases
-
-All cases are implemented.
 
 - **COL-1a** — *Requirement:* COL-1. *Behavior:* function/content/number assigned
   in order. *Oracle:* class vector equality. *Evidence:* `colorful-core`
@@ -60,15 +62,24 @@ All cases are implemented.
   `tests::apply_change_handles_utf16_surrogate_columns`,
   `tests::apply_change_clamps_out_of_range_positions`. *Status:* implemented.
 
-- **COL-6a** — *Requirement:* COL-6. *Behavior:* in `"The cat is 3."` the content
-  word `cat` and the `.` emit no token; the deltas skip them. *Oracle:*
-  `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
-  `tests::single_line_tokens_are_delta_encoded`. *Status:* implemented.
-- **COL-7a** — *Requirement:* COL-7. *Behavior:* the opt-in seed open-class
-  lexicon emits noun, verb, adjective, and adverb semantic tokens at the manifest
+- **COL-6a** — *Requirement:* COL-6. *Behavior:* in `"The zebra is 3."` the
+  unlisted content word `zebra` and the `.` emit no token; the deltas skip them.
+  *Oracle:* `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
+  `tests::unlisted_content_and_punctuation_are_unstyled`. *Status:* implemented.
+- **COL-7a** — *Requirement:* COL-7. *Behavior:* the seed open-class lexicon
+  emits noun, verb, adjective, and adverb semantic tokens at the manifest
   legend tail. *Oracle:* `SemanticToken` vector equality. *Evidence:*
   `colorful-lsp` `tests::seed_open_class_tokens_use_manifest_legend_tail`.
   *Status:* implemented.
+- **COL-8a** — *Requirement:* COL-8. *Behavior:* the default LSP path emits noun,
+  verb, adjective, and adverb semantic tokens for seeded words. *Oracle:*
+  `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
+  `tests::default_semantic_tokens_emit_seed_open_class_roles`. *Status:*
+  implemented.
+- **COL-8b** — *Requirement:* COL-8. *Behavior:* the default CLI path renders
+  seeded noun, verb, adjective, and adverb words with their manifest ANSI
+  projections. *Oracle:* exact ANSI string equality. *Evidence:* `colorful-cli`
+  `tests::default_colorizer_emits_seed_open_class_roles`. *Status:* implemented.
 
 ## Known gaps
 

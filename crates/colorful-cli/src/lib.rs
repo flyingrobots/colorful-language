@@ -1,9 +1,9 @@
 //! Colorize English prose by part of speech in the terminal.
 //!
 //! This is a driving adapter: it wires the [`ProseParser`] and
-//! [`ClosedClassLexicon`] together through a `LexicalAnnotator` and renders the
-//! classified token stream as ANSI-colored text. The same classification feeds
-//! the LSP server; here it lands as color in a terminal with no editor.
+//! [`SeedOpenClassLexicon`] together through a `LexicalAnnotator` and renders
+//! the classified token stream as ANSI-colored text. The same classification
+//! feeds the LSP server; here it lands as color in a terminal with no editor.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -12,7 +12,7 @@ use std::io::{self, Read, Write};
 use std::process::ExitCode;
 
 use colorful_core::{Analyzer, Annotator, Finding, LexicalAnnotator, Parser, PosClass, Severity};
-use colorful_lexicon::ClosedClassLexicon;
+use colorful_lexicon::SeedOpenClassLexicon;
 use colorful_lint::ProseLinter;
 use colorful_parse::ProseParser;
 
@@ -37,7 +37,7 @@ pub fn colorize(source: &str, color: bool) -> String {
     }
 
     let tree = ProseParser::new().parse(source);
-    let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, &tree);
+    let tokens = LexicalAnnotator::new(SeedOpenClassLexicon::new()).annotate(source, &tree);
 
     let mut out = String::with_capacity(source.len() + tokens.len() * 8);
     let mut prev = 0;
@@ -138,6 +138,15 @@ fn version_output() -> String {
     format!("colorful {}\n", env!("CARGO_PKG_VERSION"))
 }
 
+fn analyze_ir(
+    unit_id: &str,
+    input: &str,
+) -> Result<colorful_ir::syntax_v1::DocumentAnalysis, colorful_ir::ProjectionError> {
+    let tree = ProseParser::new().parse(input);
+    let tokens = LexicalAnnotator::new(SeedOpenClassLexicon::new()).annotate(input, &tree);
+    colorful_ir::from_classification(unit_id, input, &tree, &tokens)
+}
+
 /// Colorize prose to ANSI in the terminal (the default subcommand).
 fn run_color<I>(args: I) -> io::Result<()>
 where
@@ -229,9 +238,7 @@ where
         }
     };
 
-    let tree = ProseParser::new().parse(&input);
-    let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(&input, &tree);
-    let document = colorful_ir::from_classification(&unit_id, &input, &tree, &tokens)
+    let document = analyze_ir(&unit_id, &input)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
     let json = colorful_ir::canonical_json(&document)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
@@ -303,7 +310,7 @@ where
 /// testable without touching the filesystem.
 fn lint_to_writer<W: Write>(name: &str, source: &str, out: &mut W) -> io::Result<bool> {
     let tree = ProseParser::new().parse(source);
-    let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, &tree);
+    let tokens = LexicalAnnotator::new(SeedOpenClassLexicon::new()).annotate(source, &tree);
     let findings = ProseLinter::new().analyze(source, &tree, &tokens);
     out.write_all(lint_report(name, source, &findings).as_bytes())?;
     Ok(!findings.is_empty())
@@ -361,10 +368,10 @@ mod tests {
 
     #[test]
     fn golden_colored_output() {
-        // "The" (function), cat (content), "is" (function), 3 (number),
+        // "The" (function), cat (seed noun), "is" (function), 3 (number),
         // "." (punctuation), with whitespace preserved verbatim.
         let got = colorize("The cat is 3.", true);
-        let want = "\x1b[1;35mThe\x1b[0m cat \x1b[1;35mis\x1b[0m \x1b[36m3\x1b[0m\x1b[90m.\x1b[0m";
+        let want = "\x1b[1;35mThe\x1b[0m \x1b[34mcat\x1b[0m \x1b[1;35mis\x1b[0m \x1b[36m3\x1b[0m\x1b[90m.\x1b[0m";
         assert_eq!(got, want);
     }
 
@@ -374,6 +381,40 @@ mod tests {
         let got = colorize("I visited Paris.", true);
         let want = "\x1b[1;35mI\x1b[0m visited \x1b[1;33mParis\x1b[0m\x1b[90m.\x1b[0m";
         assert_eq!(got, want);
+    }
+
+    #[test]
+    fn default_colorizer_emits_seed_open_class_roles() {
+        let got = colorize("cat connects quick silently.", true);
+        let want = concat!(
+            "\x1b[34mcat\x1b[0m ",
+            "\x1b[31mconnects\x1b[0m ",
+            "\x1b[33mquick\x1b[0m ",
+            "\x1b[35msilently\x1b[0m",
+            "\x1b[90m.\x1b[0m",
+        );
+        assert_eq!(got, want);
+    }
+
+    #[test]
+    fn ir_uses_default_seed_open_class_roles() {
+        use colorful_ir::syntax_v1::OpenClassKind;
+
+        let doc = analyze_ir("fixture.txt", "cat connects quick silently.").unwrap();
+        let classes: Vec<_> = doc
+            .tokens
+            .iter()
+            .filter_map(|token| token.open_class_kind.clone())
+            .collect();
+        assert_eq!(
+            classes,
+            vec![
+                OpenClassKind::Noun,
+                OpenClassKind::Verb,
+                OpenClassKind::Adjective,
+                OpenClassKind::Adverb,
+            ]
+        );
     }
 
     #[test]

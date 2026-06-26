@@ -2,8 +2,9 @@
 
 Open-class POS is the Goalpost 2 path for distinguishing ordinary content words
 as nouns, verbs, adjectives, and adverbs. The current implementation establishes
-the domain contract, an opt-in seed adapter, and IR/vocabulary support for
-carrying those distinctions. It does not yet replace the default highlighter.
+the domain contract, a deterministic seed adapter, default surface wiring, and
+IR/vocabulary support for carrying those distinctions. It does not yet perform
+contextual disambiguation for ambiguous words.
 
 ## Core contract
 
@@ -29,14 +30,14 @@ editor adapters.
 
 ## Seed lexicon
 
-`colorful_lexicon::SeedOpenClassLexicon` is an opt-in deterministic adapter. It
-wraps the closed-class behavior and then checks a small representative seed
-table for noun, verb, adjective, and adverb entries.
+`colorful_lexicon::SeedOpenClassLexicon` is the deterministic default adapter for
+the shipped CLI, IR, and LSP surfaces. It wraps the closed-class behavior and
+then checks a small representative seed table for noun, verb, adjective, and
+adverb entries.
 
-The default `ClosedClassLexicon` is unchanged and still leaves unknown content
-words as `Content`. The CLI, LSP, and IR emission continue to use the closed
-class path until a later Goalpost 2 slice deliberately switches or configures a
-richer annotator.
+`ClosedClassLexicon` is still available and still leaves unknown content words as
+`Content`. `SeedOpenClassLexicon` preserves that closed-class and number
+precedence, and it also leaves unlisted content words as `Content`.
 
 ## IR boundary
 
@@ -56,9 +57,9 @@ those malformed combinations.
 
 The vocabulary manifest maps the explicit open-class axis to distinct abstract
 roles (`NOUN`, `VERB`, `ADJECTIVE`, `ADVERB`) and then to ANSI, LSP token types,
-and graft classes. Default CLI/LSP execution does not emit those roles yet
-because it still uses `ClosedClassLexicon`, but any caller that supplies an
-annotator producing `PosClass::Open` can carry the distinction through the IR and
-projection layers.
+and graft classes. The default CLI, `colorful ir`, and LSP paths emit those roles
+for seeded words by using `SeedOpenClassLexicon`. Later slices can replace or
+extend that adapter with contextual disambiguation without changing the parser,
+IR shape, LSP transport, or editor adapters.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

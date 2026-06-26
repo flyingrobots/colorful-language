@@ -3,8 +3,8 @@
 Part-of-speech syntax highlighting for **English prose** in VS Code (and Cursor),
 powered by the [`colorful-lsp`](https://crates.io/crates/colorful-lsp) language
 server. Open a `.txt` or `.md` file and the grammar lights up — function words as
-keywords, proper nouns, numbers, and quotes accentuated; ordinary content left
-clean.
+keywords, seeded nouns/verbs/adjectives/adverbs as open-class roles, proper
+nouns, numbers, and quotes accentuated; unlisted content left clean.
 
 ## Requirements
 

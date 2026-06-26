@@ -102,11 +102,13 @@ the consumer boundary.
 ## What it does (v0 = "English lights up")
 
 - **Closed-class words** (the, of, and, is, not, etc.) → highlighted like keywords
+- **Seed open-class words** → representative nouns, verbs, adjectives, and adverbs
+  get distinct roles
 - **Proper nouns** (mid-sentence capitalized words) → highlighted
 - **Numbers** → highlighted
 - **Quotes** → highlighted as strings
 - **Sentence structure** made visible
-- Everything else stays clean (skeleton mode; no color overload)
+- Unlisted content words stay clean (skeleton mode; no color overload)
 
 No cloud. No ML. Blazing fast and 100% local.
 
