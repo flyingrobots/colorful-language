@@ -47,10 +47,10 @@ onto semantic token types through the shared vocabulary manifest:
 | `Number` | `number` |
 | `Quote` | `string` |
 | `Content` | *(unstyled)* |
-| `Open(Noun)` | `variable` |
-| `Open(Verb)` | `function` |
-| `Open(Adjective)` | `property` |
-| `Open(Adverb)` | `operator` |
+| `Open(Noun)` | `noun` |
+| `Open(Verb)` | `verb` |
+| `Open(Adjective)` | `adjective` |
+| `Open(Adverb)` | `adverb` |
 | `Punctuation` | *(unstyled)* |
 
 The default CLI/LSP still use `ClosedClassLexicon`, so open-class rows appear

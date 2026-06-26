@@ -453,8 +453,14 @@ mod tests {
         assert_eq!(
             lsp_legend(),
             [
-                "keyword", "class", "number", "string", "variable", "function", "property",
-                "operator"
+                "keyword",
+                "class",
+                "number",
+                "string",
+                "noun",
+                "verb",
+                "adjective",
+                "adverb"
             ]
         );
     }

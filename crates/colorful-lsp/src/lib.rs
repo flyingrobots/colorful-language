@@ -369,10 +369,10 @@ mod tests {
         assert_eq!(
             semantic_tokens_with_seed_open_class("cat connects quick silently."),
             vec![
-                tok(0, 0, 3, 4), // noun -> variable
-                tok(0, 4, 8, 5), // verb -> function
-                tok(0, 9, 5, 6), // adjective -> property
-                tok(0, 6, 8, 7), // adverb -> operator
+                tok(0, 0, 3, 4), // noun
+                tok(0, 4, 8, 5), // verb
+                tok(0, 9, 5, 6), // adjective
+                tok(0, 6, 8, 7), // adverb
             ]
         );
     }
