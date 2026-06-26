@@ -282,14 +282,6 @@ mod tests {
         )
     }
 
-    fn semantic_tokens_with_seed_open_class(text: &str) -> Vec<SemanticToken> {
-        compute_semantic_tokens(
-            text,
-            &ProseParser::new(),
-            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
-        )
-    }
-
     fn diagnostics(text: &str) -> Vec<Diagnostic> {
         compute_diagnostics(
             text,
@@ -382,7 +374,7 @@ mod tests {
         // Existing closed-class token indices stay at the front of the legend;
         // open-class noun/verb/adjective/adverb roles append after them.
         assert_eq!(
-            semantic_tokens_with_seed_open_class("cat connects quick silently."),
+            semantic_tokens("cat connects quick silently."),
             vec![
                 tok(0, 0, 3, 4), // noun
                 tok(0, 4, 8, 5), // verb
