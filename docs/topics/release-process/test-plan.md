@@ -34,5 +34,6 @@ Verification for release preparation, tag automation, and release witnesses.
 
 ## Open verification gaps
 
-- The tag workflow is only exercised on release tags. Release-prep PRs validate
-  the workflow source with `actionlint`, but they do not publish.
+- The tag workflow is only exercised on release tags. Release-prep changes run
+  `actionlint` through the local release gate, but PR CI does not currently run
+  workflow lint or publish.

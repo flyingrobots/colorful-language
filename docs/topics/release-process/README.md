@@ -32,9 +32,11 @@ that the tag is on `main`, reruns the Rust and package guards, publishes the
 crates in dependency order, builds the Linux binary archive, writes a checksum,
 and creates the GitHub Release.
 
-The workflow relies on CI for checks that are already required before merge:
-Markdown lint, workflow lint, IR witness, editor integration compile, and
-whitespace checks.
+The workflow relies on the pre-merge gate for checks that are not repeated on
+tag pushes. Pull-request CI covers Markdown lint, whitespace checks, the IR
+witness, and editor integration compile. Workflow lint is part of the local
+release gate in [`docs/RELEASING.md`](../../RELEASING.md) until an `actionlint`
+step is added to CI.
 
 ## Boundaries
 
