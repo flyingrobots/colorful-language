@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `cargo install --path ... --root ... --force`, giving Graft and jedit a stable
   development-time binary path.
 
+### Changed
+
+- **Breaking API queued for v0.3.0.** `PosClass` is a public enum and now includes
+  `PosClass::Open(OpenClassKind)`. Downstream crates that exhaustively match on
+  `PosClass` must handle the new variant before adopting the `0.3.x` line.
+
 ### Fixed
 
 - **CLI version probe.** `colorful --version` and `colorful -V` now print the CLI
