@@ -14,6 +14,8 @@ Requirements:
 - **LEX-8** A numeric token must start and end with a digit.
 - **LEX-9** The open-class seed lexicon tags representative noun, verb,
   adjective, and adverb words while preserving closed-class and number precedence.
+- **LEX-10** The contextual open-class annotator refines a small ambiguous word
+  set using local sentence context while preserving existing lexical behavior.
 
 ## Cases
 
@@ -55,6 +57,17 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
   equality of `PosClass`. *Evidence:*
   `tests::seed_open_class_lexicon_preserves_closed_class_and_number_precedence`.
   *Status:* implemented.
+- **LEX-10a** — *Requirement:* LEX-10. *Behavior:* `ContextualOpenClassAnnotator`
+  classifies supported ambiguous words from local context. *Oracle:* class vector
+  equality. *Evidence:*
+  `tests::contextual_annotator_disambiguates_ambiguous_open_class_words`,
+  `tests::contextual_annotator_covers_record_and_lead_roles`. *Status:*
+  implemented.
+- **LEX-10b** — *Requirement:* LEX-10. *Behavior:* contextual classification
+  preserves function-word, number, seed-open-class, punctuation, and
+  unlisted-content behavior. *Oracle:* class vector equality. *Evidence:*
+  `tests::contextual_annotator_preserves_existing_precedence`. *Status:*
+  implemented.
 
 ## Known gaps
 

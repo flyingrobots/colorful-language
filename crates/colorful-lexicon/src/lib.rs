@@ -14,13 +14,18 @@
 //!
 //! [`SeedOpenClassLexicon`] is a Goalpost 2 adapter that layers a tiny
 //! deterministic noun/verb/adjective/adverb seed table behind the same
-//! [`Lexicon`] port. The shipped CLI, LSP, and IR surfaces use it by default to
-//! prove the open-class contract without committing to a full dictionary.
+//! [`Lexicon`] port.
+//!
+//! [`ContextualOpenClassAnnotator`] composes that lookup with local sentence
+//! context for a small ambiguous set. The shipped CLI, LSP, and IR surfaces use
+//! it by default to prove the open-class contract without committing to a full
+//! dictionary.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{FunctionKind, Lexicon, OpenClassKind, PosClass};
+use colorful_core::{Annotator, FunctionKind, LexicalAnnotator, Lexicon, OpenClassKind, PosClass};
+use colorful_core::{Token, Tree};
 use phf::phf_map;
 
 /// The closed-class word set. Each word is assigned to exactly one
@@ -314,6 +319,18 @@ static OPEN_CLASS_WORDS: phf::Map<&'static str, OpenClassKind> = phf_map! {
     "slowly" => OpenClassKind::Adverb,
 };
 
+/// Ambiguous words with local context rules for the contextual annotator.
+///
+/// This is deliberately tiny. It proves the Goalpost 2 port shape and keeps the
+/// default behavior deterministic while leaving a production dictionary for a
+/// later slice.
+static CONTEXTUAL_WORDS: phf::Map<&'static str, &'static [OpenClassKind]> = phf_map! {
+    "book" => &[OpenClassKind::Noun, OpenClassKind::Verb],
+    "record" => &[OpenClassKind::Noun, OpenClassKind::Verb],
+    "lead" => &[OpenClassKind::Noun, OpenClassKind::Verb, OpenClassKind::Adjective],
+    "fast" => &[OpenClassKind::Adjective, OpenClassKind::Adverb],
+};
+
 /// A [`Lexicon`] backed by the closed-class [`FUNCTION_WORDS`] set.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ClosedClassLexicon;
@@ -375,6 +392,171 @@ impl Lexicon for SeedOpenClassLexicon {
     }
 }
 
+/// A deterministic contextual annotator for the Goalpost 2 open-class path.
+///
+/// It first delegates to [`LexicalAnnotator`] with the supplied [`Lexicon`], so
+/// closed-class, number, seed-open-class, punctuation, and proper-noun behavior
+/// remain centralized. It then refines only undifferentiated [`PosClass::Content`]
+/// tokens whose lexeme appears in the small [`CONTEXTUAL_WORDS`] table.
+#[derive(Debug, Clone, Copy)]
+pub struct ContextualOpenClassAnnotator<L = SeedOpenClassLexicon> {
+    lexicon: L,
+}
+
+impl<L> ContextualOpenClassAnnotator<L> {
+    /// Create a contextual annotator over `lexicon`.
+    #[must_use]
+    pub fn new(lexicon: L) -> Self {
+        Self { lexicon }
+    }
+}
+
+impl Default for ContextualOpenClassAnnotator<SeedOpenClassLexicon> {
+    fn default() -> Self {
+        Self::new(SeedOpenClassLexicon::new())
+    }
+}
+
+impl<L> Annotator for ContextualOpenClassAnnotator<L>
+where
+    L: Lexicon + Clone,
+{
+    fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token> {
+        let mut tokens = LexicalAnnotator::new(self.lexicon.clone()).annotate(source, tree);
+
+        for i in 0..tokens.len() {
+            if tokens[i].class != PosClass::Content {
+                continue;
+            }
+
+            let word = tokens[i].span.slice(source);
+            let Some(kind) = contextual_kind(
+                word,
+                context_word(source, &tokens, i.checked_sub(1)),
+                context_word(source, &tokens, i.checked_add(1)),
+            ) else {
+                continue;
+            };
+            tokens[i].class = PosClass::Open(kind);
+        }
+
+        tokens
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ContextWord<'a> {
+    text: &'a str,
+    class: PosClass,
+}
+
+fn context_word<'a>(
+    source: &'a str,
+    tokens: &[Token],
+    index: Option<usize>,
+) -> Option<ContextWord<'a>> {
+    let index = index?;
+    let token = tokens.get(index)?;
+    if matches!(token.class, PosClass::Punctuation | PosClass::Quote) {
+        return None;
+    }
+    Some(ContextWord {
+        text: token.span.slice(source),
+        class: token.class,
+    })
+}
+
+fn contextual_kind(
+    word: &str,
+    previous: Option<ContextWord<'_>>,
+    next: Option<ContextWord<'_>>,
+) -> Option<OpenClassKind> {
+    let normalized = normalize_ascii(word);
+    let senses = CONTEXTUAL_WORDS.get(normalized.as_str())?;
+
+    match normalized.as_str() {
+        "fast" => {
+            if has_sense(senses, OpenClassKind::Adverb) && previous.is_some_and(is_verb_context) {
+                return Some(OpenClassKind::Adverb);
+            }
+            if has_sense(senses, OpenClassKind::Adjective) && next.is_some_and(is_nounish_context) {
+                return Some(OpenClassKind::Adjective);
+            }
+        }
+        "lead" => {
+            if has_sense(senses, OpenClassKind::Verb) && previous.is_some_and(is_verb_trigger) {
+                return Some(OpenClassKind::Verb);
+            }
+            if has_sense(senses, OpenClassKind::Adjective)
+                && previous.is_some_and(is_nominal_trigger)
+                && next.is_some_and(is_nounish_context)
+            {
+                return Some(OpenClassKind::Adjective);
+            }
+            if has_sense(senses, OpenClassKind::Noun) && previous.is_some_and(is_nominal_trigger) {
+                return Some(OpenClassKind::Noun);
+            }
+        }
+        "book" | "record" => {
+            if has_sense(senses, OpenClassKind::Verb) && previous.is_some_and(is_verb_trigger) {
+                return Some(OpenClassKind::Verb);
+            }
+            if has_sense(senses, OpenClassKind::Noun) && previous.is_some_and(is_nominal_trigger) {
+                return Some(OpenClassKind::Noun);
+            }
+        }
+        _ => {}
+    }
+
+    None
+}
+
+fn has_sense(senses: &[OpenClassKind], kind: OpenClassKind) -> bool {
+    senses.contains(&kind)
+}
+
+fn is_nominal_trigger(word: ContextWord<'_>) -> bool {
+    matches!(
+        word.class,
+        PosClass::Function(FunctionKind::Article)
+            | PosClass::Function(FunctionKind::Determiner)
+            | PosClass::Function(FunctionKind::Preposition)
+            | PosClass::Open(OpenClassKind::Adjective)
+    ) && !word.text.eq_ignore_ascii_case("to")
+}
+
+fn is_verb_trigger(word: ContextWord<'_>) -> bool {
+    word.text.eq_ignore_ascii_case("to")
+        || matches!(
+            word.class,
+            PosClass::Function(FunctionKind::Pronoun)
+                | PosClass::Function(FunctionKind::Auxiliary)
+                | PosClass::Open(OpenClassKind::Noun)
+                | PosClass::ProperNoun
+        )
+        || (matches!(word.class, PosClass::Content) && looks_plural_subject(word.text))
+}
+
+fn is_verb_context(word: ContextWord<'_>) -> bool {
+    matches!(word.class, PosClass::Open(OpenClassKind::Verb))
+}
+
+fn is_nounish_context(word: ContextWord<'_>) -> bool {
+    matches!(
+        word.class,
+        PosClass::Content | PosClass::Open(OpenClassKind::Noun) | PosClass::ProperNoun
+    )
+}
+
+fn looks_plural_subject(word: &str) -> bool {
+    let normalized = normalize_ascii(word);
+    normalized.len() > 1 && normalized.ends_with('s') && !normalized.ends_with("ss")
+}
+
+fn normalize_ascii(word: &str) -> String {
+    word.to_ascii_lowercase()
+}
+
 /// Look a word up in the closed-class set, case-insensitively and tolerant of a
 /// typographic apostrophe (U+2019) in contractions.
 fn lookup(word: &str) -> Option<FunctionKind> {
@@ -419,6 +601,7 @@ fn is_number(word: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use colorful_core::{Annotator, Node, Span};
 
     fn classify(word: &str) -> PosClass {
         ClosedClassLexicon::new().classify(word)
@@ -426,6 +609,133 @@ mod tests {
 
     fn seed_classify(word: &str) -> PosClass {
         SeedOpenClassLexicon::new().classify(word)
+    }
+
+    fn word(start: usize, end: usize) -> Node {
+        Node::Word {
+            span: Span::new(start, end),
+        }
+    }
+
+    fn punct(start: usize, end: usize) -> Node {
+        Node::Punct {
+            span: Span::new(start, end),
+        }
+    }
+
+    fn document(source: &str, spans: &[(usize, usize)]) -> colorful_core::Tree {
+        colorful_core::Tree::document(vec![Node::Sentence {
+            span: Span::new(0, source.len()),
+            parts: spans
+                .iter()
+                .map(|&(start, end)| {
+                    let slice = &source[start..end];
+                    if slice.chars().all(|c| c.is_alphanumeric()) {
+                        word(start, end)
+                    } else {
+                        punct(start, end)
+                    }
+                })
+                .collect(),
+        }])
+    }
+
+    fn contextual_classes(source: &str, spans: &[(usize, usize)]) -> Vec<PosClass> {
+        ContextualOpenClassAnnotator::new(SeedOpenClassLexicon::new())
+            .annotate(source, &document(source, spans))
+            .into_iter()
+            .map(|token| token.class)
+            .collect()
+    }
+
+    #[test]
+    fn contextual_annotator_disambiguates_ambiguous_open_class_words() {
+        let source = "the book I book rooms the fast river connects fast";
+        let spans = [
+            (0, 3),
+            (4, 8),
+            (9, 10),
+            (11, 15),
+            (16, 21),
+            (22, 25),
+            (26, 30),
+            (31, 36),
+            (37, 45),
+            (46, 50),
+        ];
+
+        assert_eq!(
+            contextual_classes(source, &spans),
+            vec![
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Function(FunctionKind::Pronoun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Content,
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Adjective),
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Open(OpenClassKind::Adverb),
+            ]
+        );
+    }
+
+    #[test]
+    fn contextual_annotator_covers_record_and_lead_roles() {
+        let source = "the record I record notes the lead river they lead teams the lead";
+        let spans = [
+            (0, 3),
+            (4, 10),
+            (11, 12),
+            (13, 19),
+            (20, 25),
+            (26, 29),
+            (30, 34),
+            (35, 40),
+            (41, 45),
+            (46, 50),
+            (51, 56),
+            (57, 60),
+            (61, 65),
+        ];
+
+        assert_eq!(
+            contextual_classes(source, &spans),
+            vec![
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Function(FunctionKind::Pronoun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Content,
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Adjective),
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Function(FunctionKind::Pronoun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Content,
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Noun),
+            ]
+        );
+    }
+
+    #[test]
+    fn contextual_annotator_preserves_existing_precedence() {
+        let source = "the cat writes 3 unlisted.";
+        let spans = [(0, 3), (4, 7), (8, 14), (15, 16), (17, 25), (25, 26)];
+
+        assert_eq!(
+            contextual_classes(source, &spans),
+            vec![
+                PosClass::Function(FunctionKind::Article),
+                PosClass::Open(OpenClassKind::Noun),
+                PosClass::Open(OpenClassKind::Verb),
+                PosClass::Number,
+                PosClass::Content,
+                PosClass::Punctuation,
+            ]
+        );
     }
 
     #[test]

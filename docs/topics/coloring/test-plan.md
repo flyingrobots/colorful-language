@@ -16,9 +16,11 @@ Requirements:
   and quotes do.
 - **COL-7** An annotator that emits open-class POS tags projects noun, verb,
   adjective, and adverb tokens through the manifest-backed LSP legend.
-- **COL-8** The default shipped surfaces use the seed open-class annotator so
+- **COL-8** The default shipped surfaces include seed open-class decisions, so
   representative noun, verb, adjective, and adverb words are visible without
   custom caller wiring.
+- **COL-9** The default shipped surfaces use contextual open-class
+  disambiguation for the supported ambiguous set.
 
 ## Cases
 
@@ -86,6 +88,16 @@ Requirements:
   seeded noun, verb, adjective, and adverb words with their manifest ANSI
   projections. *Oracle:* exact ANSI string equality. *Evidence:* `colorful-cli`
   `tests::default_colorizer_emits_seed_open_class_roles`. *Status:* implemented.
+- **COL-9a** — *Requirement:* COL-9. *Behavior:* the default CLI and IR paths
+  surface context-disambiguated ambiguous open-class roles. *Oracle:* exact ANSI
+  output and token-axis equality. *Evidence:* `colorful-cli`
+  `tests::default_colorizer_emits_contextual_open_class_roles`,
+  `tests::ir_uses_contextual_open_class_roles`. *Status:* implemented.
+- **COL-9b** — *Requirement:* COL-9. *Behavior:* the default LSP semantic-token
+  path surfaces context-disambiguated ambiguous open-class roles. *Oracle:*
+  `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
+  `tests::default_semantic_tokens_emit_contextual_open_class_roles`. *Status:*
+  implemented.
 
 ## Known gaps
 

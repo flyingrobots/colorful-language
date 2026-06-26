@@ -24,6 +24,12 @@ representative set of unambiguous content words to
 `PosClass::Open(OpenClassKind::Adverb)`. Unlisted content words still return
 `Content`.
 
+`ContextualOpenClassAnnotator` is not a lexicon. It is the default annotator
+adapter that composes `SeedOpenClassLexicon` with local sentence context. It can
+refine supported ambiguous `Content` words such as `book`, `record`, `lead`, and
+`fast` into explicit open-class roles when the surrounding tokens make the role
+deterministic.
+
 The set holds the finite closed-class vocabulary across the `FunctionKind`s:
 `Article`, `Preposition`, `Conjunction`, `Pronoun`, `Auxiliary`, `Determiner`,
 and `Negator`, plus common contractions. `ClosedClassLexicon::word_count()` is
@@ -41,19 +47,19 @@ the authoritative current size.
 
 ## Known limitations
 
-- **Single assignment.** Each word maps to exactly one `FunctionKind`. Genuinely
-  ambiguous words (`that` as determiner / pronoun / conjunction; `for` as
-  preposition / conjunction) are assigned their most common role. Disambiguation
-  is a later goalpost.
+- **Single closed-class assignment.** Each closed-class word maps to exactly one
+  `FunctionKind`. Genuinely ambiguous function words (`that` as determiner /
+  pronoun / conjunction; `for` as preposition / conjunction) are assigned their
+  most common role.
 - **Semi-modals.** Words like `need`, `dare`, and `used` are tagged as
   auxiliaries; their content-verb uses are mis-tagged.
 
-## Goalpost 2 seed adapter
+## Goalpost 2 adapters
 
-The seed adapter is wired into the default CLI, LSP, and `colorful ir` command
-path. It exists to prove the port contract before the project commits to a larger
-dictionary or contextual disambiguator. The IR and vocabulary layers carry and
-project those noun/verb/adjective/adverb distinctions across ANSI, LSP, and Graft
+The seed and contextual adapters are wired into the default CLI, LSP, and
+`colorful ir` command path. They prove the port contract before the project
+commits to a larger dictionary. The IR and vocabulary layers carry and project
+those noun/verb/adjective/adverb distinctions across ANSI, LSP, and Graft
 surfaces.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.
