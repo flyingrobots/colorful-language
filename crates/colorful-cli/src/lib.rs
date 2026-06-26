@@ -1,9 +1,9 @@
 //! Colorize English prose by part of speech in the terminal.
 //!
 //! This is a driving adapter: it wires the [`ProseParser`] and
-//! [`SeedOpenClassLexicon`] together through a `LexicalAnnotator` and renders
-//! the classified token stream as ANSI-colored text. The same classification
-//! feeds the LSP server; here it lands as color in a terminal with no editor.
+//! [`ContextualOpenClassAnnotator`] together and renders the classified token
+//! stream as ANSI-colored text. The same classification feeds the LSP server;
+//! here it lands as color in a terminal with no editor.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -11,8 +11,8 @@
 use std::io::{self, Read, Write};
 use std::process::ExitCode;
 
-use colorful_core::{Analyzer, Annotator, Finding, LexicalAnnotator, Parser, PosClass, Severity};
-use colorful_lexicon::SeedOpenClassLexicon;
+use colorful_core::{Analyzer, Annotator, Finding, Parser, PosClass, Severity};
+use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
 use colorful_parse::ProseParser;
 
@@ -26,6 +26,10 @@ fn sgr(class: PosClass) -> Option<&'static str> {
     colorful_ir::vocabulary::projection(&role).ansi.as_deref()
 }
 
+fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassLexicon> {
+    ContextualOpenClassAnnotator::default()
+}
+
 /// Render `source` with ANSI color per part of speech.
 ///
 /// When `color` is `false`, `source` is returned unchanged (a faithful
@@ -37,7 +41,7 @@ pub fn colorize(source: &str, color: bool) -> String {
     }
 
     let tree = ProseParser::new().parse(source);
-    let tokens = LexicalAnnotator::new(SeedOpenClassLexicon::new()).annotate(source, &tree);
+    let tokens = default_annotator().annotate(source, &tree);
 
     let mut out = String::with_capacity(source.len() + tokens.len() * 8);
     let mut prev = 0;
@@ -143,7 +147,7 @@ fn analyze_ir(
     input: &str,
 ) -> Result<colorful_ir::syntax_v1::DocumentAnalysis, colorful_ir::ProjectionError> {
     let tree = ProseParser::new().parse(input);
-    let tokens = LexicalAnnotator::new(SeedOpenClassLexicon::new()).annotate(input, &tree);
+    let tokens = default_annotator().annotate(input, &tree);
     colorful_ir::from_classification(unit_id, input, &tree, &tokens)
 }
 
@@ -310,7 +314,7 @@ where
 /// testable without touching the filesystem.
 fn lint_to_writer<W: Write>(name: &str, source: &str, out: &mut W) -> io::Result<bool> {
     let tree = ProseParser::new().parse(source);
-    let tokens = LexicalAnnotator::new(SeedOpenClassLexicon::new()).annotate(source, &tree);
+    let tokens = default_annotator().annotate(source, &tree);
     let findings = ProseLinter::new().analyze(source, &tree, &tokens);
     out.write_all(lint_report(name, source, &findings).as_bytes())?;
     Ok(!findings.is_empty())
@@ -397,6 +401,25 @@ mod tests {
     }
 
     #[test]
+    fn default_colorizer_emits_contextual_open_class_roles() {
+        let got = colorize("the book I book rooms the fast river connects fast.", true);
+        let want = concat!(
+            "\x1b[1;35mthe\x1b[0m ",
+            "\x1b[34mbook\x1b[0m ",
+            "\x1b[1;35mI\x1b[0m ",
+            "\x1b[31mbook\x1b[0m ",
+            "rooms ",
+            "\x1b[1;35mthe\x1b[0m ",
+            "\x1b[33mfast\x1b[0m ",
+            "\x1b[34mriver\x1b[0m ",
+            "\x1b[31mconnects\x1b[0m ",
+            "\x1b[35mfast\x1b[0m",
+            "\x1b[90m.\x1b[0m",
+        );
+        assert_eq!(got, want);
+    }
+
+    #[test]
     fn ir_uses_default_seed_open_class_roles() {
         use colorful_ir::syntax_v1::OpenClassKind;
 
@@ -413,6 +436,36 @@ mod tests {
                 OpenClassKind::Verb,
                 OpenClassKind::Adjective,
                 OpenClassKind::Adverb,
+            ]
+        );
+    }
+
+    #[test]
+    fn ir_uses_contextual_open_class_roles() {
+        use colorful_ir::syntax_v1::OpenClassKind;
+
+        let source = "the book I book rooms the fast river connects fast.";
+        let doc = analyze_ir("fixture.txt", source).unwrap();
+        let classes: Vec<_> = doc
+            .tokens
+            .iter()
+            .filter_map(|token| {
+                let kind = token.open_class_kind.clone()?;
+                let start = token.byte_range.start_utf8 as usize;
+                let end = token.byte_range.end_utf8 as usize;
+                Some((&source[start..end], kind))
+            })
+            .collect();
+
+        assert_eq!(
+            classes,
+            vec![
+                ("book", OpenClassKind::Noun),
+                ("book", OpenClassKind::Verb),
+                ("fast", OpenClassKind::Adjective),
+                ("river", OpenClassKind::Noun),
+                ("connects", OpenClassKind::Verb),
+                ("fast", OpenClassKind::Adverb),
             ]
         );
     }

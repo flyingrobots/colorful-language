@@ -26,22 +26,22 @@ marketplaces or registries.
 
 Highlighting uses LSP semantic tokens. The default skeleton highlighter uses
 standard token types that existing themes usually understand for structural
-roles, plus Colorful-owned token types for seeded open-class words:
+roles, plus Colorful-owned token types for deterministic open-class words:
 
 | Colorful role | LSP token type |
 | --- | --- |
 | Structural keyword | `keyword` |
-| Seeded noun | `noun` |
-| Seeded verb | `verb` |
-| Seeded adjective | `adjective` |
-| Seeded adverb | `adverb` |
+| Noun | `noun` |
+| Verb | `verb` |
+| Adjective | `adjective` |
+| Adverb | `adverb` |
 | Proper noun candidate | `class` |
 | Literal number | `number` |
 | Quoted text | `string` |
 
-The default LSP path uses `SeedOpenClassLexicon`, so it emits `noun`, `verb`,
-`adjective`, and `adverb` for the small deterministic seed table. Unlisted
-content words remain unstyled.
+The default LSP path uses `ContextualOpenClassAnnotator`, so it emits `noun`,
+`verb`, `adjective`, and `adverb` for the small deterministic seed table and the
+supported contextual patterns. Unlisted content words remain unstyled.
 
 Themes that do not style the custom token types may need explicit user rules
 until Colorful ships a theme package.

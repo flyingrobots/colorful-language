@@ -23,11 +23,11 @@ use tower_lsp::lsp_types::{
 
 /// The semantic-token legend, in index order, derived from the
 /// `colorful.vocabulary/v1` manifest (the distinct LSP token types its roles
-/// project to). The default seed path is a *skeleton* highlighter: it
+/// project to). The default contextual path is a *skeleton* highlighter: it
 /// accentuates structure (function words, proper nouns, numbers, quotes) plus
-/// seeded open-class noun/verb/adjective/adverb decisions, while unlisted
-/// content stays unstyled. Every surface stays in lock-step because all three
-/// read the same manifest.
+/// deterministic open-class noun/verb/adjective/adverb decisions, while
+/// unlisted content stays unstyled. Every surface stays in lock-step because all
+/// three read the same manifest.
 #[must_use]
 pub fn legend_token_types() -> Vec<SemanticTokenType> {
     colorful_ir::vocabulary::lsp_legend()
@@ -138,9 +138,9 @@ fn utf16_len(s: &str) -> u32 {
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
 ///
-/// Words are classified through `parser` and `annotator`; seed open-class roles
-/// emit semantic tokens, while undifferentiated content words and punctuation
-/// are left unstyled (skeleton mode). Token types index into
+/// Words are classified through `parser` and `annotator`; deterministic
+/// open-class roles emit semantic tokens, while undifferentiated content words
+/// and punctuation are left unstyled (skeleton mode). Token types index into
 /// [`legend_token_types`].
 #[must_use]
 pub fn compute_semantic_tokens<P, A>(text: &str, parser: &P, annotator: &A) -> Vec<SemanticToken>
@@ -259,8 +259,7 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use colorful_core::LexicalAnnotator;
-    use colorful_lexicon::SeedOpenClassLexicon;
+    use colorful_lexicon::ContextualOpenClassAnnotator;
     use colorful_parse::ProseParser;
     use tower_lsp::lsp_types::Position;
 
@@ -278,7 +277,7 @@ mod tests {
         compute_semantic_tokens(
             text,
             &ProseParser::new(),
-            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
+            &ContextualOpenClassAnnotator::default(),
         )
     }
 
@@ -286,7 +285,7 @@ mod tests {
         compute_diagnostics(
             text,
             &ProseParser::new(),
-            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
+            &ContextualOpenClassAnnotator::default(),
             &colorful_lint::ProseLinter::new(),
         )
     }
@@ -373,13 +372,14 @@ mod tests {
     fn seed_open_class_tokens_use_manifest_legend_tail() {
         // Existing closed-class token indices stay at the front of the legend;
         // open-class noun/verb/adjective/adverb roles append after them.
+        let tail = &legend_token_types()[4..8];
         assert_eq!(
-            semantic_tokens("cat connects quick silently."),
+            tail,
             vec![
-                tok(0, 0, 3, 4), // noun
-                tok(0, 4, 8, 5), // verb
-                tok(0, 9, 5, 6), // adjective
-                tok(0, 6, 8, 7), // adverb
+                SemanticTokenType::new("noun"),
+                SemanticTokenType::new("verb"),
+                SemanticTokenType::new("adjective"),
+                SemanticTokenType::new("adverb"),
             ]
         );
     }
@@ -393,6 +393,24 @@ mod tests {
                 tok(0, 4, 8, 5), // verb
                 tok(0, 9, 5, 6), // adjective
                 tok(0, 6, 8, 7), // adverb
+            ]
+        );
+    }
+
+    #[test]
+    fn default_semantic_tokens_emit_contextual_open_class_roles() {
+        assert_eq!(
+            semantic_tokens("the book I book rooms the fast river connects fast."),
+            vec![
+                tok(0, 0, 3, 0),  // the (keyword)
+                tok(0, 4, 4, 4),  // book (noun)
+                tok(0, 5, 1, 0),  // I (keyword)
+                tok(0, 2, 4, 5),  // book (verb)
+                tok(0, 11, 3, 0), // the (keyword; delta skips "rooms")
+                tok(0, 4, 4, 6),  // fast (adjective)
+                tok(0, 5, 5, 4),  // river (noun)
+                tok(0, 6, 8, 5),  // connects (verb)
+                tok(0, 9, 4, 7),  // fast (adverb)
             ]
         );
     }

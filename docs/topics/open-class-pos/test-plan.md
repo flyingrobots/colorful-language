@@ -18,6 +18,9 @@ Requirements:
   presentation roles without changing closed-class adapter behavior.
 - **POS-7** The shipped default CLI, IR, and LSP surfaces use the deterministic
   seed open-class lexicon while preserving closed-class and number precedence.
+- **POS-8** The shipped default annotator uses local sentence context to
+  disambiguate a small ambiguous open-class set without changing parser, IR, or
+  editor contracts.
 
 ## Cases
 
@@ -73,11 +76,23 @@ Requirements:
   *Oracle:* `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
   `tests::default_semantic_tokens_emit_seed_open_class_roles`. *Status:*
   implemented.
+- **POS-8a** — *Requirement:* POS-8. *Behavior:* context disambiguates ambiguous
+  words: `book` is a noun after an article and a verb after a pronoun, while
+  `fast` is an adjective before a noun and an adverb after a verb. *Oracle:*
+  class vector equality. *Evidence:* `colorful-lexicon`
+  `tests::contextual_annotator_disambiguates_ambiguous_open_class_words`.
+  *Status:* implemented.
+- **POS-8b** — *Requirement:* POS-8. *Behavior:* contextual disambiguation keeps
+  function-word, number, seed-open-class, punctuation, and unlisted-content
+  behavior stable. *Oracle:* class vector equality. *Evidence:*
+  `colorful-lexicon`
+  `tests::contextual_annotator_preserves_existing_precedence`. *Status:*
+  implemented.
 
 ## Known gaps
 
-- Context disambiguation for ambiguous words such as `book`, `record`, and
-  `lead` is not implemented yet. The seed adapter intentionally covers only a
-  small set of representative unambiguous words.
+- Context disambiguation is deliberately local and deterministic. It is not a
+  production grammar, and it does not attempt probabilistic whole-sentence
+  tagging.
 - Unlisted ordinary content words remain undifferentiated `Content` until a
-  richer lexicon or contextual annotator exists.
+  richer lexicon or broader contextual annotator covers them.

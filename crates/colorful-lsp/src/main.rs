@@ -5,8 +5,7 @@
 //! and answers `textDocument/semanticTokens/full` by classifying the text. All
 //! the real logic lives in the `colorful_lsp` library; this file is transport.
 
-use colorful_core::LexicalAnnotator;
-use colorful_lexicon::SeedOpenClassLexicon;
+use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
 use colorful_lsp::{
     apply_change, compute_diagnostics, compute_semantic_tokens, legend_token_types,
@@ -44,7 +43,7 @@ impl Backend {
         let diagnostics = compute_diagnostics(
             text,
             &ProseParser::new(),
-            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
+            &default_annotator(),
             &ProseLinter::new(),
         );
         self.client
@@ -133,16 +132,16 @@ impl LanguageServer for Backend {
             return Ok(None);
         };
         let text = rope.to_string();
-        let data = compute_semantic_tokens(
-            &text,
-            &ProseParser::new(),
-            &LexicalAnnotator::new(SeedOpenClassLexicon::new()),
-        );
+        let data = compute_semantic_tokens(&text, &ProseParser::new(), &default_annotator());
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
             result_id: None,
             data,
         })))
     }
+}
+
+fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassLexicon> {
+    ContextualOpenClassAnnotator::default()
 }
 
 #[tokio::main]

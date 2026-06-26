@@ -104,6 +104,8 @@ the consumer boundary.
 - **Closed-class words** (the, of, and, is, not, etc.) → highlighted like keywords
 - **Seed open-class words** → representative nouns, verbs, adjectives, and adverbs
   get distinct roles
+- **Contextual open-class words** → supported ambiguous words such as `book` and
+  `fast` disambiguate from local sentence context
 - **Proper nouns** (mid-sentence capitalized words) → highlighted
 - **Numbers** → highlighted
 - **Quotes** → highlighted as strings
@@ -146,7 +148,11 @@ gate. The same findings show up live as editor diagnostics through `colorful-lsp
 
 Most "parse English" projects go straight to heavy NLP. We took a smarter shortcut:
 
-English has a small, finite set of **closed-class words** (function words) that act exactly like programming keywords. By focusing on those + simple structural rules + a light proper-noun heuristic, we get something _immediately useful_ without the complexity.
+English has a small, finite set of **closed-class words** (function words) that
+act exactly like programming keywords. By focusing on those, a small
+deterministic open-class seed table, local contextual disambiguation, and a light
+proper-noun heuristic, we get something _immediately useful_ without the
+complexity.
 
 It's deterministic, auditable, and built to grow.
 
