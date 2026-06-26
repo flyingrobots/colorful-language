@@ -47,6 +47,27 @@ Operational rules:
   gates are facts: links, examples, generated reference, evidence, Markdown,
   whitespace, and contract coverage.
 
+## Goalpost And Topic Discipline
+
+Before starting implementation for a goalpost slice:
+
+1. Open or select the slice issue. Milestones are goalposts; issues are slices.
+2. Identify the owning `docs/topics/<topic>/` folder.
+3. If the work creates a durable lane with no topic home, create a topic folder
+   with at least `README.md` and `test-plan.md`, then link it from
+   `docs/README.md`.
+4. Update the topic `test-plan.md` with planned cases before code. Each case
+   needs a requirement, oracle, evidence type, and status.
+5. Keep topic `README.md` pages as current truth only. Do not describe planned
+   behavior there until the implementation and evidence land.
+6. Update `ROADMAP.md` when a slice opens, closes, or changes goalpost posture.
+
+Do not begin a "next goalpost" implementation from chat context alone. First
+check the milestone, issue list, `ROADMAP.md`, and `docs/topics/`. If a durable
+lane such as editor integrations, themes, distribution, release automation,
+generated contracts, or downstream consumers will keep recurring, give it a
+topic home or explicitly place it under an existing topic.
+
 ## The Delivery Loop
 
 For any meaningful behavior change, do these in order:
