@@ -14,4 +14,12 @@ pub enum VisualRole {
     Muted,
     #[serde(rename = "UNSTYLED")]
     Unstyled,
+    #[serde(rename = "NOUN")]
+    Noun,
+    #[serde(rename = "VERB")]
+    Verb,
+    #[serde(rename = "ADJECTIVE")]
+    Adjective,
+    #[serde(rename = "ADVERB")]
+    Adverb,
 }

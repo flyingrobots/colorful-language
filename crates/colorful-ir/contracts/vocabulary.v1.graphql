@@ -6,7 +6,7 @@
 # (LSP token type, jedit role, graft class) are generated/derived from it, so no
 # editor brand names ever appear in the linguistic syntax contract.
 
-"Abstract visual role — the single source of presentation intent. A LexicalClass/TokenKind maps to one VisualRole; each surface projects VisualRole onto its own theme."
+"Abstract visual role — the single source of presentation intent. Token axes map to one VisualRole; each surface projects VisualRole onto its own theme."
 enum VisualRole {
   STRUCTURAL_KEYWORD
   TYPE_LIKE
@@ -14,4 +14,8 @@ enum VisualRole {
   QUOTED
   MUTED
   UNSTYLED
+  NOUN
+  VERB
+  ADJECTIVE
+  ADVERB
 }

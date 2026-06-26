@@ -201,8 +201,8 @@ export PATH="$HOME/.colorful-language/bin:$PATH"
 This project has high documentation and testing standards. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 The **prose linter** (Goalpost 1) has landed on `main`; contributions that grow
-its rule pack, or that start **open-class disambiguation** (noun/verb/adjective,
-Goalpost 2), are especially welcome right now.
+its rule pack, or that continue **open-class disambiguation**
+(noun/verb/adjective/adverb, Goalpost 2), are especially welcome right now.
 
 ---
 

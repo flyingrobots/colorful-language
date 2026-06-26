@@ -47,8 +47,10 @@ representative seed set as `PosClass::Open(OpenClassKind::Noun)`,
 `PosClass::Open(OpenClassKind::Adjective)`, or
 `PosClass::Open(OpenClassKind::Adverb)`.
 
-The seed adapter is not wired into the default CLI, LSP, or IR emission path. It
-exists to prove the port contract before the project commits to a larger
-dictionary or contextual disambiguator.
+The seed adapter is not wired into the default CLI, LSP, or `colorful ir` command
+path. It exists to prove the port contract before the project commits to a larger
+dictionary or contextual disambiguator. When a caller does opt into an annotator
+that emits `PosClass::Open`, the IR and vocabulary layers can now carry and
+project those noun/verb/adjective/adverb distinctions.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

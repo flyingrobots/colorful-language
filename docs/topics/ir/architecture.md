@@ -79,13 +79,14 @@ Design commitments (frozen before the ecosystem depends on them):
   - `LexicalClass` — `FUNCTION`, `CONTENT`, `PROPER_NOUN_CANDIDATE`
   - `FunctionKind` — `ARTICLE`, `PREPOSITION`, `CONJUNCTION`, `PRONOUN`,
     `AUXILIARY`, `DETERMINER`, `NEGATOR`
-  - (reserved) `PartOfSpeech` — a later contextual annotation, not baked in now.
+  - `OpenClassKind` — `NOUN`, `VERB`, `ADJECTIVE`, `ADVERB` when a content word
+    has an explicit open-class decision
 - **Presentation is an abstract `VisualRole`** (`STRUCTURAL_KEYWORD`, `TYPE_LIKE`,
-  `LITERAL`, `QUOTED`, `MUTED`, `UNSTYLED`). Generate `LexicalClass → VisualRole`,
-  then `VisualRole → {LSP token, jedit role, graft class}`. No editor brand names
-  in the linguistic domain.
+  `LITERAL`, `QUOTED`, `MUTED`, `UNSTYLED`, `NOUN`, `VERB`, `ADJECTIVE`,
+  `ADVERB`). Generate token axes → `VisualRole`, then `VisualRole → {LSP token,
+  jedit role, graft class}`. No editor brand names in the linguistic domain.
 
-## Wesley findings (de-risk, wesley 0.0.5)
+## Wesley findings (de-risk, wesley 0.1.1)
 
 - `wesley-cli emit rust` emits structs/enums deriving `serde::{Serialize,
   Deserialize}` with `#[serde(rename = ...)]` — **codecs work out of the box**, so
@@ -99,7 +100,7 @@ Design commitments (frozen before the ecosystem depends on them):
   possible later upstream contribution.)
 - GraphQL `Int` lowers to Rust `i32` (a bounded wire scalar, ~2 GB; acceptable for
   v1, a custom unsigned scalar is a later refinement).
-- Pin an **exact** Wesley version (`0.0.5`) and record it in committed generator
+- Pin an **exact** Wesley version (`0.1.1`) and record it in committed generator
   metadata. An ambient `~/git/wesley` checkout is a developer override, never the
   replay mechanism.
 

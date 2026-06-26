@@ -1,9 +1,9 @@
 //! The `colorful.vocabulary/v1` manifest: the single source of presentation
 //! intent.
 //!
-//! Token axes (`TokenKind` + `LexicalClass`) map to one abstract [`VisualRole`],
-//! and each `VisualRole` projects onto every surface — terminal ANSI, LSP token
-//! type, graft class. That mapping is authored **once** in
+//! Token axes (`TokenKind` + `LexicalClass` + `OpenClassKind`) map to one
+//! abstract [`VisualRole`], and each `VisualRole` projects onto every surface —
+//! terminal ANSI, LSP token type, graft class. That mapping is authored **once** in
 //! `contracts/colorful/vocabulary.v1.json` and embedded here; the CLI, the
 //! language server, and the graft reference consumer all derive their colors from
 //! it instead of hardcoding their own copy.
@@ -20,7 +20,7 @@ use colorful_core::PosClass;
 use serde::Deserialize;
 
 use crate::sha256_hex;
-use crate::syntax_v1::{LexicalClass, TokenKind};
+use crate::syntax_v1::{LexicalClass, OpenClassKind, TokenKind};
 use crate::vocabulary_v1::VisualRole;
 
 const MANIFEST_JSON: &str = include_str!("../contracts/vocabulary.v1.json");
@@ -41,6 +41,7 @@ struct Manifest {
 struct ClassRole {
     token_kind: TokenKind,
     lexical_class: Option<LexicalClass>,
+    open_class_kind: Option<OpenClassKind>,
     visual_role: VisualRole,
 }
 
@@ -108,7 +109,11 @@ fn validate_manifest(manifest: &Manifest) -> Result<(), String> {
                 role_name(&rule.visual_role)
             ));
         }
-        let key = class_role_key(&rule.token_kind, rule.lexical_class.as_ref())?;
+        let key = class_role_key(
+            &rule.token_kind,
+            rule.lexical_class.as_ref(),
+            rule.open_class_kind.as_ref(),
+        )?;
         if !class_roles.insert(key.clone()) {
             return Err(format!("duplicate class role for `{key}`"));
         }
@@ -130,18 +135,27 @@ pub fn hash() -> String {
 }
 
 /// The [`VisualRole`] for a token's axes, per the manifest. A `WORD` is
-/// disambiguated by its [`LexicalClass`]; every other [`TokenKind`] ignores it.
+/// disambiguated by its [`LexicalClass`] and, for content words, an optional
+/// [`OpenClassKind`]; every other [`TokenKind`] carries neither.
 #[must_use]
-pub fn visual_role(token_kind: &TokenKind, lexical_class: Option<&LexicalClass>) -> VisualRole {
+pub fn visual_role(
+    token_kind: &TokenKind,
+    lexical_class: Option<&LexicalClass>,
+    open_class_kind: Option<&OpenClassKind>,
+) -> VisualRole {
     for rule in &manifest().class_roles {
-        if &rule.token_kind == token_kind && rule.lexical_class.as_ref() == lexical_class {
+        if &rule.token_kind == token_kind
+            && rule.lexical_class.as_ref() == lexical_class
+            && rule.open_class_kind.as_ref() == open_class_kind
+        {
             return rule.visual_role.clone();
         }
     }
     panic!(
-        "colorful.vocabulary/v1 manifest lacks a class role for `{}` / `{:?}`",
+        "colorful.vocabulary/v1 manifest lacks a class role for `{}` / `{:?}` / `{:?}`",
         token_kind_name(token_kind),
-        lexical_class.map(lexical_class_name)
+        lexical_class.map(lexical_class_name),
+        open_class_kind.map(open_class_kind_name)
     );
 }
 
@@ -149,8 +163,12 @@ pub fn visual_role(token_kind: &TokenKind, lexical_class: Option<&LexicalClass>)
 /// the IR projection uses — the bridge every surface calls.
 #[must_use]
 pub fn visual_role_for(class: PosClass) -> VisualRole {
-    let (token_kind, lexical_class, _function_kind) = crate::token_axes(class);
-    visual_role(&token_kind, lexical_class.as_ref())
+    let (token_kind, lexical_class, _function_kind, open_class_kind) = crate::token_axes(class);
+    visual_role(
+        &token_kind,
+        lexical_class.as_ref(),
+        open_class_kind.as_ref(),
+    )
 }
 
 /// The per-surface [`RoleProjection`] for a [`VisualRole`].
@@ -196,6 +214,15 @@ fn lexical_class_name(class: &LexicalClass) -> &'static str {
     }
 }
 
+fn open_class_kind_name(kind: &OpenClassKind) -> &'static str {
+    match kind {
+        OpenClassKind::Noun => "NOUN",
+        OpenClassKind::Verb => "VERB",
+        OpenClassKind::Adjective => "ADJECTIVE",
+        OpenClassKind::Adverb => "ADVERB",
+    }
+}
+
 fn role_name(role: &VisualRole) -> &'static str {
     match role {
         VisualRole::StructuralKeyword => "STRUCTURAL_KEYWORD",
@@ -204,6 +231,10 @@ fn role_name(role: &VisualRole) -> &'static str {
         VisualRole::Quoted => "QUOTED",
         VisualRole::Muted => "MUTED",
         VisualRole::Unstyled => "UNSTYLED",
+        VisualRole::Noun => "NOUN",
+        VisualRole::Verb => "VERB",
+        VisualRole::Adjective => "ADJECTIVE",
+        VisualRole::Adverb => "ADVERB",
     }
 }
 
@@ -215,6 +246,10 @@ fn all_role_names() -> BTreeSet<&'static str> {
         "QUOTED",
         "MUTED",
         "UNSTYLED",
+        "NOUN",
+        "VERB",
+        "ADJECTIVE",
+        "ADVERB",
     ]
     .into_iter()
     .collect()
@@ -222,12 +257,16 @@ fn all_role_names() -> BTreeSet<&'static str> {
 
 fn expected_class_role_keys() -> BTreeSet<String> {
     [
-        "WORD/FUNCTION",
-        "WORD/CONTENT",
-        "WORD/PROPER_NOUN_CANDIDATE",
-        "NUMBER/<none>",
-        "PUNCTUATION/<none>",
-        "QUOTE/<none>",
+        "WORD/FUNCTION/<none>",
+        "WORD/CONTENT/<none>",
+        "WORD/CONTENT/NOUN",
+        "WORD/CONTENT/VERB",
+        "WORD/CONTENT/ADJECTIVE",
+        "WORD/CONTENT/ADVERB",
+        "WORD/PROPER_NOUN_CANDIDATE/<none>",
+        "NUMBER/<none>/<none>",
+        "PUNCTUATION/<none>/<none>",
+        "QUOTE/<none>/<none>",
     ]
     .into_iter()
     .map(str::to_owned)
@@ -237,20 +276,33 @@ fn expected_class_role_keys() -> BTreeSet<String> {
 fn class_role_key(
     token_kind: &TokenKind,
     lexical_class: Option<&LexicalClass>,
+    open_class_kind: Option<&OpenClassKind>,
 ) -> Result<String, String> {
-    match (token_kind, lexical_class) {
-        (TokenKind::Word, Some(class)) => Ok(format!(
-            "{}/{}",
-            token_kind_name(token_kind),
-            lexical_class_name(class)
+    match (token_kind, lexical_class, open_class_kind) {
+        (TokenKind::Word, Some(LexicalClass::Content), open_class) => Ok(format!(
+            "WORD/CONTENT/{}",
+            open_class.map(open_class_kind_name).unwrap_or("<none>")
         )),
-        (TokenKind::Word, None) => Err("WORD class role must declare lexicalClass".to_string()),
-        (_, Some(class)) => Err(format!(
+        (TokenKind::Word, Some(class), None) => {
+            Ok(format!("WORD/{}/<none>", lexical_class_name(class)))
+        }
+        (TokenKind::Word, Some(class), Some(open_class)) => Err(format!(
+            "WORD/{} class role must not declare openClassKind `{}`",
+            lexical_class_name(class),
+            open_class_kind_name(open_class)
+        )),
+        (TokenKind::Word, None, _) => Err("WORD class role must declare lexicalClass".to_string()),
+        (_, Some(class), _) => Err(format!(
             "{} class role must not declare lexicalClass `{}`",
             token_kind_name(token_kind),
             lexical_class_name(class)
         )),
-        (_, None) => Ok(format!("{}/<none>", token_kind_name(token_kind))),
+        (_, None, Some(open_class)) => Err(format!(
+            "{} class role must not declare openClassKind `{}`",
+            token_kind_name(token_kind),
+            open_class_kind_name(open_class)
+        )),
+        (_, None, None) => Ok(format!("{}/<none>/<none>", token_kind_name(token_kind))),
     }
 }
 
@@ -261,7 +313,7 @@ mod tests {
     #[test]
     fn manifest_parses_and_every_role_has_a_projection() {
         let m = manifest();
-        assert_eq!(m.class_roles.len(), 6);
+        assert_eq!(m.class_roles.len(), 10);
         for role in [
             VisualRole::StructuralKeyword,
             VisualRole::TypeLike,
@@ -269,6 +321,10 @@ mod tests {
             VisualRole::Quoted,
             VisualRole::Muted,
             VisualRole::Unstyled,
+            VisualRole::Noun,
+            VisualRole::Verb,
+            VisualRole::Adjective,
+            VisualRole::Adverb,
         ] {
             // Does not panic: the projection exists for every role.
             let _ = projection(&role);
@@ -332,6 +388,19 @@ mod tests {
     }
 
     #[test]
+    fn manifest_rejects_open_class_on_non_content_axes() {
+        let mut value = manifest_value();
+        value["classRoles"][0]["openClassKind"] = serde_json::Value::String("NOUN".to_string());
+        let err = parse_manifest(&manifest_string(&value)).unwrap_err();
+        assert!(err.contains("openClassKind"), "{err}");
+
+        let mut value = manifest_value();
+        value["classRoles"][7]["openClassKind"] = serde_json::Value::String("NOUN".to_string());
+        let err = parse_manifest(&manifest_string(&value)).unwrap_err();
+        assert!(err.contains("openClassKind"), "{err}");
+    }
+
+    #[test]
     fn pos_classes_map_to_the_expected_roles() {
         use colorful_core::FunctionKind;
         assert_eq!(
@@ -345,7 +414,19 @@ mod tests {
         assert_eq!(visual_role_for(PosClass::Content), VisualRole::Unstyled);
         assert_eq!(
             visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Noun)),
-            VisualRole::Unstyled
+            VisualRole::Noun
+        );
+        assert_eq!(
+            visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Verb)),
+            VisualRole::Verb
+        );
+        assert_eq!(
+            visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Adjective)),
+            VisualRole::Adjective
+        );
+        assert_eq!(
+            visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Adverb)),
+            VisualRole::Adverb
         );
     }
 
@@ -369,7 +450,13 @@ mod tests {
 
     #[test]
     fn lsp_legend_is_keyword_class_number_string_in_order() {
-        assert_eq!(lsp_legend(), ["keyword", "class", "number", "string"]);
+        assert_eq!(
+            lsp_legend(),
+            [
+                "keyword", "class", "number", "string", "variable", "function", "property",
+                "operator"
+            ]
+        );
     }
 
     #[test]

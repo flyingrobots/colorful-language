@@ -83,6 +83,18 @@ pub enum LexicalClass {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum OpenClassKind {
+    #[serde(rename = "NOUN")]
+    Noun,
+    #[serde(rename = "VERB")]
+    Verb,
+    #[serde(rename = "ADJECTIVE")]
+    Adjective,
+    #[serde(rename = "ADVERB")]
+    Adverb,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum OutlineKind {
     #[serde(rename = "PARAGRAPH")]
     Paragraph,
@@ -124,6 +136,8 @@ pub struct Token {
     pub lexical_class: Option<LexicalClass>,
     #[serde(rename = "functionKind")]
     pub function_kind: Option<FunctionKind>,
+    #[serde(rename = "openClassKind")]
+    pub open_class_kind: Option<OpenClassKind>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

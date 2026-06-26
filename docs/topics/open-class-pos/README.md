@@ -2,8 +2,8 @@
 
 Open-class POS is the Goalpost 2 path for distinguishing ordinary content words
 as nouns, verbs, adjectives, and adverbs. The current implementation establishes
-the domain contract and an opt-in seed adapter; it does not yet replace the
-default highlighter.
+the domain contract, an opt-in seed adapter, and IR/vocabulary support for
+carrying those distinctions. It does not yet replace the default highlighter.
 
 ## Core contract
 
@@ -40,10 +40,25 @@ richer annotator.
 
 ## IR boundary
 
-`colorful.syntax/v1` does not yet have explicit noun, verb, adjective, or adverb
-axes. Until that contract changes, open-class domain tags project to
-`tokenKind: WORD` and `lexicalClass: CONTENT`. That fallback is intentional: the
-IR must not invent unsupported wire values or imply downstream consumers can see
-distinctions the contract cannot carry.
+`colorful.syntax/v1` carries open-class decisions with an optional
+`openClassKind` axis:
+
+```text
+tokenKind: WORD
+lexicalClass: CONTENT
+openClassKind: NOUN | VERB | ADJECTIVE | ADVERB
+```
+
+`PosClass::Content` still projects as `WORD` / `CONTENT` with
+`openClassKind: null`. Closed-class words, proper-noun candidates, and non-word
+tokens must not carry `openClassKind`; `colorful_ir::validate_document` rejects
+those malformed combinations.
+
+The vocabulary manifest maps the explicit open-class axis to distinct abstract
+roles (`NOUN`, `VERB`, `ADJECTIVE`, `ADVERB`) and then to ANSI, LSP token types,
+and graft classes. Default CLI/LSP execution does not emit those roles yet
+because it still uses `ClosedClassLexicon`, but any caller that supplies an
+annotator producing `PosClass::Open` can carry the distinction through the IR and
+projection layers.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.
