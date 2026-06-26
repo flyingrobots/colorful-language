@@ -71,6 +71,34 @@ like a chapter in a technical book.
 | `ROADMAP.md` | The release train, goalposts, and their GitHub issue anchors. |
 | `CHANGELOG.md` | Release-visible changes. |
 
+## Goalpost And Topic Discipline
+
+Goalposts are not only code milestones. They are documentation and verification
+milestones. Before implementation starts for a new goalpost slice, make the
+slice explicit and decide where its durable truth belongs.
+
+For every new slice:
+
+1. Open or select the GitHub issue that represents the slice. Milestones are
+   goalposts; issues are slices.
+2. Identify the topic folder that owns the behavior. If the behavior spans more
+   than one pull request and no topic exists, create one under
+   `docs/topics/<topic>/`.
+3. Update the topic `test-plan.md` before writing implementation code. Planned
+   cases must name the requirement, oracle, evidence type, and status.
+4. Keep the topic `README.md` current only for behavior that exists in tested
+   code. Planned behavior belongs in the test plan, issue, roadmap, or design
+   note until it lands.
+5. Link any new durable topic or page from `docs/README.md` in the same change.
+6. Update `ROADMAP.md` when a slice opens, closes, or changes the public posture
+   of a goalpost.
+
+Do not let durable project lanes live only in chat, issues, or pull request
+comments. If a lane will keep coming back — editor integrations, themes,
+distribution, release automation, generated contracts, or downstream consumers —
+it needs a topic home or an explicit note explaining why an existing topic owns
+it.
+
 ## How To Change Behavior
 
 For a meaningful behavior change, follow this sequence:
