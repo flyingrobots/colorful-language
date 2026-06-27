@@ -7,9 +7,8 @@ run and observed.
 
 - Target version: `0.3.0`
 - Branch (prep): `release/v0.3.0`
-- Prep head: `835dea5`
 - Merge target: `origin/main` at `fb818a5`
-- Sync state after `git fetch origin main --tags`: ahead 2, behind 0 against
+- Sync state after `git fetch origin main --tags`: ahead 4, behind 0 against
   `origin/main`
 - Workspace version (`Cargo.toml`): `0.3.0`
 - Latest existing `v*` tag before prep: `v0.2.1`
@@ -46,8 +45,8 @@ release workflow.
 | VS Code source extension | `npm ci && npm run compile` in `editors/vscode` | ✅ pass. |
 | Zed source extension | `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1` | ✅ pass. |
 
-The PR CI run for prep head `835dea5` also passed the non-tag CI surfaces:
-`IR cross-language round-trip witness` and `Editor integrations (compile)`.
+PR CI also records hosted evidence for these non-tag surfaces through the
+`IR cross-language round-trip witness` and `Editor integrations (compile)` jobs.
 
 ## crates.io dry-run
 
