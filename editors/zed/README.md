@@ -93,7 +93,7 @@ slots:
       },
       {
         "selector": "noun",
-        "style": ["syntax.type"]
+        "style": ["syntax.variable"]
       },
       {
         "selector": "verb",
@@ -105,7 +105,7 @@ slots:
       },
       {
         "selector": "adverb",
-        "style": ["syntax.string"]
+        "style": ["syntax.operator"]
       }
     ]
   }

@@ -49,7 +49,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `"semantic_tokens": "full"` for **Plain Text** and **Markdown** buffers plus
   `global_lsp_settings.semantic_token_rules` for Colorful-owned `noun`, `verb`,
   `adjective`, and `adverb` token types.
-  *Oracle:* extension build succeeds and documentation states both conditions.
+  *Oracle:* extension build succeeds and documentation states these conditions.
   *Evidence:* `editors/zed/extension.toml`; `editors/zed/src/lib.rs`;
   `editors/zed/README.md`; `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1`;
   `markdownlint-cli2 "docs/topics/**/*.md" "editors/zed/README.md"`.
