@@ -56,6 +56,10 @@ not pose as the current reference.
 
 ## Releases
 
+- [v0.3.0](goalposts/v0.3.0/release.md) — deterministic open-class POS roles
+  (noun/verb/adjective/adverb), contextual disambiguation, diagnostic JSON, and
+  Plain Text editor activation fixes
+  ([verification](goalposts/v0.3.0/verification.md)).
 - [v0.2.1](goalposts/v0.2.1/release.md) — Goalpost 1, "prose linter", plus the
   surface IR, vocabulary manifest, source editor integrations, and release
   package recovery ([verification](goalposts/v0.2.1/verification.md)).

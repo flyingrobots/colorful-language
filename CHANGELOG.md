@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-27
+
 ### Added
 
 - **Open-class POS contract.** `colorful-core` now has explicit
@@ -33,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking API queued for v0.3.0.** `PosClass` is a public enum and now includes
+- **Breaking API.** `PosClass` is a public enum and now includes
   `PosClass::Open(OpenClassKind)`. Downstream crates that exhaustively match on
   `PosClass` must handle the new variant before adopting the `0.3.x` line.
 - **Default open-class path.** The CLI colorizer, `colorful ir`, CLI lint, and
@@ -173,7 +175,8 @@ First public release — **Goalpost 0, "English lights up."**
     semantic tokens were unified on the LSP line model; `is_number` accepts
     Unicode `\p{N}`; letter-initial alphanumeric words (`covid19`) stay whole.
 
-[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/flyingrobots/colorful-language/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/flyingrobots/colorful-language/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/flyingrobots/colorful-language/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/flyingrobots/colorful-language/releases/tag/v0.1.0
