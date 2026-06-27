@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   local `colorful` CLI into `$HOME/.colorful-language/bin` with
   `cargo install --path ... --root ... --force`, giving Graft and jedit a stable
   development-time binary path.
+- **CLI diagnostic JSON.** `colorful diagnose --json [FILE]` now emits a
+  machine-readable troubleshooting report showing each token's text, byte range,
+  class axes, visual role, ANSI projection, graft class, LSP token type, and LSP
+  legend index.
 
 ### Changed
 

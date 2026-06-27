@@ -24,3 +24,4 @@ colorful-parse = { workspace = true }
 colorful-lexicon = { workspace = true }
 colorful-ir = { workspace = true }
 colorful-lint = { workspace = true }
+serde_json = { workspace = true }

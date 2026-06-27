@@ -34,6 +34,27 @@ emitted verbatim, so stripping the escapes reproduces the input exactly.
 `--no-color` and the `NO_COLOR` environment variable disable color and pass the
 text through unchanged.
 
+`colorful diagnose --json <file>` emits a compact machine-readable report for
+troubleshooting CLI and editor output. The report uses the same production parser
+and annotator as `colorful`, `colorful ir`, and `colorful-lsp`, then decodes each
+token into:
+
+- the source text and UTF-8 byte range;
+- `tokenKind`, `lexicalClass`, `functionKind`, and `openClassKind`;
+- the vocabulary-backed `visualRole`;
+- the ANSI projection used by the terminal;
+- the graft class;
+- the LSP semantic token type and legend index.
+
+Use `colorful ir` for the stable downstream consumer contract. Use
+`colorful diagnose --json` when checking whether a terminal, Zed, jedit, or
+another editor is rendering the classes Colorful actually produced.
+
+The committed smoke fixture
+[`crates/colorful-cli/fixtures/editor-smoke-prose.txt`](../../../crates/colorful-cli/fixtures/editor-smoke-prose.txt)
+contains README-style prose plus deterministic noun, verb, adjective, adverb,
+proper noun, quote, number, and punctuation probes for cross-editor comparison.
+
 ## Editor output (`colorful-lsp`)
 
 The server keeps a `ropey` mirror of each open document, applies incremental

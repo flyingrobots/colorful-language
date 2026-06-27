@@ -80,6 +80,7 @@ USAGE:
     colorful [OPTIONS] [FILE]
     colorful lint [FILE]
     colorful ir [FILE]
+    colorful diagnose [--json] [FILE]
 
 ARGS:
     FILE          Path to read; omit or use \"-\" to read standard input.
@@ -93,6 +94,8 @@ SUBCOMMANDS:
     lint          Report prose problems (weak words, run-ons, passives); exits
                   non-zero when any are found.
     ir            Emit the colorful.syntax/v1 IR as canonical JSON.
+    diagnose      Emit a machine-readable troubleshooting report for CLI/editor
+                  projection checks.
 
 Color is disabled automatically when the NO_COLOR environment variable is set.
 ";
@@ -122,6 +125,7 @@ where
         Some("-V" | "--version") => run_version(&args[1..]),
         Some("ir") => run_ir(args.iter().skip(1).cloned()).map(|()| ExitCode::SUCCESS),
         Some("lint") => run_lint(args.iter().skip(1).cloned()),
+        Some("diagnose") => run_diagnose(args.iter().skip(1).cloned()).map(|()| ExitCode::SUCCESS),
         Some("color") => run_color(args.iter().skip(1).cloned()).map(|()| ExitCode::SUCCESS),
         _ => run_color(args).map(|()| ExitCode::SUCCESS),
     }
@@ -149,6 +153,10 @@ fn analyze_ir(
     let tree = ProseParser::new().parse(input);
     let tokens = default_annotator().annotate(input, &tree);
     colorful_ir::from_classification(unit_id, input, &tree, &tokens)
+}
+
+fn json_error(err: serde_json::Error) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, err.to_string())
 }
 
 /// Colorize prose to ANSI in the terminal (the default subcommand).
@@ -251,6 +259,185 @@ where
     stdout.write_all(json.as_bytes())?;
     stdout.write_all(b"\n")?;
     stdout.flush()
+}
+
+/// Emit a troubleshooting report for CLI/editor projection checks.
+///
+/// `colorful diagnose --json [FILE]` — reads the file (or stdin), parses and
+/// classifies it through the default production path, and prints a decoded JSON
+/// report showing each token's IR axes and presentation projection.
+fn run_diagnose<I>(args: I) -> io::Result<()>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut path: Option<String> = None;
+    let mut end_of_options = false;
+    for arg in args {
+        if end_of_options {
+            path = Some(arg);
+            continue;
+        }
+        match arg.as_str() {
+            "--" => end_of_options = true,
+            "--json" => {}
+            "-h" | "--help" => {
+                print!(
+                    "colorful diagnose [--json] [FILE]\n\n\
+                     Emit a machine-readable diagnostic report for CLI/editor \
+                     projection checks (stdin if no FILE). JSON is the only \
+                     current output format.\n"
+                );
+                return Ok(());
+            }
+            "-" => path = None,
+            other if other.starts_with('-') && other.len() > 1 => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("unknown option: {other}"),
+                ));
+            }
+            other => path = Some(other.to_string()),
+        }
+    }
+
+    let (unit_id, input) = match path {
+        Some(p) => {
+            let contents = std::fs::read_to_string(&p)?;
+            (p, contents)
+        }
+        None => {
+            let mut buf = String::new();
+            io::stdin().read_to_string(&mut buf)?;
+            ("stdin".to_string(), buf)
+        }
+    };
+
+    let json = diagnose_json(&unit_id, &input)?;
+    let mut stdout = io::stdout().lock();
+    stdout.write_all(json.as_bytes())?;
+    stdout.write_all(b"\n")?;
+    stdout.flush()
+}
+
+fn diagnose_json(unit_id: &str, input: &str) -> io::Result<String> {
+    let parser = ProseParser::new();
+    let annotator = default_annotator();
+    let analyzer = ProseLinter::new();
+
+    let tree = parser.parse(input);
+    let tokens = annotator.annotate(input, &tree);
+    let document = colorful_ir::from_classification(unit_id, input, &tree, &tokens)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+    let findings = analyzer.analyze(input, &tree, &tokens);
+    let legend = colorful_ir::vocabulary::lsp_legend();
+
+    let mut lsp_semantic_tokens = 0usize;
+    let mut ansi_colored_tokens = 0usize;
+    let mut graft_styled_tokens = 0usize;
+    let mut report_tokens = Vec::with_capacity(document.tokens.len());
+
+    for token in &document.tokens {
+        let role = colorful_ir::vocabulary::visual_role(
+            &token.token_kind,
+            token.lexical_class.as_ref(),
+            token.open_class_kind.as_ref(),
+        );
+        let projection = colorful_ir::vocabulary::projection(&role);
+        let lsp_token_type = projection.lsp_token_type.as_deref();
+        let lsp_token_type_index =
+            lsp_token_type.and_then(|name| legend.iter().position(|candidate| *candidate == name));
+
+        if lsp_token_type.is_some() {
+            lsp_semantic_tokens += 1;
+        }
+        if projection.ansi.is_some() {
+            ansi_colored_tokens += 1;
+        }
+        if projection.graft_class.is_some() {
+            graft_styled_tokens += 1;
+        }
+
+        report_tokens.push(serde_json::json!({
+            "occurrenceId": token.occurrence_id,
+            "text": range_text(input, &token.byte_range),
+            "byteRange": token.byte_range,
+            "tokenKind": token.token_kind,
+            "lexicalClass": token.lexical_class,
+            "functionKind": token.function_kind,
+            "openClassKind": token.open_class_kind,
+            "visualRole": role,
+            "ansi": projection.ansi,
+            "graftClass": projection.graft_class,
+            "lspTokenType": lsp_token_type,
+            "lspTokenTypeIndex": lsp_token_type_index,
+        }));
+    }
+
+    let diagnostics: Vec<_> = findings
+        .iter()
+        .map(|finding| {
+            let (line, column) = line_col(input, finding.span.start);
+            serde_json::json!({
+                "byteRange": {
+                    "startUtf8": finding.span.start,
+                    "endUtf8": finding.span.end,
+                },
+                "line": line,
+                "column": column,
+                "severity": severity_name(finding.severity),
+                "code": finding.rule.code(),
+                "message": finding.message,
+                "text": finding.span.slice(input),
+            })
+        })
+        .collect();
+
+    let report = serde_json::json!({
+        "reportVersion": "colorful.diagnose/v1",
+        "tool": {
+            "name": "colorful",
+            "version": env!("CARGO_PKG_VERSION"),
+        },
+        "source": document.source,
+        "contracts": {
+            "syntax": {
+                "contractVersion": document.contract_version,
+                "schemaHash": document.schema_hash,
+            },
+            "vocabulary": {
+                "hash": document.vocabulary_hash,
+                "lspLegend": legend,
+            },
+        },
+        "summary": {
+            "tokens": report_tokens.len(),
+            "ansiColoredTokens": ansi_colored_tokens,
+            "graftStyledTokens": graft_styled_tokens,
+            "lspSemanticTokens": lsp_semantic_tokens,
+            "diagnostics": diagnostics.len(),
+        },
+        "tokens": report_tokens,
+        "diagnostics": diagnostics,
+    });
+
+    colorful_ir::canonical_json(&report).map_err(json_error)
+}
+
+fn range_text<'a>(source: &'a str, range: &colorful_ir::syntax_v1::ByteRange) -> &'a str {
+    let Ok(start) = usize::try_from(range.start_utf8) else {
+        return "";
+    };
+    let Ok(end) = usize::try_from(range.end_utf8) else {
+        return "";
+    };
+    source.get(start..end).unwrap_or("")
+}
+
+fn severity_name(severity: Severity) -> &'static str {
+    match severity {
+        Severity::Warning => "WARNING",
+        Severity::Info => "INFO",
+    }
 }
 
 /// Report prose problems for a file (the `lint` subcommand).
@@ -471,6 +658,118 @@ mod tests {
     }
 
     #[test]
+    fn diagnose_json_reports_token_roles_and_lsp_types() {
+        let report = diagnose_json("fixture.txt", "The cat connects fast.").unwrap();
+        let value: serde_json::Value = serde_json::from_str(&report).unwrap();
+
+        assert_eq!(value["reportVersion"], "colorful.diagnose/v1");
+        assert_eq!(value["tool"]["version"], env!("CARGO_PKG_VERSION"));
+        assert_eq!(
+            value["contracts"]["vocabulary"]["lspLegend"],
+            serde_json::json!([
+                "keyword",
+                "class",
+                "number",
+                "string",
+                "noun",
+                "verb",
+                "adjective",
+                "adverb"
+            ])
+        );
+        assert_eq!(value["summary"]["tokens"], 5);
+        assert_eq!(value["summary"]["lspSemanticTokens"], 4);
+        assert_eq!(value["summary"]["diagnostics"], 0);
+
+        let tokens = value["tokens"].as_array().unwrap();
+        assert_eq!(tokens[0]["text"], "The");
+        assert_eq!(tokens[0]["lexicalClass"], "FUNCTION");
+        assert_eq!(tokens[0]["functionKind"], "ARTICLE");
+        assert_eq!(tokens[0]["visualRole"], "STRUCTURAL_KEYWORD");
+        assert_eq!(tokens[0]["lspTokenType"], "keyword");
+        assert_eq!(tokens[0]["lspTokenTypeIndex"], 0);
+
+        assert_eq!(tokens[1]["text"], "cat");
+        assert_eq!(tokens[1]["openClassKind"], "NOUN");
+        assert_eq!(tokens[1]["visualRole"], "NOUN");
+        assert_eq!(tokens[1]["lspTokenType"], "noun");
+        assert_eq!(tokens[1]["lspTokenTypeIndex"], 4);
+
+        assert_eq!(tokens[2]["text"], "connects");
+        assert_eq!(tokens[2]["openClassKind"], "VERB");
+        assert_eq!(tokens[2]["lspTokenType"], "verb");
+
+        assert_eq!(tokens[3]["text"], "fast");
+        assert_eq!(tokens[3]["openClassKind"], "ADVERB");
+        assert_eq!(tokens[3]["lspTokenType"], "adverb");
+
+        assert_eq!(tokens[4]["text"], ".");
+        assert_eq!(tokens[4]["tokenKind"], "PUNCTUATION");
+        assert!(tokens[4]["lspTokenType"].is_null());
+        assert!(tokens[4]["lspTokenTypeIndex"].is_null());
+    }
+
+    #[test]
+    fn diagnose_json_covers_editor_smoke_fixture() {
+        let source = include_str!("../fixtures/editor-smoke-prose.txt");
+        let report = diagnose_json("fixtures/editor-smoke-prose.txt", source).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&report).unwrap();
+
+        assert_eq!(value["source"]["utf8ByteLength"], 899);
+        assert_eq!(
+            value["source"]["contentHash"],
+            "sha256:94a03286a53a888248512692865d2947ccf48c3c15247c0683f9aa3f76b82a0c"
+        );
+        assert_eq!(
+            value["summary"],
+            serde_json::json!({
+                "ansiColoredTokens": 102,
+                "diagnostics": 0,
+                "graftStyledTokens": 75,
+                "lspSemanticTokens": 75,
+                "tokens": 173,
+            })
+        );
+
+        let tokens = value["tokens"].as_array().unwrap();
+        assert_eq!(
+            count_field(tokens, "lspTokenType"),
+            [
+                ("<null>", 98),
+                ("adjective", 5),
+                ("adverb", 6),
+                ("class", 4),
+                ("keyword", 40),
+                ("noun", 7),
+                ("number", 1),
+                ("string", 4),
+                ("verb", 8),
+            ]
+            .into_iter()
+            .map(|(key, count)| (key.to_string(), count))
+            .collect()
+        );
+        assert_eq!(
+            count_field(tokens, "visualRole"),
+            [
+                ("ADJECTIVE", 5),
+                ("ADVERB", 6),
+                ("LITERAL", 1),
+                ("MUTED", 27),
+                ("NOUN", 7),
+                ("QUOTED", 4),
+                ("STRUCTURAL_KEYWORD", 40),
+                ("TYPE_LIKE", 4),
+                ("UNSTYLED", 71),
+                ("VERB", 8),
+            ]
+            .into_iter()
+            .map(|(key, count)| (key.to_string(), count))
+            .collect()
+        );
+    }
+
+    #[test]
     fn gaps_and_newlines_are_preserved_exactly() {
         // Stripping all ANSI escapes must reproduce the original source.
         let src = "Well,  \t\"quoted\"\n  text—here.";
@@ -506,6 +805,7 @@ mod tests {
             env!("CARGO_PKG_VERSION")
         )));
         assert!(help.contains("-V, --version"));
+        assert!(help.contains("colorful diagnose [--json] [FILE]"));
     }
 
     #[test]
@@ -575,5 +875,17 @@ mod tests {
             }
         }
         out
+    }
+
+    fn count_field(
+        tokens: &[serde_json::Value],
+        field: &str,
+    ) -> std::collections::BTreeMap<String, usize> {
+        let mut counts = std::collections::BTreeMap::new();
+        for token in tokens {
+            let key = token[field].as_str().unwrap_or("<null>");
+            *counts.entry(key.to_string()).or_insert(0) += 1;
+        }
+        counts
     }
 }

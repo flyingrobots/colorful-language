@@ -30,6 +30,9 @@ cat README.md | colorful
 
 # Lint it for weak words, run-ons, and passives (exits non-zero on findings)
 colorful lint my-essay.txt
+
+# Inspect the exact token roles and editor projections
+colorful diagnose --json my-essay.txt | python3 -m json.tool
 ```
 
 Or just:
@@ -40,6 +43,15 @@ colorful --version
 ```
 
 It works on any text file and respects `NO_COLOR`.
+Use `colorful diagnose --json` when comparing terminal, Zed, jedit, or another
+editor against the classes Colorful actually produced.
+
+For a committed smoke sample with denser prose and deterministic POS probes, run:
+
+```bash
+colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt \
+  | python3 -m json.tool
+```
 
 <div align="center"><img width="739" height="817" alt="Screenshot 2026-06-21 at 12 20 52" src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
 
