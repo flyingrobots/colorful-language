@@ -52,7 +52,7 @@ supported contextual patterns. Unlisted content words remain unstyled.
 Themes that do not style the custom token types need explicit user semantic
 token rules until Colorful ships a theme package. The Zed source extension
 README carries the current rule block that maps `noun`, `verb`, `adjective`,
-and `adverb` onto existing theme slots.
+and `adverb` onto visible starter colors.
 
 ## Boundaries
 

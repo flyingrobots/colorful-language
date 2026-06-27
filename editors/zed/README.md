@@ -68,44 +68,44 @@ Or enable them only for prose buffers:
 ```
 
 Most Zed themes do not style Colorful's custom open-class token types by
-default. Add semantic token rules that map Colorful roles onto existing theme
-slots:
+default. Add semantic token rules that map Colorful roles onto visible starter
+colors:
 
 ```json
 {
   "global_lsp_settings": {
     "semantic_token_rules": [
       {
-        "selector": "keyword",
+        "token_type": "keyword",
         "style": ["syntax.keyword"]
       },
       {
-        "selector": "class",
+        "token_type": "class",
         "style": ["syntax.type"]
       },
       {
-        "selector": "number",
+        "token_type": "number",
         "style": ["syntax.number"]
       },
       {
-        "selector": "string",
+        "token_type": "string",
         "style": ["syntax.string"]
       },
       {
-        "selector": "noun",
-        "style": ["syntax.variable"]
+        "token_type": "noun",
+        "foreground_color": "#fc9867"
       },
       {
-        "selector": "verb",
-        "style": ["syntax.function"]
+        "token_type": "verb",
+        "foreground_color": "#a9dc76"
       },
       {
-        "selector": "adjective",
-        "style": ["syntax.property"]
+        "token_type": "adjective",
+        "foreground_color": "#ab9df2"
       },
       {
-        "selector": "adverb",
-        "style": ["syntax.operator"]
+        "token_type": "adverb",
+        "foreground_color": "#ffd866"
       }
     ]
   }
