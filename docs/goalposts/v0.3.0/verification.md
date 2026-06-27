@@ -7,6 +7,10 @@ run and observed.
 
 - Target version: `0.3.0`
 - Branch (prep): `release/v0.3.0`
+- Prep head: `835dea5`
+- Merge target: `origin/main` at `fb818a5`
+- Sync state after `git fetch origin main --tags`: ahead 2, behind 0 against
+  `origin/main`
 - Workspace version (`Cargo.toml`): `0.3.0`
 - Latest existing `v*` tag before prep: `v0.2.1`
 - Previous completed release: `v0.2.1`
@@ -37,12 +41,19 @@ release workflow.
 | CLI version | `cargo run --quiet -p colorful-cli -- --version` | ✅ pass; printed `colorful 0.3.0`. |
 | CLI help | `cargo run --quiet -p colorful-cli -- --help` | ✅ pass; listed `colorful diagnose [--json] [FILE]` and `-V, --version`. |
 | Diagnostic JSON | `cargo run --quiet -p colorful-cli -- diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt` | ✅ pass; emitted `colorful.diagnose/v1` with all expected visual roles and LSP token types. |
+| IR witness | `bash scripts/ir-witness.sh` | ✅ pass; Rust, TypeScript decode, and Rust decode canonical JSON were byte-identical, and the generated TypeScript contract type-checked. |
+| Graft projection consumer | `node consumers/graft-projection.test.mjs` | ✅ pass. |
+| VS Code source extension | `npm ci && npm run compile` in `editors/vscode` | ✅ pass. |
+| Zed source extension | `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1` | ✅ pass. |
+
+The PR CI run for prep head `835dea5` also passed the non-tag CI surfaces:
+`IR cross-language round-trip witness` and `Editor integrations (compile)`.
 
 ## crates.io dry-run
 
 | Crate | Command | Result |
 | --- | --- | --- |
-| `colorful-core` | `cargo publish --dry-run -p colorful-core --locked` | Not run for this prep pass. The package witness verifies every crate from extracted package tarballs before the release PR merges and before the tag workflow publishes. |
+| `colorful-core` | `cargo publish --dry-run -p colorful-core --locked` | ✅ pass; packaged and verified `colorful-core v0.3.0`, then aborted upload because this was a dry run. |
 
 ## Tag and publish
 

@@ -184,8 +184,9 @@ See [`docs/design/`](docs/design/) for the thinking.
 
 ## Project Status
 
-**Current release — `v0.3.0`.** Colorful now ships deterministic open-class
-noun/verb/adjective/adverb roles through the CLI, IR, LSP, and editor adapters.
+**Current source version — `v0.3.0`.** This source tree contains deterministic
+open-class noun/verb/adjective/adverb roles through the CLI, IR, LSP, and editor
+adapters. See the Releases page for the latest published version.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
 page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full
