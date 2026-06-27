@@ -274,6 +274,12 @@ where
     let mut end_of_options = false;
     for arg in args {
         if end_of_options {
+            if path.is_some() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "expected at most one FILE argument",
+                ));
+            }
             path = Some(arg);
             continue;
         }
@@ -296,7 +302,15 @@ where
                     format!("unknown option: {other}"),
                 ));
             }
-            other => path = Some(other.to_string()),
+            other => {
+                if path.is_some() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "expected at most one FILE argument",
+                    ));
+                }
+                path = Some(other.to_string());
+            }
         }
     }
 
@@ -767,6 +781,14 @@ mod tests {
             .map(|(key, count)| (key.to_string(), count))
             .collect()
         );
+    }
+
+    #[test]
+    fn diagnose_rejects_multiple_file_operands() {
+        let err = run_diagnose(["first.txt".to_string(), "second.txt".to_string()]).unwrap_err();
+
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+        assert_eq!(err.to_string(), "expected at most one FILE argument");
     }
 
     #[test]
