@@ -25,6 +25,15 @@ put it on your `PATH`).
 | `colorful.enable` | `true` | Enable/disable prose highlighting. |
 | `colorful.serverPath` | `colorful-lsp` | Path to the `colorful-lsp` binary (on `PATH` or absolute). |
 
+The extension enables semantic highlighting for VS Code's built-in
+`plaintext` and `markdown` languages, declares Colorful's custom semantic token
+types (`noun`, `verb`, `adjective`, `adverb`), and maps them to TextMate scopes
+so regular themes have a fallback. If a theme still renders them too subtly, add
+theme-specific `editor.semanticTokenColorCustomizations`.
+
+When startup fails, check **Output → Colorful Language**. The channel reports
+the `colorful-lsp` command path and startup errors.
+
 ## Build from source
 
 ```bash
@@ -32,8 +41,13 @@ npm install
 npm run compile
 ```
 
-Then press <kbd>F5</kbd> in VS Code to launch an Extension Development Host, or
-package with `npx @vscode/vsce package`.
+Open this `editors/vscode/` directory in VS Code and run
+**Launch Colorful Language Extension**. That launch configuration compiles the
+extension and opens an Extension Development Host with this source checkout
+loaded. Attach configurations only connect a debugger to an already running
+extension host; they do not launch this extension by themselves.
+
+Package with `npx @vscode/vsce package`.
 
 ## How it works
 

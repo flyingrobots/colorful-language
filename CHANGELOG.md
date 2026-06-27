@@ -46,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **VS Code Plain Text highlighting.** The VS Code source extension now declares
+  Colorful's `noun`, `verb`, `adjective`, and `adverb` semantic token types,
+  enables semantic highlighting for Plain Text and Markdown, maps custom tokens
+  to fallback TextMate scopes, and exposes a **Colorful Language** output channel
+  for startup diagnostics.
 - **Zed Plain Text activation.** The Zed source extension now honors
   `lsp.colorful-lsp.binary.path` before falling back to `PATH`, and its docs
   explain that Zed semantic tokens and custom semantic token rules must be

@@ -14,6 +14,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-6** Zed Plain Text highlighting requires semantic tokens and a
   resolvable `colorful-lsp` binary, with theme rules for Colorful-owned token
   types.
+- **EDIT-7** VS Code Plain Text highlighting should work from the source
+  extension without user semantic-token setup beyond a resolvable
+  `colorful-lsp` binary, and startup failures must be inspectable.
 
 ## Cases
 
@@ -54,6 +57,14 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `editors/zed/README.md`; `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1`;
   `markdownlint-cli2 "docs/topics/**/*.md" "editors/zed/README.md"`.
   *Status:* implemented.
+- **EDIT-7a** — *Requirement:* EDIT-7. *Behavior:* the VS Code source extension
+  declares the Colorful-owned open-class semantic token types, enables semantic
+  highlighting for **Plain Text** and **Markdown**, maps custom token types to
+  fallback TextMate scopes, and exposes a **Colorful Language** output channel
+  with the selected `colorful-lsp` command and startup failures. *Oracle:*
+  TypeScript compile and source review. *Evidence:* `editors/vscode/package.json`;
+  `editors/vscode/src/extension.ts`; `editors/vscode/README.md`;
+  `npm --prefix editors/vscode run compile`. *Status:* implemented.
 
 ## Open verification gaps
 

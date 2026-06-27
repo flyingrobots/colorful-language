@@ -28,6 +28,14 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configurationDefaults": {
+      "[plaintext]": {
+        "editor.semanticHighlighting.enabled": true
+      },
+      "[markdown]": {
+        "editor.semanticHighlighting.enabled": true
+      }
+    },
     "configuration": {
       "title": "Colorful Language",
       "properties": {
@@ -42,7 +50,65 @@
           "description": "Path to the colorful-lsp binary. Install it with `cargo install colorful-lsp`; must be on PATH or an absolute path."
         }
       }
-    }
+    },
+    "semanticTokenTypes": [
+      {
+        "id": "noun",
+        "superType": "variable",
+        "description": "English noun"
+      },
+      {
+        "id": "verb",
+        "superType": "function",
+        "description": "English verb"
+      },
+      {
+        "id": "adjective",
+        "superType": "property",
+        "description": "English adjective"
+      },
+      {
+        "id": "adverb",
+        "superType": "keyword",
+        "description": "English adverb"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "plaintext",
+        "scopes": {
+          "noun": [
+            "variable.other.colorful.noun"
+          ],
+          "verb": [
+            "entity.name.function.colorful.verb"
+          ],
+          "adjective": [
+            "variable.other.property.colorful.adjective"
+          ],
+          "adverb": [
+            "keyword.other.colorful.adverb"
+          ]
+        }
+      },
+      {
+        "language": "markdown",
+        "scopes": {
+          "noun": [
+            "variable.other.colorful.noun"
+          ],
+          "verb": [
+            "entity.name.function.colorful.verb"
+          ],
+          "adjective": [
+            "variable.other.property.colorful.adjective"
+          ],
+          "adverb": [
+            "keyword.other.colorful.adverb"
+          ]
+        }
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -p ./",
