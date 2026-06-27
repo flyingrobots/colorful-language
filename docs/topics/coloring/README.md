@@ -10,16 +10,15 @@ The `Annotator` port produces the classified `Vec<Token>` for a parsed tree. The
 default `ContextualOpenClassAnnotator::annotate(source, tree)` walks the tree in
 source order and assigns each leaf a `PosClass`:
 
-- **Words** are classified by the `Lexicon`. The shipped default lexicon is
-  `SeedOpenClassLexicon`, so representative unambiguous content words can become
-  `Open(Noun)`, `Open(Verb)`, `Open(Adjective)`, or `Open(Adverb)`. Then the
-  contextual adapter refines a small ambiguous set such as `book` and `fast`
-  when local context is strong. Then a proper-noun heuristic upgrades a
-  capitalized `Content` or `Open(_)` word to `ProperNoun` *only* when it is not
-  the first word of its sentence or line, and the line is not a title-case run.
-  Sentence- or line-initial words keep the class returned by the lexicon or
-  contextual pass: unlisted words stay `Content`, and classified open-class words
-  stay `Open(_)`.
+- **Words** are first classified by `LexicalAnnotator<SeedOpenClassLexicon>`.
+  The seed lexicon maps representative unambiguous content words to
+  `Open(Noun)`, `Open(Verb)`, `Open(Adjective)`, or `Open(Adverb)`. The
+  proper-noun heuristic then upgrades a capitalized `Content` or `Open(_)` word
+  to `ProperNoun` *only* when it is not the first word of its sentence or line,
+  and the line is not a title-case run. Sentence- or line-initial words keep the
+  class returned by the seed lexicon. After that shared lexical pass, the
+  contextual adapter refines only remaining `Content` tokens from a small
+  ambiguous set such as `book` and `fast` when local context is strong.
 - **Punctuation** is classified structurally: quotation marks become `Quote`, all
   other punctuation becomes `Punctuation`.
 

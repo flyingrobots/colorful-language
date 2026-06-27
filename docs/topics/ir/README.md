@@ -26,7 +26,9 @@ A `DocumentAnalysis` carries:
   words).
 - `structure` — a flattened outline tree: paragraphs (depth 0) containing
   sentences (depth 1), children referenced by `childNodeIds`.
-- `diagnostics` — empty in `v0` (the linter is a later phase).
+- `diagnostics` — currently empty in `colorful ir` output. The prose linter
+  exists today, but its findings surface through `colorful lint` and
+  `colorful-lsp` diagnostics, not through `colorful.syntax/v1`.
 - `derivation` — a trace seed per pass (`passId`, `ruleId`, `sourceRanges`,
   `compilerBuildHash`), not yet replayable provenance.
 - `contractVersion`, `schemaHash`, `vocabularyHash` — the exact contract identity.
