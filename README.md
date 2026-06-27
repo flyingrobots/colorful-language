@@ -201,8 +201,11 @@ cargo install colorful-cli
 cargo install colorful-lsp
 ```
 
-**Prebuilt binaries:** download the archive for a tagged release from the
+**Prebuilt binaries:** tagged releases currently include a Linux
+`x86_64-unknown-linux-gnu` archive containing `colorful` and `colorful-lsp`.
+Download it from the
 [Releases](https://github.com/flyingrobots/colorful-language/releases) page.
+Use Cargo or build from source on macOS, Windows, and other Linux targets.
 
 **From git** (latest `main`):
 

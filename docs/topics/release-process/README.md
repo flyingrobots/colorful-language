@@ -29,8 +29,9 @@ Each release also has a packet under `docs/goalposts/vX.Y.Z/`:
 
 The tag-triggered release workflow runs when a `v*` tag is pushed. It verifies
 that the tag is on `main`, reruns the Rust and package guards, publishes the
-crates in dependency order, builds the Linux binary archive, writes a checksum,
-and creates the GitHub Release.
+crates in dependency order, builds one `x86_64-unknown-linux-gnu` archive
+containing the `colorful` and `colorful-lsp` binaries, writes a checksum, and
+creates the GitHub Release.
 
 The workflow relies on the pre-merge gate for checks that are not repeated on
 tag pushes. Pull-request CI covers Markdown lint, whitespace checks, the IR

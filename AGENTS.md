@@ -68,6 +68,29 @@ lane such as editor integrations, themes, distribution, release automation,
 generated contracts, or downstream consumers will keep recurring, give it a
 topic home or explicitly place it under an existing topic.
 
+## Release Work
+
+For any release, ship, version, tag, publish, or "is this ready?" request, read
+[`docs/RELEASING.md`](docs/RELEASING.md) fresh before answering or acting. Do
+not rely on memory or chat history for the release process.
+
+Before claiming release readiness:
+
+1. Record the current branch, sync state against `origin/main`, latest `v*` tag,
+   workspace version, and intended target version.
+2. Confirm the working tree is clean.
+3. Run `git fetch origin main --tags`, then confirm the target tag does not
+   already exist locally or on the remote.
+4. Audit `docs/topics/`, crate READMEs, editor READMEs, `CHANGELOG.md`, and
+   `ROADMAP.md` against implemented behavior on `main`.
+5. Report any stale current-reference claim as a blocker or fix it on a branch
+   before continuing.
+6. Run the release gate from `docs/RELEASING.md` when preparing the release
+   packet, not a remembered subset of commands.
+
+The release runbook is the source of truth. This file only says when to consult
+it.
+
 ## The Delivery Loop
 
 For any meaningful behavior change, do these in order:
