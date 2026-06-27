@@ -54,9 +54,10 @@ that backbone rather than replacing it.
 
 ## Where Documentation Lives
 
-Durable concepts that evolve across more than one pull request live in a topic
-folder under `docs/topics/<topic>/`. The folder is the shelf for that concept,
-like a chapter in a technical book.
+Durable product concepts that evolve across more than one pull request live in a
+topic folder under `docs/topics/<topic>/`. The folder is the shelf for that
+concept, like a chapter in a technical book. Contributor-facing repository
+operations live under `docs/workflows/<workflow>/`.
 
 | Path | Use it for |
 | --- | --- |
@@ -65,6 +66,8 @@ like a chapter in a technical book.
 | `docs/topics/<topic>/test-plan.md` | Requirements, planned cases, implemented evidence, fixtures, oracles, known gaps. |
 | `docs/topics/<topic>/architecture.md` | Optional structure, data flow, and module boundaries when the topic is large. |
 | `docs/topics/<topic>/rationale.md` | Optional still-relevant tradeoffs and rejected alternatives. |
+| `docs/workflows/<workflow>/README.md` | Current operational contract for recurring contributor or maintainer work. |
+| `docs/workflows/<workflow>/test-plan.md` | Requirements, evidence, and known gaps for the workflow. |
 | `docs/design/` | Historical, proposal-era design documents. |
 | `docs/goalposts/` | Delivery evidence for completed goalposts. |
 | `docs/README.md` | The documentation spine and topic index. |
@@ -83,21 +86,24 @@ For every new slice:
    goalposts; issues are slices.
 2. Identify the topic folder that owns the behavior. If the behavior spans more
    than one pull request and no topic exists, create one under
-   `docs/topics/<topic>/`.
-3. Update the topic `test-plan.md` before writing implementation code. Planned
-   cases must name the requirement, oracle, evidence type, and status.
-4. Keep the topic `README.md` current only for behavior that exists in tested
-   code. Planned behavior belongs in the test plan, issue, roadmap, or design
-   note until it lands.
+   `docs/topics/<topic>/`. If the lane is repository policy or recurring
+   maintainer work, use `docs/workflows/<workflow>/` instead.
+3. Update the topic or workflow `test-plan.md` before writing implementation
+   code. Planned cases must name the requirement, oracle, evidence type, and
+   status.
+4. Keep the topic or workflow `README.md` current only for behavior that exists
+   in tested code. Planned behavior belongs in the test plan, issue, roadmap,
+   or design note until it lands.
 5. Link any new durable topic or page from `docs/README.md` in the same change.
 6. Update `ROADMAP.md` when a slice opens, closes, or changes the public posture
    of a goalpost.
 
 Do not let durable project lanes live only in chat, issues, or pull request
 comments. If a lane will keep coming back — editor integrations, themes,
-distribution, release automation, generated contracts, or downstream consumers —
-it needs a topic home or an explicit note explaining why an existing topic owns
-it.
+distribution, generated contracts, or downstream consumers — it needs a topic
+home or an explicit note explaining why an existing topic owns it. If the lane
+is release automation, publishing, or repository maintenance, give it a workflow
+home instead.
 
 ## How To Change Behavior
 
@@ -105,13 +111,14 @@ For a meaningful behavior change, follow this sequence:
 
 1. Write or update a design note or rationale page if the change needs real
    design discussion.
-2. Update the topic `test-plan.md` with planned cases **before** implementation.
-   Each planned case should carry a stable case ID, the requirement(s) it
-   covers, an explicit oracle, an evidence type, and a status.
+2. Update the owning topic or workflow `test-plan.md` with planned cases
+   **before** implementation. Each planned case should carry a stable case ID,
+   the requirement(s) it covers, an explicit oracle, an evidence type, and a
+   status.
 3. Write the smallest deterministic, executable evidence that fails for the
    missing behavior.
 4. Implement the behavior.
-5. Update the topic `README.md` so it describes the behavior that now exists on
+5. Update the owning `README.md` so it describes the behavior that now exists on
    `main`.
 6. Mark the planned cases as implemented and record the actual test names,
    fixture paths, or doctests that are the evidence.
@@ -127,22 +134,24 @@ When you create or substantially change documentation:
 
 1. Identify the page's primary job: learn, do, look up, understand,
    troubleshoot, or contribute.
-2. Use `docs/topics/<topic>/README.md` for durable current behavior and
+2. Use `docs/topics/<topic>/README.md` for durable current product behavior and
    invariants.
-3. Use `docs/topics/<topic>/test-plan.md` for requirements, planned cases,
-   evidence, exact oracles, status, and known gaps.
-4. Add a tutorial, how-to guide, reference page, or troubleshooting page only
+3. Use `docs/topics/<topic>/test-plan.md` for product requirements, planned
+   cases, evidence, exact oracles, status, and known gaps.
+4. Use `docs/workflows/<workflow>/` for repository operations, release process,
+   publishing, and other maintainer workflows.
+5. Add a tutorial, how-to guide, reference page, or troubleshooting page only
    when a reader task is not served well by the topic reference.
-5. Link every new durable page from `docs/README.md`.
-6. Keep examples honest: runnable examples should run, illustrative examples
+6. Link every new durable page from `docs/README.md`.
+7. Keep examples honest: runnable examples should run, illustrative examples
    should be labeled, and abridged examples should say what was omitted.
-7. Separate copyable commands from expected output, and avoid shell prompts in
+8. Separate copyable commands from expected output, and avoid shell prompts in
    copyable command blocks.
-8. Place warnings before destructive, privileged, costly, or irreversible
+9. Place warnings before destructive, privileged, costly, or irreversible
    commands, including scope and verification guidance.
-9. Give informative visuals alt text or a nearby textual equivalent, and do not
+10. Give informative visuals alt text or a nearby textual equivalent, and do not
    put essential instructions only in screenshots.
-10. Update `CHANGELOG.md` and `ROADMAP.md` when the documentation change reflects
+11. Update `CHANGELOG.md` and `ROADMAP.md` when the documentation change reflects
     release-visible behavior or shifts project posture.
 
 ## Test Plans Are Contracts

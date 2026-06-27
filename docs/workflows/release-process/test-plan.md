@@ -16,7 +16,8 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-1a** — *Requirement:* REL-1. *Behavior:* each completed release has a
   packet and witness under `docs/goalposts/vX.Y.Z/`. *Oracle:* documentation
   review. *Evidence:* `docs/goalposts/v0.1.0/`;
-  `docs/goalposts/v0.2.0/`; `docs/goalposts/v0.2.1/`. *Status:* implemented.
+  `docs/goalposts/v0.2.0/`; `docs/goalposts/v0.2.1/`;
+  `docs/goalposts/v0.3.0/`. *Status:* implemented.
 - **REL-2a** — *Requirement:* REL-2. *Behavior:* the workflow rejects a tag that
   is not an ancestor of `origin/main`. *Oracle:* workflow source review.
   *Evidence:* `.github/workflows/release.yml`. *Status:* implemented.
@@ -30,7 +31,7 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-5a** — *Requirement:* REL-5. *Behavior:* release instructions live in
   `docs/RELEASING.md`; the topic points to it instead of duplicating the full
   runbook. *Oracle:* documentation review. *Evidence:*
-  `docs/topics/release-process/README.md`. *Status:* implemented.
+  `docs/workflows/release-process/README.md`. *Status:* implemented.
 
 ## Open verification gaps
 

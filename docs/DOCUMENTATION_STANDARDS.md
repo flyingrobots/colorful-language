@@ -36,10 +36,12 @@ Colorful keeps its durable truth in a small set of known places.
 | --- | --- |
 | `README.md` | Public front door: what Colorful is, how to try it, install paths, current project status, and links to deeper docs. |
 | `docs/README.md` | Documentation spine and routing index. Add new durable pages here. |
-| `docs/topics/<topic>/README.md` | Living reference for current behavior on `main`. |
+| `docs/topics/<topic>/README.md` | Living reference for current product behavior on `main`. |
 | `docs/topics/<topic>/test-plan.md` | Requirements, planned and implemented cases, exact oracles, evidence, and known gaps. |
 | `docs/topics/<topic>/architecture.md` | Optional current architecture for larger topics. |
 | `docs/topics/<topic>/rationale.md` | Optional still-relevant tradeoffs and rejected alternatives. |
+| `docs/workflows/<workflow>/README.md` | Contributor-facing operational contract for recurring repository work. |
+| `docs/workflows/<workflow>/test-plan.md` | Requirements and verification for the workflow. |
 | `docs/design/` | Historical proposal-era design records. They explain why; they do not pose as current truth. |
 | `docs/goalposts/` | Release packets and verification witnesses. |
 | `docs/RELEASING.md` | Release runbook and pre-tag checklist. |
@@ -68,7 +70,7 @@ reader job.
 
 ### 3.1 Topic reference
 
-A topic reference describes current behavior for a durable concept such as
+A topic reference describes current behavior for a durable product concept such as
 parsing, lexicon lookup, coloring, linting, or IR.
 
 A topic reference MUST:
@@ -81,6 +83,9 @@ A topic reference MUST:
 
 It MUST NOT become the only user-facing guide for a workflow that needs
 step-by-step help.
+
+Repository operations such as releasing, publishing, and recurring maintenance
+belong under `docs/workflows/`, not `docs/topics/`.
 
 ### 3.2 Test plan
 
@@ -162,7 +167,20 @@ Troubleshooting starts with a symptom a user or operator can observe, such as:
 A troubleshooting page MUST list discriminating checks first, map signals to
 likely causes, give concrete recovery actions, and show how to verify the fix.
 
-### 3.8 Contributor guide
+### 3.8 Workflow reference
+
+A workflow reference describes a recurring contributor or maintainer operation,
+such as preparing a release or maintaining repository automation.
+
+A workflow reference MUST:
+
+- describe only the current operational contract;
+- identify the authoritative runbook when one exists;
+- link to workflow verification or witness evidence;
+- avoid duplicating product-facing topic references, release notes, or roadmap
+  promises.
+
+### 3.9 Contributor guide
 
 Contributor docs explain how to change the implementation safely. They SHOULD
 explain the system model before listing files. Source links support an
@@ -173,11 +191,11 @@ explanation; they do not replace one.
 For a meaningful behavior change:
 
 1. Update or add design/rationale only if the change needs design discussion.
-2. Update the relevant `docs/topics/<topic>/test-plan.md` before implementation.
+2. Update the relevant topic or workflow `test-plan.md` before implementation.
 3. Add the smallest deterministic executable evidence that fails for the missing
    behavior.
 4. Implement the behavior.
-5. Update the living topic reference after the behavior exists.
+5. Update the living topic or workflow reference after the behavior exists.
 6. Mark planned cases implemented and record the actual evidence.
 7. Update `README.md`, `docs/README.md`, `CHANGELOG.md`, and `ROADMAP.md` when
    the public surface, documentation routing, release status, or project posture

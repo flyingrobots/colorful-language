@@ -1,8 +1,8 @@
 # Release process
 
 The release process turns a completed goalpost into a versioned public artifact.
-It is documented as a current operational contract because release mistakes are
-expensive and externally visible.
+It is documented as a contributor workflow because release mistakes are
+expensive, operational, and externally visible.
 
 ## Current behavior
 
@@ -41,8 +41,8 @@ step is added to CI.
 
 ## Boundaries
 
-The release process topic describes how this repository releases. It is not a
-changelog and should not duplicate per-version notes from `CHANGELOG.md` or the
-goalpost packets.
+The release process workflow describes how this repository releases. It is not a
+product topic, changelog, or per-version note. Do not duplicate per-version
+notes from `CHANGELOG.md` or the goalpost packets here.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

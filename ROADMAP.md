@@ -24,7 +24,7 @@ compile only what the target can prove.*
 | 1 | **Surface IR** — `colorful.syntax/v1`, a Wesley-generated GraphQL contract (Rust + TS) | graft (agent reads), jedit | [IR Spine](https://github.com/flyingrobots/colorful-language/milestone/4) · [#11](https://github.com/flyingrobots/colorful-language/issues/11) | 🚧 core IR released v0.2.1; consumers open |
 | 2 | Prose linter (Analyzer: passive voice, run-ons, weak words) | LSP diagnostics + CLI warnings | [Goalpost 1](https://github.com/flyingrobots/colorful-language/milestone/2) · [#6](https://github.com/flyingrobots/colorful-language/issues/6) | ✅ released v0.2.1 |
 | 3 | — | **VS Code extension** + Neovim / Helix / Zed / Emacs / JetBrains recipes | [Editor Reach](https://github.com/flyingrobots/colorful-language/milestone/5) · [#12](https://github.com/flyingrobots/colorful-language/issues/12) | 🚧 source integrations released v0.2.1; packaging open |
-| 4 | Open-class POS disambiguation (noun/verb/adj/adv) + custom legend + theme | richer color in every surface | [Goalpost 2](https://github.com/flyingrobots/colorful-language/milestone/3) · [#7](https://github.com/flyingrobots/colorful-language/issues/7) | 🚧 core port [#38](https://github.com/flyingrobots/colorful-language/issues/38); IR/vocabulary axes [#40](https://github.com/flyingrobots/colorful-language/issues/40); default seed surfaces [#44](https://github.com/flyingrobots/colorful-language/issues/44); contextual disambiguation [#46](https://github.com/flyingrobots/colorful-language/issues/46) |
+| 4 | Open-class POS disambiguation (noun/verb/adj/adv) + custom legend + theme | richer color in every surface | [Goalpost 2](https://github.com/flyingrobots/colorful-language/milestone/3) · [#7](https://github.com/flyingrobots/colorful-language/issues/7) | 🚧 core/default path released v0.3.0; shipped slices [#38](https://github.com/flyingrobots/colorful-language/issues/38), [#40](https://github.com/flyingrobots/colorful-language/issues/40), [#44](https://github.com/flyingrobots/colorful-language/issues/44), [#46](https://github.com/flyingrobots/colorful-language/issues/46); theme/package polish open |
 | 5 | Contract English (CNL → canonical GraphQL SDL → Wesley) | first honest English → Wesley proof | [Contract English](https://github.com/flyingrobots/colorful-language/milestone/6) · [#13](https://github.com/flyingrobots/colorful-language/issues/13) | horizon |
 | 6 | Intent English (CNL → Edict surface AST) | — | [Intent English](https://github.com/flyingrobots/colorful-language/milestone/7) · [#14](https://github.com/flyingrobots/colorful-language/issues/14) | horizon |
 | 7 | Proof-carrying compilation → Edict Core IR → sealed bundle + echo provenance | nutrition labels; counterfactual "what would this sentence do?" | [Edict](https://github.com/flyingrobots/colorful-language/milestone/8) · [#15](https://github.com/flyingrobots/colorful-language/issues/15) | horizon |
@@ -63,9 +63,11 @@ bounded, proof-carrying structure.
 
 ## Now
 
-Phase 0 is released in v0.1.0, and Goalpost 1 ships in v0.2.1. The v0.2.1
-release also publishes the core `colorful.syntax/v1` IR, the vocabulary manifest,
-and source editor integrations, but the IR consumer slices and editor-package
-publishing remain open. See [`CHANGELOG.md`](CHANGELOG.md), the
-[v0.1.0 release packet](docs/goalposts/v0.1.0/release.md), and the
-[v0.2.1 release packet](docs/goalposts/v0.2.1/release.md).
+Phase 0 is released in v0.1.0, Goalpost 1 ships in v0.2.1, and v0.3.0 ships the
+core/default Goalpost 2 open-class POS path: explicit noun, verb, adjective, and
+adverb roles in the domain model, IR, vocabulary manifest, CLI, LSP, and source
+editor adapters. The Goalpost 2 epic remains open for theme visibility and
+packaging polish. See [`CHANGELOG.md`](CHANGELOG.md), the
+[v0.1.0 release packet](docs/goalposts/v0.1.0/release.md), the
+[v0.2.1 release packet](docs/goalposts/v0.2.1/release.md), and the
+[v0.3.0 release packet](docs/goalposts/v0.3.0/release.md).

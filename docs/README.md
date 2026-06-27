@@ -13,7 +13,8 @@ proven by deterministic executable evidence.
 | Path | Contains |
 | --- | --- |
 | [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) | The project-local documentation corpus standard: page types, examples, visuals, style, and enforcement. |
-| `topics/<topic>/` | The living reference for a durable concept (behavior, test plan, optional architecture and rationale). |
+| `topics/<topic>/` | The living reference for a durable product concept (behavior, test plan, optional architecture and rationale). |
+| `workflows/<workflow>/` | Contributor-facing operational contracts for repository workflows. |
 | `design/` | Historical, proposal-era design documents. |
 | `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |
 | [`RELEASING.md`](RELEASING.md) | The release runbook and pre-tag sign-off checklist. |
@@ -51,11 +52,18 @@ not pose as the current reference.
   `colorful-lsp` reaches VS Code, Zed, and generic LSP clients.
 - [distribution](topics/distribution/README.md) — install paths, package
   boundaries, and release artifacts.
-- [release process](topics/release-process/README.md) — the release runbook,
+
+## Contributor workflows
+
+- [release process](workflows/release-process/README.md) — the release runbook,
   automation boundary, and witness discipline.
 
 ## Releases
 
+- [v0.3.0](goalposts/v0.3.0/release.md) — deterministic open-class POS roles
+  (noun/verb/adjective/adverb), contextual disambiguation, diagnostic JSON, and
+  Plain Text editor activation fixes
+  ([verification](goalposts/v0.3.0/verification.md)).
 - [v0.2.1](goalposts/v0.2.1/release.md) — Goalpost 1, "prose linter", plus the
   surface IR, vocabulary manifest, source editor integrations, and release
   package recovery ([verification](goalposts/v0.2.1/verification.md)).

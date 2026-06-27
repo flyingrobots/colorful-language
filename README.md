@@ -184,7 +184,9 @@ See [`docs/design/`](docs/design/) for the thinking.
 
 ## Project Status
 
-**Current release — `v0.2.1`.** Goalpost 1 ("prose linter") is released.
+**Current source version — `v0.3.0`.** This source tree contains deterministic
+open-class noun/verb/adjective/adverb roles through the CLI, IR, LSP, and editor
+adapters. See the Releases page for the latest published version.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
 page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full
@@ -230,9 +232,10 @@ boundaries and packaging evidence.
 
 This project has high documentation and testing standards. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-The **prose linter** (Goalpost 1) has landed on `main`; contributions that grow
-its rule pack, or that continue **open-class disambiguation**
-(noun/verb/adjective/adverb, Goalpost 2), are especially welcome right now.
+The **prose linter** and the deterministic **open-class POS** path have landed
+on `main`; contributions that grow the rule pack, improve editor/theme
+packaging, or continue the deeper controlled-English roadmap are especially
+welcome right now.
 
 ---
 

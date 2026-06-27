@@ -10,16 +10,17 @@ the concrete things to do, in order, on every change. When the two disagree,
 ## Prime Directive
 
 **Living references describe only what is true on `main`.** Never write a
-`README.md` or a `docs/topics/<topic>/README.md` to describe behavior that does
-not yet exist in committed, tested code. Plans live in test plans, the roadmap,
-issues, and pull requests — never in the current reference.
+`README.md`, `docs/topics/<topic>/README.md`, or
+`docs/workflows/<workflow>/README.md` to describe behavior that does not yet
+exist in committed, tested code. Plans live in test plans, the roadmap, issues,
+and pull requests — never in the current reference.
 
 The four artifacts and their one job each:
 
 | Artifact | Job |
 | --- | --- |
-| Current truth (`README`, `docs/topics/<topic>/README.md`) | What is true on `main` now. |
-| Planned verification (`docs/topics/<topic>/test-plan.md`) | How behavior will be proven, written before it exists. |
+| Current truth (`README`, topic/workflow `README.md`) | What is true on `main` now. |
+| Planned verification (topic/workflow `test-plan.md`) | How behavior will be proven, written before it exists. |
 | Executable evidence (tests, doctests, fixtures, goldens) | Proof the behavior is real. |
 | Historical reasoning (`docs/design/`, `rationale.md`) | Why a decision was made, without posing as the current reference. |
 
@@ -33,8 +34,10 @@ Operational rules:
 
 - Give every page one primary reader job: learn, do, look up, understand,
   troubleshoot, or contribute.
-- Keep durable current behavior in `docs/topics/<topic>/README.md`; keep planned
+- Keep durable product behavior in `docs/topics/<topic>/README.md`; keep planned
   verification and known gaps in `docs/topics/<topic>/test-plan.md`.
+- Keep recurring repository operations in `docs/workflows/<workflow>/`, not
+  `docs/topics/`.
 - Add tutorials, how-to guides, reference pages, or troubleshooting pages only
   when the topic reference does not serve the reader's task.
 - Link any new durable documentation page from `docs/README.md`.
@@ -52,21 +55,24 @@ Operational rules:
 Before starting implementation for a goalpost slice:
 
 1. Open or select the slice issue. Milestones are goalposts; issues are slices.
-2. Identify the owning `docs/topics/<topic>/` folder.
-3. If the work creates a durable lane with no topic home, create a topic folder
-   with at least `README.md` and `test-plan.md`, then link it from
+2. Identify the owning `docs/topics/<topic>/` or `docs/workflows/<workflow>/`
+   folder.
+3. If the work creates a durable lane with no home, create a topic or workflow
+   folder with at least `README.md` and `test-plan.md`, then link it from
    `docs/README.md`.
-4. Update the topic `test-plan.md` with planned cases before code. Each case
-   needs a requirement, oracle, evidence type, and status.
-5. Keep topic `README.md` pages as current truth only. Do not describe planned
-   behavior there until the implementation and evidence land.
+4. Update the topic or workflow `test-plan.md` with planned cases before code.
+   Each case needs a requirement, oracle, evidence type, and status.
+5. Keep topic and workflow `README.md` pages as current truth only. Do not
+   describe planned behavior there until the implementation and evidence land.
 6. Update `ROADMAP.md` when a slice opens, closes, or changes goalpost posture.
 
 Do not begin a "next goalpost" implementation from chat context alone. First
-check the milestone, issue list, `ROADMAP.md`, and `docs/topics/`. If a durable
-lane such as editor integrations, themes, distribution, release automation,
-generated contracts, or downstream consumers will keep recurring, give it a
-topic home or explicitly place it under an existing topic.
+check the milestone, issue list, `ROADMAP.md`, `docs/topics/`, and
+`docs/workflows/`. If a durable product lane such as editor integrations,
+themes, distribution, generated contracts, or downstream consumers will keep
+recurring, give it a topic home or explicitly place it under an existing topic.
+If the lane is release automation, publishing, or repository maintenance, give
+it a workflow home.
 
 ## Release Work
 
@@ -81,8 +87,8 @@ Before claiming release readiness:
 2. Confirm the working tree is clean.
 3. Run `git fetch origin main --tags`, then confirm the target tag does not
    already exist locally or on the remote.
-4. Audit `docs/topics/`, crate READMEs, editor READMEs, `CHANGELOG.md`, and
-   `ROADMAP.md` against implemented behavior on `main`.
+4. Audit `docs/topics/`, `docs/workflows/`, crate READMEs, editor READMEs,
+   `CHANGELOG.md`, and `ROADMAP.md` against implemented behavior on `main`.
 5. Report any stale current-reference claim as a blocker or fix it on a branch
    before continuing.
 6. Run the release gate from `docs/RELEASING.md` when preparing the release
@@ -96,15 +102,15 @@ it.
 For any meaningful behavior change, do these in order:
 
 1. If the change needs design discussion, write or update a design note
-   (`docs/design/`) or a topic `rationale.md`.
-2. Update the topic `test-plan.md` with planned cases **before** writing code.
-   Each case carries a stable ID, the requirement(s) it covers, an explicit
-   oracle, an evidence type, and a status.
+   (`docs/design/`) or a topic/workflow `rationale.md`.
+2. Update the owning topic or workflow `test-plan.md` with planned cases
+   **before** writing code. Each case carries a stable ID, the requirement(s) it
+   covers, an explicit oracle, an evidence type, and a status.
 3. Write the smallest deterministic, executable evidence that **fails** for the
    missing behavior. Tests are the spec — write the failing test first.
 4. Implement until the test passes. Do not alter, skip, or weaken a test to go
    green; fix the code. If a test seems wrong, stop and raise it.
-5. Update the topic `README.md` so it describes the behavior that now exists.
+5. Update the owning `README.md` so it describes the behavior that now exists.
 6. Mark the planned cases implemented and record the real test names / fixture
    paths / doctests that are the evidence.
 7. Update `CHANGELOG.md` and `ROADMAP.md` when the change is release-visible or
