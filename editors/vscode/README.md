@@ -14,9 +14,9 @@ The extension drives the `colorful-lsp` binary; install it once:
 cargo install colorful-lsp
 ```
 
-(or download a release binary from the
-[Releases](https://github.com/flyingrobots/colorful-language/releases) page and
-put it on your `PATH`).
+(or, when your platform is covered by a release archive, download a binary from
+the [Releases](https://github.com/flyingrobots/colorful-language/releases) page
+and put it on your `PATH`).
 
 ## Settings
 
