@@ -14,8 +14,17 @@ diagnostics. The same server backs every editor path.
 The repository currently ships source integrations and recipes:
 
 - VS Code and Cursor use the source extension in
-  [`editors/vscode/`](../../../editors/vscode/).
+  [`editors/vscode/`](../../../editors/vscode/). The extension enables semantic
+  highlighting for **Plain Text** and **Markdown**, declares Colorful-owned
+  semantic token types, maps them to TextMate scopes for theme fallback, and
+  exposes an **Output -> Colorful Language** channel for LSP startup evidence.
 - Zed uses the source extension in [`editors/zed/`](../../../editors/zed/).
+  The extension registers `colorful-lsp` for Zed's built-in **Plain Text** and
+  **Markdown** languages. Users must enable Zed semantic tokens
+  (`"semantic_tokens": "full"` is clearest for prose), can set
+  `lsp.colorful-lsp.binary.path` when Zed cannot see the shell `PATH`, and may
+  need `global_lsp_settings.semantic_token_rules` for Colorful's custom
+  open-class token types.
 - Neovim, Helix, Emacs, Sublime Text, and Kate use the recipes in
   [`editors/README.md`](../../../editors/README.md).
 
@@ -43,8 +52,11 @@ The default LSP path uses `ContextualOpenClassAnnotator`, so it emits `noun`,
 `verb`, `adjective`, and `adverb` for the small deterministic seed table and the
 supported contextual patterns. Unlisted content words remain unstyled.
 
-Themes that do not style the custom token types may need explicit user rules
-until Colorful ships a theme package.
+Themes that do not style the custom token types distinctly may still need
+explicit user semantic token rules until Colorful ships a theme package. The
+VS Code source extension declares fallback scopes for those token types. The Zed
+source extension README carries the current rule block that maps `noun`, `verb`,
+`adjective`, and `adverb` onto visible starter colors.
 
 ## Boundaries
 

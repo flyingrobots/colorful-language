@@ -6,11 +6,26 @@ Markdown and Plain Text buffers.
 
 ## Requirements
 
+The extension starts the `colorful-lsp` language server. Install it once:
+
 ```bash
 cargo install colorful-lsp
 ```
 
-(the extension resolves `colorful-lsp` from your `PATH`).
+If Zed cannot see your shell `PATH`, set the binary path explicitly in
+`settings.json`:
+
+```json
+{
+  "lsp": {
+    "colorful-lsp": {
+      "binary": {
+        "path": "/Users/example/.cargo/bin/colorful-lsp"
+      }
+    }
+  }
+}
+```
 
 ## Install
 
@@ -21,9 +36,99 @@ compiles the extension to WebAssembly and loads it.
 **From the registry:** once published to the Zed extension registry, install it
 by name from **Extensions**.
 
+## Plain Text highlighting
+
+The extension attaches to Zed's built-in **Markdown** and **Plain Text**
+languages and sends LSP language IDs `markdown` and `plaintext`, respectively.
+A `.txt` file should show **Plain Text** in Zed's language selector.
+
+Colorful uses LSP semantic tokens for highlighting. Zed defaults semantic tokens
+to `off`, so enable them globally. `full` is the clearest mode for prose because
+Plain Text has no useful syntax layer to merge with:
+
+```json
+{
+  "semantic_tokens": "full"
+}
+```
+
+Or enable them only for prose buffers:
+
+```json
+{
+  "languages": {
+    "Plain Text": {
+      "semantic_tokens": "full"
+    },
+    "Markdown": {
+      "semantic_tokens": "full"
+    }
+  }
+}
+```
+
+Most Zed themes do not style Colorful's custom open-class token types by
+default. Add semantic token rules that map Colorful roles onto visible starter
+colors:
+
+```json
+{
+  "global_lsp_settings": {
+    "semantic_token_rules": [
+      {
+        "token_type": "keyword",
+        "style": ["syntax.keyword"]
+      },
+      {
+        "token_type": "class",
+        "style": ["syntax.type"]
+      },
+      {
+        "token_type": "number",
+        "style": ["syntax.number"]
+      },
+      {
+        "token_type": "string",
+        "style": ["syntax.string"]
+      },
+      {
+        "token_type": "noun",
+        "foreground_color": "#fc9867"
+      },
+      {
+        "token_type": "verb",
+        "foreground_color": "#a9dc76"
+      },
+      {
+        "token_type": "adjective",
+        "foreground_color": "#ab9df2"
+      },
+      {
+        "token_type": "adverb",
+        "foreground_color": "#ffd866"
+      }
+    ]
+  }
+}
+```
+
+Restart the language server, reload the extension, or reopen the buffer after
+changing this setting.
+
+If highlighting still does not appear:
+
+1. Open Zed's log with **zed: open log** and look for `colorful-lsp`.
+2. Reopen the `.txt` buffer and confirm the log gets a fresh
+   `starting language server process` entry for `colorful-lsp`.
+3. Confirm the buffer language is **Plain Text** or **Markdown**.
+4. Confirm the configured `colorful-lsp` path exists and is executable.
+5. Reinstall the dev extension if Zed's extension index still shows stale
+   metadata after a manifest change.
+
 ## How it works
 
 A small Rust→WebAssembly extension (`zed_extension_api`) whose
-`language_server_command` returns the `colorful-lsp` binary. All analysis lives in
-the server, shared with every other editor — see the
+`language_server_command` returns the configured `colorful-lsp` binary, or falls
+back to resolving `colorful-lsp` from `PATH`. All analysis lives in the server,
+shared with every other editor — see the
 [editor recipes](../README.md).

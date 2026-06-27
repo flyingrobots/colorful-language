@@ -1,0 +1,16 @@
+Colorful makes English visible as a local, deterministic syntax surface.
+Programmers get rich feedback from editors because code has visible structure.
+Prose usually gets spellcheck, grammar guesses, or a wall of plain text.
+
+Open a text file, essay draft, novel chapter, or design doc and watch grammar light up.
+Function words become keywords, proper nouns pop as types, quotes glow as strings, and the skeleton of every sentence becomes visible.
+
+"The cat connects quick silently," Ada said, "but Paris waits."
+A silent river glows slowly while the mountain renders structural patterns.
+The book is on the table; I book rooms carefully.
+The record is quiet, yet I record notes silently.
+The lead river glows; they lead teams quickly.
+The fast river connects fast.
+
+Version 0.3.0 keeps analysis local and deterministic.
+Unlisted words should mostly stay plain until Colorful has a larger lexicon.

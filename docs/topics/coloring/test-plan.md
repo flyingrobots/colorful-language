@@ -21,6 +21,8 @@ Requirements:
   custom caller wiring.
 - **COL-9** The default shipped surfaces use contextual open-class
   disambiguation for the supported ambiguous set.
+- **COL-10** The CLI emits a machine-readable diagnostic report that explains
+  each token's class and presentation projection.
 
 ## Cases
 
@@ -97,6 +99,18 @@ Requirements:
   path surfaces context-disambiguated ambiguous open-class roles. *Oracle:*
   `SemanticToken` vector equality. *Evidence:* `colorful-lsp`
   `tests::default_semantic_tokens_emit_contextual_open_class_roles`. *Status:*
+  implemented.
+- **COL-10a** — *Requirement:* COL-10. *Behavior:* `colorful diagnose --json`
+  reports each token's text, byte range, token axes, visual role, ANSI
+  projection, graft class, LSP token type, and LSP legend index. *Oracle:* JSON
+  field equality. *Evidence:* `colorful-cli`
+  `tests::diagnose_json_reports_token_roles_and_lsp_types`. *Status:*
+  implemented.
+- **COL-10b** — *Requirement:* COL-10. *Behavior:* the committed editor smoke
+  fixture produces a stable diagnostic summary and includes every current
+  presentation role. *Oracle:* exact summary and per-role count equality.
+  *Evidence:* `crates/colorful-cli/fixtures/editor-smoke-prose.txt`;
+  `colorful-cli` `tests::diagnose_json_covers_editor_smoke_fixture`. *Status:*
   implemented.
 
 ## Known gaps

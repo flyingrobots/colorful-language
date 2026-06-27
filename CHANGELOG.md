@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   local `colorful` CLI into `$HOME/.colorful-language/bin` with
   `cargo install --path ... --root ... --force`, giving Graft and jedit a stable
   development-time binary path.
+- **CLI diagnostic JSON.** `colorful diagnose --json [FILE]` now emits a
+  machine-readable troubleshooting report showing each token's text, byte range,
+  class axes, visual role, ANSI projection, graft class, LSP token type, and LSP
+  legend index.
 
 ### Changed
 
@@ -42,6 +46,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **VS Code Plain Text highlighting.** The VS Code source extension now declares
+  Colorful's `noun`, `verb`, `adjective`, and `adverb` semantic token types,
+  enables semantic highlighting for Plain Text and Markdown, maps custom tokens
+  to fallback TextMate scopes, and exposes a **Colorful Language** output channel
+  for startup diagnostics.
+- **Zed Plain Text activation.** The Zed source extension now honors
+  `lsp.colorful-lsp.binary.path` before falling back to `PATH`, and its docs
+  explain that Zed semantic tokens and custom semantic token rules must be
+  enabled for Plain Text highlighting.
 - **CLI version probe.** `colorful --version` and `colorful -V` now print the CLI
   package version, so Graft can enforce its `colorful >= 0.2.1` prose projection
   contract before shelling through `colorful ir -`.
