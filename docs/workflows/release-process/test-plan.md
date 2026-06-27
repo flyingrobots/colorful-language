@@ -31,7 +31,7 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-5a** — *Requirement:* REL-5. *Behavior:* release instructions live in
   `docs/RELEASING.md`; the topic points to it instead of duplicating the full
   runbook. *Oracle:* documentation review. *Evidence:*
-  `docs/topics/release-process/README.md`. *Status:* implemented.
+  `docs/workflows/release-process/README.md`. *Status:* implemented.
 
 ## Open verification gaps
 

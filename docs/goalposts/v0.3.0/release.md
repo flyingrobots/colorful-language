@@ -43,6 +43,8 @@ tokens, and `colorful.syntax/v1` agree.
 - The release and distribution docs now state the current binary artifact
   boundary precisely: one Linux `x86_64-unknown-linux-gnu` archive containing
   both `colorful` and `colorful-lsp`.
+- Repository policy and maintainer workflow references now live under
+  `docs/workflows/`, keeping `docs/topics/` focused on product-facing concepts.
 
 ## Who it's for
 

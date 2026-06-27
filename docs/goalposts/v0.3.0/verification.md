@@ -23,7 +23,7 @@ Run on the prep branch before opening the release PR. Record exit status.
 | Tests | `cargo test --all --locked` | ✅ pass (125 unit tests) |
 | Package witness | `bash scripts/package-witness.sh` | ✅ pass; checked package-local contract copies, packaged all seven publishable crates, extracted the tarballs, and checked the extracted package workspace. |
 | Release build | `cargo build --release --locked` | ✅ pass |
-| Markdown | `markdownlint-cli2 "**/*.md"` | ✅ pass (0 errors) |
+| Markdown | `markdownlint-cli2 "**/*.md"` | ✅ pass (48 files, 0 errors) |
 | Workflows | `actionlint .github/workflows/*.yml` | ✅ pass |
 | Whitespace | `git diff --check "$(git hash-object -t tree /dev/null)" HEAD` | ✅ pass |
 

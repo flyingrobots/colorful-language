@@ -94,9 +94,9 @@ Copy into the release-prep PR body and complete before tagging:
 - [ ] **CHANGELOG reflects the actual diff.** `git log <prev-tag>..HEAD --oneline`
       accounts for every user-visible change; nothing significant is silently
       absent.
-- [ ] **Living docs are current.** The `docs/topics/` references and crate
-      READMEs describe behavior that exists on `main` (no stale ports, claims, or
-      examples).
+- [ ] **Living docs are current.** The `docs/topics/` references,
+      `docs/workflows/` operations docs, and crate READMEs describe behavior
+      that exists on `main` (no stale ports, claims, workflows, or examples).
 - [ ] **No known issue silently shipped.** Open issues affecting this release's
       correctness are either fixed or acknowledged in the CHANGELOG / a follow-on
       issue.

@@ -13,7 +13,8 @@ proven by deterministic executable evidence.
 | Path | Contains |
 | --- | --- |
 | [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) | The project-local documentation corpus standard: page types, examples, visuals, style, and enforcement. |
-| `topics/<topic>/` | The living reference for a durable concept (behavior, test plan, optional architecture and rationale). |
+| `topics/<topic>/` | The living reference for a durable product concept (behavior, test plan, optional architecture and rationale). |
+| `workflows/<workflow>/` | Contributor-facing operational contracts for repository workflows. |
 | `design/` | Historical, proposal-era design documents. |
 | `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |
 | [`RELEASING.md`](RELEASING.md) | The release runbook and pre-tag sign-off checklist. |
@@ -51,7 +52,10 @@ not pose as the current reference.
   `colorful-lsp` reaches VS Code, Zed, and generic LSP clients.
 - [distribution](topics/distribution/README.md) — install paths, package
   boundaries, and release artifacts.
-- [release process](topics/release-process/README.md) — the release runbook,
+
+## Contributor workflows
+
+- [release process](workflows/release-process/README.md) — the release runbook,
   automation boundary, and witness discipline.
 
 ## Releases

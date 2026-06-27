@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking API.** `PosClass` is a public enum and now includes
   `PosClass::Open(OpenClassKind)`. Downstream crates that exhaustively match on
   `PosClass` must handle the new variant before adopting the `0.3.x` line.
+- **Documentation routing.** Repository policy and maintainer workflow
+  references now live under `docs/workflows/` instead of the product-oriented
+  `docs/topics/` corpus.
 - **Default open-class path.** The CLI colorizer, `colorful ir`, CLI lint, and
   `colorful-lsp` now use `ContextualOpenClassAnnotator` by default, so seeded and
   supported context-disambiguated noun, verb, adjective, and adverb words carry
