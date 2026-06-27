@@ -16,6 +16,10 @@ The repository currently ships source integrations and recipes:
 - VS Code and Cursor use the source extension in
   [`editors/vscode/`](../../../editors/vscode/).
 - Zed uses the source extension in [`editors/zed/`](../../../editors/zed/).
+  The extension registers `colorful-lsp` for Zed's built-in **Plain Text** and
+  **Markdown** languages. Users must enable Zed semantic tokens
+  (`"semantic_tokens": "combined"` or `"full"`), and can set
+  `lsp.colorful-lsp.binary.path` when Zed cannot see the shell `PATH`.
 - Neovim, Helix, Emacs, Sublime Text, and Kate use the recipes in
   [`editors/README.md`](../../../editors/README.md).
 

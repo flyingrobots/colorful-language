@@ -21,6 +21,10 @@ put it on your `PATH`).
 | **Zed** | the [`zed`](zed/) extension |
 | **Neovim**, **Helix**, **Emacs**, **Sublime**, **Kate** | config recipes below |
 
+For Zed, install the source extension from [`zed/`](zed/), make sure the buffer
+language is **Plain Text** or **Markdown**, and enable Zed semantic tokens. The
+Zed README includes the exact settings and binary-path override.
+
 > Highlighting uses **LSP semantic tokens**. The default skeleton highlighter
 > uses standard token types (`keyword`, `class`, `number`, `string`) for
 > structure and Colorful-owned open-class types (`noun`, `verb`, `adjective`,

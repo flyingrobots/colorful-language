@@ -11,6 +11,8 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-4** Source editor integrations compile in CI.
 - **EDIT-5** Editor recipe docs stay honest about source installs,
   marketplace status, and theme caveats.
+- **EDIT-6** Zed Plain Text highlighting requires semantic tokens and a
+  resolvable `colorful-lsp` binary.
 
 ## Cases
 
@@ -38,6 +40,15 @@ Verification for editor adapters and the `colorful-lsp` surface.
   marketplace packages are not published and that custom open-class token types
   may need theme rules. *Oracle:* documentation review. *Evidence:*
   `README.md`; `editors/README.md`; `docs/topics/editor-integrations/README.md`.
+  *Status:* implemented.
+- **EDIT-6a** — *Requirement:* EDIT-6. *Behavior:* the Zed source extension can
+  use `lsp.colorful-lsp.binary.path` when present and otherwise falls back to
+  resolving `colorful-lsp` from `PATH`; the Zed README documents
+  `"semantic_tokens": "combined"` for **Plain Text** and **Markdown** buffers.
+  *Oracle:* extension build succeeds and documentation states both conditions.
+  *Evidence:* `editors/zed/src/lib.rs`; `editors/zed/README.md`;
+  `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1`;
+  `markdownlint-cli2 "docs/topics/**/*.md" "editors/zed/README.md"`.
   *Status:* implemented.
 
 ## Open verification gaps
