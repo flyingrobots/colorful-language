@@ -43,11 +43,12 @@ languages and sends LSP language IDs `markdown` and `plaintext`, respectively.
 A `.txt` file should show **Plain Text** in Zed's language selector.
 
 Colorful uses LSP semantic tokens for highlighting. Zed defaults semantic tokens
-to `off`, so enable them globally:
+to `off`, so enable them globally. `full` is the clearest mode for prose because
+Plain Text has no useful syntax layer to merge with:
 
 ```json
 {
-  "semantic_tokens": "combined"
+  "semantic_tokens": "full"
 }
 ```
 
@@ -57,11 +58,56 @@ Or enable them only for prose buffers:
 {
   "languages": {
     "Plain Text": {
-      "semantic_tokens": "combined"
+      "semantic_tokens": "full"
     },
     "Markdown": {
-      "semantic_tokens": "combined"
+      "semantic_tokens": "full"
     }
+  }
+}
+```
+
+Most Zed themes do not style Colorful's custom open-class token types by
+default. Add semantic token rules that map Colorful roles onto existing theme
+slots:
+
+```json
+{
+  "global_lsp_settings": {
+    "semantic_token_rules": [
+      {
+        "selector": "keyword",
+        "style": ["syntax.keyword"]
+      },
+      {
+        "selector": "class",
+        "style": ["syntax.type"]
+      },
+      {
+        "selector": "number",
+        "style": ["syntax.number"]
+      },
+      {
+        "selector": "string",
+        "style": ["syntax.string"]
+      },
+      {
+        "selector": "noun",
+        "style": ["syntax.type"]
+      },
+      {
+        "selector": "verb",
+        "style": ["syntax.function"]
+      },
+      {
+        "selector": "adjective",
+        "style": ["syntax.property"]
+      },
+      {
+        "selector": "adverb",
+        "style": ["syntax.string"]
+      }
+    ]
   }
 }
 ```
@@ -76,8 +122,8 @@ If highlighting still does not appear:
    `starting language server process` entry for `colorful-lsp`.
 3. Confirm the buffer language is **Plain Text** or **Markdown**.
 4. Confirm the configured `colorful-lsp` path exists and is executable.
-5. Try `semantic_tokens: "full"` to rule out theme interaction with existing
-   highlighting.
+5. Reinstall the dev extension if Zed's extension index still shows stale
+   metadata after a manifest change.
 
 ## How it works
 

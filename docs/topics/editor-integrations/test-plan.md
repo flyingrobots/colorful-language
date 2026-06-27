@@ -12,7 +12,8 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-5** Editor recipe docs stay honest about source installs,
   marketplace status, and theme caveats.
 - **EDIT-6** Zed Plain Text highlighting requires semantic tokens and a
-  resolvable `colorful-lsp` binary.
+  resolvable `colorful-lsp` binary, with theme rules for Colorful-owned token
+  types.
 
 ## Cases
 
@@ -45,7 +46,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
   use `lsp.colorful-lsp.binary.path` when present and otherwise falls back to
   resolving `colorful-lsp` from `PATH`; it maps Zed **Plain Text** to LSP
   language ID `plaintext`; the Zed README documents
-  `"semantic_tokens": "combined"` for **Plain Text** and **Markdown** buffers.
+  `"semantic_tokens": "full"` for **Plain Text** and **Markdown** buffers plus
+  `global_lsp_settings.semantic_token_rules` for Colorful-owned `noun`, `verb`,
+  `adjective`, and `adverb` token types.
   *Oracle:* extension build succeeds and documentation states both conditions.
   *Evidence:* `editors/zed/extension.toml`; `editors/zed/src/lib.rs`;
   `editors/zed/README.md`; `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1`;

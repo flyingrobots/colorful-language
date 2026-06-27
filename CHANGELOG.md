@@ -44,7 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Zed Plain Text activation.** The Zed source extension now honors
   `lsp.colorful-lsp.binary.path` before falling back to `PATH`, and its docs
-  explain that Zed semantic tokens must be enabled for Plain Text highlighting.
+  explain that Zed semantic tokens and custom semantic token rules must be
+  enabled for Plain Text highlighting.
 - **CLI version probe.** `colorful --version` and `colorful -V` now print the CLI
   package version, so Graft can enforce its `colorful >= 0.2.1` prose projection
   contract before shelling through `colorful ir -`.

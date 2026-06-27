@@ -18,8 +18,10 @@ The repository currently ships source integrations and recipes:
 - Zed uses the source extension in [`editors/zed/`](../../../editors/zed/).
   The extension registers `colorful-lsp` for Zed's built-in **Plain Text** and
   **Markdown** languages. Users must enable Zed semantic tokens
-  (`"semantic_tokens": "combined"` or `"full"`), and can set
-  `lsp.colorful-lsp.binary.path` when Zed cannot see the shell `PATH`.
+  (`"semantic_tokens": "full"` is clearest for prose), can set
+  `lsp.colorful-lsp.binary.path` when Zed cannot see the shell `PATH`, and may
+  need `global_lsp_settings.semantic_token_rules` for Colorful's custom
+  open-class token types.
 - Neovim, Helix, Emacs, Sublime Text, and Kate use the recipes in
   [`editors/README.md`](../../../editors/README.md).
 
@@ -47,8 +49,10 @@ The default LSP path uses `ContextualOpenClassAnnotator`, so it emits `noun`,
 `verb`, `adjective`, and `adverb` for the small deterministic seed table and the
 supported contextual patterns. Unlisted content words remain unstyled.
 
-Themes that do not style the custom token types may need explicit user rules
-until Colorful ships a theme package.
+Themes that do not style the custom token types need explicit user semantic
+token rules until Colorful ships a theme package. The Zed source extension
+README carries the current rule block that maps `noun`, `verb`, `adjective`,
+and `adverb` onto existing theme slots.
 
 ## Boundaries
 
