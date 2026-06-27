@@ -39,7 +39,8 @@ by name from **Extensions**.
 ## Plain Text highlighting
 
 The extension attaches to Zed's built-in **Markdown** and **Plain Text**
-languages. A `.txt` file should show **Plain Text** in Zed's language selector.
+languages and sends LSP language IDs `markdown` and `plaintext`, respectively.
+A `.txt` file should show **Plain Text** in Zed's language selector.
 
 Colorful uses LSP semantic tokens for highlighting. Zed defaults semantic tokens
 to `off`, so enable them globally:
@@ -71,9 +72,11 @@ changing this setting.
 If highlighting still does not appear:
 
 1. Open Zed's log with **zed: open log** and look for `colorful-lsp`.
-2. Confirm the buffer language is **Plain Text** or **Markdown**.
-3. Confirm the configured `colorful-lsp` path exists and is executable.
-4. Try `semantic_tokens: "full"` to rule out theme interaction with existing
+2. Reopen the `.txt` buffer and confirm the log gets a fresh
+   `starting language server process` entry for `colorful-lsp`.
+3. Confirm the buffer language is **Plain Text** or **Markdown**.
+4. Confirm the configured `colorful-lsp` path exists and is executable.
+5. Try `semantic_tokens: "full"` to rule out theme interaction with existing
    highlighting.
 
 ## How it works

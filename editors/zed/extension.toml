@@ -9,3 +9,7 @@ repository = "https://github.com/flyingrobots/colorful-language"
 [language_servers.colorful-lsp]
 name = "Colorful Language"
 languages = ["Markdown", "Plain Text"]
+
+[language_servers.colorful-lsp.language_ids]
+Markdown = "markdown"
+"Plain Text" = "plaintext"

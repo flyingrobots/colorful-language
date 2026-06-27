@@ -43,11 +43,12 @@ Verification for editor adapters and the `colorful-lsp` surface.
   *Status:* implemented.
 - **EDIT-6a** — *Requirement:* EDIT-6. *Behavior:* the Zed source extension can
   use `lsp.colorful-lsp.binary.path` when present and otherwise falls back to
-  resolving `colorful-lsp` from `PATH`; the Zed README documents
+  resolving `colorful-lsp` from `PATH`; it maps Zed **Plain Text** to LSP
+  language ID `plaintext`; the Zed README documents
   `"semantic_tokens": "combined"` for **Plain Text** and **Markdown** buffers.
   *Oracle:* extension build succeeds and documentation states both conditions.
-  *Evidence:* `editors/zed/src/lib.rs`; `editors/zed/README.md`;
-  `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1`;
+  *Evidence:* `editors/zed/extension.toml`; `editors/zed/src/lib.rs`;
+  `editors/zed/README.md`; `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1`;
   `markdownlint-cli2 "docs/topics/**/*.md" "editors/zed/README.md"`.
   *Status:* implemented.
 
