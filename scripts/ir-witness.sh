@@ -43,7 +43,8 @@ if command -v tsc >/dev/null 2>&1; then
   tsc -p witness/tsconfig.json
   echo "  ✅ generated TS contract type-checks"
 else
-  echo "  ⚠ tsc not found; skipping TS type-check (round-trip already proved)"
+  echo "  ❌ tsc not found; cannot type-check generated TS contract" >&2
+  exit 1
 fi
 
 echo "WITNESS PASSED"

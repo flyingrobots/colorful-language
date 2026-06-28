@@ -25,9 +25,11 @@ cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --all --locked
 bash scripts/package-witness.sh
 cargo build --release --locked
+npm --prefix editors/vscode ci
+export PATH="$root/editors/vscode/node_modules/.bin:$PATH"
+command -v tsc >/dev/null 2>&1 || fail "typescript compiler is required"
 bash scripts/ir-witness.sh
 node consumers/graft-projection.test.mjs
-npm --prefix editors/vscode ci
 npm --prefix editors/vscode run compile
 cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1
 markdownlint-cli2 "**/*.md"
