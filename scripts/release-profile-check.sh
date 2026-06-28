@@ -42,7 +42,14 @@ require_profile_text "tag_format: \"v{version}\""
 require_profile_text "release_branch_format: \"release/v{version}\""
 require_profile_text "milestone_format: \"v{version}\""
 require_profile_text "field: workspace.package.version"
+require_profile_text "profile: bash scripts/release-profile-check.sh"
+require_profile_text "prep: bash scripts/release-prep.sh"
+require_profile_text "preflight: bash scripts/release-preflight.sh v{version}"
+require_profile_text "ci: ci.yml"
+require_profile_text "release_prep: ci.yml"
+require_profile_text "publish: release.yml"
 require_profile_text "trigger: tag_push"
+require_profile_text "verify: cargo info {crate}@{version}"
 
 for path in \
   Cargo.toml \
