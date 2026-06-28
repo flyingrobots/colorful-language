@@ -88,8 +88,33 @@ for crate in \
   colorful-lsp
 do
   require_profile_text "$crate"
-  if ! grep -Fq "name = \"$crate\"" Cargo.lock; then
+  lock_version="$(
+    awk -v crate="$crate" '
+      /^\[\[package\]\]$/ {
+        name = ""
+        version = ""
+        next
+      }
+      /^name = / {
+        name = $3
+        gsub(/"/, "", name)
+        next
+      }
+      /^version = / {
+        version = $3
+        gsub(/"/, "", version)
+        if (name == crate) {
+          print version
+          exit
+        }
+      }
+    ' Cargo.lock
+  )"
+  if [[ -z "$lock_version" ]]; then
     fail "Cargo.lock does not contain package $crate"
+  fi
+  if [[ "$lock_version" != "$workspace_version" ]]; then
+    fail "Cargo.lock has $crate $lock_version; expected $workspace_version"
   fi
 done
 
