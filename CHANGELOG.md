@@ -37,8 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scripts/release-prep.sh`, and `scripts/release-preflight.sh` make the
   profile, prep, and tag guards executable.
 - **Release workflow metadata and rerun guards.** The tag-triggered release
-  workflow now validates release metadata against the tag and skips crates that
-  are already visible on crates.io during reruns.
+  workflow now validates release metadata against the tag and skips crates whose
+  exact release version is already available in the crates.io index during
+  reruns.
 
 ### Changed
 

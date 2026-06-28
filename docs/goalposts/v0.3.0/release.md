@@ -50,7 +50,8 @@ tokens, and `colorful.syntax/v1` agree.
   `scripts/release-preflight.sh` make the release profile, prep, and final tag
   gates executable.
 - The tag-triggered release workflow validates release metadata against the tag
-  and skips crate versions that are already visible on crates.io during reruns.
+  and skips crate versions that are already available in the crates.io registry
+  index during reruns.
 
 ## Who it's for
 

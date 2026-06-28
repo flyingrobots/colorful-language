@@ -14,7 +14,7 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-7** Release-prep and final preflight gates are executable.
 - **REL-8** The current lifecycle records verification and retrospective duties.
 - **REL-9** The tag workflow validates metadata and is safe to rerun after
-  crates are already visible.
+  crates are already available in the crates.io registry index.
 
 ## Cases
 
@@ -62,11 +62,11 @@ Verification for release preparation, tag automation, and release witnesses.
   paths. *Oracle:* workflow source review. *Evidence:*
   `.github/workflows/release.yml`. *Status:* implemented.
 - **REL-9b** — *Requirement:* REL-9. *Behavior:* the crates.io publish loop
-  checks whether each crate version is already visible before publishing, so a
-  rerun can continue after a partial publish without moving the tag; the job
-  timeout covers the aggregate visibility polling budget. *Oracle:* workflow
-  source review. *Evidence:* `.github/workflows/release.yml`. *Status:*
-  implemented.
+  checks whether each crate version is already available in the registry index
+  before publishing, so a rerun can continue after a partial publish without
+  moving the tag; the job timeout covers the aggregate index-readiness polling
+  budget. *Oracle:* workflow source review. *Evidence:*
+  `.github/workflows/release.yml`. *Status:* implemented.
 
 ## Open verification gaps
 

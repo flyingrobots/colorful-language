@@ -132,8 +132,9 @@ binaries, and creates the GitHub Release.
 ### verified
 
 A release is verified only after public availability is confirmed: crates.io
-versions are visible, the GitHub Release exists, release assets are attached, and
-install / CLI / import or equivalent smoke checks pass.
+versions are available through the registry index, the GitHub Release exists,
+release assets are attached, and install / CLI / import or equivalent smoke
+checks pass.
 
 ### retrospectived
 
@@ -404,9 +405,10 @@ It then builds one `x86_64-unknown-linux-gnu` archive containing `colorful`,
 `colorful-lsp`, `README.md`, `LICENSE`, `NOTICE`, and `CHANGELOG.md`, writes a
 SHA-256 checksum, and creates the GitHub Release.
 
-The crates.io publish step is rerun-safe for already-visible crate versions: it
-checks crates.io before each crate and continues when that exact version already
-exists. It must not move tags or publish from a different commit.
+The crates.io publish step is rerun-safe for already-published crate versions:
+it checks the crates.io registry index before each crate and continues when that
+exact version is already available. It must not move tags or publish from a
+different commit.
 
 ## crates.io prerequisites
 
@@ -434,7 +436,8 @@ After the workflow succeeds, verify public availability:
 
 ```bash
 gh release view vX.Y.Z --json url,tagName,name,publishedAt,assets
-cargo search colorful-core --limit 5
+cargo info colorful-core@X.Y.Z
+cargo info colorful-cli@X.Y.Z
 cargo install colorful-cli --version X.Y.Z --locked
 colorful --version
 colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt
