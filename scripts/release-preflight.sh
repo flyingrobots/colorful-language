@@ -15,13 +15,9 @@ if [[ "$#" -ne 1 ]]; then
 fi
 
 target_tag="$1"
-case "$target_tag" in
-  v[0-9]*.[0-9]*.[0-9]*)
-    ;;
-  *)
-    fail "target tag must look like vX.Y.Z"
-    ;;
-esac
+if [[ ! "$target_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  fail "target tag must look like vX.Y.Z"
+fi
 
 target_version="${target_tag#v}"
 branch="$(git branch --show-current)"
