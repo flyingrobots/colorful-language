@@ -82,25 +82,24 @@ jobs:
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
-          crate_published() {
-            curl --retry 3 --retry-delay 2 --fail --silent --show-error \
-              "https://crates.io/api/v1/crates/$1/$version" >/dev/null
+          crate_ready() {
+            cargo info --quiet "$1@$version" --registry crates-io >/dev/null
           }
           for crate in colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-cli colorful-lsp; do
             echo "::group::publish $crate"
-            if crate_published "$crate"; then
-              echo "$crate $version is already visible on crates.io; verifying and continuing."
+            if crate_ready "$crate"; then
+              echo "$crate $version is already available in the crates.io index; verifying and continuing."
               echo "::endgroup::"
               continue
             fi
             cargo publish -p "$crate" --locked
             for attempt in $(seq 1 30); do
-              if crate_published "$crate"; then
-                echo "$crate $version is visible on crates.io."
+              if crate_ready "$crate"; then
+                echo "$crate $version is available in the crates.io index."
                 break
               fi
               if [ "$attempt" -eq 30 ]; then
-                echo "$crate $version did not become visible on crates.io in time."
+                echo "$crate $version did not become available in the crates.io index in time."
                 exit 1
               fi
               sleep 10
