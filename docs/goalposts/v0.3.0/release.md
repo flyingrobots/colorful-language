@@ -45,6 +45,12 @@ tokens, and `colorful.syntax/v1` agree.
   both `colorful` and `colorful-lsp`.
 - Repository policy and maintainer workflow references now live under
   `docs/workflows/`, keeping `docs/topics/` focused on product-facing concepts.
+- `.continuum/release.yml` declares the repo-local release profile, and
+  `scripts/release-profile-check.sh`, `scripts/release-prep.sh`, and
+  `scripts/release-preflight.sh` make the release profile, prep, and final tag
+  gates executable.
+- The tag-triggered release workflow validates release metadata against the tag
+  and skips crate versions that are already visible on crates.io during reruns.
 
 ## Who it's for
 
@@ -93,6 +99,8 @@ before adopting the `0.3.x` line.
 - **No native macOS or Windows binary archives.** Release assets remain one Linux
   `x86_64-unknown-linux-gnu` archive plus crates.io packages.
 - **No Homebrew formula.** Homebrew packaging remains a separate tracked slice.
+- **No autotag workflow yet.** Public release tags are still created manually
+  from clean, aligned `main` after `scripts/release-preflight.sh` passes.
 - **Controlled English is not shipped.** Contract English, Intent English, and
   proof-carrying execution remain roadmap phases.
 
@@ -114,6 +122,8 @@ before adopting the `0.3.x` line.
 - `colorful diagnose --json` is covered for report shape, LSP token type
   projection, the editor smoke fixture, and invalid operand handling.
 - VS Code and Zed source integrations compile in CI.
+- The release profile check runs in CI and in the tag-triggered release
+  workflow.
 - The release gate in [`docs/RELEASING.md`](../../RELEASING.md) passes before
   the release-prep PR is merged.
 

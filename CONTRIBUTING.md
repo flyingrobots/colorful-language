@@ -154,6 +154,34 @@ When you create or substantially change documentation:
 11. Update `CHANGELOG.md` and `ROADMAP.md` when the documentation change reflects
     release-visible behavior or shifts project posture.
 
+## How To Maintain Releases
+
+Release mechanics live in two places:
+
+- [`docs/RELEASING.md`](docs/RELEASING.md) explains the lifecycle, current
+  repository adapter, validation gates, publication, verification, failure
+  handling, and retrospective requirements.
+- [`.continuum/release.yml`](.continuum/release.yml) declares the repo-local
+  facts automation checks: version sources, signposts, workflows, crates,
+  artifacts, and validation entrypoints.
+
+Use release branches named `release/vX.Y.Z`. Release-prep PRs are normal,
+non-draft PRs to `main`. After merge, create the public annotated tag only from
+clean, fetched, aligned `main` and only after final preflight:
+
+```bash
+bash scripts/release-preflight.sh vX.Y.Z
+```
+
+Then push the tag to trigger publication:
+
+```bash
+git tag -a vX.Y.Z -m "release: vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+Do not move public tags. If a published version is wrong, patch forward.
+
 ## Test Plans Are Contracts
 
 A topic test plan is written for people and read closely in review. The prose

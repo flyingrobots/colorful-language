@@ -32,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   machine-readable troubleshooting report showing each token's text, byte range,
   class axes, visual role, ANSI projection, graft class, LSP token type, and LSP
   legend index.
+- **Release profile and executable gates.** `.continuum/release.yml` now declares
+  Colorful's release mechanics, and `scripts/release-profile-check.sh`,
+  `scripts/release-prep.sh`, and `scripts/release-preflight.sh` make the
+  profile, prep, and tag guards executable.
+- **Release workflow metadata and rerun guards.** The tag-triggered release
+  workflow now validates release metadata against the tag and skips crates that
+  are already visible on crates.io during reruns.
 
 ### Changed
 
@@ -41,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation routing.** Repository policy and maintainer workflow
   references now live under `docs/workflows/` instead of the product-oriented
   `docs/topics/` corpus.
+- **Release lifecycle.** The release runbook now adapts the Continuum lifecycle
+  to this repo: thesis, milestone scope, signposts, release-prep PRs, immutable
+  tags, tag-triggered publication, public verification, and retrospectives.
 - **Default open-class path.** The CLI colorizer, `colorful ir`, CLI lint, and
   `colorful-lsp` now use `ContextualOpenClassAnnotator` by default, so seeded and
   supported context-disambiguated noun, verb, adjective, and adverb words carry

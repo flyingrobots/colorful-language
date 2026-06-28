@@ -28,6 +28,32 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Check release profile
+        run: bash scripts/release-profile-check.sh
+
+      - name: Verify release metadata
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          workspace_version="$(
+            awk '
+              /^\[workspace.package\]$/ { in_package = 1; next }
+              /^\[/ { in_package = 0 }
+              in_package && /^version = / {
+                gsub(/"/, "", $3)
+                print $3
+                exit
+              }
+            ' Cargo.toml
+          )"
+          if [ "$workspace_version" != "$version" ]; then
+            echo "Workspace version $workspace_version does not match tag $version."
+            exit 1
+          fi
+          grep -F "## [$version]" CHANGELOG.md
+          test -f "docs/goalposts/${GITHUB_REF_NAME}/release.md"
+          test -f "docs/goalposts/${GITHUB_REF_NAME}/verification.md"
+
       - name: Verify the tag is on main
         run: |
           set -euo pipefail
@@ -55,9 +81,30 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          crate_published() {
+            curl --retry 3 --retry-delay 2 --fail --silent --show-error \
+              "https://crates.io/api/v1/crates/$1/$version" >/dev/null
+          }
           for crate in colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-cli colorful-lsp; do
             echo "::group::publish $crate"
+            if crate_published "$crate"; then
+              echo "$crate $version is already visible on crates.io; verifying and continuing."
+              echo "::endgroup::"
+              continue
+            fi
             cargo publish -p "$crate" --locked
+            for attempt in $(seq 1 30); do
+              if crate_published "$crate"; then
+                echo "$crate $version is visible on crates.io."
+                break
+              fi
+              if [ "$attempt" -eq 30 ]; then
+                echo "$crate $version did not become visible on crates.io in time."
+                exit 1
+              fi
+              sleep 10
+            done
             echo "::endgroup::"
           done
 

@@ -6,16 +6,31 @@ expensive, operational, and externally visible.
 
 ## Current behavior
 
+This repo adapts the Continuum release lifecycle through
+[`../../RELEASING.md`](../../RELEASING.md) and the repo-local profile at
+[`../../../.continuum/release.yml`](../../../.continuum/release.yml).
+
+The current release path is:
+
+```text
+release branch -> PR -> merge to main -> manual annotated tag -> tag workflow
+-> crates.io publish -> GitHub Release -> public verification -> retrospective
+```
+
+There is no autotag workflow yet. Manual tagging is the current supported path,
+but it must run final preflight and must not bypass failed gates.
+
 Releases are prepared on a branch, reviewed through a pull request, merged to
 `main`, and published by pushing an annotated `vX.Y.Z` tag on `main`.
 
 The durable runbook is [`docs/RELEASING.md`](../../RELEASING.md). It defines:
 
+- the release doctrine and lifecycle;
+- the repo profile and release signposts;
 - required release artifacts;
-- discovery and guard checks;
-- version bump and changelog steps;
-- local validation commands;
-- tag and publish steps;
+- thesis, scope, milestone, and signpost discipline;
+- release-prep and preflight validation commands;
+- tag, publish, verification, failure handling, and retrospective steps;
 - crates.io ownership and publish constraints.
 
 Each release also has a packet under `docs/goalposts/vX.Y.Z/`:
@@ -27,17 +42,40 @@ Each release also has a packet under `docs/goalposts/vX.Y.Z/`:
 
 ## Automation
 
+The release profile is checked by CI and by the tag-triggered release workflow:
+
+```bash
+bash scripts/release-profile-check.sh
+```
+
+Release-prep validation is executable:
+
+```bash
+bash scripts/release-prep.sh
+```
+
+Final manual tag preflight is executable from clean, aligned `main`:
+
+```bash
+bash scripts/release-preflight.sh vX.Y.Z
+```
+
 The tag-triggered release workflow runs when a `v*` tag is pushed. It verifies
-that the tag is on `main`, reruns the Rust and package guards, publishes the
-crates in dependency order, builds one `x86_64-unknown-linux-gnu` archive
-containing the `colorful` and `colorful-lsp` binaries, writes a checksum, and
-creates the GitHub Release.
+the profile, verifies that release metadata matches the tag, verifies that the
+tag is on `main`, reruns the Rust and package guards, publishes the crates in
+dependency order, builds one
+`x86_64-unknown-linux-gnu` archive containing the `colorful` and `colorful-lsp`
+binaries, writes a checksum, and creates the GitHub Release.
+
+The crates.io publish step skips crate versions that are already visible on
+crates.io, so rerunning the workflow after a partial publish can continue
+without moving the tag.
 
 The workflow relies on the pre-merge gate for checks that are not repeated on
 tag pushes. Pull-request CI covers Markdown lint, whitespace checks, the IR
-witness, and editor integration compile. Workflow lint is part of the local
-release gate in [`docs/RELEASING.md`](../../RELEASING.md) until an `actionlint`
-step is added to CI.
+witness, editor integration compile, and release profile validation. Workflow
+lint is part of the local release-prep gate in
+[`docs/RELEASING.md`](../../RELEASING.md).
 
 ## Boundaries
 

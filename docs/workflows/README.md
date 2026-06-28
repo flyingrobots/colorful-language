@@ -13,4 +13,4 @@ Product and user-facing concepts still belong in [`../topics/`](../topics/).
 ## Workflows
 
 - [Release process](release-process/README.md) — release preparation, tag
-  automation, and witness discipline.
+  publication, verification, and retrospective discipline.
