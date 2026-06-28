@@ -17,7 +17,7 @@ proven by deterministic executable evidence.
 | `workflows/<workflow>/` | Contributor-facing operational contracts for repository workflows. |
 | `design/` | Historical, proposal-era design documents. |
 | `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |
-| [`RELEASING.md`](RELEASING.md) | The release runbook and pre-tag sign-off checklist. |
+| [`RELEASING.md`](RELEASING.md) | The release lifecycle, profile adapter, gates, publication, verification, and retrospective runbook. |
 
 ## Design records
 
@@ -56,7 +56,7 @@ not pose as the current reference.
 ## Contributor workflows
 
 - [release process](workflows/release-process/README.md) — the release runbook,
-  automation boundary, and witness discipline.
+  profile adapter, automation boundary, publication, and witness discipline.
 
 ## Releases
 

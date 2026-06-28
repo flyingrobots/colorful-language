@@ -1,0 +1,88 @@
+schema: 1
+repo:
+  name: colorful-language
+  owner: flyingrobots
+  primary_artifact: cargo-workspace
+versioning:
+  strategy: fixed
+  semver_phase: pre-1.0
+  tag_format: "v{version}"
+  release_branch_format: "release/v{version}"
+  milestone_format: "v{version}"
+version_sources:
+  - path: Cargo.toml
+    type: cargo-workspace
+    field: workspace.package.version
+    required: true
+  - path: Cargo.lock
+    type: cargo-lock
+    field: package.version
+    required: true
+docs:
+  changelog: CHANGELOG.md
+  front_door: README.md
+  roadmap: ROADMAP.md
+  release_runbook: docs/RELEASING.md
+  release_packets: docs/goalposts/v{version}/release.md
+  release_witness: docs/goalposts/v{version}/verification.md
+  architecture:
+    - docs/design/
+    - docs/topics/ir/architecture.md
+  user_docs:
+    - docs/topics/
+  operator_docs:
+    - docs/workflows/
+  contributor_docs:
+    - CONTRIBUTING.md
+    - AGENTS.md
+    - docs/DOCUMENTATION_STANDARDS.md
+validation:
+  profile: bash scripts/release-profile-check.sh
+  prep: bash scripts/release-prep.sh
+  preflight: bash scripts/release-preflight.sh v{version}
+workflows:
+  ci: ci.yml
+  release_prep: ci.yml
+  autotag: null
+  publish: release.yml
+publish:
+  trigger: tag_push
+  manual_dispatch_required: false
+  github_release: true
+  registries:
+    - name: crates.io
+      packages:
+        - colorful-core
+        - colorful-lexicon
+        - colorful-parse
+        - colorful-ir
+        - colorful-lint
+        - colorful-cli
+        - colorful-lsp
+      verify: cargo info {crate}@{version}
+  artifacts:
+    - name: linux-binaries
+      platform: x86_64-unknown-linux-gnu
+      contents:
+        - colorful
+        - colorful-lsp
+        - README.md
+        - LICENSE
+        - NOTICE
+        - CHANGELOG.md
+dist_tags:
+  stable: crates.io-default
+  prerelease:
+    alpha: unsupported
+    beta: unsupported
+    rc: unsupported
+  maintenance: unsupported
+issue_axes:
+  required:
+    - type
+    - priority
+    - status
+    - area
+  optional:
+    - risk
+    - impact

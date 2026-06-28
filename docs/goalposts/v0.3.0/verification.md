@@ -30,6 +30,15 @@ Run on the prep branch before opening the release PR. Record exit status.
 | Workflows | `actionlint .github/workflows/*.yml` | ✅ pass |
 | Whitespace | `git diff --check "$(git hash-object -t tree /dev/null)" HEAD` | ✅ pass |
 
+After adopting the repo-local Continuum release profile, the unified release-prep
+script was run on `docs/adapt-release-lifecycle` before opening the follow-up PR
+that carries the profile and guard changes:
+
+| Step | Command | Result |
+| --- | --- | --- |
+| Release profile | `bash scripts/release-profile-check.sh` | ✅ pass; profile matched workspace version `0.3.0`, release signposts, workflows, scripts, and all seven crate versions in `Cargo.lock`. |
+| Unified release prep | `bash scripts/release-prep.sh` | ✅ pass; ran profile, Rust fmt/clippy/test, package witness, release build, IR witness with TypeScript contract checking, Graft consumer, VS Code compile, locked Zed compile, Markdown lint, `actionlint`, and whitespace checks. |
+
 ## Supplemental witnesses
 
 These commands mirror CI surfaces that are not repeated by the tag-triggered
@@ -43,7 +52,7 @@ release workflow.
 | IR witness | `bash scripts/ir-witness.sh` | ✅ pass; Rust, TypeScript decode, and Rust decode canonical JSON were byte-identical, and the generated TypeScript contract type-checked. |
 | Graft projection consumer | `node consumers/graft-projection.test.mjs` | ✅ pass. |
 | VS Code source extension | `npm ci && npm run compile` in `editors/vscode` | ✅ pass. |
-| Zed source extension | `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1` | ✅ pass. |
+| Zed source extension | `cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked` | ✅ pass. |
 
 PR CI also records hosted evidence for these non-tag surfaces through the
 `IR cross-language round-trip witness` and `Editor integrations (compile)` jobs.

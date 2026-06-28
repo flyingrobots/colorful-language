@@ -80,6 +80,10 @@ For any release, ship, version, tag, publish, or "is this ready?" request, read
 [`docs/RELEASING.md`](docs/RELEASING.md) fresh before answering or acting. Do
 not rely on memory or chat history for the release process.
 
+Also inspect [`.continuum/release.yml`](.continuum/release.yml). It is the
+repo-local release profile: version sources, signposts, validation entrypoints,
+publish workflow, crates, and artifacts.
+
 Before claiming release readiness:
 
 1. Record the current branch, sync state against `origin/main`, latest `v*` tag,
@@ -91,8 +95,11 @@ Before claiming release readiness:
    `CHANGELOG.md`, and `ROADMAP.md` against implemented behavior on `main`.
 5. Report any stale current-reference claim as a blocker or fix it on a branch
    before continuing.
-6. Run the release gate from `docs/RELEASING.md` when preparing the release
+6. Run `bash scripts/release-profile-check.sh`.
+7. Run the release gate from `docs/RELEASING.md` when preparing the release
    packet, not a remembered subset of commands.
+8. Before creating a public tag from `main`, run
+   `bash scripts/release-preflight.sh vX.Y.Z`.
 
 The release runbook is the source of truth. This file only says when to consult
 it.
