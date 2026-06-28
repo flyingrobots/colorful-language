@@ -283,14 +283,14 @@ bash scripts/release-prep.sh
 
 That script runs:
 
-- release profile check;
+- release profile check, including `Cargo.lock` workspace crate versions;
 - Rust format, clippy, and tests;
 - package witness;
 - release build;
-- IR witness;
+- IR witness, including generated TypeScript contract type-checking;
 - Graft reference consumer test;
 - VS Code extension compile;
-- Zed extension compile;
+- Zed extension compile with locked Cargo metadata;
 - Markdown lint;
 - workflow lint with `actionlint`;
 - whitespace / conflict marker check.

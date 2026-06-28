@@ -39,13 +39,15 @@ Verification for release preparation, tag automation, and release witnesses.
   `docs/workflows/release-process/README.md`. *Status:* implemented.
 - **REL-6a** — *Requirement:* REL-6. *Behavior:* `.continuum/release.yml`
   declares version sources, signposts, validation commands, workflows, crates,
-  and artifacts for this repo. *Oracle:* profile validation. *Evidence:*
+  and artifacts for this repo, and the profile check rejects stale workspace
+  crate versions in `Cargo.lock`. *Oracle:* profile validation. *Evidence:*
   `.continuum/release.yml`; `scripts/release-profile-check.sh`; CI `Docs &
   whitespace` job. *Status:* implemented.
 - **REL-7a** — *Requirement:* REL-7. *Behavior:* release prep is a single
-  executable gate that runs profile, Rust, package, IR, downstream, editor,
-  Markdown, workflow, and whitespace checks. *Oracle:* script review and local
-  execution. *Evidence:* `scripts/release-prep.sh`. *Status:* implemented.
+  executable gate that runs profile, Rust, package, IR with generated TypeScript
+  type-checking, downstream, editor, Markdown, workflow, and whitespace checks;
+  the Zed wasm build uses locked Cargo metadata. *Oracle:* script review and
+  local execution. *Evidence:* `scripts/release-prep.sh`. *Status:* implemented.
 - **REL-7b** — *Requirement:* REL-7. *Behavior:* final tag preflight requires
   clean aligned `main`, absent local/remote tag, matching workspace version,
   changelog entry, release packet, witness, and the full prep gate. *Oracle:*
@@ -61,8 +63,9 @@ Verification for release preparation, tag automation, and release witnesses.
   `.github/workflows/release.yml`. *Status:* implemented.
 - **REL-9b** — *Requirement:* REL-9. *Behavior:* the crates.io publish loop
   checks whether each crate version is already visible before publishing, so a
-  rerun can continue after a partial publish without moving the tag. *Oracle:*
-  workflow source review. *Evidence:* `.github/workflows/release.yml`. *Status:*
+  rerun can continue after a partial publish without moving the tag; the job
+  timeout covers the aggregate visibility polling budget. *Oracle:* workflow
+  source review. *Evidence:* `.github/workflows/release.yml`. *Status:*
   implemented.
 
 ## Open verification gaps
