@@ -31,7 +31,7 @@ command -v tsc >/dev/null 2>&1 || fail "typescript compiler is required"
 bash scripts/ir-witness.sh
 node consumers/graft-projection.test.mjs
 npm --prefix editors/vscode run compile
-cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1
+cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked
 markdownlint-cli2 "**/*.md"
 actionlint .github/workflows/*.yml
 git diff --check
