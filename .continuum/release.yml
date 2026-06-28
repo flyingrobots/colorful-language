@@ -59,7 +59,7 @@ publish:
         - colorful-lint
         - colorful-cli
         - colorful-lsp
-      verify: cargo search {crate} --limit 5
+      verify: cargo info {crate}@{version}
   artifacts:
     - name: linux-binaries
       platform: x86_64-unknown-linux-gnu
