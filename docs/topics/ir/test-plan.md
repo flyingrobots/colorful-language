@@ -32,6 +32,11 @@ Requirements:
   two sentences containing at least two logical line breaks (`\n`, `\r`, or
   `\r\n` — each counted once, never a raw `\n` byte count) with only
   whitespace between them.
+- **IR-11** Every `ValidationError` names exactly where it occurred via a
+  structured `Path`, is produced by validation running as fixed, ordered
+  stages so the overall error order is deterministic, and never lets
+  untrusted document content forge output when its `Display` rendering is
+  printed by a consumer.
 
 ## Cases
 
@@ -161,6 +166,33 @@ Requirements:
   `integration::a_carriage_return_only_blank_line_splits_paragraphs`,
   `a_single_carriage_return_does_not_split_paragraphs`,
   `a_crlf_blank_line_splits_paragraphs_exactly_once`. *Status:* implemented.
+
+- **IR-11a** — *Requirement:* IR-11. *Behavior:* every `ValidationError`
+  variant's `path()` renders the exact field it names (e.g.
+  `derivation[0]`, `diagnostics[0].byteRange.endUtf8`), and validation runs
+  as seven fixed stages — contract identity, source identity, token ranges,
+  token axes, structure graph, diagnostics, derivation — so errors spanning
+  every stage come back in that stage order. *Oracle:* per-error `path.
+  to_string()` equality; relative positions of one error per stage. *Evidence
+  type:* unit + integration test. *Evidence:* `colorful-ir`
+  `integration::rejects_a_derivation_step_with_missing_identity`,
+  `integration::rejects_an_out_of_bounds_diagnostic_range`,
+  `integration::error_order_follows_the_seven_validator_stages`. *Status:*
+  implemented.
+- **IR-11b** — *Requirement:* IR-11. *Behavior:* `ValidationError`'s `Display`
+  renders `"at {path}: {message}"`, and `ValidationErrors` lists each error by
+  `Display`, not `Debug`; document-controlled strings interpolated into that
+  text (`contractVersion`, hash `found` values, derivation `passId`) are
+  escaped via `escape_debug()` before rendering, so a value containing a
+  newline or a terminal control sequence comes out as visible, inert text
+  instead of being interpreted by a consumer's terminal. *Oracle:* exact
+  rendered string equality; absence of raw control characters in rendered
+  output for a hostile fixture value. *Evidence type:* unit test. *Evidence:*
+  `colorful-ir`
+  `integration::validation_error_display_renders_path_and_message`,
+  `integration::validation_errors_display_lists_every_error_by_display_not_debug`,
+  `integration::validation_error_display_escapes_untrusted_document_strings`.
+  *Status:* implemented.
 
 ## Known gaps / risks
 
