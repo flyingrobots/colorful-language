@@ -67,6 +67,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   producer's `pass_identity()`) before adopting the `0.4.x` line; there is no
   compatible 4-argument entry point, since a default identity would be exactly
   the dishonest placeholder `PassIdentity` is designed to reject.
+- **Breaking API queued for v0.4.0.** `colorful_ir::ValidationError` now
+  carries a structured `path: Path` on every variant (e.g.
+  `tokens[3].byteRange.startUtf8`) instead of the old ad hoc `what: String` /
+  `index: usize` fields, and a new `ValidationError::path()` plus a `Display`
+  impl (`"at {path}: ..."`) replace the previous `{:?}`-based rendering in
+  `ValidationErrors`. `validate_document` itself is unchanged in behavior —
+  it is now composed from seven independently testable validators
+  (`validate_contract_identity`, `validate_source_identity`,
+  `validate_token_ranges`, `validate_token_axes`, `validate_structure_graph`,
+  `validate_diagnostics`, `validate_derivation`) run in the same fixed order,
+  so error ordering is unchanged — but any downstream code matching on the
+  old field names must update.
 
 ### Fixed
 
