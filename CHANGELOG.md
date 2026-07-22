@@ -30,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   everywhere, not just in the default subcommand; and "at most one `FILE`
   operand" is now enforced uniformly instead of only in `diagnose`.
 
+### Changed
+
+- **Breaking API queued for v0.4.0.** `colorful_ir::from_classification` is a
+  public function and now takes two additional mandatory parameters,
+  `parser_identity: PassIdentity` and `annotator_identity: PassIdentity`.
+  Downstream crates calling it directly must update call sites (pass each
+  producer's `pass_identity()`) before adopting the `0.4.x` line; there is no
+  compatible 4-argument entry point, since a default identity would be exactly
+  the dishonest placeholder `PassIdentity` is designed to reject.
+
 ### Fixed
 
 - **Total vocabulary lookups.** `colorful_ir::vocabulary::visual_role`,
