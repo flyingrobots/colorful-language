@@ -52,8 +52,8 @@ fn token_type_index(class: PosClass) -> Option<u32> {
             .collect()
     });
 
-    let role = colorful_ir::vocabulary::visual_role_for(class);
-    let name = colorful_ir::vocabulary::projection(&role)
+    let role = colorful_ir::vocabulary::visual_role_for(class)?;
+    let name = colorful_ir::vocabulary::projection(&role)?
         .lsp_token_type
         .as_deref()?;
     token_type_index.get(name).copied()
