@@ -35,8 +35,9 @@ into validity:
    child references (the same scope `colorful_ir::validate_document` checks,
    no more);
 10. `diagnostics` and `derivation` are shape- and range-valid; `derivation` is
-    non-empty with a non-empty, non-duplicated `passId`/`ruleId` per step —
-    mirroring `colorful_ir::validate_document`'s own derivation checks;
+    non-empty, each step's `passId` and `ruleId` are non-empty, and `passId`
+    (not `ruleId`) is unique across steps — mirroring
+    `colorful_ir::validate_document`'s own derivation checks exactly, no more;
 11. `schemaHash`, `vocabularyHash`, and `contentHash` each match this
     consumer's own contract copies, checked in that order.
 
