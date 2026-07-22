@@ -25,7 +25,12 @@ A `DocumentAnalysis` carries:
   `openClassKind` (NOUN/VERB/ADJECTIVE/ADVERB for explicitly tagged content
   words).
 - `structure` — a flattened outline tree: paragraphs (depth 0) containing
-  sentences (depth 1), children referenced by `childNodeIds`.
+  sentences (depth 1), children referenced by `childNodeIds`. A paragraph
+  boundary is a blank line: a gap between two sentences containing at least
+  two *logical* line breaks — `\n`, `\r`, or `\r\n` (a `\r\n` pair counts as
+  one break, never two) — with only whitespace between them. This is a byte-
+  count-independent rule: a source using `\r` only (classic Mac line
+  endings) splits paragraphs exactly like one using `\n\n`.
 - `diagnostics` — currently empty in `colorful ir` output. The prose linter
   exists today, but its findings surface through `colorful lint` and
   `colorful-lsp` diagnostics, not through `colorful.syntax/v1`.
