@@ -961,9 +961,8 @@ mod integration {
 
     #[test]
     fn a_crlf_blank_line_splits_paragraphs_exactly_once() {
-        // '\r\n' must count as one logical break, not two: three of them
-        // (six bytes) is one-and-a-half breaks short of a second boundary in
-        // any per-byte count, but is unambiguously one blank line.
+        // Each '\r\n' is one logical break; two such breaks (four bytes)
+        // form one blank-line paragraph boundary.
         assert_eq!(
             paragraph_count("First sentence.\r\n\r\nSecond sentence."),
             2
