@@ -30,6 +30,10 @@ All cases are implemented. Evidence lives in `colorful-parse` unit tests
 - **PAR-1d** — *Requirement:* PAR-1. *Behavior:* non-ASCII letters join a word.
   *Oracle:* structural equality (`café` is one 5-byte word). *Evidence:*
   `tests::non_ascii_letters_join_words`. *Status:* implemented.
+- **PAR-1e** — *Requirement:* PAR-1. *Behavior:* a letter-initial word keeps
+  its internal digits as one word (`covid19`, `H2O`), while a digit-initial
+  token is still a number (`3.5`). *Oracle:* structural equality. *Evidence:*
+  `tests::alphanumeric_words_stay_together`. *Status:* implemented.
 - **PAR-2a** — *Requirement:* PAR-2. *Behavior:* terminators split sentences.
   *Oracle:* structural equality (two sentences). *Evidence:*
   `tests::splits_on_sentence_terminators`. *Status:* implemented.
