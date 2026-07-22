@@ -31,6 +31,11 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
 - **LEX-3a** — *Requirement:* LEX-3. *Behavior:* `150`, `3.14`, `1,000` are
   numbers; `covid19` and `.` are not. *Oracle:* equality of `PosClass`.
   *Evidence:* `tests::numbers_are_recognized`. *Status:* implemented.
+- **LEX-3b** — *Requirement:* LEX-3. *Behavior:* non-ASCII Unicode digits
+  (Arabic-Indic, full-width) classify as `Number`, matching the parser's
+  `\p{N}` word-formation rule so the pipeline never disagrees with itself.
+  *Oracle:* equality of `PosClass`. *Evidence:*
+  `tests::unicode_numerals_are_numbers`. *Status:* implemented.
 - **LEX-4a** — *Requirement:* LEX-4. *Behavior:* `cat`, `running`, and `Paris`
   are `Content`. *Oracle:* equality of `PosClass`. *Evidence:*
   `tests::content_words_are_undifferentiated`. *Status:* implemented.

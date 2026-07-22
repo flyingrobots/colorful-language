@@ -34,8 +34,18 @@ into validity:
 9. the outline's structure graph has no duplicate node ids and no dangling
    child references (the same scope `colorful_ir::validate_document` checks,
    no more);
-10. `schemaHash`, `vocabularyHash`, and `contentHash` each match this
+10. `diagnostics` and `derivation` are shape- and range-valid; `derivation` is
+    non-empty, each step's `passId` and `ruleId` are non-empty, and `passId`
+    (not `ruleId`) is unique across steps — mirroring
+    `colorful_ir::validate_document`'s own derivation checks exactly, no more;
+11. `schemaHash`, `vocabularyHash`, and `contentHash` each match this
     consumer's own contract copies, checked in that order.
+
+Every enum-shaped field (`tokenKind`, `lexicalClass`, `functionKind`,
+`openClassKind`, outline node `kind`) is checked against the actual wire
+enum, not just "is a string", and every integer field is held to the real
+`colorful.syntax/v1` wire range (signed `i32`), not merely "any JS safe
+integer" — both as part of step 1's shape check.
 
 Only once an artifact passes admission does `project()` convert UTF-8 byte
 ranges into row/column spans for Graft syntax classes.
