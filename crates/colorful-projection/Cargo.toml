@@ -1,0 +1,18 @@
+[package]
+name = "colorful-projection"
+description = "The single build_document front door: parse, annotate, and classify a colorful-core producer's output into the canonical colorful.syntax/v1 DocumentAnalysis."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["prose", "ir", "english"]
+categories = ["text-processing"]
+
+[dependencies]
+colorful-core = { workspace = true }
+colorful-ir = { workspace = true }
+
+[dev-dependencies]
+colorful-parse = { workspace = true }
+colorful-lexicon = { workspace = true }

@@ -14,7 +14,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{Node, Parser, Span, Tree};
+use colorful_core::{Node, Parser, PassIdentity, Span, Tree};
 use logos::Logos;
 
 /// Mechanical token kinds produced by the lexer.
@@ -54,6 +54,13 @@ impl ProseParser {
 }
 
 impl Parser for ProseParser {
+    fn pass_identity(&self) -> PassIdentity {
+        PassIdentity {
+            pass_id: "segment",
+            rule_id: "prose-segmenter",
+        }
+    }
+
     fn parse(&self, text: &str) -> Tree {
         let mut sentences: Vec<Node> = Vec::new();
         let mut parts: Vec<Node> = Vec::new();

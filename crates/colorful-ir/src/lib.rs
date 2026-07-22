@@ -13,7 +13,7 @@ pub mod vocabulary;
 
 pub use generated::{syntax_v1, vocabulary_v1};
 
-use colorful_core::{Node, PosClass, Span, Token as CoreToken, Tree};
+use colorful_core::{Node, PassIdentity, PosClass, Span, Token as CoreToken, Tree};
 use std::fmt::Write as _;
 
 /// The contract identity this crate produces.
@@ -93,6 +93,19 @@ pub enum ProjectionError {
         /// The value that overflowed.
         value: usize,
     },
+    /// A parser or annotator did not override
+    /// [`pass_identity`](colorful_core::Parser::pass_identity), so its identity
+    /// is the invalid-by-construction empty default.
+    MissingPassIdentity {
+        /// Which producer role was missing an identity: `"parser"` or
+        /// `"annotator"`.
+        role: &'static str,
+    },
+    /// The parser and annotator both claimed the same `passId`.
+    DuplicatePassId {
+        /// The pass id both roles claimed.
+        pass_id: &'static str,
+    },
 }
 
 impl core::fmt::Display for ProjectionError {
@@ -102,6 +115,16 @@ impl core::fmt::Display for ProjectionError {
                 f,
                 "{what} ({value}) exceeds the colorful.syntax/v1 i32 range; \
                  the document is too large to project"
+            ),
+            ProjectionError::MissingPassIdentity { role } => write!(
+                f,
+                "the {role} did not override `pass_identity()`; its provenance \
+                 would be indistinguishable from no identity at all"
+            ),
+            ProjectionError::DuplicatePassId { pass_id } => write!(
+                f,
+                "the parser and annotator both claimed pass id `{pass_id}`; \
+                 each derivation step must be uniquely identifiable"
             ),
         }
     }
@@ -246,16 +269,39 @@ fn build_structure(
 
 /// Project a `colorful-core` classification into a `DocumentAnalysis` DTO.
 ///
+/// `parser_identity` and `annotator_identity` are the [`PassIdentity`] each
+/// producer reports via `pass_identity()` — pass them in rather than having
+/// this function assume any particular parser or annotator, so a caller using
+/// a different pair still gets honest provenance.
+///
 /// # Errors
 ///
 /// Returns [`ProjectionError::Overflow`] if a byte offset, the source length, a
 /// token index, or an outline id exceeds the IR's `i32` wire range (~2 GB).
+/// Returns [`ProjectionError::MissingPassIdentity`] if either identity is the
+/// invalid-by-construction default (an implementation that never overrode
+/// `pass_identity()`), and [`ProjectionError::DuplicatePassId`] if both
+/// identities claim the same pass id.
 pub fn from_classification(
     unit_id: &str,
     source: &str,
     tree: &Tree,
     tokens: &[CoreToken],
+    parser_identity: PassIdentity,
+    annotator_identity: PassIdentity,
 ) -> Result<syntax_v1::DocumentAnalysis, ProjectionError> {
+    if !parser_identity.is_present() {
+        return Err(ProjectionError::MissingPassIdentity { role: "parser" });
+    }
+    if !annotator_identity.is_present() {
+        return Err(ProjectionError::MissingPassIdentity { role: "annotator" });
+    }
+    if parser_identity.pass_id == annotator_identity.pass_id {
+        return Err(ProjectionError::DuplicatePassId {
+            pass_id: parser_identity.pass_id,
+        });
+    }
+
     let ir_tokens = tokens
         .iter()
         .enumerate()
@@ -277,9 +323,9 @@ pub fn from_classification(
         start_utf8: 0,
         end_utf8: to_i32("source length", source.len())?,
     };
-    let step = |pass: &str, rule: &str| syntax_v1::DerivationStep {
-        pass_id: pass.to_string(),
-        rule_id: rule.to_string(),
+    let step = |identity: PassIdentity| syntax_v1::DerivationStep {
+        pass_id: identity.pass_id.to_string(),
+        rule_id: identity.rule_id.to_string(),
         source_ranges: vec![whole.clone()],
         compiler_build_hash: build_hash(),
     };
@@ -296,10 +342,7 @@ pub fn from_classification(
         tokens: ir_tokens,
         structure: build_structure(source, tree)?,
         diagnostics: Vec::new(),
-        derivation: vec![
-            step("segment", "prose-segmenter"),
-            step("classify", "lexical-annotator"),
-        ],
+        derivation: vec![step(parser_identity), step(annotator_identity)],
     })
 }
 
@@ -408,6 +451,23 @@ pub enum ValidationError {
         /// The missing child id.
         child: i32,
     },
+    /// A derivation step's `passId` or `ruleId` is empty — the invalid-by-
+    /// construction placeholder a producer reports when it never overrode
+    /// `pass_identity()`.
+    MissingDerivationIdentity {
+        /// Index of the offending step in `derivation`.
+        index: usize,
+    },
+    /// Two derivation steps share a `passId`.
+    DuplicateDerivationPassId {
+        /// The duplicated pass id.
+        pass_id: String,
+    },
+    /// `derivation` is empty — the document claims no producer ran at all,
+    /// which is never valid: a per-step identity check that only runs inside
+    /// a loop over `derivation` is vacuously satisfied by an empty list, so
+    /// this must be rejected explicitly rather than relying on the loop.
+    EmptyDerivation,
 }
 
 /// The non-empty set of reasons a document failed validation. Validation runs
@@ -614,7 +674,25 @@ pub fn validate_document(
     for diagnostic in &document.diagnostics {
         check_range("diagnostic range", &diagnostic.byte_range, &mut errors);
     }
-    for step in &document.derivation {
+    // Derivation: at least one step must be present — an empty list would
+    // otherwise vacuously satisfy every per-step check below by never
+    // entering the loop — and each step's identity must be present, with
+    // pass ids unique across the *complete* list, not merely the two steps
+    // today's producer happens to emit, so a future third derivation step is
+    // covered without changing this check.
+    if document.derivation.is_empty() {
+        errors.push(ValidationError::EmptyDerivation);
+    }
+    let mut seen_pass_ids = std::collections::HashSet::new();
+    for (index, step) in document.derivation.iter().enumerate() {
+        if step.pass_id.is_empty() || step.rule_id.is_empty() {
+            errors.push(ValidationError::MissingDerivationIdentity { index });
+        }
+        if !seen_pass_ids.insert(step.pass_id.clone()) {
+            errors.push(ValidationError::DuplicateDerivationPassId {
+                pass_id: step.pass_id.clone(),
+            });
+        }
         for range in &step.source_ranges {
             check_range(
                 &format!("derivation '{}' range", step.pass_id),
@@ -732,9 +810,19 @@ mod integration {
     use std::collections::HashMap;
 
     fn analyze(source: &str) -> syntax_v1::DocumentAnalysis {
-        let tree = ProseParser::new().parse(source);
-        let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, &tree);
-        from_classification("test", source, &tree, &tokens).expect("projection within i32 range")
+        let parser = ProseParser::new();
+        let annotator = LexicalAnnotator::new(ClosedClassLexicon::new());
+        let tree = parser.parse(source);
+        let tokens = annotator.annotate(source, &tree);
+        from_classification(
+            "test",
+            source,
+            &tree,
+            &tokens,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .expect("projection within i32 range")
     }
 
     #[test]
@@ -790,6 +878,123 @@ mod integration {
         let a = canonical_json(&doc).unwrap();
         let decoded: syntax_v1::DocumentAnalysis = serde_json::from_str(&a).unwrap();
         assert_eq!(a, canonical_json(&decoded).unwrap());
+    }
+
+    // ---- pass identity ----
+
+    #[test]
+    fn derivation_reports_the_real_producers_pass_identity() {
+        // `analyze()` here uses ProseParser + LexicalAnnotator(ClosedClassLexicon);
+        // the derivation must name exactly those two, not a hardcoded literal —
+        // a different annotator (e.g. ContextualOpenClassAnnotator) must show up
+        // under its own honest rule_id.
+        let doc = analyze(VALID_SOURCE);
+        assert_eq!(doc.derivation.len(), 2);
+        assert_eq!(doc.derivation[0].pass_id, "segment");
+        assert_eq!(doc.derivation[0].rule_id, "prose-segmenter");
+        assert_eq!(doc.derivation[1].pass_id, "classify");
+        assert_eq!(doc.derivation[1].rule_id, "lexical-annotator");
+    }
+
+    #[test]
+    fn derivation_names_a_different_annotator_honestly() {
+        use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
+
+        let parser = ProseParser::new();
+        let annotator = ContextualOpenClassAnnotator::<SeedOpenClassLexicon>::default();
+        let tree = parser.parse(VALID_SOURCE);
+        let tokens = annotator.annotate(VALID_SOURCE, &tree);
+        let doc = from_classification(
+            "test",
+            VALID_SOURCE,
+            &tree,
+            &tokens,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .expect("projection within i32 range");
+
+        assert_eq!(doc.derivation[1].pass_id, "classify");
+        assert_eq!(doc.derivation[1].rule_id, "contextual-open-class-annotator");
+    }
+
+    /// A third-party `Parser`/`Annotator` that does not override
+    /// `pass_identity()` — proves the additive-default compatibility boundary
+    /// actually rejects a silently-unidentified producer instead of letting it
+    /// through with a plausible-looking placeholder.
+    struct UnidentifiedParser;
+    impl Parser for UnidentifiedParser {
+        fn parse(&self, text: &str) -> Tree {
+            ProseParser::new().parse(text)
+        }
+    }
+
+    struct UnidentifiedAnnotator;
+    impl Annotator for UnidentifiedAnnotator {
+        fn annotate(&self, source: &str, tree: &Tree) -> Vec<CoreToken> {
+            LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, tree)
+        }
+    }
+
+    #[test]
+    fn from_classification_rejects_an_unidentified_parser() {
+        let parser = UnidentifiedParser;
+        let annotator = LexicalAnnotator::new(ClosedClassLexicon::new());
+        let tree = parser.parse(VALID_SOURCE);
+        let tokens = annotator.annotate(VALID_SOURCE, &tree);
+        let err = from_classification(
+            "test",
+            VALID_SOURCE,
+            &tree,
+            &tokens,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .unwrap_err();
+        assert_eq!(err, ProjectionError::MissingPassIdentity { role: "parser" });
+    }
+
+    #[test]
+    fn from_classification_rejects_an_unidentified_annotator() {
+        let parser = ProseParser::new();
+        let annotator = UnidentifiedAnnotator;
+        let tree = parser.parse(VALID_SOURCE);
+        let tokens = annotator.annotate(VALID_SOURCE, &tree);
+        let err = from_classification(
+            "test",
+            VALID_SOURCE,
+            &tree,
+            &tokens,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            ProjectionError::MissingPassIdentity { role: "annotator" }
+        );
+    }
+
+    #[test]
+    fn from_classification_rejects_a_duplicate_pass_id() {
+        let parser = ProseParser::new();
+        let annotator = LexicalAnnotator::new(ClosedClassLexicon::new());
+        let tree = parser.parse(VALID_SOURCE);
+        let tokens = annotator.annotate(VALID_SOURCE, &tree);
+        let clashing = PassIdentity {
+            pass_id: "segment",
+            rule_id: "lexical-annotator",
+        };
+        let err = from_classification(
+            "test",
+            VALID_SOURCE,
+            &tree,
+            &tokens,
+            parser.pass_identity(),
+            clashing,
+        )
+        .unwrap_err();
+        assert_eq!(err, ProjectionError::DuplicatePassId { pass_id: "segment" });
     }
 
     // ---- validate_document ----
@@ -1066,6 +1271,49 @@ mod integration {
             has(&errors, |e| matches!(
                 e,
                 ValidationError::ByteLengthMismatch { .. }
+            )),
+            "{errors:?}"
+        );
+    }
+
+    #[test]
+    fn rejects_a_derivation_step_with_missing_identity() {
+        let mut doc = analyze(VALID_SOURCE);
+        doc.derivation[0].pass_id = String::new();
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(
+                e,
+                ValidationError::MissingDerivationIdentity { index: 0 }
+            )),
+            "{errors:?}"
+        );
+    }
+
+    #[test]
+    fn rejects_an_artifact_with_an_empty_derivation_trace() {
+        // Stripping `derivation` to `[]` must not bypass every per-step
+        // identity check by making the loop iterate zero times — an artifact
+        // claiming no producer ran at all is never valid.
+        let mut doc = analyze(VALID_SOURCE);
+        doc.derivation.clear();
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(e, ValidationError::EmptyDerivation)),
+            "{errors:?}"
+        );
+    }
+
+    #[test]
+    fn rejects_derivation_steps_sharing_a_pass_id() {
+        let mut doc = analyze(VALID_SOURCE);
+        let dup = doc.derivation[1].pass_id.clone();
+        doc.derivation[0].pass_id = dup.clone();
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(
+                e,
+                ValidationError::DuplicateDerivationPassId { pass_id } if *pass_id == dup
             )),
             "{errors:?}"
         );

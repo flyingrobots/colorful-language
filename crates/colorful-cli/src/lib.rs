@@ -8,6 +8,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+use std::collections::BTreeSet;
 use std::io::{self, Read, Write};
 use std::process::ExitCode;
 
@@ -16,6 +17,17 @@ use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
 use colorful_parse::ProseParser;
 
+/// The manifest projection for an optional role, or `None` if the role is
+/// absent (an uncovered token-axis combination) or itself has no manifest
+/// entry (a drifted manifest). Shared by [`sgr`] and [`diagnose_json`] so the
+/// "missing role/projection degrades to no styling" contract lives in one
+/// place and is directly testable.
+fn projection_for(
+    role: Option<&colorful_ir::vocabulary_v1::VisualRole>,
+) -> Option<&'static colorful_ir::vocabulary::RoleProjection> {
+    role.and_then(colorful_ir::vocabulary::projection)
+}
+
 /// The ANSI SGR parameter used to color a class, or `None` to leave it plain.
 ///
 /// The colors are not chosen here: the class maps to an abstract `VisualRole`,
@@ -23,7 +35,7 @@ use colorful_parse::ProseParser;
 /// manifest drives the LSP and the graft consumer, so all three surfaces agree.
 fn sgr(class: PosClass) -> Option<&'static str> {
     let role = colorful_ir::vocabulary::visual_role_for(class);
-    colorful_ir::vocabulary::projection(&role).ansi.as_deref()
+    projection_for(role.as_ref())?.ansi.as_deref()
 }
 
 fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassLexicon> {
@@ -107,6 +119,98 @@ fn help_text() -> String {
     )
 }
 
+/// The outcome of parsing a subcommand's arguments: help was requested, or
+/// every argument was recognized.
+enum ParseOutcome {
+    /// `-h`/`--help` was seen; the caller should print its own usage and stop.
+    Help,
+    /// Parsing completed; every subcommand runs the same way from here.
+    Run(ParsedArgs),
+}
+
+/// A subcommand's parsed arguments: at most one positional `FILE` (`None`
+/// means read stdin — either `FILE` was omitted or given as the explicit `-`
+/// sentinel), plus the recognized flags that were passed.
+struct ParsedArgs {
+    path: Option<String>,
+    flags: BTreeSet<String>,
+}
+
+impl ParsedArgs {
+    /// Whether `flag` (e.g. `"--json"`) was passed. Repeating a flag is
+    /// idempotent — it either was passed or it wasn't.
+    fn has_flag(&self, flag: &str) -> bool {
+        self.flags.contains(flag)
+    }
+}
+
+fn too_many_file_operands() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::InvalidInput,
+        "expected at most one FILE argument",
+    )
+}
+
+/// Record `arg` as the (only) `FILE` operand: `"-"` means stdin (`None`),
+/// anything else is a literal path. Errs if a `FILE` was already recorded.
+fn take_path(arg: String, path: &mut Option<String>, has_path: &mut bool) -> io::Result<()> {
+    if *has_path {
+        return Err(too_many_file_operands());
+    }
+    *has_path = true;
+    *path = if arg == "-" { None } else { Some(arg) };
+    Ok(())
+}
+
+/// Parse a subcommand's `args` against the flags it recognizes (each starting
+/// with `-`, e.g. `&["--json"]`), shared by every subcommand so `-h`/`--help`,
+/// `--`, and the `-`-means-stdin sentinel behave identically everywhere.
+///
+/// Before `--`: `-h`/`--help` requests help; `-` or a recognized flag are
+/// handled; anything else starting with `-` is an unknown option; anything
+/// else is the `FILE` operand. After `--`, every remaining argument is
+/// positional — `-` still means stdin (it is a sentinel, not a flag, even past
+/// `--`), and a flag-shaped argument such as `--weird-file` is accepted
+/// literally as a path rather than rejected as unknown. At most one `FILE`
+/// operand is accepted, before or after `--`.
+///
+/// # Errors
+///
+/// Returns an error if an unrecognized flag is seen, or more than one `FILE`
+/// operand is given.
+fn parse_args<I>(args: I, recognized_flags: &[&str]) -> io::Result<ParseOutcome>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut flags = BTreeSet::new();
+    let mut path: Option<String> = None;
+    let mut has_path = false;
+    let mut end_of_options = false;
+
+    for arg in args {
+        if end_of_options {
+            take_path(arg, &mut path, &mut has_path)?;
+            continue;
+        }
+        match arg.as_str() {
+            "--" => end_of_options = true,
+            "-h" | "--help" => return Ok(ParseOutcome::Help),
+            other if recognized_flags.contains(&other) => {
+                flags.insert(other.to_string());
+            }
+            other if other.starts_with('-') && other.len() > 1 => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("unknown option: {other}"),
+                ));
+            }
+            _ => take_path(arg, &mut path, &mut has_path)?,
+        }
+    }
+
+    Ok(ParseOutcome::Run(ParsedArgs { path, flags }))
+}
+
 /// Run the CLI over `args` (the program's arguments, excluding `argv[0]`).
 ///
 /// Returns the process [`ExitCode`]: `lint` exits non-zero when it reports
@@ -149,10 +253,11 @@ fn version_output() -> String {
 fn analyze_ir(
     unit_id: &str,
     input: &str,
-) -> Result<colorful_ir::syntax_v1::DocumentAnalysis, colorful_ir::ProjectionError> {
-    let tree = ProseParser::new().parse(input);
-    let tokens = default_annotator().annotate(input, &tree);
-    colorful_ir::from_classification(unit_id, input, &tree, &tokens)
+) -> Result<colorful_ir::syntax_v1::DocumentAnalysis, colorful_projection::ProjectionError> {
+    let parser = ProseParser::new();
+    let annotator = default_annotator();
+    colorful_projection::build_document(unit_id, input, &parser, &annotator)
+        .map(|analyzed| analyzed.document)
 }
 
 fn json_error(err: serde_json::Error) -> io::Error {
@@ -164,34 +269,19 @@ fn run_color<I>(args: I) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
 {
-    let mut no_color_flag = false;
-    let mut path: Option<String> = None;
-    let mut end_of_options = false;
-
-    for arg in args {
-        if end_of_options {
-            path = Some(arg);
-            continue;
+    let parsed = match parse_args(args, &["--no-color"])? {
+        ParseOutcome::Help => {
+            print!("{}", help_text());
+            return Ok(());
         }
-        match arg.as_str() {
-            "--" => end_of_options = true,
-            "--no-color" => no_color_flag = true,
-            "-h" | "--help" => {
-                print!("{}", help_text());
-                return Ok(());
-            }
-            "-" => path = None,
-            other if other.starts_with('-') && other.len() > 1 => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("unknown option: {other}"),
-                ));
-            }
-            other => path = Some(other.to_string()),
-        }
-    }
+        ParseOutcome::Run(parsed) => parsed,
+    };
 
-    let input = match path {
+    let color = decide_color(
+        parsed.has_flag("--no-color"),
+        std::env::var_os("NO_COLOR").is_some(),
+    );
+    let input = match parsed.path {
         Some(p) => std::fs::read_to_string(p)?,
         None => {
             let mut buf = String::new();
@@ -199,8 +289,6 @@ where
             buf
         }
     };
-
-    let color = decide_color(no_color_flag, std::env::var_os("NO_COLOR").is_some());
     let mut stdout = io::stdout().lock();
     stdout.write_all(colorize(&input, color).as_bytes())?;
     stdout.flush()
@@ -214,31 +302,15 @@ fn run_ir<I>(args: I) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
 {
-    let mut path: Option<String> = None;
-    let mut end_of_options = false;
-    for arg in args {
-        if end_of_options {
-            path = Some(arg);
-            continue;
+    let parsed = match parse_args(args, &[])? {
+        ParseOutcome::Help => {
+            print!("colorful ir [FILE]\n\nEmit the colorful.syntax/v1 IR as canonical JSON (stdin if no FILE).\n");
+            return Ok(());
         }
-        match arg.as_str() {
-            "--" => end_of_options = true,
-            "-h" | "--help" => {
-                print!("colorful ir [FILE]\n\nEmit the colorful.syntax/v1 IR as canonical JSON (stdin if no FILE).\n");
-                return Ok(());
-            }
-            "-" => path = None,
-            other if other.starts_with('-') && other.len() > 1 => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("unknown option: {other}"),
-                ));
-            }
-            other => path = Some(other.to_string()),
-        }
-    }
+        ParseOutcome::Run(parsed) => parsed,
+    };
 
-    let (unit_id, input) = match path {
+    let (unit_id, input) = match parsed.path {
         Some(p) => {
             let contents = std::fs::read_to_string(&p)?;
             (p, contents)
@@ -270,51 +342,20 @@ fn run_diagnose<I>(args: I) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
 {
-    let mut path: Option<String> = None;
-    let mut end_of_options = false;
-    for arg in args {
-        if end_of_options {
-            if path.is_some() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "expected at most one FILE argument",
-                ));
-            }
-            path = Some(arg);
-            continue;
+    let parsed = match parse_args(args, &["--json"])? {
+        ParseOutcome::Help => {
+            print!(
+                "colorful diagnose [--json] [FILE]\n\n\
+                 Emit a machine-readable diagnostic report for CLI/editor \
+                 projection checks (stdin if no FILE). JSON is the only \
+                 current output format.\n"
+            );
+            return Ok(());
         }
-        match arg.as_str() {
-            "--" => end_of_options = true,
-            "--json" => {}
-            "-h" | "--help" => {
-                print!(
-                    "colorful diagnose [--json] [FILE]\n\n\
-                     Emit a machine-readable diagnostic report for CLI/editor \
-                     projection checks (stdin if no FILE). JSON is the only \
-                     current output format.\n"
-                );
-                return Ok(());
-            }
-            "-" => path = None,
-            other if other.starts_with('-') && other.len() > 1 => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("unknown option: {other}"),
-                ));
-            }
-            other => {
-                if path.is_some() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "expected at most one FILE argument",
-                    ));
-                }
-                path = Some(other.to_string());
-            }
-        }
-    }
+        ParseOutcome::Run(parsed) => parsed,
+    };
 
-    let (unit_id, input) = match path {
+    let (unit_id, input) = match parsed.path {
         Some(p) => {
             let contents = std::fs::read_to_string(&p)?;
             (p, contents)
@@ -338,9 +379,11 @@ fn diagnose_json(unit_id: &str, input: &str) -> io::Result<String> {
     let annotator = default_annotator();
     let analyzer = ProseLinter::new();
 
-    let tree = parser.parse(input);
-    let tokens = annotator.annotate(input, &tree);
-    let document = colorful_ir::from_classification(unit_id, input, &tree, &tokens)
+    let colorful_projection::AnalyzedDocument {
+        tree,
+        tokens,
+        document,
+    } = colorful_projection::build_document(unit_id, input, &parser, &annotator)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
     let findings = analyzer.analyze(input, &tree, &tokens);
     let legend = colorful_ir::vocabulary::lsp_legend();
@@ -356,18 +399,24 @@ fn diagnose_json(unit_id: &str, input: &str) -> io::Result<String> {
             token.lexical_class.as_ref(),
             token.open_class_kind.as_ref(),
         );
-        let projection = colorful_ir::vocabulary::projection(&role);
-        let lsp_token_type = projection.lsp_token_type.as_deref();
+        let projection = projection_for(role.as_ref());
+        let lsp_token_type = projection.and_then(|projection| projection.lsp_token_type.as_deref());
         let lsp_token_type_index =
             lsp_token_type.and_then(|name| legend.iter().position(|candidate| *candidate == name));
 
         if lsp_token_type.is_some() {
             lsp_semantic_tokens += 1;
         }
-        if projection.ansi.is_some() {
+        if projection
+            .and_then(|projection| projection.ansi.as_ref())
+            .is_some()
+        {
             ansi_colored_tokens += 1;
         }
-        if projection.graft_class.is_some() {
+        if projection
+            .and_then(|projection| projection.graft_class.as_ref())
+            .is_some()
+        {
             graft_styled_tokens += 1;
         }
 
@@ -380,8 +429,8 @@ fn diagnose_json(unit_id: &str, input: &str) -> io::Result<String> {
             "functionKind": token.function_kind,
             "openClassKind": token.open_class_kind,
             "visualRole": role,
-            "ansi": projection.ansi,
-            "graftClass": projection.graft_class,
+            "ansi": projection.and_then(|projection| projection.ansi.as_deref()),
+            "graftClass": projection.and_then(|projection| projection.graft_class.as_deref()),
             "lspTokenType": lsp_token_type,
             "lspTokenTypeIndex": lsp_token_type_index,
         }));
@@ -463,31 +512,15 @@ fn run_lint<I>(args: I) -> io::Result<ExitCode>
 where
     I: IntoIterator<Item = String>,
 {
-    let mut path: Option<String> = None;
-    let mut end_of_options = false;
-    for arg in args {
-        if end_of_options {
-            path = Some(arg);
-            continue;
+    let parsed = match parse_args(args, &[])? {
+        ParseOutcome::Help => {
+            print!("colorful lint [FILE]\n\nReport prose problems (stdin if no FILE). Exits non-zero when any are found.\n");
+            return Ok(ExitCode::SUCCESS);
         }
-        match arg.as_str() {
-            "--" => end_of_options = true,
-            "-h" | "--help" => {
-                print!("colorful lint [FILE]\n\nReport prose problems (stdin if no FILE). Exits non-zero when any are found.\n");
-                return Ok(ExitCode::SUCCESS);
-            }
-            "-" => path = None,
-            other if other.starts_with('-') && other.len() > 1 => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("unknown option: {other}"),
-                ));
-            }
-            other => path = Some(other.to_string()),
-        }
-    }
+        ParseOutcome::Run(parsed) => parsed,
+    };
 
-    let (name, input) = match path {
+    let (name, input) = match parsed.path {
         Some(p) => {
             let contents = std::fs::read_to_string(&p)?;
             (p, contents)
@@ -569,6 +602,15 @@ mod tests {
     fn passthrough_when_color_disabled() {
         let s = "The cat is 3.\nA second line.";
         assert_eq!(colorize(s, false), s);
+    }
+
+    #[test]
+    fn projection_for_none_role_is_none() {
+        // sgr() and diagnose_json() both feed visual_role_for()/visual_role()'s
+        // Option through projection_for(). Every real PosClass currently has a
+        // manifest entry, so a missing role can't arise from production
+        // input — this exercises the shared composition directly instead.
+        assert!(projection_for(None).is_none());
     }
 
     #[test]
@@ -806,9 +848,49 @@ mod tests {
         // fails with NotFound, not an "unknown option" InvalidInput.
         let err = run(["--".to_string(), "-weird.txt".to_string()]).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::NotFound);
+        // A flag-shaped argument after `--` is a literal path too, not
+        // rejected as unknown.
+        let err = run(["--".to_string(), "--weird-file".to_string()]).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::NotFound);
         // Without `--`, the same argument is rejected as an unknown option.
         let err = run(["-weird.txt".to_string()]).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn double_dash_then_bare_dash_still_means_stdin() {
+        // `-` is a positional sentinel, not a flag: `colorful lint -- -` reads
+        // stdin, it does not try to open a file literally named "-".
+        match parse_args(["--".to_string(), "-".to_string()], &[]).unwrap() {
+            ParseOutcome::Run(parsed) => assert_eq!(parsed.path, None),
+            ParseOutcome::Help => panic!("expected Run, got Help"),
+        }
+    }
+
+    #[test]
+    fn repeating_a_recognized_flag_is_idempotent() {
+        match parse_args(["--json".to_string(), "--json".to_string()], &["--json"]).unwrap() {
+            ParseOutcome::Run(parsed) => {
+                assert!(parsed.has_flag("--json"));
+                assert_eq!(parsed.flags.len(), 1);
+            }
+            ParseOutcome::Help => panic!("expected Run, got Help"),
+        }
+    }
+
+    #[test]
+    fn a_second_file_operand_is_rejected_uniformly_across_subcommands() {
+        // Previously only `diagnose` enforced "at most one FILE"; the shared
+        // parser enforces it everywhere, before or after `--`.
+        for prefix in [Vec::new(), vec!["--".to_string()]] {
+            let mut args = prefix;
+            args.push("first.txt".to_string());
+            args.push("second.txt".to_string());
+            let err = run_lint(args.clone()).unwrap_err();
+            assert_eq!(err.to_string(), "expected at most one FILE argument");
+            let err = run_ir(args).unwrap_err();
+            assert_eq!(err.to_string(), "expected at most one FILE argument");
+        }
     }
 
     #[test]

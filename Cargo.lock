@@ -65,23 +65,24 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "colorful-cli"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "colorful-core",
  "colorful-ir",
  "colorful-lexicon",
  "colorful-lint",
  "colorful-parse",
+ "colorful-projection",
  "serde_json",
 ]
 
 [[package]]
 name = "colorful-core"
-version = "0.3.0"
+version = "0.4.0"
 
 [[package]]
 name = "colorful-ir"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "colorful-core",
  "colorful-lexicon",
@@ -93,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "colorful-lexicon"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "colorful-core",
  "phf",
@@ -101,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "colorful-lint"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "colorful-core",
  "colorful-lexicon",
@@ -110,7 +111,7 @@ dependencies = [
 
 [[package]]
 name = "colorful-lsp"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "colorful-core",
  "colorful-ir",
@@ -125,10 +126,20 @@ dependencies = [
 
 [[package]]
 name = "colorful-parse"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "colorful-core",
  "logos",
+]
+
+[[package]]
+name = "colorful-projection"
+version = "0.4.0"
+dependencies = [
+ "colorful-core",
+ "colorful-ir",
+ "colorful-lexicon",
+ "colorful-parse",
 ]
 
 [[package]]

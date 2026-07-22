@@ -16,6 +16,7 @@ proven by deterministic executable evidence.
 | `topics/<topic>/` | The living reference for a durable product concept (behavior, test plan, optional architecture and rationale). |
 | `workflows/<workflow>/` | Contributor-facing operational contracts for repository workflows. |
 | `design/` | Historical, proposal-era design documents. |
+| `audits/` | Point-in-time engineering assessments (historical snapshots, not living references). |
 | `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |
 | [`RELEASING.md`](RELEASING.md) | The release lifecycle, profile adapter, gates, publication, verification, and retrospective runbook. |
 
@@ -30,6 +31,19 @@ not pose as the current reference.
   `Parser`/`Lexicon`/`Annotator` seam.
 - [ADR-0003](design/0003-pure-rust-parser.md) — a pure-Rust parser; tree-sitter
   declined for the core.
+
+## Audits
+
+Point-in-time engineering assessments, generated at a specific commit. Like
+design records, they are historical snapshots, not living references — check
+each page's own status note before trusting a specific finding.
+
+- [documentation & README audit](audits/documentation-readme-audit-2026-06-28.md)
+  — 2026-06-28 completeness check of the README against the codebase.
+- [ready-to-ship assessment](audits/ready-to-ship-assessment-2026-06-28.md) —
+  2026-06-28 exhaustive quality, risk, and production-readiness review.
+- [two-phase assessment](audits/two-phase-assessment-2026-06-28.md) — 2026-06-28
+  DX/IQ/strategic review.
 
 ## Topics
 

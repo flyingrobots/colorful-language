@@ -29,7 +29,16 @@ compile only what the target can prove.*
 | 6 | Intent English (CNL → Edict surface AST) | — | [Intent English](https://github.com/flyingrobots/colorful-language/milestone/7) · [#14](https://github.com/flyingrobots/colorful-language/issues/14) | horizon |
 | 7 | Proof-carrying compilation → Edict Core IR → sealed bundle + echo provenance | nutrition labels; counterfactual "what would this sentence do?" | [Edict](https://github.com/flyingrobots/colorful-language/milestone/8) · [#15](https://github.com/flyingrobots/colorful-language/issues/15) | horizon |
 | 8 | Ouroboros — Colorful's own contract written in English, compiled through Colorful to the same Wesley hash | — | [Ouroboros](https://github.com/flyingrobots/colorful-language/milestone/9) · [#16](https://github.com/flyingrobots/colorful-language/issues/16) | the moon |
+| 9 | Semantic closure — Colorful's constitutional contract authored entirely in Colorful; independent compilers lower both the historical bootstrap spec and the Colorful spec to one Wesley semantic identity | — | — | the bell |
 | ∞ | LLM elaboration tier (freeform English → CNL); other targets (SQL, UI trees, test plans, build graphs) | English → anything provable | — | beyond |
+
+Phase 9 is stronger than Phase 8. Ouroboros proves Colorful can compile itself.
+Semantic closure proves Colorful can *mean* itself: its constitutional contract
+is authored entirely in Colorful, and independent compilers lower both the
+historical bootstrap specification and the Colorful specification to the same
+Wesley semantic identity. The bell rings not because the language compiles
+itself, but because it can faithfully express the laws of its own meaning
+without changing that meaning.
 
 ## Where VS Code falls
 

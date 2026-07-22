@@ -85,7 +85,7 @@ jobs:
           crate_ready() {
             cargo info --quiet "$1@$version" --registry crates-io >/dev/null
           }
-          for crate in colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-cli colorful-lsp; do
+          for crate in colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-projection colorful-cli colorful-lsp; do
             echo "::group::publish $crate"
             if crate_ready "$crate"; then
               echo "$crate $version is already available in the crates.io index; verifying and continuing."

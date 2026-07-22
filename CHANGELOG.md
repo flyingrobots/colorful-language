@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`colorful-projection` crate.** A single `build_document` front door parses,
+  annotates, and classifies source text into an `AnalyzedDocument` (tree +
+  tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`
+  and `analyze_ir` no longer hand-roll the parse/annotate/project pipeline.
+- **`PassIdentity` provenance.** `Parser` and `Annotator` (`colorful-core`) gain
+  a `pass_identity()` method reporting which derivation stage and rule
+  implementation they are; the default is invalid by construction (empty),
+  so an implementation that never overrides it is honestly unidentified. IR
+  derivation steps now carry these real identities instead of two hardcoded
+  string literals — `ContextualOpenClassAnnotator` is now correctly reported
+  as `contextual-open-class-annotator`, not the fallback `lexical-annotator`.
+  `from_classification` rejects a missing or duplicate pass identity;
+  `validate_document` rejects the same on a received artifact.
+- **Shared CLI argument parser.** `colorful-cli`'s four subcommands (`color`,
+  `ir`, `diagnose`, `lint`) now parse arguments through one `parse_args`
+  function instead of four hand-rolled copies. `--` then a bare `-` now
+  correctly means stdin instead of a literal file named `-`; a flag-shaped
+  argument after `--` (e.g. `--weird-file`) is accepted as a literal path
+  everywhere, not just in the default subcommand; and "at most one `FILE`
+  operand" is now enforced uniformly instead of only in `diagnose`.
+
+### Changed
+
+- **Breaking API queued for v0.4.0.** `colorful_ir::from_classification` is a
+  public function and now takes two additional mandatory parameters,
+  `parser_identity: PassIdentity` and `annotator_identity: PassIdentity`.
+  Downstream crates calling it directly must update call sites (pass each
+  producer's `pass_identity()`) before adopting the `0.4.x` line; there is no
+  compatible 4-argument entry point, since a default identity would be exactly
+  the dishonest placeholder `PassIdentity` is designed to reject.
+
+### Fixed
+
+- **Empty derivation trace bypassed identity validation.**
+  `colorful_ir::validate_document` iterated `derivation` to check each step's
+  pass identity, but a document with `derivation: []` made that loop run zero
+  times, vacuously passing validation despite claiming no producer identity at
+  all. `validate_document` now rejects an empty `derivation` explicitly via
+  `ValidationError::EmptyDerivation`.
+- **Total vocabulary lookups.** `colorful_ir::vocabulary::visual_role`,
+  `visual_role_for`, and `projection` return `Option` instead of
+  panicking/`.expect()`-ing on an uncovered axis combination or a manifest
+  missing a role's projection; `colorful-cli` and `colorful-lsp` propagate the
+  `None` through to "no styling" instead of crashing.
+
 ## [0.3.0] - 2026-06-27
 
 ### Added

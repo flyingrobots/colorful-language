@@ -142,27 +142,22 @@ pub fn visual_role(
     token_kind: &TokenKind,
     lexical_class: Option<&LexicalClass>,
     open_class_kind: Option<&OpenClassKind>,
-) -> VisualRole {
-    for rule in &manifest().class_roles {
-        if &rule.token_kind == token_kind
-            && rule.lexical_class.as_ref() == lexical_class
-            && rule.open_class_kind.as_ref() == open_class_kind
-        {
-            return rule.visual_role.clone();
-        }
-    }
-    panic!(
-        "colorful.vocabulary/v1 manifest lacks a class role for `{}` / `{:?}` / `{:?}`",
-        token_kind_name(token_kind),
-        lexical_class.map(lexical_class_name),
-        open_class_kind.map(open_class_kind_name)
-    );
+) -> Option<VisualRole> {
+    manifest()
+        .class_roles
+        .iter()
+        .find(|rule| {
+            &rule.token_kind == token_kind
+                && rule.lexical_class.as_ref() == lexical_class
+                && rule.open_class_kind.as_ref() == open_class_kind
+        })
+        .map(|rule| rule.visual_role.clone())
 }
 
 /// The [`VisualRole`] for a `colorful-core` [`PosClass`], via the same token axes
 /// the IR projection uses — the bridge every surface calls.
 #[must_use]
-pub fn visual_role_for(class: PosClass) -> VisualRole {
+pub fn visual_role_for(class: PosClass) -> Option<VisualRole> {
     let (token_kind, lexical_class, _function_kind, open_class_kind) = crate::token_axes(class);
     visual_role(
         &token_kind,
@@ -173,12 +168,11 @@ pub fn visual_role_for(class: PosClass) -> VisualRole {
 
 /// The per-surface [`RoleProjection`] for a [`VisualRole`].
 #[must_use]
-pub fn projection(role: &VisualRole) -> &'static RoleProjection {
+pub fn projection(role: &VisualRole) -> Option<&'static RoleProjection> {
     manifest()
         .role_projections
         .iter()
         .find(|p| &p.visual_role == role)
-        .expect("every VisualRole has a projection in the manifest")
 }
 
 /// The LSP semantic token-type names in legend order: the distinct, non-`null`
@@ -326,8 +320,7 @@ mod tests {
             VisualRole::Adjective,
             VisualRole::Adverb,
         ] {
-            // Does not panic: the projection exists for every role.
-            let _ = projection(&role);
+            assert!(projection(&role).is_some());
         }
     }
 
@@ -428,51 +421,62 @@ mod tests {
     }
 
     #[test]
+    fn visual_role_returns_none_for_uncovered_axes() {
+        assert_eq!(visual_role(&TokenKind::Word, None, None), None);
+    }
+
+    #[test]
     fn pos_classes_map_to_the_expected_roles() {
         use colorful_core::FunctionKind;
         assert_eq!(
             visual_role_for(PosClass::Function(FunctionKind::Article)),
-            VisualRole::StructuralKeyword
+            Some(VisualRole::StructuralKeyword)
         );
-        assert_eq!(visual_role_for(PosClass::ProperNoun), VisualRole::TypeLike);
-        assert_eq!(visual_role_for(PosClass::Number), VisualRole::Literal);
-        assert_eq!(visual_role_for(PosClass::Quote), VisualRole::Quoted);
-        assert_eq!(visual_role_for(PosClass::Punctuation), VisualRole::Muted);
-        assert_eq!(visual_role_for(PosClass::Content), VisualRole::Unstyled);
+        assert_eq!(
+            visual_role_for(PosClass::ProperNoun),
+            Some(VisualRole::TypeLike)
+        );
+        assert_eq!(visual_role_for(PosClass::Number), Some(VisualRole::Literal));
+        assert_eq!(visual_role_for(PosClass::Quote), Some(VisualRole::Quoted));
+        assert_eq!(
+            visual_role_for(PosClass::Punctuation),
+            Some(VisualRole::Muted)
+        );
+        assert_eq!(
+            visual_role_for(PosClass::Content),
+            Some(VisualRole::Unstyled)
+        );
         assert_eq!(
             visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Noun)),
-            VisualRole::Noun
+            Some(VisualRole::Noun)
         );
         assert_eq!(
             visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Verb)),
-            VisualRole::Verb
+            Some(VisualRole::Verb)
         );
         assert_eq!(
             visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Adjective)),
-            VisualRole::Adjective
+            Some(VisualRole::Adjective)
         );
         assert_eq!(
             visual_role_for(PosClass::Open(colorful_core::OpenClassKind::Adverb)),
-            VisualRole::Adverb
+            Some(VisualRole::Adverb)
         );
     }
 
     #[test]
     fn projections_match_the_authored_table() {
-        assert_eq!(
-            projection(&VisualRole::StructuralKeyword).ansi.as_deref(),
-            Some("1;35")
-        );
-        assert_eq!(
-            projection(&VisualRole::TypeLike).graft_class.as_deref(),
-            Some("type")
-        );
-        assert_eq!(projection(&VisualRole::Muted).ansi.as_deref(), Some("90"));
-        assert_eq!(
-            projection(&VisualRole::Muted).lsp_token_type.as_deref(),
-            None
-        );
-        assert_eq!(projection(&VisualRole::Unstyled).ansi.as_deref(), None);
+        let structural_keyword =
+            projection(&VisualRole::StructuralKeyword).expect("role has a projection");
+        let type_like = projection(&VisualRole::TypeLike).expect("role has a projection");
+        let muted = projection(&VisualRole::Muted).expect("role has a projection");
+        let unstyled = projection(&VisualRole::Unstyled).expect("role has a projection");
+
+        assert_eq!(structural_keyword.ansi.as_deref(), Some("1;35"));
+        assert_eq!(type_like.graft_class.as_deref(), Some("type"));
+        assert_eq!(muted.ansi.as_deref(), Some("90"));
+        assert_eq!(muted.lsp_token_type.as_deref(), None);
+        assert_eq!(unstyled.ansi.as_deref(), None);
     }
 
     #[test]

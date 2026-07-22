@@ -24,7 +24,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{Annotator, FunctionKind, LexicalAnnotator, Lexicon, OpenClassKind, PosClass};
+use colorful_core::{
+    Annotator, FunctionKind, LexicalAnnotator, Lexicon, OpenClassKind, PassIdentity, PosClass,
+};
 use colorful_core::{Token, Tree};
 use phf::phf_map;
 
@@ -421,6 +423,13 @@ impl<L> Annotator for ContextualOpenClassAnnotator<L>
 where
     L: Lexicon + Clone,
 {
+    fn pass_identity(&self) -> PassIdentity {
+        PassIdentity {
+            pass_id: "classify",
+            rule_id: "contextual-open-class-annotator",
+        }
+    }
+
     fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token> {
         let mut tokens = LexicalAnnotator::new(self.lexicon.clone()).annotate(source, tree);
 

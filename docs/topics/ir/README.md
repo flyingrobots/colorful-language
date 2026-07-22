@@ -49,6 +49,19 @@ CLI version other than `0.1.1`). The generated types are a **wire boundary**:
 `colorful_ir::from_classification` is the one-way projection from the domain model
 into the DTO.
 
+`colorful-projection::build_document` is the single Rust producer front door:
+it parses, annotates, and calls `from_classification` with each producer's
+`PassIdentity` (`colorful_core::Parser::pass_identity` /
+`Annotator::pass_identity`), returning an `AnalyzedDocument` — the parsed
+`Tree` and classified tokens alongside the projected `DocumentAnalysis`.
+`colorful-cli`'s `analyze_ir`/`diagnose_json` call it directly; `colorful-lsp`
+does not, since its semantic-token and diagnostic paths never needed the
+projected IR. `from_classification` — and `build_document` in turn — rejects a
+parser or annotator that never overrode `pass_identity()` (an
+invalid-by-construction empty identity) or two producers claiming the same
+derivation stage; `validate_document` rejects the same on a received
+artifact, including an empty `derivation` list.
+
 `colorful_ir::canonical_json` is the shared canonical serializer (compact, sorted
 keys); the TypeScript side uses the identical algorithm.
 
@@ -75,8 +88,9 @@ consumer all derive from this manifest.
 - `VisualRole` is generated from GraphQL, but concrete projection maps live in
   the JSON vocabulary manifest because Wesley drops enum-value directives that
   would otherwise carry them.
-- The derivation record is a trace seed, not replayable provenance; node-level
-  input/output ids and artifact hashes come later.
+- The derivation record is a trace seed, not replayable provenance: `passId`
+  and `ruleId` now name a real, validated producer identity, but node-level
+  input/output ids, a real `compilerBuildHash`, and artifact hashes come later.
 - GraphQL `Int` lowers to `i32`, bounding documents to ~2 GB.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

@@ -18,7 +18,7 @@ boring facts automation can check:
 - tag format `v{version}`;
 - release branch format `release/v{version}`;
 - milestone format `v{version}`;
-- the seven crates published to crates.io;
+- the eight crates published to crates.io;
 - release signposts such as `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
   `docs/topics/`, `docs/workflows/`, and maintainer docs;
 - validation entrypoints in `scripts/release-profile-check.sh`,
@@ -398,8 +398,9 @@ The current workflow publishes these crates in dependency order:
 3. `colorful-parse`
 4. `colorful-ir`
 5. `colorful-lint`
-6. `colorful-cli`
-7. `colorful-lsp`
+6. `colorful-projection`
+7. `colorful-cli`
+8. `colorful-lsp`
 
 It then builds one `x86_64-unknown-linux-gnu` archive containing `colorful`,
 `colorful-lsp`, `README.md`, `LICENSE`, `NOTICE`, and `CHANGELOG.md`, writes a
@@ -412,7 +413,7 @@ different commit.
 
 ## crates.io prerequisites
 
-The seven crates publish under flat crates.io names. crates.io has no scoped
+The eight crates publish under flat crates.io names. crates.io has no scoped
 package names; organization identity comes from ownership and repository links.
 
 One-time prerequisites:
