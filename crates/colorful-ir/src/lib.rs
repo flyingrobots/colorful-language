@@ -1648,6 +1648,10 @@ mod integration {
     #[test]
     fn rejects_an_out_of_bounds_diagnostic_range() {
         let mut doc = analyze(VALID_SOURCE);
+        assert!(
+            doc.diagnostics.is_empty(),
+            "fixture must start with no diagnostics for the pushed one to land at index 0"
+        );
         doc.diagnostics.push(syntax_v1::Diagnostic {
             byte_range: syntax_v1::ByteRange {
                 start_utf8: 0,
@@ -1675,6 +1679,141 @@ mod integration {
         doc.tokens[0].byte_range.start_utf8 = -5;
         let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
         assert!(errors.0.len() >= 2, "expected several errors: {errors:?}");
+    }
+
+    #[test]
+    fn path_segments_reports_fields_and_indices_in_order() {
+        let path = Path::root().field("tokens").index(2).field("byteRange");
+        assert_eq!(
+            path.segments(),
+            &[
+                PathSegment::Field("tokens"),
+                PathSegment::Index(2),
+                PathSegment::Field("byteRange"),
+            ]
+        );
+    }
+
+    #[test]
+    fn validation_error_display_renders_path_and_message() {
+        let error = ValidationError::RangeOutOfBounds {
+            path: Path::root()
+                .field("tokens")
+                .index(2)
+                .field("byteRange")
+                .field("endUtf8"),
+            end: 100,
+            length: 50,
+        };
+        assert_eq!(
+            error.to_string(),
+            "at tokens[2].byteRange.endUtf8: 100 exceeds source length 50"
+        );
+    }
+
+    #[test]
+    fn validation_errors_display_lists_every_error_by_display_not_debug() {
+        let errors = ValidationErrors(vec![
+            ValidationError::EmptyDerivation {
+                path: Path::root().field("derivation"),
+            },
+            ValidationError::SourceNotUtf8 {
+                path: Path::root().field("source"),
+            },
+        ]);
+        assert_eq!(
+            errors.to_string(),
+            "document failed validation (2 issue(s)):\n  - at derivation: must not be empty\n  - at source: not valid UTF-8"
+        );
+    }
+
+    #[test]
+    fn error_order_follows_the_seven_validator_stages() {
+        // Trip one invariant in each of the six stages that can fail on this
+        // fixture (source identity is left valid), then assert the returned
+        // errors appear in the fixed stage order `validate_document` runs:
+        // contract identity, token ranges, token axes, structure graph,
+        // diagnostics, derivation. This pins the ordering contract itself —
+        // nothing else in this suite fails if a future edit reorders the
+        // `errors.extend(...)` calls in `validate_document`.
+        use syntax_v1::{LexicalClass, OpenClassKind};
+
+        // A mid-sentence capitalized word ("Paris", not sentence-initial) is
+        // needed to get a proper-noun-candidate token; VALID_SOURCE's only
+        // capitalized word is sentence-initial and so is never tagged as one.
+        let source = "The cat sat on the mat. I saw Paris.\n\nDogs run fast.";
+        let mut doc = analyze(source);
+
+        // Stage: contract identity.
+        doc.contract_version = "wrong".to_string();
+
+        // Stage: token ranges.
+        doc.tokens[0].byte_range.start_utf8 = -1;
+
+        // Stage: token axes — a proper-noun candidate carrying an open-class
+        // kind is an illegal axis combination.
+        let proper_noun = doc
+            .tokens
+            .iter_mut()
+            .find(|t| t.lexical_class == Some(LexicalClass::ProperNounCandidate))
+            .expect("fixture has a proper-noun candidate token");
+        proper_noun.open_class_kind = Some(OpenClassKind::Noun);
+
+        // Stage: structure graph — duplicate a node id.
+        assert!(doc.structure.len() >= 2, "fixture needs 2+ outline nodes");
+        let dup_node = doc.structure[1].node_id;
+        doc.structure[0].node_id = dup_node;
+
+        // Stage: diagnostics — an out-of-bounds range.
+        doc.diagnostics.push(syntax_v1::Diagnostic {
+            byte_range: syntax_v1::ByteRange {
+                start_utf8: 0,
+                end_utf8: source.len() as i32 + 1_000,
+            },
+            severity: syntax_v1::DiagnosticSeverity::Warning,
+            code: "test/stage-order".to_string(),
+            message: "test fixture".to_string(),
+        });
+
+        // Stage: derivation — empty.
+        doc.derivation.clear();
+
+        let errors = validate_document(&doc, Some(source.as_bytes()))
+            .unwrap_err()
+            .0;
+
+        let position_of = |pred: &dyn Fn(&ValidationError) -> bool| -> usize {
+            errors
+                .iter()
+                .position(pred)
+                .unwrap_or_else(|| panic!("expected error not found in {errors:?}"))
+        };
+
+        let contract_pos =
+            position_of(&|e| matches!(e, ValidationError::UnsupportedContractVersion { .. }));
+        let token_range_pos = position_of(&|e| matches!(e, ValidationError::NegativeOffset { .. }));
+        let token_axes_pos =
+            position_of(&|e| matches!(e, ValidationError::IllegalTokenAxes { .. }));
+        let structure_pos = position_of(&|e| matches!(e, ValidationError::DuplicateNodeId { .. }));
+        let diagnostics_pos = position_of(&|e| {
+            matches!(
+                e,
+                ValidationError::RangeOutOfBounds { path, .. }
+                    if path.to_string().starts_with("diagnostics[")
+            )
+        });
+        let derivation_pos = position_of(&|e| matches!(e, ValidationError::EmptyDerivation { .. }));
+
+        assert!(
+            contract_pos < token_range_pos
+                && token_range_pos < token_axes_pos
+                && token_axes_pos < structure_pos
+                && structure_pos < diagnostics_pos
+                && diagnostics_pos < derivation_pos,
+            "expected stage order contract < token_ranges < token_axes < structure \
+             < diagnostics < derivation, got positions {contract_pos}, {token_range_pos}, \
+             {token_axes_pos}, {structure_pos}, {diagnostics_pos}, {derivation_pos} in {errors:?}"
+        );
     }
 
     #[test]

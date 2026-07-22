@@ -72,13 +72,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tokens[3].byteRange.startUtf8`) instead of the old ad hoc `what: String` /
   `index: usize` fields, and a new `ValidationError::path()` plus a `Display`
   impl (`"at {path}: ..."`) replace the previous `{:?}`-based rendering in
-  `ValidationErrors`. `validate_document` itself is unchanged in behavior —
+  `ValidationErrors`. `validate_document`'s pass/fail verdict is unchanged —
   it is now composed from seven independently testable validators
   (`validate_contract_identity`, `validate_source_identity`,
   `validate_token_ranges`, `validate_token_axes`, `validate_structure_graph`,
-  `validate_diagnostics`, `validate_derivation`) run in the same fixed order,
-  so error ordering is unchanged — but any downstream code matching on the
-  old field names must update.
+  `validate_diagnostics`, `validate_derivation`) run in that fixed order, so
+  error ordering is still deterministic — but it is not byte-for-byte the old
+  order: token range/duplicate-id errors and token axis errors used to be
+  interleaved per token in one loop and are now two separate stages, so all
+  of a document's range/duplicate-id errors precede all of its axis errors
+  rather than alternating token by token. A new test
+  (`error_order_follows_the_seven_validator_stages`) pins the new stage
+  order. Any downstream code matching on the old field names, or depending
+  on the exact previous interleaving, must update.
 
 ### Fixed
 
