@@ -40,7 +40,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GraftProjectionError.code` rather than repaired, clamped, or sorted into
   validity. `schemaHash` is newly verified, independently recomputed from this
   consumer's own `contracts/colorful/syntax.v1.graphql` copy exactly as
-  `vocabularyHash` already was from the vocabulary manifest.
+  `vocabularyHash` already was from the vocabulary manifest. The gate now also:
+  checks `tokenKind`/`lexicalClass`/`functionKind`/`openClassKind`/outline
+  `kind` against the actual wire enum, not just "is a string" (an unknown
+  value no longer reaches a later, uncoded `Error`); holds every integer
+  field to the real `colorful.syntax/v1` wire range (signed `i32`), not
+  merely "any JS safe integer"; and validates `diagnostics`/`derivation`
+  shape and ranges, rejecting an empty `derivation` (`E_EMPTY_DERIVATION`) or
+  a step with an empty/duplicate pass identity
+  (`E_MISSING_DERIVATION_IDENTITY` / `E_DUPLICATE_DERIVATION_PASS_ID`) —
+  mirroring `colorful_ir::validate_document`'s own derivation checks.
 - **`makeByteToPoint` no longer rescans from row 0 on every call.** The graft
   reference consumer's byte-offset-to-row/column mapper now advances a
   monotonic cursor forward for the sequential queries `project()` actually

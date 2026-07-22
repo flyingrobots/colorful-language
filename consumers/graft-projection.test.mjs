@@ -59,6 +59,21 @@ function validIr(overrides = {}) {
       },
     ],
     structure: [],
+    diagnostics: [],
+    derivation: [
+      {
+        passId: "segment",
+        ruleId: "prose-segmenter",
+        sourceRanges: [{ startUtf8: 0, endUtf8: source.length }],
+        compilerBuildHash: "colorful-ir@0.0.0-fixture",
+      },
+      {
+        passId: "classify",
+        ruleId: "lexical-annotator",
+        sourceRanges: [{ startUtf8: 0, endUtf8: source.length }],
+        compilerBuildHash: "colorful-ir@0.0.0-fixture",
+      },
+    ],
     ...overrides,
   };
 }
@@ -557,6 +572,128 @@ assert.equal(
     ),
   ),
   "E_DANGLING_CHILD_REF",
+);
+
+// Enum fields are checked against the actual wire schema, not just "is a
+// string" -- an unknown value is rejected at admission instead of later
+// throwing an ordinary Error from deep inside projection.
+assert.equal(
+  errorCode(() =>
+    validateArtifact(source, validIr({ tokens: [{ ...ir.tokens[0], tokenKind: "BOGUS" }, ir.tokens[1]] })),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an unknown tokenKind must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ tokens: [{ ...ir.tokens[0], functionKind: "BOGUS" }, ir.tokens[1]] }),
+    ),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an unknown functionKind must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ tokens: [ir.tokens[0], { ...ir.tokens[1], tokenKind: "NUMBER", openClassKind: "BOGUS" }] }),
+    ),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an unknown openClassKind must be rejected",
+);
+assert.equal(
+  errorCode(() => validateArtifact(source, validIr({ structure: [{ ...paragraph, kind: "BOGUS" }] }))),
+  "E_ARTIFACT_SHAPE",
+  "an unknown outline node kind must be rejected",
+);
+// className()/visualRole() on their own still reject illegal axes under the
+// same stable code, for a caller that bypasses validateArtifact entirely.
+assert.equal(errorCode(() => className({ tokenKind: "WORD" })), "E_TOKEN_AXES");
+
+// Integer fields are held to the actual colorful.syntax/v1 wire range
+// (signed i32), not just "any JS safe integer" -- a value the generated
+// Rust DTO could never deserialize is rejected at admission.
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ tokens: [{ ...ir.tokens[0], occurrenceId: 2 ** 40 }, ir.tokens[1]] }),
+    ),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an occurrenceId beyond the i32 range must be rejected",
+);
+assert.equal(
+  errorCode(() => validateArtifact(source, validIr({ structure: [{ ...paragraph, nodeId: 2 ** 40 }] }))),
+  "E_ARTIFACT_SHAPE",
+  "a nodeId beyond the i32 range must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ tokens: [{ ...ir.tokens[0], byteRange: { startUtf8: 0, endUtf8: 2 ** 40 } }, ir.tokens[1]] }),
+    ),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "a byteRange endUtf8 beyond the i32 range must be rejected",
+);
+
+// Diagnostics and derivation are validated too: a missing/empty derivation
+// claims no producer ran at all, and per-step identity is checked exactly
+// like from_classification's producer-side check.
+assert.equal(
+  errorCode(() => validateArtifact(source, validIr({ derivation: [] }))),
+  "E_EMPTY_DERIVATION",
+  "an empty derivation must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ derivation: [{ ...ir.derivation[0], passId: "" }, ir.derivation[1]] }),
+    ),
+  ),
+  "E_MISSING_DERIVATION_IDENTITY",
+  "an empty passId must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ derivation: [ir.derivation[0], { ...ir.derivation[1], passId: ir.derivation[0].passId }] }),
+    ),
+  ),
+  "E_DUPLICATE_DERIVATION_PASS_ID",
+  "two derivation steps sharing a passId must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({
+        derivation: [
+          { ...ir.derivation[0], sourceRanges: [{ startUtf8: 0, endUtf8: source.length + 5 }] },
+          ir.derivation[1],
+        ],
+      }),
+    ),
+  ),
+  "E_BYTE_RANGE_BOUNDS",
+  "a derivation source range exceeding the source length must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ diagnostics: [{ byteRange: { startUtf8: 0, endUtf8: source.length + 5 }, severity: "ERROR", code: "x", message: "x" }] }),
+    ),
+  ),
+  "E_BYTE_RANGE_BOUNDS",
+  "a diagnostic range exceeding the source length must be rejected",
 );
 
 // 10. Hashes run last, and in a fixed order: schemaHash, then

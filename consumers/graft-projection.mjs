@@ -35,6 +35,22 @@ const CONTRACT_VERSION = "colorful.syntax/v1";
 const TOKEN_KINDS = new Set(["WORD", "NUMBER", "PUNCTUATION", "QUOTE"]);
 const LEXICAL_CLASSES = new Set(["FUNCTION", "CONTENT", "PROPER_NOUN_CANDIDATE"]);
 const OPEN_CLASS_KINDS = new Set(["NOUN", "VERB", "ADJECTIVE", "ADVERB"]);
+const FUNCTION_KINDS = new Set([
+  "ARTICLE",
+  "PREPOSITION",
+  "CONJUNCTION",
+  "PRONOUN",
+  "AUXILIARY",
+  "DETERMINER",
+  "NEGATOR",
+]);
+const OUTLINE_KINDS = new Set(["PARAGRAPH", "SENTENCE"]);
+const DIAGNOSTIC_SEVERITIES = new Set(["ERROR", "WARNING", "INFO"]);
+// Every GraphQL `Int` in colorful.syntax/v1 lowers to a signed 32-bit Rust
+// `i32`, not an arbitrary JS safe integer -- a value the generated Rust DTO
+// cannot represent is exactly the kind of artifact admission must reject.
+const WIRE_INT_MIN = -2147483648;
+const WIRE_INT_MAX = 2147483647;
 const VISUAL_ROLES = new Set([
   "STRUCTURAL_KEYWORD",
   "TYPE_LIKE",
@@ -207,8 +223,10 @@ function visualRole(token) {
     const openClassMatches = rule.openClassKind === (token.openClassKind ?? null);
     if (kindMatches && classMatches && openClassMatches) return rule.visualRole;
   }
-  throw new Error(
+  fail(
+    "E_TOKEN_AXES",
     `no vocabulary role for token axes ${token.tokenKind}/${token.lexicalClass ?? "<none>"}/${token.openClassKind ?? "<none>"}`,
+    { tokenKind: token.tokenKind, lexicalClass: token.lexicalClass ?? null, openClassKind: token.openClassKind ?? null },
   );
 }
 
@@ -377,6 +395,12 @@ export function verifyContentHash(buffer, ir) {
 // whatever it won't accept.
 function requireIntegerField(value, label) {
   if (!isSafeInteger(value)) fail("E_ARTIFACT_SHAPE", `${label} must be a safe integer`);
+  if (value < WIRE_INT_MIN || value > WIRE_INT_MAX) {
+    fail("E_ARTIFACT_SHAPE", `${label} (${value}) exceeds the colorful.syntax/v1 i32 range`, {
+      label,
+      value,
+    });
+  }
 }
 
 function requireByteRangeShape(range, label) {
@@ -387,10 +411,25 @@ function requireByteRangeShape(range, label) {
   if (range.endUtf8 < 0) fail("E_ARTIFACT_SHAPE", `${label}.endUtf8 must not be negative`);
 }
 
-function requireStringOrNullField(value, label) {
-  if (value !== null && typeof value !== "string") {
-    fail("E_ARTIFACT_SHAPE", `${label} must be a string or null`);
+function requireStringField(value, label) {
+  if (typeof value !== "string") fail("E_ARTIFACT_SHAPE", `${label} must be a string`);
+}
+
+// Reject a value that isn't a member of `allowed` (a Set of wire enum
+// strings) -- a stricter, honest replacement for "is this a string", so an
+// unknown enum value fails admission instead of later throwing an ordinary
+// Error from deep inside projection.
+function requireEnumField(value, allowed, label) {
+  if (!allowed.has(value)) {
+    fail("E_ARTIFACT_SHAPE", `${label} must be one of ${[...allowed].join(", ")}; got ${JSON.stringify(value)}`, {
+      label,
+      value,
+    });
   }
+}
+
+function requireEnumOrNullField(value, allowed, label) {
+  if (value !== null) requireEnumField(value, allowed, label);
 }
 
 // 1. Top-level shape: every field validation past this point dereferences
@@ -411,30 +450,51 @@ function validateShape(ir) {
   if (ir.source.utf8ByteLength < 0) fail("E_ARTIFACT_SHAPE", "source.utf8ByteLength must not be negative");
   if (!Array.isArray(ir.tokens)) fail("E_ARTIFACT_SHAPE", "tokens must be an array");
   if (!Array.isArray(ir.structure)) fail("E_ARTIFACT_SHAPE", "structure must be an array");
+  if (!Array.isArray(ir.diagnostics)) fail("E_ARTIFACT_SHAPE", "diagnostics must be an array");
+  if (!Array.isArray(ir.derivation)) fail("E_ARTIFACT_SHAPE", "derivation must be an array");
 
   for (const [index, token] of ir.tokens.entries()) {
     if (!isPlainObject(token)) fail("E_ARTIFACT_SHAPE", `tokens[${index}] must be an object`);
     requireIntegerField(token.occurrenceId, `tokens[${index}].occurrenceId`);
     requireByteRangeShape(token.byteRange, `tokens[${index}].byteRange`);
-    if (typeof token.tokenKind !== "string") {
-      fail("E_ARTIFACT_SHAPE", `tokens[${index}].tokenKind must be a string`);
-    }
-    requireStringOrNullField(token.lexicalClass ?? null, `tokens[${index}].lexicalClass`);
-    requireStringOrNullField(token.functionKind ?? null, `tokens[${index}].functionKind`);
-    requireStringOrNullField(token.openClassKind ?? null, `tokens[${index}].openClassKind`);
+    requireEnumField(token.tokenKind, TOKEN_KINDS, `tokens[${index}].tokenKind`);
+    requireEnumOrNullField(token.lexicalClass ?? null, LEXICAL_CLASSES, `tokens[${index}].lexicalClass`);
+    requireEnumOrNullField(token.functionKind ?? null, FUNCTION_KINDS, `tokens[${index}].functionKind`);
+    requireEnumOrNullField(token.openClassKind ?? null, OPEN_CLASS_KINDS, `tokens[${index}].openClassKind`);
   }
 
   for (const [index, node] of ir.structure.entries()) {
     if (!isPlainObject(node)) fail("E_ARTIFACT_SHAPE", `structure[${index}] must be an object`);
     requireIntegerField(node.nodeId, `structure[${index}].nodeId`);
     requireByteRangeShape(node.byteRange, `structure[${index}].byteRange`);
-    if (typeof node.kind !== "string") fail("E_ARTIFACT_SHAPE", `structure[${index}].kind must be a string`);
+    requireEnumField(node.kind, OUTLINE_KINDS, `structure[${index}].kind`);
     requireIntegerField(node.depth, `structure[${index}].depth`);
     if (!Array.isArray(node.childNodeIds)) {
       fail("E_ARTIFACT_SHAPE", `structure[${index}].childNodeIds must be an array`);
     }
     for (const [childIndex, child] of node.childNodeIds.entries()) {
       requireIntegerField(child, `structure[${index}].childNodeIds[${childIndex}]`);
+    }
+  }
+
+  for (const [index, diagnostic] of ir.diagnostics.entries()) {
+    if (!isPlainObject(diagnostic)) fail("E_ARTIFACT_SHAPE", `diagnostics[${index}] must be an object`);
+    requireByteRangeShape(diagnostic.byteRange, `diagnostics[${index}].byteRange`);
+    requireEnumField(diagnostic.severity, DIAGNOSTIC_SEVERITIES, `diagnostics[${index}].severity`);
+    requireStringField(diagnostic.code, `diagnostics[${index}].code`);
+    requireStringField(diagnostic.message, `diagnostics[${index}].message`);
+  }
+
+  for (const [index, step] of ir.derivation.entries()) {
+    if (!isPlainObject(step)) fail("E_ARTIFACT_SHAPE", `derivation[${index}] must be an object`);
+    requireStringField(step.passId, `derivation[${index}].passId`);
+    requireStringField(step.ruleId, `derivation[${index}].ruleId`);
+    requireStringField(step.compilerBuildHash, `derivation[${index}].compilerBuildHash`);
+    if (!Array.isArray(step.sourceRanges)) {
+      fail("E_ARTIFACT_SHAPE", `derivation[${index}].sourceRanges must be an array`);
+    }
+    for (const [rangeIndex, range] of step.sourceRanges.entries()) {
+      requireByteRangeShape(range, `derivation[${index}].sourceRanges[${rangeIndex}]`);
     }
   }
 }
@@ -601,6 +661,38 @@ function validateStructure(buffer, ir) {
   }
 }
 
+// Diagnostics and derivation ranges, plus derivation identity -- mirroring
+// colorful_ir::validate_document exactly: each diagnostic/derivation range is
+// checked the same way a token's is; derivation must be non-empty (an empty
+// list claims no producer ran at all); each step's passId/ruleId must be
+// non-empty (the invalid-by-construction PassIdentity default colorful-core
+// reports when a producer never overrode it); and no two steps may share a
+// passId.
+function validateDiagnosticsAndDerivation(buffer, ir) {
+  for (const [index, diagnostic] of ir.diagnostics.entries()) {
+    validateByteRangeBounds(diagnostic.byteRange, buffer, `diagnostics[${index}].byteRange`);
+  }
+
+  if (ir.derivation.length === 0) {
+    fail("E_EMPTY_DERIVATION", "derivation must not be empty; it would claim no producer ran at all.");
+  }
+  const seenPassIds = new Set();
+  for (const [index, step] of ir.derivation.entries()) {
+    for (const [rangeIndex, range] of step.sourceRanges.entries()) {
+      validateByteRangeBounds(range, buffer, `derivation[${index}].sourceRanges[${rangeIndex}]`);
+    }
+    if (step.passId === "" || step.ruleId === "") {
+      fail("E_MISSING_DERIVATION_IDENTITY", `derivation[${index}] has an empty passId or ruleId.`, { index });
+    }
+    if (seenPassIds.has(step.passId)) {
+      fail("E_DUPLICATE_DERIVATION_PASS_ID", `derivation has two steps with passId "${step.passId}".`, {
+        passId: step.passId,
+      });
+    }
+    seenPassIds.add(step.passId);
+  }
+}
+
 // The full admission gate. project() below runs this unconditionally; it is
 // also exported so a caller can validate without projecting.
 export function validateArtifact(buffer, ir) {
@@ -612,6 +704,7 @@ export function validateArtifact(buffer, ir) {
   validateOccurrenceIds(ir);
   validateTokenAxes(ir);
   validateStructure(buffer, ir);
+  validateDiagnosticsAndDerivation(buffer, ir);
   verifySchemaHash(ir);
   verifyVocabularyHash(ir);
   verifyContentHash(buffer, ir);

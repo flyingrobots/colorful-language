@@ -97,6 +97,24 @@ workspace.
   *Oracle:* JavaScript assertions on `err.code` and hash equality. *Evidence
   type:* unit test. *Evidence:* `consumers/graft-projection.test.mjs`.
   *Status:* implemented.
+- **CONSUMER-6f** — *Requirement:* CONSUMER-6. *Behavior:* `tokenKind`,
+  `lexicalClass`, `functionKind`, `openClassKind`, and outline node `kind`
+  are checked against the actual wire enum, not merely "is a string" — an
+  unknown value is rejected at admission (`E_ARTIFACT_SHAPE`) instead of
+  later throwing an uncoded `Error` from deep inside projection. Integer
+  fields (`occurrenceId`, `nodeId`, `depth`, child ids, byte offsets) are
+  held to the real `colorful.syntax/v1` wire range (signed `i32`), not
+  merely "any JS safe integer". *Oracle:* JavaScript assertions on
+  `err.code`. *Evidence type:* unit test. *Evidence:*
+  `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **CONSUMER-6g** — *Requirement:* CONSUMER-6. *Behavior:* `diagnostics` and
+  `derivation` are shape- and range-validated like `tokens`/`structure`; an
+  empty `derivation` (`E_EMPTY_DERIVATION`), a step with an empty
+  `passId`/`ruleId` (`E_MISSING_DERIVATION_IDENTITY`), or two steps sharing a
+  `passId` (`E_DUPLICATE_DERIVATION_PASS_ID`) are each rejected — mirroring
+  `colorful_ir::validate_document`'s own derivation checks exactly. *Oracle:*
+  JavaScript assertions on `err.code`. *Evidence type:* unit test.
+  *Evidence:* `consumers/graft-projection.test.mjs`. *Status:* implemented.
 
 ## Open verification gaps
 
