@@ -63,7 +63,7 @@ Two contracts:
   `vocabularyHash`, `source { unitId, contentHash, utf8ByteLength }`,
   `tokens [{ occurrenceId, byteRange, tokenKind, lexicalClass?, functionKind?,
   openClassKind? }]`, `structure` (outline nodes with `byteRange` + children),
-  `diagnostics`.
+  `diagnostics`, `derivation` (per-pass provenance; see below).
 - `colorful.vocabulary/v1` — the enums and their *render intent*.
 
 Design commitments (frozen before the ecosystem depends on them):
@@ -108,14 +108,21 @@ Design commitments (frozen before the ecosystem depends on them):
 ## Boundary discipline
 
 Generated Rust/TS types are **boundary DTOs**, not the internal model. Keep
-`colorful-core`'s ergonomic domain types; bridge with a projection
-`DocumentAnalysis::from_classification(source, tree, tokens)`. Each pass emits a
+`colorful-core`'s ergonomic domain types; bridge with the free function
+`colorful_ir::from_classification(unit_id, source, tree, tokens,
+parser_identity, annotator_identity)`. `colorful-projection::build_document`
+is the single Rust producer front door that calls it: it sources each
+`PassIdentity` from the `Parser`/`Annotator`'s own `pass_identity()` and
+rejects a producer that never overrode it (an invalid-by-construction empty
+identity) or two producers claiming the same pass id. Each pass emits a
 `DerivationStep`, but Stage 1 records a **trace seed**, not replayable
-provenance: every step currently carries `passId`, `ruleId`, `sourceRanges`, and
-a `compilerBuildHash` that is itself a stand-in (the crate version). The richer
-fields that make derivation *replayable* — `inputNodeIds`, `outputNodeIds`, and
-input/output artifact hashes — are deferred; the trace seed reserves the shape so
-they can land without a contract break, but the IR does not yet claim replay.
+provenance: every step currently carries `passId` and `ruleId` — now a real,
+validated producer identity rather than a hardcoded literal — plus
+`sourceRanges` and a `compilerBuildHash` that is itself a stand-in (the crate
+version). The richer fields that make derivation *replayable* —
+`inputNodeIds`, `outputNodeIds`, and input/output artifact hashes — are
+deferred; the trace seed reserves the shape so they can land without a
+contract break, but the IR does not yet claim replay.
 
 ### Presentation lives in a versioned manifest
 
