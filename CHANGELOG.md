@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `from_classification` rejects a missing or duplicate pass identity;
   `validate_document` rejects the same on a received artifact.
 
+- **Shared CLI argument parser.** `colorful-cli`'s four subcommands (`color`,
+  `ir`, `diagnose`, `lint`) now parse arguments through one `parse_args`
+  function instead of four hand-rolled copies. `--` then a bare `-` now
+  correctly means stdin instead of a literal file named `-`; a flag-shaped
+  argument after `--` (e.g. `--weird-file`) is accepted as a literal path
+  everywhere, not just in the default subcommand; and "at most one `FILE`
+  operand" is now enforced uniformly instead of only in `diagnose`.
+
 ### Fixed
 
 - **Total vocabulary lookups.** `colorful_ir::vocabulary::visual_role`,
