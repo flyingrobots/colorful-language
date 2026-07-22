@@ -100,7 +100,8 @@ Requirements:
   production implementations (`ProseParser`, `ContextualOpenClassAnnotator`,
   `LexicalAnnotator`) override it with a real `passId`/`ruleId`, and
   `from_classification` rejects a producer that never did. *Oracle:*
-  `ProjectionError::MissingPassIdentity`. *Evidence:* `colorful-ir`
+  `ProjectionError::MissingPassIdentity`. *Evidence type:* integration test.
+  *Evidence:* `colorful-ir`
   `integration::from_classification_rejects_an_unidentified_parser` /
   `..._rejects_an_unidentified_annotator`. *Status:* implemented.
 - **IR-8b** — *Requirement:* IR-8. *Behavior:* `from_classification` threads
@@ -108,7 +109,8 @@ Requirements:
   hardcoded literals — a different annotator is named under its own honest
   `ruleId` — and rejects two producers claiming the same pass id. *Oracle:*
   `derivation[i].passId`/`ruleId` equal the producer's identity;
-  `ProjectionError::DuplicatePassId` on a clash. *Evidence:* `colorful-ir`
+  `ProjectionError::DuplicatePassId` on a clash. *Evidence type:* integration
+  test. *Evidence:* `colorful-ir`
   `integration::derivation_reports_the_real_producers_pass_identity`,
   `derivation_names_a_different_annotator_honestly`,
   `from_classification_rejects_a_duplicate_pass_id`. *Status:* implemented.
@@ -117,21 +119,23 @@ Requirements:
   across steps, is rejected — checked across the complete `derivation` list,
   not only the two steps today's producer happens to emit. *Oracle:*
   `ValidationError::MissingDerivationIdentity` / `DuplicateDerivationPassId`.
-  *Evidence:* `colorful-ir`
+  *Evidence type:* integration test. *Evidence:* `colorful-ir`
   `integration::rejects_a_derivation_step_with_missing_identity`,
   `rejects_derivation_steps_sharing_a_pass_id`. *Status:* implemented.
 - **IR-9a** — *Requirement:* IR-9. *Behavior:* `build_document` parses,
   annotates, and projects a `Parser`/`Annotator` pair (borrowed, not consumed)
   into an `AnalyzedDocument`, sourcing each `PassIdentity` from
   `pass_identity()`. *Oracle:* output is byte-identical to a hand-rolled
-  parse/annotate/`from_classification` call. *Evidence:* `colorful-projection`
+  parse/annotate/`from_classification` call. *Evidence type:* integration
+  test. *Evidence:* `colorful-projection`
   `tests::builds_the_same_document_a_hand_rolled_pipeline_would`,
   `tests::propagates_a_missing_pass_identity`. *Status:* implemented.
 - **IR-9b** — *Requirement:* IR-9. *Behavior:* IR tokens correspond 1:1 by
   index to core tokens — matching byte ranges, and agreeing with the same
   `visual_role`/`visual_role_for` mapping every ANSI/LSP role lookup uses.
   *Oracle:* pairwise equality across `AnalyzedDocument.tokens` and
-  `.document.tokens`. *Evidence:* `colorful-projection`
+  `.document.tokens`. *Evidence type:* integration test. *Evidence:*
+  `colorful-projection`
   `tests::ir_tokens_correspond_1to1_to_core_tokens`. *Status:* implemented.
 
 ## Known gaps / risks
