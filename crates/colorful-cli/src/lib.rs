@@ -16,15 +16,25 @@ use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
 use colorful_parse::ProseParser;
 
+/// The manifest projection for an optional role, or `None` if the role is
+/// absent (an uncovered token-axis combination) or itself has no manifest
+/// entry (a drifted manifest). Shared by [`sgr`] and [`diagnose_json`] so the
+/// "missing role/projection degrades to no styling" contract lives in one
+/// place and is directly testable.
+fn projection_for(
+    role: Option<&colorful_ir::vocabulary_v1::VisualRole>,
+) -> Option<&'static colorful_ir::vocabulary::RoleProjection> {
+    role.and_then(colorful_ir::vocabulary::projection)
+}
+
 /// The ANSI SGR parameter used to color a class, or `None` to leave it plain.
 ///
 /// The colors are not chosen here: the class maps to an abstract `VisualRole`,
 /// which the `colorful.vocabulary/v1` manifest projects onto ANSI. The same
 /// manifest drives the LSP and the graft consumer, so all three surfaces agree.
 fn sgr(class: PosClass) -> Option<&'static str> {
-    let role = colorful_ir::vocabulary::visual_role_for(class)?;
-    let projection = colorful_ir::vocabulary::projection(&role)?;
-    projection.ansi.as_deref()
+    let role = colorful_ir::vocabulary::visual_role_for(class);
+    projection_for(role.as_ref())?.ansi.as_deref()
 }
 
 fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassLexicon> {
@@ -357,7 +367,7 @@ fn diagnose_json(unit_id: &str, input: &str) -> io::Result<String> {
             token.lexical_class.as_ref(),
             token.open_class_kind.as_ref(),
         );
-        let projection = role.as_ref().and_then(colorful_ir::vocabulary::projection);
+        let projection = projection_for(role.as_ref());
         let lsp_token_type = projection.and_then(|projection| projection.lsp_token_type.as_deref());
         let lsp_token_type_index =
             lsp_token_type.and_then(|name| legend.iter().position(|candidate| *candidate == name));
@@ -576,6 +586,15 @@ mod tests {
     fn passthrough_when_color_disabled() {
         let s = "The cat is 3.\nA second line.";
         assert_eq!(colorize(s, false), s);
+    }
+
+    #[test]
+    fn projection_for_none_role_is_none() {
+        // sgr() and diagnose_json() both feed visual_role_for()/visual_role()'s
+        // Option through projection_for(). Every real PosClass currently has a
+        // manifest entry, so a missing role can't arise from production
+        // input — this exercises the shared composition directly instead.
+        assert!(projection_for(None).is_none());
     }
 
     #[test]

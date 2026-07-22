@@ -52,11 +52,20 @@ fn token_type_index(class: PosClass) -> Option<u32> {
             .collect()
     });
 
-    let role = colorful_ir::vocabulary::visual_role_for(class)?;
-    let name = colorful_ir::vocabulary::projection(&role)?
-        .lsp_token_type
-        .as_deref()?;
+    let role = colorful_ir::vocabulary::visual_role_for(class);
+    let name = token_type_name_for(role.as_ref())?;
     token_type_index.get(name).copied()
+}
+
+/// The LSP semantic token-type name for an optional role, or `None` if the
+/// role is absent (an uncovered token-axis combination) or itself has no
+/// manifest entry (a drifted manifest). Split out of [`token_type_index`] so
+/// the "missing role/projection degrades to no token" contract is directly
+/// testable.
+fn token_type_name_for(role: Option<&colorful_ir::vocabulary_v1::VisualRole>) -> Option<&'static str> {
+    role.and_then(colorful_ir::vocabulary::projection)?
+        .lsp_token_type
+        .as_deref()
 }
 
 /// Maps byte offsets to `(line, UTF-16 column)` positions over a fixed string.
@@ -262,6 +271,15 @@ mod tests {
     use colorful_lexicon::ContextualOpenClassAnnotator;
     use colorful_parse::ProseParser;
     use tower_lsp::lsp_types::Position;
+
+    #[test]
+    fn token_type_name_for_none_role_is_none() {
+        // token_type_index() feeds visual_role_for()'s Option through
+        // token_type_name_for(). Every real PosClass currently has a manifest
+        // entry, so a missing role can't arise from production input — this
+        // exercises the composition directly instead.
+        assert!(token_type_name_for(None).is_none());
+    }
 
     fn tok(delta_line: u32, delta_start: u32, length: u32, token_type: u32) -> SemanticToken {
         SemanticToken {
