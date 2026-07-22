@@ -38,6 +38,12 @@
 //! not carry (see `docs/design/0002`), so this crate hands them back alongside
 //! the projected [`AnalyzedDocument::document`] instead of flattening
 //! everything into the wire DTO merely to look uniform.
+//!
+//! The IR tokens in [`AnalyzedDocument::document`] correspond 1:1 by index to
+//! the core tokens in [`AnalyzedDocument::tokens`] — same length, matching
+//! byte ranges, and the same `visual_role`/`visual_role_for` mapping every
+//! ANSI/LSP role lookup uses. `build_document` checks this with a
+//! `debug_assert_eq!` and the test suite pins it directly.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
