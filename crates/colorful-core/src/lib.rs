@@ -217,11 +217,47 @@ pub struct Finding {
     pub message: String,
 }
 
+/// A producer's provenance: which derivation stage it fills (`pass_id`, e.g.
+/// `"segment"`, `"classify"`) and which concrete rule implements it (`rule_id`,
+/// e.g. `"contextual-open-class-annotator"`).
+///
+/// `rule_id` names the algorithm family, not a full replayable-implementation
+/// digest — this is honest, checkable provenance, not executable historical
+/// reconstruction.
+///
+/// The default (`pass_id: "", rule_id: ""`) is **invalid by construction**: a
+/// [`Parser`] or [`Annotator`] that does not override [`Parser::pass_identity`]
+/// / [`Annotator::pass_identity`] reports this empty identity rather than a
+/// plausible-sounding placeholder, so a projection boundary can reject it
+/// instead of recording a lie.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PassIdentity {
+    /// The derivation stage this identity fills, e.g. `"segment"`, `"classify"`.
+    pub pass_id: &'static str,
+    /// The concrete rule implementation, e.g. `"prose-segmenter"`.
+    pub rule_id: &'static str,
+}
+
+impl PassIdentity {
+    /// Whether both fields are non-empty, i.e. this is not the invalid-by-
+    /// construction default.
+    #[must_use]
+    pub fn is_present(&self) -> bool {
+        !self.pass_id.is_empty() && !self.rule_id.is_empty()
+    }
+}
+
 /// Port: turn source text into shallow structure. Knows nothing about meaning.
 pub trait Parser {
     /// Parse `text` into a [`Tree`]. Implementations must be total: any input,
     /// including malformed or adversarial text, yields a tree without panicking.
     fn parse(&self, text: &str) -> Tree;
+
+    /// This parser's provenance. The default is invalid by construction (see
+    /// [`PassIdentity`]) — a production implementation must override it.
+    fn pass_identity(&self) -> PassIdentity {
+        PassIdentity::default()
+    }
 }
 
 /// Port: classify a single word's lexeme into a [`PosClass`], **in isolation**.
@@ -248,6 +284,12 @@ pub trait Annotator {
     /// Produce the classified tokens for `source`, given its parsed `tree`, in
     /// source order.
     fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token>;
+
+    /// This annotator's provenance. The default is invalid by construction
+    /// (see [`PassIdentity`]) — a production implementation must override it.
+    fn pass_identity(&self) -> PassIdentity {
+        PassIdentity::default()
+    }
 }
 
 /// Port: inspect a classified document and report prose [`Finding`]s.
@@ -285,6 +327,13 @@ impl<L: Lexicon> LexicalAnnotator<L> {
 }
 
 impl<L: Lexicon> Annotator for LexicalAnnotator<L> {
+    fn pass_identity(&self) -> PassIdentity {
+        PassIdentity {
+            pass_id: "classify",
+            rule_id: "lexical-annotator",
+        }
+    }
+
     fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token> {
         let mut tokens = Vec::new();
         let Node::Document(sentences) = &tree.root else {

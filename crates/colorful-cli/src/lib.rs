@@ -161,9 +161,18 @@ fn analyze_ir(
     unit_id: &str,
     input: &str,
 ) -> Result<colorful_ir::syntax_v1::DocumentAnalysis, colorful_ir::ProjectionError> {
-    let tree = ProseParser::new().parse(input);
-    let tokens = default_annotator().annotate(input, &tree);
-    colorful_ir::from_classification(unit_id, input, &tree, &tokens)
+    let parser = ProseParser::new();
+    let annotator = default_annotator();
+    let tree = parser.parse(input);
+    let tokens = annotator.annotate(input, &tree);
+    colorful_ir::from_classification(
+        unit_id,
+        input,
+        &tree,
+        &tokens,
+        parser.pass_identity(),
+        annotator.pass_identity(),
+    )
 }
 
 fn json_error(err: serde_json::Error) -> io::Error {
@@ -351,8 +360,15 @@ fn diagnose_json(unit_id: &str, input: &str) -> io::Result<String> {
 
     let tree = parser.parse(input);
     let tokens = annotator.annotate(input, &tree);
-    let document = colorful_ir::from_classification(unit_id, input, &tree, &tokens)
-        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+    let document = colorful_ir::from_classification(
+        unit_id,
+        input,
+        &tree,
+        &tokens,
+        parser.pass_identity(),
+        annotator.pass_identity(),
+    )
+    .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
     let findings = analyzer.analyze(input, &tree, &tokens);
     let legend = colorful_ir::vocabulary::lsp_legend();
 
