@@ -29,6 +29,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   argument after `--` (e.g. `--weird-file`) is accepted as a literal path
   everywhere, not just in the default subcommand; and "at most one `FILE`
   operand" is now enforced uniformly instead of only in `diagnose`.
+- **Graft reference consumer artifact validation.** The JS reference consumer
+  (`consumers/graft-projection.mjs`) gains `validateArtifact(buffer, ir)`, an
+  ordered admission gate `project()` now runs unconditionally: top-level
+  shape, `contractVersion`, declared byte length, source UTF-8 validity, per-
+  token byte-range order/bounds/char-boundary, token wire-order non-overlap,
+  `occurrenceId` uniqueness, token axis legality, structure-graph duplicate-
+  node/dangling-child checks, then `schemaHash`/`vocabularyHash`/`contentHash`
+  — cheapest first, hashes last, malformed input rejected under a stable
+  `GraftProjectionError.code` rather than repaired, clamped, or sorted into
+  validity. `schemaHash` is newly verified, independently recomputed from this
+  consumer's own `contracts/colorful/syntax.v1.graphql` copy exactly as
+  `vocabularyHash` already was from the vocabulary manifest. The gate now also:
+  checks `tokenKind`/`lexicalClass`/`functionKind`/`openClassKind`/outline
+  `kind` against the actual wire enum, not just "is a string" (an unknown
+  value no longer reaches a later, uncoded `Error`); holds every integer
+  field to the real `colorful.syntax/v1` wire range (signed `i32`), not
+  merely "any JS safe integer"; and validates `diagnostics`/`derivation`
+  shape and ranges, rejecting an empty `derivation` (`E_EMPTY_DERIVATION`) or
+  a step with an empty/duplicate pass identity
+  (`E_MISSING_DERIVATION_IDENTITY` / `E_DUPLICATE_DERIVATION_PASS_ID`) —
+  mirroring `colorful_ir::validate_document`'s own derivation checks.
+- **`makeByteToPoint` no longer rescans from row 0 on every call.** The graft
+  reference consumer's byte-offset-to-row/column mapper now advances a
+  monotonic cursor forward for the sequential queries `project()` actually
+  makes (now that token wire-order is validated — see above), falling back to
+  a binary search for an out-of-order query instead of assuming one won't
+  happen. A deterministic test proves the bound (total cursor advances across
+  N sequential calls is at most N, not N²/2) without timing anything.
 
 ### Changed
 
@@ -42,6 +70,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Paragraph boundaries missed non-LF line endings.** `colorful_ir`'s outline
+  builder counted raw `\n` bytes to detect a blank line, so a source using `\r`
+  only (classic Mac line endings) never split into paragraphs. A named
+  `logical_line_break_count` now counts `\n`, `\r`, and `\r\n` as one break
+  each — never double-counting a `\r\n` pair — and a paragraph boundary
+  requires at least two such breaks with only whitespace between them.
 - **Empty derivation trace bypassed identity validation.**
   `colorful_ir::validate_document` iterated `derivation` to check each step's
   pass identity, but a document with `derivation: []` made that loop run zero
