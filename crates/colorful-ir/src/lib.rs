@@ -617,26 +617,39 @@ impl ValidationError {
     }
 }
 
+/// Escape a string that came from an untrusted document before interpolating
+/// it into a rendered [`ValidationError`] message. Consumers such as
+/// `examples/recanon.rs` write this text directly to stderr, so a hostile
+/// value must not be able to inject a newline (forging extra log lines) or a
+/// terminal control sequence — it renders as visible, inert escapes instead.
+fn escape_untrusted(value: &str) -> String {
+    value.escape_debug().to_string()
+}
+
 impl core::fmt::Display for ValidationError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let path = self.path();
         match self {
             Self::UnsupportedContractVersion { found, .. } => {
+                let found = escape_untrusted(found);
                 write!(f, "at {path}: unsupported contract version `{found}`")
             }
             Self::SchemaHashMismatch {
                 expected, found, ..
             } => {
+                let found = escape_untrusted(found);
                 write!(f, "at {path}: expected `{expected}`, found `{found}`")
             }
             Self::VocabularyHashMismatch {
                 expected, found, ..
             } => {
+                let found = escape_untrusted(found);
                 write!(f, "at {path}: expected `{expected}`, found `{found}`")
             }
             Self::ContentHashMismatch {
                 expected, found, ..
             } => {
+                let found = escape_untrusted(found);
                 write!(f, "at {path}: expected `{expected}`, found `{found}`")
             }
             Self::ByteLengthMismatch {
@@ -672,6 +685,7 @@ impl core::fmt::Display for ValidationError {
                 write!(f, "at {path}: empty passId or ruleId")
             }
             Self::DuplicateDerivationPassId { pass_id, .. } => {
+                let pass_id = escape_untrusted(pass_id);
                 write!(f, "at {path}: duplicate passId `{pass_id}`")
             }
             Self::EmptyDerivation { .. } => write!(f, "at {path}: must not be empty"),
@@ -1708,6 +1722,40 @@ mod integration {
         assert_eq!(
             error.to_string(),
             "at tokens[2].byteRange.endUtf8: 100 exceeds source length 50"
+        );
+    }
+
+    #[test]
+    fn validation_error_display_escapes_untrusted_document_strings() {
+        // contractVersion, hash "found" values, and derivation passId all
+        // come straight from an untrusted document. recanon.rs prints this
+        // Display output directly to stderr, so a hostile value containing a
+        // newline or a terminal escape sequence must not reach the render
+        // verbatim — it must come out escaped, not interpreted.
+        let hostile = "sha256:evil\x1b[31mFAKE ERROR\x1b[0m\nrecanon: fabricated line";
+
+        let contract_version = ValidationError::UnsupportedContractVersion {
+            path: Path::root().field("contractVersion"),
+            found: hostile.to_string(),
+        };
+        let rendered = contract_version.to_string();
+        assert!(
+            !rendered.contains('\n') && !rendered.contains('\x1b'),
+            "raw control characters leaked into rendered output: {rendered:?}"
+        );
+        assert!(
+            rendered.contains("\\n") && rendered.contains("\\u{1b}"),
+            "expected the control characters escaped, got: {rendered:?}"
+        );
+
+        let pass_id = ValidationError::DuplicateDerivationPassId {
+            path: Path::root().field("derivation").index(0),
+            pass_id: hostile.to_string(),
+        };
+        let rendered = pass_id.to_string();
+        assert!(
+            !rendered.contains('\n') && !rendered.contains('\x1b'),
+            "raw control characters leaked into rendered output: {rendered:?}"
         );
     }
 

@@ -108,6 +108,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **`ValidationError`'s `Display` output could carry forged log lines or
+  terminal control sequences from an untrusted document.** `contractVersion`,
+  the schema/vocabulary/content hash "found" values, and derivation `passId`
+  are attacker-controlled strings once a document arrives over a boundary;
+  rendering them verbatim let a hostile artifact inject a newline (forging
+  extra lines) or a raw escape sequence into any consumer that prints the
+  error text — `crates/colorful-ir/examples/recanon.rs` writes it straight to
+  stderr. These fields now render through `escape_debug()` before
+  interpolation, so control characters come out as visible, inert escapes
+  (e.g. `\n`, `\u{1b}`) instead of being interpreted by the terminal.
 - **`brace-expansion` DoS ([GHSA-3jxr-9vmj-r5cp](https://github.com/advisories/GHSA-3jxr-9vmj-r5cp)).**
   Bumped `editors/vscode`'s transitive `brace-expansion` (via
   `vscode-languageclient` → `minimatch`) from `2.1.1` to `2.1.2`, closing an
