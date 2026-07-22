@@ -18,7 +18,7 @@ boring facts automation can check:
 - tag format `v{version}`;
 - release branch format `release/v{version}`;
 - milestone format `v{version}`;
-- the seven crates published to crates.io;
+- the eight crates published to crates.io;
 - release signposts such as `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
   `docs/topics/`, `docs/workflows/`, and maintainer docs;
 - validation entrypoints in `scripts/release-profile-check.sh`,
@@ -413,7 +413,7 @@ different commit.
 
 ## crates.io prerequisites
 
-The seven crates publish under flat crates.io names. crates.io has no scoped
+The eight crates publish under flat crates.io names. crates.io has no scoped
 package names; organization identity comes from ownership and repository links.
 
 One-time prerequisites:

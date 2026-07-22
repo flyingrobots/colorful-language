@@ -70,7 +70,7 @@ binaries, writes a checksum, and creates the GitHub Release.
 The crates.io publish step skips crate versions that are already available in
 the crates.io registry index, so rerunning the workflow after a partial publish
 can continue without moving the tag. The release job timeout is sized for the
-aggregate index-readiness polling window across all seven crates.
+aggregate index-readiness polling window across all eight crates.
 
 The workflow relies on the pre-merge gate for checks that are not repeated on
 tag pushes. Pull-request CI covers Markdown lint, whitespace checks, the IR

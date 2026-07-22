@@ -42,13 +42,14 @@ export PATH="$HOME/.colorful-language/bin:$PATH"
 
 ## Package boundaries
 
-The workspace publishes seven crates in lock-step:
+The workspace publishes eight crates in lock-step:
 
 - `colorful-core`
 - `colorful-lexicon`
 - `colorful-parse`
 - `colorful-ir`
 - `colorful-lint`
+- `colorful-projection`
 - `colorful-cli`
 - `colorful-lsp`
 
