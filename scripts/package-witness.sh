@@ -52,7 +52,7 @@ internal_deps_for() {
       echo "colorful-core colorful-lexicon colorful-parse"
       ;;
     colorful-projection)
-      echo "colorful-core colorful-ir"
+      echo "colorful-core colorful-ir colorful-lexicon colorful-parse"
       ;;
     colorful-cli)
       echo "colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-projection"
