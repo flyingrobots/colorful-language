@@ -28,6 +28,10 @@ Requirements:
 - **IR-9** `colorful-projection::build_document` is the single Rust-only front
   door from a `Parser`/`Annotator` pair to an `AnalyzedDocument`; the IR tokens
   it projects correspond 1:1 by index to the core tokens the annotator produced.
+- **IR-10** A paragraph boundary in the outline is a blank line: a gap between
+  two sentences containing at least two logical line breaks (`\n`, `\r`, or
+  `\r\n` — each counted once, never a raw `\n` byte count) with only
+  whitespace between them.
 
 ## Cases
 
@@ -141,6 +145,22 @@ Requirements:
   `.document.tokens`. *Evidence type:* integration test. *Evidence:*
   `colorful-projection`
   `tests::ir_tokens_correspond_1to1_to_core_tokens`. *Status:* implemented.
+- **IR-10a** — *Requirement:* IR-10. *Behavior:* a named
+  `logical_line_break_count` counts `\n`, `\r`, and `\r\n` as one break each,
+  never double-counting a `\r\n` pair; `is_paragraph_break` additionally
+  requires the gap be pure whitespace. *Oracle:* direct equality on hand-built
+  gap strings. *Evidence type:* unit test. *Evidence:* `colorful-ir`
+  `tests::logical_line_break_count_treats_crlf_as_one_break`,
+  `tests::is_paragraph_break_requires_only_whitespace_between_the_breaks`.
+  *Status:* implemented.
+- **IR-10b** — *Requirement:* IR-10. *Behavior:* a blank line made of `\r`
+  only (classic Mac line endings, no `\n` byte anywhere) splits paragraphs
+  exactly like `\n\n`; a single `\r` does not; a `\r\n\r\n` blank line counts
+  as one boundary, not two. *Oracle:* paragraph count over the projected
+  outline. *Evidence type:* integration test. *Evidence:* `colorful-ir`
+  `integration::a_carriage_return_only_blank_line_splits_paragraphs`,
+  `a_single_carriage_return_does_not_split_paragraphs`,
+  `a_crlf_blank_line_splits_paragraphs_exactly_once`. *Status:* implemented.
 
 ## Known gaps / risks
 

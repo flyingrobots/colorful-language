@@ -205,8 +205,38 @@ pub(crate) fn token_axes(
     }
 }
 
+/// Count logical line breaks in `text`: `\n`, `\r`, and `\r\n` each count as
+/// exactly one break — a `\r\n` pair is not double-counted as two — and
+/// repeated sequences count individually (`"\n\n"` is two, `"\r\n\r\n"` is
+/// two).
+fn logical_line_break_count(text: &str) -> usize {
+    let mut count = 0;
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '\r' => {
+                count += 1;
+                if chars.peek() == Some(&'\n') {
+                    chars.next();
+                }
+            }
+            '\n' => count += 1,
+            _ => {}
+        }
+    }
+    count
+}
+
+/// Whether `gap` (the source between two adjacent sentences) is a paragraph
+/// boundary: at least two logical line breaks with only whitespace between
+/// them, i.e. a genuine blank line rather than a single line wrap.
+fn is_paragraph_break(gap: &str) -> bool {
+    logical_line_break_count(gap) >= 2 && gap.chars().all(char::is_whitespace)
+}
+
 /// Build the outline: a flattened paragraph → sentence tree. Paragraphs are
-/// separated by a blank line (a gap containing two or more newlines).
+/// separated by a blank line (a gap containing at least two logical line
+/// breaks — `\n`, `\r`, or `\r\n` — with nothing but whitespace between them).
 fn build_structure(
     source: &str,
     tree: &Tree,
@@ -229,7 +259,7 @@ fn build_structure(
     let mut paragraphs: Vec<Vec<usize>> = vec![vec![0]];
     for i in 1..spans.len() {
         let gap = source.get(spans[i - 1].end..spans[i].start).unwrap_or("");
-        if gap.matches('\n').count() >= 2 {
+        if is_paragraph_break(gap) {
             paragraphs.push(vec![i]);
         } else if let Some(last) = paragraphs.last_mut() {
             last.push(i);
@@ -764,6 +794,31 @@ mod tests {
     use super::*;
 
     #[test]
+    fn logical_line_break_count_treats_crlf_as_one_break() {
+        assert_eq!(logical_line_break_count(""), 0);
+        assert_eq!(logical_line_break_count("\n"), 1);
+        assert_eq!(logical_line_break_count("\r"), 1);
+        assert_eq!(logical_line_break_count("\r\n"), 1);
+        assert_eq!(logical_line_break_count("\n\n"), 2);
+        assert_eq!(logical_line_break_count("\r\r"), 2);
+        assert_eq!(logical_line_break_count("\r\n\r\n"), 2);
+        // A lone \n immediately followed by a \r\n pair: two independent
+        // break events, not three -- the \r\n is still one break.
+        assert_eq!(logical_line_break_count("\n\r\n"), 2);
+    }
+
+    #[test]
+    fn is_paragraph_break_requires_only_whitespace_between_the_breaks() {
+        assert!(is_paragraph_break("\n\n"));
+        assert!(is_paragraph_break("\r\r"));
+        assert!(is_paragraph_break("\n  \n"));
+        assert!(!is_paragraph_break("\n"));
+        // Two breaks with non-whitespace between them is not a blank line,
+        // even though the break count alone would say otherwise.
+        assert!(!is_paragraph_break("\nx\n"));
+    }
+
+    #[test]
     fn canonical_json_sorts_keys_and_is_compact() {
         let range = syntax_v1::ByteRange {
             start_utf8: 1,
@@ -878,6 +933,41 @@ mod integration {
         let a = canonical_json(&doc).unwrap();
         let decoded: syntax_v1::DocumentAnalysis = serde_json::from_str(&a).unwrap();
         assert_eq!(a, canonical_json(&decoded).unwrap());
+    }
+
+    // ---- paragraph boundaries ----
+
+    fn paragraph_count(source: &str) -> usize {
+        analyze(source)
+            .structure
+            .iter()
+            .filter(|n| n.kind == syntax_v1::OutlineKind::Paragraph)
+            .count()
+    }
+
+    #[test]
+    fn a_carriage_return_only_blank_line_splits_paragraphs() {
+        // Classic Mac Os line endings: no '\n' anywhere, so a byte-count of
+        // '\n' characters (the old implementation) would never see two
+        // paragraphs here.
+        assert_eq!(paragraph_count("First sentence.\r\rSecond sentence."), 2);
+    }
+
+    #[test]
+    fn a_single_carriage_return_does_not_split_paragraphs() {
+        // One line break is a line wrap, not a blank line.
+        assert_eq!(paragraph_count("First sentence.\rSecond sentence."), 1);
+    }
+
+    #[test]
+    fn a_crlf_blank_line_splits_paragraphs_exactly_once() {
+        // '\r\n' must count as one logical break, not two: three of them
+        // (six bytes) is one-and-a-half breaks short of a second boundary in
+        // any per-byte count, but is unambiguously one blank line.
+        assert_eq!(
+            paragraph_count("First sentence.\r\n\r\nSecond sentence."),
+            2
+        );
     }
 
     // ---- pass identity ----

@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Paragraph boundaries missed non-LF line endings.** `colorful_ir`'s outline
+  builder counted raw `\n` bytes to detect a blank line, so a source using `\r`
+  only (classic Mac line endings) never split into paragraphs. A named
+  `logical_line_break_count` now counts `\n`, `\r`, and `\r\n` as one break
+  each — never double-counting a `\r\n` pair — and a paragraph boundary
+  requires at least two such breaks with only whitespace between them.
 - **Empty derivation trace bypassed identity validation.**
   `colorful_ir::validate_document` iterated `derivation` to check each step's
   pass identity, but a document with `derivation: []` made that loop run zero
