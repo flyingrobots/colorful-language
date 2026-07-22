@@ -266,10 +266,36 @@ export function schemaHash() {
   return SYNTAX_SCHEMA_HASH;
 }
 
+// The row containing `offset`: the largest index into `lineStarts` (sorted
+// ascending) whose value is <= offset. Correct for any caller regardless of
+// call order, at O(log lines) instead of the O(lines) a linear scan from row
+// 0 would cost on every call.
+function binarySearchRow(lineStarts, offset) {
+  let low = 0;
+  let high = lineStarts.length - 1;
+  while (low < high) {
+    const mid = (low + high + 1) >> 1;
+    if (lineStarts[mid] <= offset) low = mid;
+    else high = mid - 1;
+  }
+  return low;
+}
+
 // Build a UTF-8 byte offset -> { row, column } mapper over the raw source bytes.
 // Line breaks follow the LSP set (`\n`, `\r\n`, bare `\r`) so rows agree with the
-// language server. The column counts Unicode scalar values from the line start,
-// decoding only the prefix it needs.
+// language server. The column counts Unicode *scalar values* (code points) from
+// the line start, decoding only the prefix it needs -- not grapheme clusters, so
+// a combining mark ("é") counts as two columns and an emoji ("😀", two
+// UTF-16 units) counts as one, same as any other single code point.
+//
+// project() calls the returned function once per token in
+// validateArtifact()'s already-enforced wire order (colorful.syntax/v1
+// itself does not require this; see validateTokenOrderAndBoundaries), so the
+// common case advances a cursor forward by however many lines the next
+// offset actually crossed -- typically zero or one -- rather than rescanning
+// from row 0 every time. A caller that goes backward (project() never does,
+// but this function is also exported on its own) still gets a correct
+// answer via binary search instead of a wrong one from a stale cursor.
 export function makeByteToPoint(buffer) {
   const lineStarts = [0];
   for (let i = 0; i < buffer.length; i += 1) {
@@ -282,14 +308,33 @@ export function makeByteToPoint(buffer) {
       if (crlf) i += 1;
     }
   }
-  return (byte) => {
+  let cursorRow = 0;
+  let lastOffset = -1;
+  // Total forward cursor advances across every call this closure ever
+  // receives. Not used by project() -- it exists so a test can prove the
+  // monotonic-cursor optimization is real (bounded by line count, not by
+  // line count times call count) without timing anything.
+  const stats = { advances: 0 };
+  const byteToPoint = (byte) => {
     const offset = Math.max(0, Math.min(byte, buffer.length));
-    let row = 0;
-    while (row + 1 < lineStarts.length && lineStarts[row + 1] <= offset) row += 1;
+    let row;
+    if (offset >= lastOffset) {
+      row = cursorRow;
+      while (row + 1 < lineStarts.length && lineStarts[row + 1] <= offset) {
+        row += 1;
+        stats.advances += 1;
+      }
+    } else {
+      row = binarySearchRow(lineStarts, offset);
+    }
+    cursorRow = row;
+    lastOffset = offset;
     const lineStart = lineStarts[row];
     const column = [...buffer.subarray(lineStart, offset).toString("utf8")].length;
     return { row, column };
   };
+  byteToPoint.stats = stats;
+  return byteToPoint;
 }
 
 // Reject a source whose bytes do not hash to the IR's declared `contentHash`.

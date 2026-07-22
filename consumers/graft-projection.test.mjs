@@ -107,6 +107,120 @@ const atMixed = makeByteToPoint(mixed);
 assert.deepEqual(atMixed(3), { row: 1, column: 0 }, "'b' after CRLF");
 assert.deepEqual(atMixed(5), { row: 2, column: 0 }, "'c' after lone CR");
 
+// The column counts Unicode *scalar values* (code points), not grapheme
+// clusters: a combining mark is its own column, not merged into the base
+// letter's, while a single-code-point emoji astride two UTF-16 units is
+// still exactly one column. Call this a "code-point column", not a "visual
+// column" -- it does not match what a person would count as one glyph.
+{
+  // "e" (1 byte) + U+0301 COMBINING ACUTE ACCENT (2 bytes), then " x".
+  const combining = Buffer.from("é x", "utf8");
+  const atCombining = makeByteToPoint(combining);
+  assert.deepEqual(
+    atCombining(3),
+    { row: 0, column: 2 },
+    "a combining mark is a second column, not merged into the base letter",
+  );
+
+  // "é" precomposed (U+00E9, 2 bytes), then " x".
+  const precomposed = Buffer.from("é x", "utf8");
+  const atPrecomposed = makeByteToPoint(precomposed);
+  assert.deepEqual(
+    atPrecomposed(2),
+    { row: 0, column: 1 },
+    "a precomposed accented letter is one column",
+  );
+
+  // "😀" (4 UTF-8 bytes, 2 UTF-16 units, 1 code point), then " x".
+  const emoji = Buffer.from("😀 x", "utf8");
+  const atEmoji = makeByteToPoint(emoji);
+  assert.deepEqual(
+    atEmoji(4),
+    { row: 0, column: 1 },
+    "a single-code-point emoji is one column despite two UTF-16 units",
+  );
+}
+
+// A caller that queries offsets out of order (project() never does, but
+// makeByteToPoint is also exported on its own) still gets correct answers via
+// binary search, not a stale forward-only cursor.
+{
+  const multiline = Buffer.from("aaa\nbbb\nccc\nddd\n", "utf8");
+  const atBackward = makeByteToPoint(multiline);
+  assert.deepEqual(atBackward(12), { row: 3, column: 0 }, "forward to the last line");
+  assert.deepEqual(atBackward(0), { row: 0, column: 0 }, "then backward to the first line");
+  assert.deepEqual(atBackward(8), { row: 2, column: 0 }, "then backward to a middle line");
+  assert.deepEqual(atBackward(12), { row: 3, column: 0 }, "then forward again to the last line");
+}
+
+// Deterministic complexity check: sequential forward calls (project()'s
+// actual call pattern, given validated wire-order tokens) advance the cursor
+// a total of at most `lineCount` times across the *entire* run, not per
+// call -- proving the monotonic-cursor optimization is real, without timing
+// anything. A row-0 rescan on every call would instead accumulate roughly
+// lineCount*(lineCount-1)/2 advances (~2,000,000 here), which this bound
+// would catch deterministically.
+{
+  const lineCount = 2000;
+  const lines = Array.from({ length: lineCount }, (_, i) => `line number ${i}`);
+  const manyLines = Buffer.from(lines.join("\n"), "utf8");
+  const lineByteOffsets = [];
+  let cumulative = 0;
+  for (const line of lines) {
+    lineByteOffsets.push(cumulative);
+    cumulative += Buffer.byteLength(line, "utf8") + 1;
+  }
+  const atMany = makeByteToPoint(manyLines);
+  for (const offset of lineByteOffsets) atMany(offset);
+  assert.ok(
+    atMany.stats.advances <= lineCount,
+    `expected at most ${lineCount} cursor advances across ${lineCount} sequential forward calls, got ${atMany.stats.advances}`,
+  );
+}
+
+// Human benchmark: informational, not a correctness gate. Wall-clock time is
+// evidence, not proof -- CI contention, JIT warmup, and thermal throttling
+// can make even a real O(1)-amortized algorithm's wall-clock ratio noisy at
+// these sizes, so this reports median-of-several-samples timings after a
+// warmup run rather than asserting a specific ratio. The deterministic
+// complexity check above is the actual regression gate.
+{
+  function medianDurationMs(fn, samples = 7) {
+    const durations = [];
+    for (let i = 0; i < samples; i += 1) {
+      const start = process.hrtime.bigint();
+      fn();
+      durations.push(Number(process.hrtime.bigint() - start) / 1e6);
+    }
+    durations.sort((a, b) => a - b);
+    return durations[Math.floor(durations.length / 2)];
+  }
+
+  function benchmarkSequentialCalls(lineCount) {
+    const lines = Array.from({ length: lineCount }, (_, i) => `line number ${i} of prose`);
+    const text = Buffer.from(lines.join("\n"), "utf8");
+    const offsets = [];
+    let cumulative = 0;
+    for (const line of lines) {
+      offsets.push(cumulative);
+      cumulative += Buffer.byteLength(line, "utf8") + 1;
+    }
+    return medianDurationMs(() => {
+      const at = makeByteToPoint(text);
+      for (const offset of offsets) at(offset);
+    });
+  }
+
+  benchmarkSequentialCalls(500); // warm up the JIT before measuring
+  const small = benchmarkSequentialCalls(2000);
+  const large = benchmarkSequentialCalls(8000);
+  console.log(
+    `graft-projection: byteToPoint sequential-call benchmark -- ` +
+      `2000 lines: ${small.toFixed(3)}ms, 8000 lines: ${large.toFixed(3)}ms ` +
+      `(informational; the deterministic complexity check above is the actual regression gate)`,
+  );
+}
+
 // className derives from the vocabulary manifest, including a WORD disambiguated
 // by lexicalClass, optional openClassKind, and the unstyled fall-through.
 assert.equal(className({ tokenKind: "WORD", lexicalClass: "PROPER_NOUN_CANDIDATE" }), "type");

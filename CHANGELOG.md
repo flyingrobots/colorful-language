@@ -41,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   validity. `schemaHash` is newly verified, independently recomputed from this
   consumer's own `contracts/colorful/syntax.v1.graphql` copy exactly as
   `vocabularyHash` already was from the vocabulary manifest.
+- **`makeByteToPoint` no longer rescans from row 0 on every call.** The graft
+  reference consumer's byte-offset-to-row/column mapper now advances a
+  monotonic cursor forward for the sequential queries `project()` actually
+  makes (now that token wire-order is validated — see above), falling back to
+  a binary search for an out-of-order query instead of assuming one won't
+  happen. A deterministic test proves the bound (total cursor advances across
+  N sequential calls is at most N, not N²/2) without timing anything.
 
 ### Changed
 

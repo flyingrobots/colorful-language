@@ -34,6 +34,22 @@ workspace.
   a token does not corrupt projected row/column spans. *Oracle:* JavaScript
   assertion. *Evidence:* `consumers/graft-projection.test.mjs`; CI
   `ir-witness` job. *Status:* implemented.
+- **CONSUMER-3b** — *Requirement:* CONSUMER-3. *Behavior:* `makeByteToPoint`'s
+  column counts Unicode scalar values (code points), not grapheme clusters: a
+  combining mark is its own column, a precomposed accented letter is one
+  column, and a single-code-point emoji is one column despite two UTF-16
+  units. *Oracle:* JavaScript assertions. *Evidence type:* unit test.
+  *Evidence:* `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **CONSUMER-3c** — *Requirement:* CONSUMER-3. *Behavior:* `makeByteToPoint`
+  advances a monotonic cursor forward for sequential (project()'s actual call
+  pattern) queries instead of rescanning from row 0 every call, falling back
+  to a binary search when a caller queries backward. A deterministic
+  complexity check (advances bounded by line count, not line count × call
+  count) proves this without timing anything; a separate, non-blocking
+  wall-clock benchmark reports median timings for context only. *Oracle:*
+  JavaScript assertion on a counter; wall-clock is informational. *Evidence
+  type:* unit test (deterministic) plus an informational benchmark.
+  *Evidence:* `consumers/graft-projection.test.mjs`. *Status:* implemented.
 - **CONSUMER-4a** — *Requirement:* CONSUMER-4. *Behavior:* structural keyword,
   proper noun, number, quote, unstyled content, and open-class roles all derive
   their Graft class from the vocabulary manifest. *Oracle:* JavaScript
