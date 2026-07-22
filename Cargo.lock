@@ -72,6 +72,7 @@ dependencies = [
  "colorful-lexicon",
  "colorful-lint",
  "colorful-parse",
+ "colorful-projection",
  "serde_json",
 ]
 
@@ -129,6 +130,16 @@ version = "0.3.0"
 dependencies = [
  "colorful-core",
  "logos",
+]
+
+[[package]]
+name = "colorful-projection"
+version = "0.3.0"
+dependencies = [
+ "colorful-core",
+ "colorful-ir",
+ "colorful-lexicon",
+ "colorful-parse",
 ]
 
 [[package]]
