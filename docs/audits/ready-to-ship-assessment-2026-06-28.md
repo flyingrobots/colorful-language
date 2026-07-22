@@ -1,5 +1,13 @@
 # Ready-to-Ship Assessment (Exhaustive Mode) — `colorful-language`
 
+> **Historical snapshot.** This audit is a point-in-time record of the codebase
+> as of 2026-06-28. Its headline finding and single release blocker — the
+> `panic!` in `visual_role_for` (`crates/colorful-ir/src/vocabulary.rs`) — was
+> fixed shortly after this audit was written: the function now returns
+> `Option<VisualRole>` instead of panicking, and `colorful-cli`/`colorful-lsp`
+> propagate `None` to "no styling." Read the analysis below as the reasoning
+> that led to that fix, not as a description of the current codebase.
+
 **Date:** 2026-06-28
 **Role:** Senior Principal Software Auditor (long-term maintenance risk + deployment feasibility)
 **Scope:** Full Rust workspace at `flyingrobots/colorful-language`, `v0.3.0`. 7 crates, ~5.9k LOC, 125 tests, strict CI.
@@ -36,6 +44,7 @@ Evidence-backed low debt: `#![forbid(unsafe_code)]` in every crate, **0 `unsafe`
 **Violation 1 — `visual_role_for` owns mapping *and* process liveness** (`vocabulary.rs:144-163`).
 
 Original (abridged):
+
 ```rust
 fn visual_role(token_kind: &TokenKind, lexical_class: Option<&LexicalClass>, open_class_kind: Option<&OpenClassKind>) -> VisualRole {
     for rule in &manifest().class_roles {
@@ -48,6 +57,7 @@ fn visual_role(token_kind: &TokenKind, lexical_class: Option<&LexicalClass>, ope
 ```
 
 Simplified Rewrite — total function, fallback decided by the caller:
+
 ```rust
 fn visual_role(token_kind: &TokenKind, lexical_class: Option<&LexicalClass>, open_class_kind: Option<&OpenClassKind>) -> Option<VisualRole> {
     manifest().class_roles.iter()
@@ -69,6 +79,7 @@ pub fn visual_role_for(class: PosClass) -> VisualRole {
 **Violation 2 — `run()` dispatch mixes flag parsing, subcommand routing, and default-file handling** (`colorful-cli/src/lib.rs:119-131`). One `match` conflates `-V/--version`, four subcommands, and the "bare arg is a file" fallthrough, which is exactly where the subcommand/filename ambiguity (DX 1.2) hides.
 
 Simplified Rewrite — separate parse from dispatch:
+
 ```rust
 pub fn run<I: IntoIterator<Item = String>>(args: I) -> io::Result<ExitCode> {
     let args: Vec<String> = args.into_iter().collect();
@@ -87,6 +98,7 @@ pub fn run<I: IntoIterator<Item = String>>(args: I) -> io::Result<ExitCode> {
 **Violation 3 — `projection()` re-scans the manifest per call** (`vocabulary.rs:176-182`): `manifest().role_projections.iter().find(...)` runs for every token's role.
 
 Simplified Rewrite — memoized index (mirrors the LSP's `TOKEN_TYPE_INDEX`):
+
 ```rust
 pub fn projection(role: &VisualRole) -> &'static RoleProjection {
     static BY_ROLE: OnceLock<HashMap<VisualRole, &'static RoleProjection>> = OnceLock::new();
@@ -152,6 +164,7 @@ This codebase is already production-grade and already published; the engineering
 ---
 
 ### Evidence Basis
+
 - CI gates: `.github/workflows/ci.yml` (fmt `--check`, `clippy --locked -D warnings`, `cargo test --all --locked`, package-witness, IR round-trip + graft consumer, editor-compile); `release.yml` re-runs the gate and checks `docs/goalposts/<tag>/release.md` + `verification.md`. No `cargo audit`/`deny`.
 - Safety: `#![forbid(unsafe_code)]` workspace-wide; 0 `unsafe`/`todo!`/`TODO`; 125 tests / ~5.9k LOC.
 - Panic path: `crates/colorful-ir/src/vocabulary.rs:154` via `visual_role_for` (`vocabulary.rs:165`) ← `colorful-lsp/src/lib.rs:55`, `colorful-cli/src/lib.rs:25`.

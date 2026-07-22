@@ -20,7 +20,7 @@ A secondary, smaller item: the README instructs `cargo install colorful-cli` and
 The README serves **three** audiences, and serves all of them well:
 
 | Audience | Top question | Addressed? |
-|---|---|---|
+| --- | --- | --- |
 | **Writers / end users** | "What does it do and how do I run it on my file?" | ✅ "Why?", "Try it now (30s)", "What it does", "Lint your prose" — concrete and honest. |
 | **Editor integrators** | "How do I get live coloring in my editor?" | ✅ "Editor Support (LSP)" + `editors/README.md` + `docs/topics/editor-integrations/`, with an explicit "not yet on marketplaces" caveat. |
 | **Downstream consumers (Graft/jedit)** | "How is the IR discovered and consumed?" | ✅ "Use with jedit and graft" documents the `PATH` discovery, `--version` gate, and `colorful ir -` projection. |
@@ -83,6 +83,7 @@ The documentation is accurate, honest, and nearly complete. A rewrite would be d
 ---
 
 ### Evidence Basis
+
 - README commands verified: `run()` dispatch at `crates/colorful-cli/src/lib.rs:124-130` (`ir`/`lint`/`diagnose`/`color` + default color); bin `colorful` via `default-run` (`crates/colorful-cli/Cargo.toml`).
 - Standard files present at root: `LICENSE`, `NOTICE`, `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `ROADMAP.md`, `AGENTS.md`. Absent: `ARCHITECTURE.md`; no per-crate `README.md`.
 - MSRV: `rust-version` intentionally unset (`Cargo.toml`), no `rust-toolchain.toml`; README states no toolchain requirement.
