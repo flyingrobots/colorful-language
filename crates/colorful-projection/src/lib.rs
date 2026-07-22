@@ -2,27 +2,34 @@
 //! `colorful.syntax/v1` analysis.
 //!
 //! [`build_document`] parses, annotates, and classifies source text into an
-//! [`AnalyzedDocument`] in one call, so `colorful-cli` and `colorful-lsp` stop
-//! hand-rolling the same "parse -> annotate -> project into IR" pipeline. It
-//! is a Rust-only front door: **only Rust producer surfaces route through it**.
-//! An external consumer such as the JS graft projection never calls this
-//! crate — it receives a serialized [`colorful_ir::syntax_v1::DocumentAnalysis`]
-//! artifact and validates that wire contract directly with
-//! [`colorful_ir::validate_document`]. Sameness of semantics (the same
-//! canonical `DocumentAnalysis` model) is not sameness of allocation — there is
-//! plainly not one physical object shared across independently running CLI,
-//! LSP, and JS processes.
+//! [`AnalyzedDocument`] in one call, so a Rust producer surface that needs the
+//! `colorful.syntax/v1` IR stops hand-rolling the "parse -> annotate -> project
+//! into IR" pipeline by hand. `colorful-cli`'s `analyze_ir`/`diagnose_json`
+//! route through it today. `colorful-lsp` does not: its semantic-token and
+//! diagnostic paths only ever needed the parsed [`Tree`] and classified
+//! [`CoreToken`]s, never the projected IR, so it still calls `parser.parse`
+//! and `annotator.annotate` directly — there is nothing here for it to stop
+//! hand-rolling. It is a Rust-only front door in any case: **only Rust
+//! producer surfaces route through it**. An external consumer such as the JS
+//! graft projection never calls this crate — it receives a serialized
+//! [`colorful_ir::syntax_v1::DocumentAnalysis`] artifact and validates that
+//! wire contract directly with [`colorful_ir::validate_document`]. Sameness of
+//! semantics (the same canonical `DocumentAnalysis` model) is not sameness of
+//! allocation — there is plainly not one physical object shared across
+//! independently running CLI, LSP, and JS processes.
 //!
 //! ```text
 //! source
 //!   │
 //!   ▼
-//! colorful-projection::build_document
+//! colorful-projection::build_document (colorful-cli)
 //!   ├── Tree + CoreToken ───────────────► lint
 //!   └── DocumentAnalysis
-//!         ├─────────────────────────────► ANSI
-//!         ├─────────────────────────────► LSP semantic tokens
+//!         ├─────────────────────────────► ANSI / diagnose JSON (colorful-cli)
 //!         └── serialized contract ──────► graft projection
+//!
+//! parser.parse + annotator.annotate (colorful-lsp, no IR step)
+//!   └── Tree + CoreToken ───────────────► LSP semantic tokens / diagnostics
 //! ```
 //!
 //! [`AnalyzedDocument::tree`] and [`AnalyzedDocument::tokens`] are producer-
