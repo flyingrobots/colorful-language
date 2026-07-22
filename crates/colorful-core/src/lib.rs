@@ -410,11 +410,13 @@ fn is_capitalized(word: &str) -> bool {
 /// against a future producer's bug, not today's.
 fn line_of(source: &str, byte: usize) -> &str {
     let byte = byte.min(source.len());
-    let (Some(before), Some(after)) = (source.get(..byte), source.get(byte..)) else {
+    if !source.is_char_boundary(byte) {
         return "";
-    };
-    let start = before.rfind(['\n', '\r']).map_or(0, |i| i + 1);
-    let end = after.find(['\n', '\r']).map_or(source.len(), |i| byte + i);
+    }
+    let start = source[..byte].rfind(['\n', '\r']).map_or(0, |i| i + 1);
+    let end = source[byte..]
+        .find(['\n', '\r'])
+        .map_or(source.len(), |i| byte + i);
     source.get(start..end).unwrap_or("")
 }
 

@@ -379,9 +379,12 @@ fn diagnose_json(unit_id: &str, input: &str) -> io::Result<String> {
     let annotator = default_annotator();
     let analyzer = ProseLinter::new();
 
-    let analyzed = colorful_projection::build_document(unit_id, input, &parser, &annotator)
+    let colorful_projection::AnalyzedDocument {
+        tree,
+        tokens,
+        document,
+    } = colorful_projection::build_document(unit_id, input, &parser, &annotator)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-    let (tree, tokens, document) = (analyzed.tree, analyzed.tokens, analyzed.document);
     let findings = analyzer.analyze(input, &tree, &tokens);
     let legend = colorful_ir::vocabulary::lsp_legend();
 

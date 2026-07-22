@@ -22,7 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as `contextual-open-class-annotator`, not the fallback `lexical-annotator`.
   `from_classification` rejects a missing or duplicate pass identity;
   `validate_document` rejects the same on a received artifact.
-
 - **Shared CLI argument parser.** `colorful-cli`'s four subcommands (`color`,
   `ir`, `diagnose`, `lint`) now parse arguments through one `parse_args`
   function instead of four hand-rolled copies. `--` then a bare `-` now
