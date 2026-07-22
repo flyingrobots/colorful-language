@@ -115,12 +115,16 @@ Requirements:
   `derivation_names_a_different_annotator_honestly`,
   `from_classification_rejects_a_duplicate_pass_id`. *Status:* implemented.
 - **IR-8c** — *Requirement:* IR-8. *Behavior:* a received document's derivation
-  is validated the same way: an empty `passId`/`ruleId`, or a `passId` shared
-  across steps, is rejected — checked across the complete `derivation` list,
-  not only the two steps today's producer happens to emit. *Oracle:*
-  `ValidationError::MissingDerivationIdentity` / `DuplicateDerivationPassId`.
-  *Evidence type:* integration test. *Evidence:* `colorful-ir`
-  `integration::rejects_a_derivation_step_with_missing_identity`,
+  is validated the same way: an empty `derivation` list, an empty
+  `passId`/`ruleId` on a step, or a `passId` shared across steps, is rejected —
+  checked across the complete `derivation` list, not only the two steps
+  today's producer happens to emit. An empty list is checked explicitly rather
+  than left to the per-step loop, since a loop over zero steps would otherwise
+  vacuously pass. *Oracle:* `ValidationError::EmptyDerivation` /
+  `MissingDerivationIdentity` / `DuplicateDerivationPassId`. *Evidence type:*
+  integration test. *Evidence:* `colorful-ir`
+  `integration::rejects_an_artifact_with_an_empty_derivation_trace`,
+  `rejects_a_derivation_step_with_missing_identity`,
   `rejects_derivation_steps_sharing_a_pass_id`. *Status:* implemented.
 - **IR-9a** — *Requirement:* IR-9. *Behavior:* `build_document` parses,
   annotates, and projects a `Parser`/`Annotator` pair (borrowed, not consumed)

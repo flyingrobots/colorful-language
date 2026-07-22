@@ -463,6 +463,11 @@ pub enum ValidationError {
         /// The duplicated pass id.
         pass_id: String,
     },
+    /// `derivation` is empty — the document claims no producer ran at all,
+    /// which is never valid: a per-step identity check that only runs inside
+    /// a loop over `derivation` is vacuously satisfied by an empty list, so
+    /// this must be rejected explicitly rather than relying on the loop.
+    EmptyDerivation,
 }
 
 /// The non-empty set of reasons a document failed validation. Validation runs
@@ -669,10 +674,15 @@ pub fn validate_document(
     for diagnostic in &document.diagnostics {
         check_range("diagnostic range", &diagnostic.byte_range, &mut errors);
     }
-    // Derivation: each step's identity must be present, and pass ids must be
-    // unique across the *complete* list — not merely the two steps today's
-    // producer happens to emit — so a future third derivation step is covered
-    // without changing this check.
+    // Derivation: at least one step must be present — an empty list would
+    // otherwise vacuously satisfy every per-step check below by never
+    // entering the loop — and each step's identity must be present, with
+    // pass ids unique across the *complete* list, not merely the two steps
+    // today's producer happens to emit, so a future third derivation step is
+    // covered without changing this check.
+    if document.derivation.is_empty() {
+        errors.push(ValidationError::EmptyDerivation);
+    }
     let mut seen_pass_ids = std::collections::HashSet::new();
     for (index, step) in document.derivation.iter().enumerate() {
         if step.pass_id.is_empty() || step.rule_id.is_empty() {
@@ -1276,6 +1286,20 @@ mod integration {
                 e,
                 ValidationError::MissingDerivationIdentity { index: 0 }
             )),
+            "{errors:?}"
+        );
+    }
+
+    #[test]
+    fn rejects_an_artifact_with_an_empty_derivation_trace() {
+        // Stripping `derivation` to `[]` must not bypass every per-step
+        // identity check by making the loop iterate zero times — an artifact
+        // claiming no producer ran at all is never valid.
+        let mut doc = analyze(VALID_SOURCE);
+        doc.derivation.clear();
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert!(
+            has(&errors, |e| matches!(e, ValidationError::EmptyDerivation)),
             "{errors:?}"
         );
     }

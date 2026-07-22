@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Empty derivation trace bypassed identity validation.**
+  `colorful_ir::validate_document` iterated `derivation` to check each step's
+  pass identity, but a document with `derivation: []` made that loop run zero
+  times, vacuously passing validation despite claiming no producer identity at
+  all. `validate_document` now rejects an empty `derivation` explicitly via
+  `ValidationError::EmptyDerivation`.
 - **Total vocabulary lookups.** `colorful_ir::vocabulary::visual_role`,
   `visual_role_for`, and `projection` return `Option` instead of
   panicking/`.expect()`-ing on an uncovered axis combination or a manifest
