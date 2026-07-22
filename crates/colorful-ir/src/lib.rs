@@ -984,12 +984,7 @@ mod integration {
             clashing,
         )
         .unwrap_err();
-        assert_eq!(
-            err,
-            ProjectionError::DuplicatePassId {
-                pass_id: "segment"
-            }
-        );
+        assert_eq!(err, ProjectionError::DuplicatePassId { pass_id: "segment" });
     }
 
     // ---- validate_document ----

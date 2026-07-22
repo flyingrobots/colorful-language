@@ -14,7 +14,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{Node, PassIdentity, Parser, Span, Tree};
+use colorful_core::{Node, Parser, PassIdentity, Span, Tree};
 use logos::Logos;
 
 /// Mechanical token kinds produced by the lexer.

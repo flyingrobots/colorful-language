@@ -403,12 +403,19 @@ fn is_capitalized(word: &str) -> bool {
 }
 
 /// The line (between line breaks) of `source` containing byte offset `byte`.
+///
+/// Total: an out-of-range or off-char-boundary `byte` (from a malformed
+/// upstream span) yields `""` rather than panicking. A span from
+/// [`Parser::parse`] is always in bounds and on a boundary, so this defends
+/// against a future producer's bug, not today's.
 fn line_of(source: &str, byte: usize) -> &str {
-    let start = source[..byte].rfind(['\n', '\r']).map_or(0, |i| i + 1);
-    let end = source[byte..]
-        .find(['\n', '\r'])
-        .map_or(source.len(), |i| byte + i);
-    &source[start..end]
+    let byte = byte.min(source.len());
+    let (Some(before), Some(after)) = (source.get(..byte), source.get(byte..)) else {
+        return "";
+    };
+    let start = before.rfind(['\n', '\r']).map_or(0, |i| i + 1);
+    let end = after.find(['\n', '\r']).map_or(source.len(), |i| byte + i);
+    source.get(start..end).unwrap_or("")
 }
 
 /// Whether `line` looks like a title-case header: at least two words, at least
@@ -681,6 +688,43 @@ mod tests {
                 PosClass::Content,
             ]
         );
+    }
+
+    #[test]
+    fn line_of_clamps_an_out_of_range_byte_instead_of_panicking() {
+        let src = "one\ntwo";
+        // Past the end of the source entirely.
+        assert_eq!(line_of(src, 100), "two");
+        // Exactly at the end.
+        assert_eq!(line_of(src, src.len()), "two");
+    }
+
+    #[test]
+    fn line_of_returns_empty_for_an_off_char_boundary_byte_instead_of_panicking() {
+        // 'é' is two bytes (0xC3 0xA9); byte 1 splits it.
+        let src = "é ok";
+        assert_eq!(line_of(src, 1), "");
+    }
+
+    #[test]
+    fn malformed_word_span_off_a_char_boundary_stays_content_not_proper_noun() {
+        // A hand-built span (bypassing Parser::parse, which never produces this)
+        // starting mid-character in "é ok". Pins the exact downgrade: the word
+        // must remain PosClass::Content, not panic, and not be upgraded to
+        // PosClass::ProperNoun — line_of's malformed-input path (via
+        // line_is_title_case) returning "" must not silently grant "sentence
+        // start" status that lets the capitalization check through differently
+        // than a well-formed empty case would.
+        let src = "é ok";
+        let tree = Tree::document(vec![sentence(
+            (0, 4),
+            vec![Node::Word {
+                span: Span { start: 1, end: 4 },
+            }],
+        )]);
+        let tokens = annotate(&tree, src);
+        assert_eq!(tokens.len(), 1);
+        assert_eq!(tokens[0].class, PosClass::Content);
     }
 
     #[test]

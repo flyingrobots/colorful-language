@@ -62,7 +62,9 @@ fn token_type_index(class: PosClass) -> Option<u32> {
 /// manifest entry (a drifted manifest). Split out of [`token_type_index`] so
 /// the "missing role/projection degrades to no token" contract is directly
 /// testable.
-fn token_type_name_for(role: Option<&colorful_ir::vocabulary_v1::VisualRole>) -> Option<&'static str> {
+fn token_type_name_for(
+    role: Option<&colorful_ir::vocabulary_v1::VisualRole>,
+) -> Option<&'static str> {
     role.and_then(colorful_ir::vocabulary::projection)?
         .lsp_token_type
         .as_deref()
