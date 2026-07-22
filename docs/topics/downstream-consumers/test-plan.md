@@ -15,6 +15,11 @@ workspace.
   private class table.
 - **CONSUMER-5** jedit/Graft discovery depends on a `colorful` CLI with version
   `0.2.1` or newer.
+- **CONSUMER-6** The reference consumer validates a received artifact's
+  structural shape, contract identity, and internal consistency before
+  projecting it — rejecting malformed input rather than repairing or clamping
+  it — via one ordered `validateArtifact` admission gate: cheap structural
+  checks first, expensive hashes last.
 
 ## Cases
 
@@ -38,6 +43,44 @@ workspace.
   the Graft/jedit CLI version floor as `0.2.1` or newer. *Oracle:* documentation
   review. *Evidence:* `README.md`; this topic. *Status:* implemented as docs;
   enforced in the downstream Graft repository.
+- **CONSUMER-6a** — *Requirement:* CONSUMER-6. *Behavior:* a malformed
+  top-level shape, wrong `contractVersion`, wrong declared byte length, or
+  invalid UTF-8 source is rejected with a stable `GraftProjectionError.code`
+  (`E_ARTIFACT_SHAPE`, `E_CONTRACT_VERSION`, `E_BYTE_LENGTH`, `E_SOURCE_UTF8`),
+  in that order, before any hash is checked. *Oracle:* JavaScript assertions
+  on `err.code`. *Evidence type:* unit test. *Evidence:*
+  `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **CONSUMER-6b** — *Requirement:* CONSUMER-6. *Behavior:* token byte ranges
+  are validated for order (`E_BYTE_RANGE_ORDER`), bounds
+  (`E_BYTE_RANGE_BOUNDS`), and UTF-8 char-boundary alignment
+  (`E_BYTE_RANGE_BOUNDARY`); zero-width tokens are allowed, matching
+  `colorful_ir::validate_document`'s own `start <= end` check; out-of-order or
+  overlapping tokens (`E_TOKEN_ORDER`) are rejected, never sorted into
+  validity. *Oracle:* JavaScript assertions on `err.code`. *Evidence type:*
+  unit test. *Evidence:* `consumers/graft-projection.test.mjs`. *Status:*
+  implemented.
+- **CONSUMER-6c** — *Requirement:* CONSUMER-6. *Behavior:* duplicate
+  `occurrenceId`s (`E_DUPLICATE_OCCURRENCE_ID`) and illegal token axis
+  combinations (`E_TOKEN_AXES`, mirroring `colorful_ir`'s
+  `token_axes_violation` exactly) are rejected. *Oracle:* JavaScript
+  assertions on `err.code`. *Evidence type:* unit test. *Evidence:*
+  `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **CONSUMER-6d** — *Requirement:* CONSUMER-6. *Behavior:* the structure graph
+  is checked for duplicate node ids (`E_DUPLICATE_NODE_ID`) and dangling child
+  references (`E_DANGLING_CHILD_REF`) — the same scope as
+  `colorful_ir::validate_document`, no more: range containment and cycles are
+  deliberately not checked, on either side. *Oracle:* JavaScript assertions
+  on `err.code`. *Evidence type:* unit test. *Evidence:*
+  `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **CONSUMER-6e** — *Requirement:* CONSUMER-6. *Behavior:* `schemaHash` is
+  independently recomputed from the consumer's own
+  `contracts/colorful/syntax.v1.graphql` copy (byte-identical to
+  `colorful-ir`'s package-local copy, enforced by
+  `scripts/package-witness.sh`) and checked before `vocabularyHash` and
+  `contentHash`; corrupting all three at once surfaces `E_SCHEMA_HASH` first.
+  *Oracle:* JavaScript assertions on `err.code` and hash equality. *Evidence
+  type:* unit test. *Evidence:* `consumers/graft-projection.test.mjs`.
+  *Status:* implemented.
 
 ## Open verification gaps
 

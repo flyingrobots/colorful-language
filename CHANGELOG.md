@@ -29,6 +29,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   argument after `--` (e.g. `--weird-file`) is accepted as a literal path
   everywhere, not just in the default subcommand; and "at most one `FILE`
   operand" is now enforced uniformly instead of only in `diagnose`.
+- **Graft reference consumer artifact validation.** The JS reference consumer
+  (`consumers/graft-projection.mjs`) gains `validateArtifact(buffer, ir)`, an
+  ordered admission gate `project()` now runs unconditionally: top-level
+  shape, `contractVersion`, declared byte length, source UTF-8 validity, per-
+  token byte-range order/bounds/char-boundary, token wire-order non-overlap,
+  `occurrenceId` uniqueness, token axis legality, structure-graph duplicate-
+  node/dangling-child checks, then `schemaHash`/`vocabularyHash`/`contentHash`
+  — cheapest first, hashes last, malformed input rejected under a stable
+  `GraftProjectionError.code` rather than repaired, clamped, or sorted into
+  validity. `schemaHash` is newly verified, independently recomputed from this
+  consumer's own `contracts/colorful/syntax.v1.graphql` copy exactly as
+  `vocabularyHash` already was from the vocabulary manifest.
 
 ### Changed
 
