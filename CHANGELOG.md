@@ -88,6 +88,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   missing a role's projection; `colorful-cli` and `colorful-lsp` propagate the
   `None` through to "no styling" instead of crashing.
 
+### Security
+
+- **`brace-expansion` DoS ([GHSA-3jxr-9vmj-r5cp](https://github.com/advisories/GHSA-3jxr-9vmj-r5cp)).**
+  Bumped `editors/vscode`'s transitive `brace-expansion` (via
+  `vscode-languageclient` → `minimatch`) from `2.1.1` to `2.1.2`, closing an
+  exponential-time regex DoS on crafted `{}` groups. `minimatch`'s own
+  declared range (`^2.0.1`) already permitted the patched version; no
+  `package.json` change was needed.
+
 ## [0.3.0] - 2026-06-27
 
 ### Added
