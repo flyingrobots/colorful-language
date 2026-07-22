@@ -398,8 +398,9 @@ The current workflow publishes these crates in dependency order:
 3. `colorful-parse`
 4. `colorful-ir`
 5. `colorful-lint`
-6. `colorful-cli`
-7. `colorful-lsp`
+6. `colorful-projection`
+7. `colorful-cli`
+8. `colorful-lsp`
 
 It then builds one `x86_64-unknown-linux-gnu` archive containing `colorful`,
 `colorful-lsp`, `README.md`, `LICENSE`, `NOTICE`, and `CHANGELOG.md`, writes a

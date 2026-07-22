@@ -91,6 +91,7 @@ for crate in \
   colorful-parse \
   colorful-ir \
   colorful-lint \
+  colorful-projection \
   colorful-cli \
   colorful-lsp
 do

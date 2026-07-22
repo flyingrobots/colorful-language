@@ -21,6 +21,7 @@ packages=(
   colorful-parse
   colorful-ir
   colorful-lint
+  colorful-projection
   colorful-cli
   colorful-lsp
 )
@@ -50,8 +51,11 @@ internal_deps_for() {
     colorful-lint)
       echo "colorful-core colorful-lexicon colorful-parse"
       ;;
+    colorful-projection)
+      echo "colorful-core colorful-ir"
+      ;;
     colorful-cli)
-      echo "colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint"
+      echo "colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-projection"
       ;;
     colorful-lsp)
       echo "colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint"

@@ -57,6 +57,7 @@ publish:
         - colorful-parse
         - colorful-ir
         - colorful-lint
+        - colorful-projection
         - colorful-cli
         - colorful-lsp
       verify: cargo info {crate}@{version}
