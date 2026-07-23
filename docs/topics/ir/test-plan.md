@@ -173,10 +173,26 @@ Requirements:
   as seven fixed stages — contract identity, source identity, token ranges,
   token axes, structure graph, diagnostics, derivation — so errors spanning
   every stage come back in that stage order. *Oracle:* per-error `path.
-  to_string()` equality; relative positions of one error per stage. *Evidence
-  type:* unit + integration test. *Evidence:* `colorful-ir`
-  `integration::rejects_a_derivation_step_with_missing_identity`,
+  to_string()` equality (exact for most variants; a path-prefix check for
+  `IllegalTokenAxes` and `DanglingChildRef`, whose exact index depends on
+  fixture shape rather than the invariant under test); relative positions of
+  one error per stage. *Evidence type:* unit +
+  integration test. *Evidence:* `colorful-ir`
+  `integration::rejects_wrong_contract_schema_and_vocabulary`,
+  `integration::rejects_content_hash_and_byte_length_against_the_real_source`,
+  `integration::rejects_a_range_out_of_order_and_out_of_bounds`,
+  `integration::rejects_a_negative_offset`,
+  `integration::rejects_a_range_off_a_utf8_char_boundary`,
+  `integration::rejects_illegal_token_axes`,
+  `integration::rejects_a_duplicate_token_id`,
+  `integration::rejects_a_dangling_child_ref`,
+  `integration::rejects_a_duplicate_node_id`,
   `integration::rejects_an_out_of_bounds_diagnostic_range`,
+  `integration::negative_declared_byte_length_is_rejected_without_a_source`,
+  `integration::byte_length_mismatch_is_reported_even_for_non_utf8_source`,
+  `integration::rejects_a_derivation_step_with_missing_identity`,
+  `integration::rejects_an_artifact_with_an_empty_derivation_trace`,
+  `integration::rejects_derivation_steps_sharing_a_pass_id`,
   `integration::error_order_follows_the_seven_validator_stages`. *Status:*
   implemented.
 - **IR-11b** — *Requirement:* IR-11. *Behavior:* `ValidationError`'s `Display`

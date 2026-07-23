@@ -1423,15 +1423,18 @@ mod integration {
         let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::UnsupportedContractVersion { .. }
+            ValidationError::UnsupportedContractVersion { path, .. }
+                if path.to_string() == "contractVersion"
         )));
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::SchemaHashMismatch { .. }
+            ValidationError::SchemaHashMismatch { path, .. }
+                if path.to_string() == "schemaHash"
         )));
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::VocabularyHashMismatch { .. }
+            ValidationError::VocabularyHashMismatch { path, .. }
+                if path.to_string() == "vocabularyHash"
         )));
     }
 
@@ -1443,11 +1446,13 @@ mod integration {
         let errors = validate_document(&doc, Some(other.as_bytes())).unwrap_err();
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::ContentHashMismatch { .. }
+            ValidationError::ContentHashMismatch { path, .. }
+                if path.to_string() == "source.contentHash"
         )));
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::ByteLengthMismatch { .. }
+            ValidationError::ByteLengthMismatch { path, .. }
+                if path.to_string() == "source.utf8ByteLength"
         )));
     }
 
@@ -1465,11 +1470,13 @@ mod integration {
         let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::RangeOutOfOrder { .. }
+            ValidationError::RangeOutOfOrder { path, .. }
+                if path.to_string() == "tokens[0].byteRange"
         )));
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::RangeOutOfBounds { .. }
+            ValidationError::RangeOutOfBounds { path, .. }
+                if path.to_string() == "tokens[1].byteRange.endUtf8"
         )));
     }
 
@@ -1480,7 +1487,8 @@ mod integration {
         let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::NegativeOffset { .. }
+            ValidationError::NegativeOffset { path, .. }
+                if path.to_string() == "tokens[0].byteRange.startUtf8"
         )));
     }
 
@@ -1496,7 +1504,8 @@ mod integration {
         let errors = validate_document(&doc, Some(source.as_bytes())).unwrap_err();
         assert!(has(&errors, |e| matches!(
             e,
-            ValidationError::RangeNotOnCharBoundary { .. }
+            ValidationError::RangeNotOnCharBoundary { path, .. }
+                if path.to_string() == "tokens[0].byteRange.endUtf8"
         )));
     }
 
@@ -1514,7 +1523,7 @@ mod integration {
         word.function_kind = None;
         assert!(has(
             &validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err(),
-            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+            |e| matches!(e, ValidationError::IllegalTokenAxes { path, .. } if path.to_string().starts_with("tokens["))
         ));
 
         // A NUMBER carrying a lexicalClass.
@@ -1527,7 +1536,7 @@ mod integration {
         number.lexical_class = Some(LexicalClass::Content);
         assert!(has(
             &validate_document(&doc, None).unwrap_err(),
-            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+            |e| matches!(e, ValidationError::IllegalTokenAxes { path, .. } if path.to_string().starts_with("tokens["))
         ));
 
         // A NUMBER carrying an openClassKind.
@@ -1540,7 +1549,7 @@ mod integration {
         number.open_class_kind = Some(OpenClassKind::Noun);
         assert!(has(
             &validate_document(&doc, None).unwrap_err(),
-            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+            |e| matches!(e, ValidationError::IllegalTokenAxes { path, .. } if path.to_string().starts_with("tokens["))
         ));
 
         // A FUNCTION word missing its functionKind.
@@ -1553,7 +1562,7 @@ mod integration {
         function.function_kind = None;
         assert!(has(
             &validate_document(&doc, None).unwrap_err(),
-            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+            |e| matches!(e, ValidationError::IllegalTokenAxes { path, .. } if path.to_string().starts_with("tokens["))
         ));
 
         // A FUNCTION word carrying an openClassKind.
@@ -1566,7 +1575,7 @@ mod integration {
         function.open_class_kind = Some(OpenClassKind::Verb);
         assert!(has(
             &validate_document(&doc, None).unwrap_err(),
-            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+            |e| matches!(e, ValidationError::IllegalTokenAxes { path, .. } if path.to_string().starts_with("tokens["))
         ));
 
         // A proper-noun candidate carrying an openClassKind.
@@ -1579,7 +1588,7 @@ mod integration {
         proper_noun.open_class_kind = Some(OpenClassKind::Noun);
         assert!(has(
             &validate_document(&doc, None).unwrap_err(),
-            |e| matches!(e, ValidationError::IllegalTokenAxes { .. })
+            |e| matches!(e, ValidationError::IllegalTokenAxes { path, .. } if path.to_string().starts_with("tokens["))
         ));
     }
 
@@ -1615,7 +1624,8 @@ mod integration {
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::DuplicateTokenId { .. }
+                ValidationError::DuplicateTokenId { path, .. }
+                    if path.to_string() == "tokens[1]"
             )),
             "{errors:?}"
         );
@@ -1635,7 +1645,9 @@ mod integration {
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::DanglingChildRef { child: 9_999, .. }
+                ValidationError::DanglingChildRef { path, child: 9_999 }
+                    if path.to_string().starts_with("structure[")
+                        && path.to_string().contains(".childNodeIds[")
             )),
             "{errors:?}"
         );
@@ -1653,7 +1665,8 @@ mod integration {
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::DuplicateNodeId { node_id, .. } if *node_id == dup
+                ValidationError::DuplicateNodeId { path, node_id }
+                    if *node_id == dup && path.to_string() == "structure[1]"
             )),
             "{errors:?}"
         );
@@ -1874,7 +1887,8 @@ mod integration {
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::NegativeByteLength { .. }
+                ValidationError::NegativeByteLength { path, .. }
+                    if path.to_string() == "source.utf8ByteLength"
             )),
             "{errors:?}"
         );
@@ -1892,14 +1906,15 @@ mod integration {
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::SourceNotUtf8 { .. }
+                ValidationError::SourceNotUtf8 { path } if path.to_string() == "source"
             )),
             "{errors:?}"
         );
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::ByteLengthMismatch { .. }
+                ValidationError::ByteLengthMismatch { path, .. }
+                    if path.to_string() == "source.utf8ByteLength"
             )),
             "{errors:?}"
         );
@@ -1931,7 +1946,7 @@ mod integration {
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::EmptyDerivation { .. }
+                ValidationError::EmptyDerivation { path } if path.to_string() == "derivation"
             )),
             "{errors:?}"
         );
@@ -1946,7 +1961,8 @@ mod integration {
         assert!(
             has(&errors, |e| matches!(
                 e,
-                ValidationError::DuplicateDerivationPassId { pass_id, .. } if *pass_id == dup
+                ValidationError::DuplicateDerivationPassId { path, pass_id }
+                    if *pass_id == dup && path.to_string() == "derivation[1]"
             )),
             "{errors:?}"
         );
