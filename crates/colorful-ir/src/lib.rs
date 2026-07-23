@@ -642,17 +642,11 @@ impl core::fmt::Display for ValidationError {
             }
             Self::SchemaHashMismatch {
                 expected, found, ..
-            } => {
-                let found = escape_untrusted(found);
-                write!(f, "at {path}: expected `{expected}`, found `{found}`")
             }
-            Self::VocabularyHashMismatch {
+            | Self::VocabularyHashMismatch {
                 expected, found, ..
-            } => {
-                let found = escape_untrusted(found);
-                write!(f, "at {path}: expected `{expected}`, found `{found}`")
             }
-            Self::ContentHashMismatch {
+            | Self::ContentHashMismatch {
                 expected, found, ..
             } => {
                 let found = escape_untrusted(found);
