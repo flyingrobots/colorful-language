@@ -321,16 +321,123 @@ static OPEN_CLASS_WORDS: phf::Map<&'static str, OpenClassKind> = phf_map! {
     "slowly" => OpenClassKind::Adverb,
 };
 
-/// Ambiguous words with local context rules for the contextual annotator.
+/// One candidate resolution for an ambiguous lexeme: the class it resolves to
+/// when `evidence` holds, and the local-context check that decides whether it
+/// does. `evidence` is a human-readable name for *why* — it exists so a
+/// reader (or the corpus test) can cite the rationale without re-deriving it
+/// from `matches`.
+struct Sense {
+    kind: OpenClassKind,
+    // Only read by the corpus test today (cited in its failure message), so
+    // the plain (non-test) build sees it as unread; kept on the struct
+    // rather than a parallel test-only table so it can never drift from the
+    // rule it documents.
+    #[cfg_attr(not(test), allow(dead_code))]
+    evidence: &'static str,
+    matches: fn(Option<ContextWord<'_>>, Option<ContextWord<'_>>) -> bool,
+}
+
+fn previous_is_verb_trigger(
+    previous: Option<ContextWord<'_>>,
+    _next: Option<ContextWord<'_>>,
+) -> bool {
+    previous.is_some_and(is_verb_trigger)
+}
+
+fn previous_is_nominal_trigger(
+    previous: Option<ContextWord<'_>>,
+    _next: Option<ContextWord<'_>>,
+) -> bool {
+    previous.is_some_and(is_nominal_trigger)
+}
+
+fn previous_is_nominal_trigger_and_next_is_nounish(
+    previous: Option<ContextWord<'_>>,
+    next: Option<ContextWord<'_>>,
+) -> bool {
+    previous.is_some_and(is_nominal_trigger) && next.is_some_and(is_nounish_context)
+}
+
+fn previous_is_verb_context(
+    previous: Option<ContextWord<'_>>,
+    _next: Option<ContextWord<'_>>,
+) -> bool {
+    previous.is_some_and(is_verb_context)
+}
+
+fn next_is_nounish_context(
+    _previous: Option<ContextWord<'_>>,
+    next: Option<ContextWord<'_>>,
+) -> bool {
+    next.is_some_and(is_nounish_context)
+}
+
+/// `book` and `record` share the same two-sense shape: a preceding verb
+/// trigger reads them as a verb (e.g. "I will book a room"), a preceding
+/// nominal trigger reads them as a noun (e.g. "the book is old").
+const VERB_OR_NOUN_BY_PRECEDING_TRIGGER: &[Sense] = &[
+    Sense {
+        kind: OpenClassKind::Verb,
+        evidence: "preceded by a to-infinitive marker, pronoun/auxiliary subject, or a plural noun subject (a verb trigger)",
+        matches: previous_is_verb_trigger,
+    },
+    Sense {
+        kind: OpenClassKind::Noun,
+        evidence: "preceded by an article, determiner, preposition, or adjective (a nominal trigger)",
+        matches: previous_is_nominal_trigger,
+    },
+];
+
+/// Ambiguous words with local-context rules for the contextual annotator.
+///
+/// Each word's senses are checked in the exact order listed. The first sense
+/// whose `matches` fires wins, so **declaration order is precedence** — e.g.
+/// `lead`'s adjective sense is listed before its noun sense, so "the lead
+/// pipe" resolves to adjective even though both senses' evidence could
+/// otherwise apply. There is deliberately no catch-all branch: an
+/// unrecognized lexeme is simply absent from this map (`None` via `?` in
+/// [`contextual_kind`]), and every declared sense carries its own `matches`
+/// function bundled with it, so a sense can never be added to the corpus
+/// without the resolution logic that makes it fire — unlike a separate
+/// senses-only table paired with a hand-matched dispatch, which can drift
+/// apart silently.
 ///
 /// This is deliberately tiny. It proves the Goalpost 2 port shape and keeps the
 /// default behavior deterministic while leaving a production dictionary for a
-/// later slice.
-static CONTEXTUAL_WORDS: phf::Map<&'static str, &'static [OpenClassKind]> = phf_map! {
-    "book" => &[OpenClassKind::Noun, OpenClassKind::Verb],
-    "record" => &[OpenClassKind::Noun, OpenClassKind::Verb],
-    "lead" => &[OpenClassKind::Noun, OpenClassKind::Verb, OpenClassKind::Adjective],
-    "fast" => &[OpenClassKind::Adjective, OpenClassKind::Adverb],
+/// later slice. See `ambiguous_word_corpus_matches_expected_sense_with_rationale`
+/// (below) for a worked example of every sense.
+static AMBIGUOUS_WORDS: phf::Map<&'static str, &'static [Sense]> = phf_map! {
+    "book" => VERB_OR_NOUN_BY_PRECEDING_TRIGGER,
+    "record" => VERB_OR_NOUN_BY_PRECEDING_TRIGGER,
+    "lead" => &[
+        Sense {
+            kind: OpenClassKind::Verb,
+            evidence: "preceded by a to-infinitive marker, pronoun/auxiliary subject, or a plural noun subject (a verb trigger)",
+            matches: previous_is_verb_trigger,
+        },
+        Sense {
+            kind: OpenClassKind::Adjective,
+            evidence: "preceded by a nominal trigger and followed by a noun-like word, e.g. \"the lead pipe\"",
+            matches: previous_is_nominal_trigger_and_next_is_nounish,
+        },
+        Sense {
+            kind: OpenClassKind::Noun,
+            evidence: "preceded by a nominal trigger with no following noun-like word",
+            matches: previous_is_nominal_trigger,
+        },
+    ],
+    "fast" => &[
+        Sense {
+            kind: OpenClassKind::Adverb,
+            evidence: "preceded by a verb, e.g. \"runs fast\"",
+            matches: previous_is_verb_context,
+        },
+        Sense {
+            kind: OpenClassKind::Adjective,
+            evidence: "followed by a noun-like word, e.g. \"fast car\"",
+            matches: next_is_nounish_context,
+        },
+    ],
 };
 
 /// A [`Lexicon`] backed by the closed-class [`FUNCTION_WORDS`] set.
@@ -475,53 +582,23 @@ fn context_word<'a>(
     })
 }
 
+/// Resolve an ambiguous open-class word from its local context, or `None` if
+/// `word` isn't in [`AMBIGUOUS_WORDS`] or none of its senses' evidence holds.
+///
+/// This is purely data-driven: [`AMBIGUOUS_WORDS`] names every rule, in
+/// precedence order, and this function is nothing more than "find the first
+/// one whose evidence matches."
 fn contextual_kind(
     word: &str,
     previous: Option<ContextWord<'_>>,
     next: Option<ContextWord<'_>>,
 ) -> Option<OpenClassKind> {
     let normalized = normalize_ascii(word);
-    let senses = CONTEXTUAL_WORDS.get(normalized.as_str())?;
-
-    match normalized.as_str() {
-        "fast" => {
-            if has_sense(senses, OpenClassKind::Adverb) && previous.is_some_and(is_verb_context) {
-                return Some(OpenClassKind::Adverb);
-            }
-            if has_sense(senses, OpenClassKind::Adjective) && next.is_some_and(is_nounish_context) {
-                return Some(OpenClassKind::Adjective);
-            }
-        }
-        "lead" => {
-            if has_sense(senses, OpenClassKind::Verb) && previous.is_some_and(is_verb_trigger) {
-                return Some(OpenClassKind::Verb);
-            }
-            if has_sense(senses, OpenClassKind::Adjective)
-                && previous.is_some_and(is_nominal_trigger)
-                && next.is_some_and(is_nounish_context)
-            {
-                return Some(OpenClassKind::Adjective);
-            }
-            if has_sense(senses, OpenClassKind::Noun) && previous.is_some_and(is_nominal_trigger) {
-                return Some(OpenClassKind::Noun);
-            }
-        }
-        "book" | "record" => {
-            if has_sense(senses, OpenClassKind::Verb) && previous.is_some_and(is_verb_trigger) {
-                return Some(OpenClassKind::Verb);
-            }
-            if has_sense(senses, OpenClassKind::Noun) && previous.is_some_and(is_nominal_trigger) {
-                return Some(OpenClassKind::Noun);
-            }
-        }
-        _ => {}
-    }
-
-    None
-}
-
-fn has_sense(senses: &[OpenClassKind], kind: OpenClassKind) -> bool {
-    senses.contains(&kind)
+    let senses = AMBIGUOUS_WORDS.get(normalized.as_str())?;
+    senses
+        .iter()
+        .find(|sense| (sense.matches)(previous, next))
+        .map(|sense| sense.kind)
 }
 
 fn is_nominal_trigger(word: ContextWord<'_>) -> bool {
@@ -745,6 +822,119 @@ mod tests {
                 PosClass::Punctuation,
             ]
         );
+    }
+
+    #[test]
+    fn ambiguous_word_corpus_matches_expected_sense_with_rationale() {
+        /// One documented example per sense in [`AMBIGUOUS_WORDS`]: the
+        /// ambiguous word, the local context that should trigger a sense (as
+        /// already-classified neighbors, exercising `contextual_kind`
+        /// directly rather than a full sentence), and the expected class.
+        /// "Why" isn't restated here — it's read straight from the matched
+        /// `Sense::evidence`, so this corpus can never drift from the actual
+        /// rationale authored in the rule table.
+        struct Case {
+            word: &'static str,
+            previous: Option<(&'static str, PosClass)>,
+            next: Option<(&'static str, PosClass)>,
+            expected: Option<OpenClassKind>,
+        }
+
+        fn ctx(pair: Option<(&'static str, PosClass)>) -> Option<ContextWord<'static>> {
+            pair.map(|(text, class)| ContextWord { text, class })
+        }
+
+        const AUX: PosClass = PosClass::Function(FunctionKind::Auxiliary);
+        const PRONOUN: PosClass = PosClass::Function(FunctionKind::Pronoun);
+        const ARTICLE: PosClass = PosClass::Function(FunctionKind::Article);
+        const PREPOSITION: PosClass = PosClass::Function(FunctionKind::Preposition);
+        const VERB: PosClass = PosClass::Open(OpenClassKind::Verb);
+
+        const CASES: &[Case] = &[
+            Case {
+                word: "book",
+                previous: Some(("will", AUX)),
+                next: None,
+                expected: Some(OpenClassKind::Verb),
+            },
+            Case {
+                word: "book",
+                previous: Some(("the", ARTICLE)),
+                next: None,
+                expected: Some(OpenClassKind::Noun),
+            },
+            Case {
+                word: "record",
+                previous: Some(("they", PRONOUN)),
+                next: None,
+                expected: Some(OpenClassKind::Verb),
+            },
+            Case {
+                word: "record",
+                previous: Some(("a", ARTICLE)),
+                next: None,
+                expected: Some(OpenClassKind::Noun),
+            },
+            Case {
+                word: "lead",
+                previous: Some(("to", PREPOSITION)),
+                next: None,
+                expected: Some(OpenClassKind::Verb),
+            },
+            Case {
+                word: "lead",
+                previous: Some(("the", ARTICLE)),
+                next: Some(("pipe", PosClass::Content)),
+                expected: Some(OpenClassKind::Adjective),
+            },
+            Case {
+                word: "lead",
+                previous: Some(("the", ARTICLE)),
+                next: None,
+                expected: Some(OpenClassKind::Noun),
+            },
+            Case {
+                word: "fast",
+                previous: Some(("runs", VERB)),
+                next: None,
+                expected: Some(OpenClassKind::Adverb),
+            },
+            Case {
+                word: "fast",
+                previous: None,
+                next: Some(("car", PosClass::Content)),
+                expected: Some(OpenClassKind::Adjective),
+            },
+            Case {
+                word: "fast",
+                previous: None,
+                next: None,
+                expected: None,
+            },
+            Case {
+                word: "spring",
+                previous: Some(("the", ARTICLE)),
+                next: None,
+                expected: None,
+            },
+        ];
+
+        for case in CASES {
+            let previous = ctx(case.previous);
+            let next = ctx(case.next);
+            let normalized = case.word.to_ascii_lowercase();
+            let matched = AMBIGUOUS_WORDS
+                .get(normalized.as_str())
+                .and_then(|senses| senses.iter().find(|sense| (sense.matches)(previous, next)));
+
+            assert_eq!(
+                matched.map(|sense| sense.kind),
+                case.expected,
+                "{}: {}",
+                case.word,
+                matched.map_or("no sense's evidence matched", |sense| sense.evidence)
+            );
+        }
     }
 
     #[test]

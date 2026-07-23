@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`colorful-lexicon`'s ambiguous-word rules are now named, data-driven
+  senses.** `contextual_kind` previously hand-matched each ambiguous lexeme
+  (`book`, `record`, `lead`, `fast`) against a separate senses-only table,
+  with a catch-all branch that would silently do nothing for a word absent
+  from the code even if present in the table (or vice versa). Each lexeme is
+  now a `Sense` list — class, named evidence, and the context check that
+  fires it, bundled together — checked in declaration order (the first
+  match wins); there is no catch-all, so a sense can't exist in the data
+  without the logic that makes it fire. A corpus test
+  (`ambiguous_word_corpus_matches_expected_sense_with_rationale`) exercises
+  every sense plus a no-match and an unrecognized-word case, citing each
+  matched rule's own evidence on failure. Internal to `colorful-lexicon`,
+  not a public API change.
+
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`

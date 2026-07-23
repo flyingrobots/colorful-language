@@ -16,6 +16,11 @@ Requirements:
   adjective, and adverb words while preserving closed-class and number precedence.
 - **LEX-10** The contextual open-class annotator refines a small ambiguous word
   set using local sentence context while preserving existing lexical behavior.
+  Each ambiguous word is a named rule (an ordered list of senses, each with its
+  own evidence check) rather than a hand-matched dispatch over a separate
+  senses-only table, so a sense can't be declared without the logic that
+  makes it fire, and there is no catch-all branch that could silently
+  swallow an unrecognized word into the wrong class.
 
 ## Cases
 
@@ -73,6 +78,15 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
   unlisted-content behavior. *Oracle:* class vector equality. *Evidence:*
   `tests::contextual_annotator_preserves_existing_precedence`. *Status:*
   implemented.
+- **LEX-10c** — *Requirement:* LEX-10. *Behavior:* a corpus of worked examples
+  — one per sense of `book`/`record`/`lead`/`fast`, plus a case where no
+  sense's evidence matches and a case for a word absent from the rule table
+  entirely — resolves to the expected class (or `None`), citing the matched
+  rule's own named evidence on failure rather than a rationale restated in
+  the test. *Oracle:* per-case class equality against `contextual_kind`
+  directly. *Evidence:*
+  `tests::ambiguous_word_corpus_matches_expected_sense_with_rationale`.
+  *Status:* implemented.
 
 ## Known gaps
 
