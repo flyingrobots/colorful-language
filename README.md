@@ -49,7 +49,9 @@ colorful --help
 colorful --version
 ```
 
-It works on any text file and respects `NO_COLOR`.
+It works on any valid UTF-8 text file and respects `NO_COLOR`. A file with
+invalid UTF-8 bytes is rejected with a clear error, not silently mangled —
+see [`docs/topics/coloring/`](docs/topics/coloring/) for the exact contract.
 Use `colorful diagnose --json` when comparing terminal, Zed, jedit, or another
 editor against the classes Colorful actually produced.
 

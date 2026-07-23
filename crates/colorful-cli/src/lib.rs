@@ -885,6 +885,25 @@ mod tests {
     }
 
     #[test]
+    fn invalid_utf8_file_is_rejected_across_every_command() {
+        // Every single-document command reads its file through
+        // std::fs::read_to_string, which is strict about UTF-8 -- a malformed
+        // file is rejected with a clear error, never silently lossy-converted
+        // into corrupted-but-readable text.
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/invalid-utf8.bin").to_string();
+
+        fn assert_invalid_utf8(err: &io::Error) {
+            assert_eq!(err.kind(), io::ErrorKind::InvalidData, "{err}");
+            assert_eq!(err.to_string(), "stream did not contain valid UTF-8");
+        }
+
+        assert_invalid_utf8(&run_color([path.clone()]).unwrap_err());
+        assert_invalid_utf8(&run_ir([path.clone()]).unwrap_err());
+        assert_invalid_utf8(&run_diagnose([path.clone()]).unwrap_err());
+        assert_invalid_utf8(&run_lint([path]).unwrap_err());
+    }
+
+    #[test]
     fn gaps_and_newlines_are_preserved_exactly() {
         // Stripping all ANSI escapes must reproduce the original source.
         let src = "Well,  \t\"quoted\"\n  text—here.";
