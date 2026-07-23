@@ -622,8 +622,14 @@ impl ValidationError {
 /// `examples/recanon.rs` write this text directly to stderr, so a hostile
 /// value must not be able to inject a newline (forging extra log lines) or a
 /// terminal control sequence — it renders as visible, inert escapes instead.
-fn escape_untrusted(value: &str) -> String {
-    value.escape_debug().to_string()
+///
+/// Returns the borrowing `EscapeDebug` iterator rather than an allocated
+/// `String`: a hostile, arbitrarily large value can expand several-fold once
+/// control bytes become `\u{..}` escapes, and this way the formatter writes
+/// each escaped char as it goes instead of the rejection path first
+/// materializing the whole (attacker-sized) escaped string in memory.
+fn escape_untrusted(value: &str) -> core::str::EscapeDebug<'_> {
+    value.escape_debug()
 }
 
 impl core::fmt::Display for ValidationError {
