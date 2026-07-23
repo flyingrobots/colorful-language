@@ -6,7 +6,19 @@
 #[test]
 fn readme_architecture_names_every_public_port_trait() {
     let core_source = include_str!("../src/lib.rs");
-    let readme = include_str!("../../../README.md");
+
+    // This checks the *workspace* README against colorful-core's own source,
+    // so it only makes sense from a full checkout. `scripts/package-witness.sh`
+    // test-compiles this crate extracted standalone via `cargo package`, where
+    // the workspace README isn't present (and can't be: `cargo package`
+    // refuses to include paths outside the crate directory) -- read at
+    // runtime and skip gracefully there instead of failing to compile on an
+    // irrelevant environment difference.
+    let readme_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../README.md");
+    let Ok(readme) = std::fs::read_to_string(readme_path) else {
+        eprintln!("skipping: {readme_path} not found (not a full workspace checkout)");
+        return;
+    };
 
     let architecture_section = readme
         .split("## Architecture")
