@@ -11,9 +11,12 @@ text. That leaves the structure of a sentence — the little words that carry
 logic, emphasis, negation, scope, and rhythm — harder to see than it should be.
 
 Colorful makes English visible as a local, deterministic syntax surface. No
-cloud, no model, no hidden judgment. It shows the shape of prose the way a code
-highlighter shows the shape of a program. The same parse feeds CLI highlighting,
-lint warnings, LSP diagnostics, and the `colorful.syntax/v1` surface IR.
+cloud, no opaque model: the [lexicon](docs/topics/lexicon/) and
+[lint rules](docs/topics/linting/) that decide every classification are local,
+deterministic, and inspectable, not a black box. It shows the shape of prose
+the way a code highlighter shows the shape of a program. The same parse feeds
+CLI highlighting, lint warnings, LSP diagnostics, and the `colorful.syntax/v1`
+surface IR.
 
 That is the current contract. Future phases are tracked in the
 [roadmap](ROADMAP.md), not promised by this README.
