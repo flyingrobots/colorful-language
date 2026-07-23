@@ -11,18 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **The IR witness's TypeScript leg now actually validates.**
   `witness/ir-canonicalize.mjs` previously parsed and canonicalized a
-  `DocumentAnalysis` with zero structural validation. It now runs the graft
-  reference consumer's `validateArtifact` admission gate (unknown/missing/
-  wrongly-typed field checks, plus the existing range/hash checks) against
-  the decoded document and the real source bytes before re-emitting, so a
-  malformed artifact is rejected instead of canonicalized. Three checked-in
+  `DocumentAnalysis` with zero structural validation. It now runs a new
+  `validateWireContract` gate (unknown/missing/wrongly-typed field checks at
+  every nesting level, plus the existing range/hash checks) against the
+  decoded document and the real source bytes before re-emitting, so a
+  malformed artifact is rejected instead of canonicalized. `validateWireContract`
+  is `consumers/graft-projection.mjs`'s admission gate minus
+  `validateGraftTokenOrder` — non-overlapping token wire order is a
+  graft-projection-specific requirement (for its `makeByteToPoint` monotonic
+  cursor), not part of the `colorful.syntax/v1` wire contract, which
+  `colorful_ir::validate_document` deliberately leaves unchecked; reusing the
+  graft-specific gate in the witness would make it reject a token layout the
+  Rust leg accepts. The existing `validateArtifact` (used by the real graft
+  consumer) is unchanged in behavior, now expressed as
+  `validateWireContract` + `validateGraftTokenOrder`. Three checked-in
   negative fixtures under `witness/negative/` (an unknown top-level field, a
-  missing field, a wrong-typed field) prove the rejection on every
-  `scripts/ir-witness.sh` run. `consumers/graft-projection.mjs`'s
-  `validateArtifact` also gains an unknown-top-level-field check it didn't
-  have before (an artifact carrying a field outside the contract was
-  previously silently ignored, not rejected) — this affects the shipped
-  graft reference consumer, not just the witness.
+  missing field, a wrong-typed field) prove the rejection — for the specific
+  expected reason, not just a nonzero exit — on every `scripts/ir-witness.sh`
+  run. `consumers/graft-projection.mjs` also gains an unknown-field check at
+  *every* nesting level (`source`, each token, structure node, diagnostic,
+  derivation step, and byte range) it didn't have before (a field outside
+  the contract was previously silently ignored at any level below the
+  document root) — this affects the shipped graft reference consumer, not
+  just the witness.
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`

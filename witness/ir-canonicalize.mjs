@@ -1,15 +1,23 @@
 // Round-trip witness leg (TypeScript/JS): read a DocumentAnalysis JSON from
-// stdin, **validate** it against the contract and the real source bytes (the
-// same admission gate the graft reference consumer runs before projecting),
-// then re-emit *canonical* JSON (compact, object keys sorted lexicographically)
-// — the exact same canonical form colorful-ir produces in Rust, so a faithful
-// round-trip is byte-for-byte identical. Validating before re-emitting is what
-// keeps this leg from laundering a malformed artifact into clean-looking JSON,
-// exactly like the Rust leg's `recanon` example.
+// stdin, **validate** it against the colorful.syntax/v1 wire contract and the
+// real source bytes, then re-emit *canonical* JSON (compact, object keys
+// sorted lexicographically) — the exact same canonical form colorful-ir
+// produces in Rust, so a faithful round-trip is byte-for-byte identical.
+// Validating before re-emitting is what keeps this leg from laundering a
+// malformed artifact into clean-looking JSON, exactly like the Rust leg's
+// `recanon` example.
+//
+// Uses `validateWireContract`, not the graft reference consumer's full
+// `validateArtifact`: the latter also enforces non-overlapping token wire
+// order, a graft-projection-specific requirement that
+// `colorful_ir::validate_document` deliberately does not check (inter-token
+// layout is a producer guarantee, not part of the wire contract). Reusing
+// the graft-specific gate here would make this witness reject a token
+// layout the Rust leg would accept.
 //
 //   node ir-canonicalize.mjs SOURCE < document.json
 import { readFileSync } from "node:fs";
-import { validateArtifact } from "../consumers/graft-projection.mjs";
+import { validateWireContract } from "../consumers/graft-projection.mjs";
 
 function canonicalize(value) {
   if (Array.isArray(value)) {
@@ -36,7 +44,7 @@ const document = JSON.parse(input);
 const buffer = readFileSync(sourcePath);
 
 try {
-  validateArtifact(buffer, document);
+  validateWireContract(buffer, document);
 } catch (err) {
   console.error(`ir-canonicalize: ${err.message}`);
   process.exit(1);

@@ -50,14 +50,36 @@ else
   exit 1
 fi
 
-echo "Negative fixtures: the TS leg must reject every malformed artifact..."
+echo "Negative fixtures: the TS leg must reject each malformed artifact for its specific reason..."
+# A bare nonzero exit only proves *some* check fired -- not the one the
+# fixture exists to prove. If a fixture regains a stale schema/vocabulary/
+# content hash or the targeted check regresses while some other guard still
+# happens to reject it, a nonzero-exit-only assertion would stay green for
+# the wrong reason. Assert the exact expected message substring instead.
+declare -A expected_rejection=(
+  [unknown-field]="unknown top-level field: unexpectedField"
+  [missing-field]="derivation must be an array"
+  [wrong-type]="contractVersion must be a string"
+)
 for fixture in witness/negative/*.json; do
   name="$(basename "$fixture" .json)"
+  expected="${expected_rejection[$name]:-}"
+  if [[ -z "$expected" ]]; then
+    echo "  ❌ $name: no expected-rejection entry recorded in this script -- add one" >&2
+    exit 1
+  fi
   if node witness/ir-canonicalize.mjs witness/fixture.txt < "$fixture" > /dev/null 2>"$work/negative-$name.err"; then
     echo "  ❌ $name: expected rejection, but the TS leg accepted it" >&2
     exit 1
   fi
-  echo "  ✅ $name rejected: $(cat "$work/negative-$name.err")"
+  actual="$(cat "$work/negative-$name.err")"
+  if [[ "$actual" != *"$expected"* ]]; then
+    echo "  ❌ $name: rejected, but not for the expected reason" >&2
+    echo "     expected to contain: $expected" >&2
+    echo "     actual:              $actual" >&2
+    exit 1
+  fi
+  echo "  ✅ $name rejected for the expected reason: $actual"
 done
 
 echo "WITNESS PASSED"
