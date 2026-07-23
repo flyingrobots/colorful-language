@@ -85,6 +85,20 @@ consumer all derive from this manifest.
 - **Structural invariants** (asserted on a corpus): token ranges are ordered,
   in-bounds, non-overlapping, and on char boundaries; every `structure` node's
   range contains its children; the source digest matches.
+- **Structured, path-aware validation errors.** `validate_document` reports
+  every failure as a `ValidationError` carrying a `Path` (e.g.
+  `tokens[3].byteRange.startUtf8`) naming exactly where the invariant broke,
+  rather than a prose string a consumer has to parse. Validation runs as
+  seven fixed, independently testable stages — contract identity, source
+  identity, token ranges, token axes, structure graph, diagnostics,
+  derivation — concatenated in that order, so the error order is
+  deterministic for a given input (it is not, however, identical to the
+  interleaved-per-token order the pre-`Path` implementation produced).
+  Untrusted document strings that flow into the rendered message
+  (`contractVersion`, the hash `found` values, derivation `passId`) go through
+  `escape_debug()` first, so a malformed artifact cannot forge extra log
+  lines or terminal escape sequences in a consumer that prints the error
+  text — the `recanon` witness leg being the concrete case that does.
 
 ## Known limitations (Stage 1)
 

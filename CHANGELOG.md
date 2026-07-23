@@ -67,6 +67,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   producer's `pass_identity()`) before adopting the `0.4.x` line; there is no
   compatible 4-argument entry point, since a default identity would be exactly
   the dishonest placeholder `PassIdentity` is designed to reject.
+- **Breaking API queued for v0.4.0.** `colorful_ir::ValidationError` now
+  carries a structured `path: Path` on every variant (e.g.
+  `tokens[3].byteRange.startUtf8`) instead of the old ad hoc `what: String` /
+  `index: usize` fields, and a new `ValidationError::path()` plus a `Display`
+  impl (`"at {path}: ..."`) replace the previous `{:?}`-based rendering in
+  `ValidationErrors`. `validate_document`'s pass/fail verdict is unchanged —
+  it is now composed from seven independently testable validators
+  (`validate_contract_identity`, `validate_source_identity`,
+  `validate_token_ranges`, `validate_token_axes`, `validate_structure_graph`,
+  `validate_diagnostics`, `validate_derivation`) run in that fixed order, so
+  error ordering is still deterministic — but it is not byte-for-byte the old
+  order: token range/duplicate-id errors and token axis errors used to be
+  interleaved per token in one loop and are now two separate stages, so all
+  of a document's range/duplicate-id errors precede all of its axis errors
+  rather than alternating token by token. A new test
+  (`error_order_follows_the_seven_validator_stages`) pins the new stage
+  order. Any downstream code matching on the old field names, or depending
+  on the exact previous interleaving, must update.
 
 ### Fixed
 
@@ -90,6 +108,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **`ValidationError`'s `Display` output could carry forged log lines or
+  terminal control sequences from an untrusted document.** `contractVersion`,
+  the schema/vocabulary/content hash "found" values, and derivation `passId`
+  are attacker-controlled strings once a document arrives over a boundary;
+  rendering them verbatim let a hostile artifact inject a newline (forging
+  extra lines) or a raw escape sequence into any consumer that prints the
+  error text — `crates/colorful-ir/examples/recanon.rs` writes it straight to
+  stderr. These fields now render through `escape_debug()` before
+  interpolation, so control characters come out as visible, inert escapes
+  (e.g. `\n`, `\u{1b}`) instead of being interpreted by the terminal.
 - **`brace-expansion` DoS ([GHSA-3jxr-9vmj-r5cp](https://github.com/advisories/GHSA-3jxr-9vmj-r5cp)).**
   Bumped `editors/vscode`'s transitive `brace-expansion` (via
   `vscode-languageclient` → `minimatch`) from `2.1.1` to `2.1.2`, closing an
