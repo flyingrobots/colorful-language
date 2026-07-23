@@ -93,10 +93,20 @@ Measured, not asserted: `cargo bench -p colorful-cli` and
 `cargo bench -p colorful-lsp` (release-profile `criterion` benchmarks,
 `crates/colorful-cli/benches/colorize_bench.rs` and
 `crates/colorful-lsp/benches/semantic_tokens_bench.rs`) time the CLI's
-`colorize()` path and the LSP's `compute_semantic_tokens()` path — the full
-per-edit cost under `v0`'s reparse-the-whole-document model — over two
-fixtures: the committed 899-byte `editor-smoke-prose.txt` sample, and a
-45 KB corpus built by repeating it 50×.
+`colorize()` path and the LSP's `compute_semantic_tokens()` function itself,
+over two fixtures: the committed 899-byte `editor-smoke-prose.txt` sample,
+and a 45 KB corpus built by repeating it 50×.
+
+`compute_semantic_tokens()` is what answers one `textDocument/
+semanticTokens/full` request — it is **not** the full `didChange` handler.
+`did_change` (`crates/colorful-lsp/src/main.rs`) applies the edit to the
+rope and calls `compute_diagnostics`, a separate reparse this benchmark does
+not measure; `compute_semantic_tokens()` only runs when the editor
+separately issues a semantic-tokens request, which is a second reparse of
+the same `v0`-simple, whole-document kind. Both are real per-request costs
+an editor pays around an edit, but they are two different requests, not one
+combined "per-edit" number — `compute_diagnostics` has no benchmark yet,
+recorded as an open gap below.
 
 **2026-07-23, `rustc 1.96.0`, Apple M1 Pro, 16 GB RAM, macOS (Darwin 25.3.0),
 release profile (`cargo bench`), median of 100 samples:**
@@ -108,14 +118,19 @@ release profile (`cargo bench`), median of 100 samples:**
 
 **Budget:** under 16 ms (one 60 Hz frame) for documents up to ~50 KB, on
 comparable hardware — chosen as a product-relevant "feels instant" ceiling,
-not a multiple of today's number; today's medium-corpus measurements sit
-roughly 13–15× under it. This budget is **not yet a CI gate**: a single
-machine's first measurement isn't a stable baseline to enforce against, and
-turning it into a hard failure before establishing one would just make CI
-flaky on noisy hardware. Re-run the benchmarks and update this table when the
-hot path changes meaningfully.
+not a multiple of today's number; today's measurements sit roughly 13–15×
+under it for both benchmarked functions. This budget is **not yet a CI
+gate**: a single machine's first measurement isn't a stable baseline to
+enforce against, and turning it into a hard failure before establishing one
+would just make CI flaky on noisy hardware. Re-run the benchmarks and
+update this table when the hot path changes meaningfully.
 
-Memory is not yet benchmarked — no allocation or peak-RSS profiling exists
-today. Treat that as an open gap, not an implied "cheap" claim.
+**Known gaps:**
+
+- `compute_diagnostics` — what `did_change` actually calls — has no
+  benchmark yet. Only `compute_semantic_tokens` (a separate request) is
+  measured above.
+- Memory is not yet benchmarked — no allocation or peak-RSS profiling
+  exists today. Treat both as open gaps, not an implied "cheap" claim.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

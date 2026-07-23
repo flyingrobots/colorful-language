@@ -1,10 +1,13 @@
 //! Release-mode latency benchmarks for `colorful_lsp::compute_semantic_tokens`.
 //!
+//! This times the function that answers one `textDocument/semanticTokens/
+//! full` request -- it is *not* the `did_change` handler, which calls
+//! `compute_diagnostics` instead (a separate reparse, not benchmarked here).
 //! `v0`'s incrementality model reparses the whole document on every request
-//! (see `docs/topics/coloring/README.md`), so this benchmark's cost model
-//! *is* the per-edit cost an editor pays on `didChange`. Run with
-//! `cargo bench -p colorful-lsp`. See `docs/topics/coloring/README.md` for
-//! the measured figures this produces and how to read them.
+//! (see `docs/topics/coloring/README.md`), so this is one of the real costs
+//! an editor pays around an edit, not the full combined per-edit cost. Run
+//! with `cargo bench -p colorful-lsp`. See `docs/topics/coloring/README.md`
+//! for the measured figures this produces and how to read them.
 
 use colorful_lexicon::ContextualOpenClassAnnotator;
 use colorful_parse::ProseParser;
@@ -30,7 +33,7 @@ fn bench_semantic_tokens(c: &mut Criterion) {
     let annotator = ContextualOpenClassAnnotator::default();
     let small = fixture("editor-smoke-prose.txt");
     let medium = fixture("bench-corpus.txt");
-    let mut group = c.benchmark_group("semantic_tokens (full reparse, v0's per-edit cost)");
+    let mut group = c.benchmark_group("semantic_tokens (one semanticTokens/full request)");
 
     group.bench_function("small (899 B, real prose)", |b| {
         b.iter(|| colorful_lsp::compute_semantic_tokens(black_box(&small), &parser, &annotator));

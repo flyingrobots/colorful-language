@@ -847,4 +847,3 @@ The fast river connects fast.
 
 Version 0.3.0 keeps analysis local and deterministic.
 Unlisted words should mostly stay plain until Colorful has a larger lexicon.
-

@@ -15,14 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `crates/colorful-cli/benches/colorize_bench.rs` and
   `crates/colorful-lsp/benches/semantic_tokens_bench.rs` (`criterion`,
   `cargo bench -p colorful-cli` / `-p colorful-lsp`), timing the CLI's
-  `colorize()` and the LSP's `compute_semantic_tokens()` — `v0`'s full
-  per-edit cost, since both reparse the whole document — over a 899-byte
-  real fixture and a 45 KB corpus. `docs/topics/coloring/README.md` gets a
-  new *Performance* section with the actual measured figures (2026-07-23,
+  `colorize()` path and the LSP's `compute_semantic_tokens()` function
+  itself — the cost of one `semanticTokens/full` request, both reparsing
+  the whole document per `v0`'s incrementality model — over a 899-byte real
+  fixture and a 45 KB corpus. This is *not* the full `did_change` handler,
+  which calls `compute_diagnostics` instead (a separate reparse, not yet
+  benchmarked) — the two are different requests, not one combined
+  "per-edit" cost. `docs/topics/coloring/README.md` gets a new
+  *Performance* section with the actual measured figures (2026-07-23,
   `rustc 1.96.0`, Apple M1 Pro), a stated 16 ms budget for documents up to
-  ~50 KB, and an explicit note that the budget is not yet CI-enforced (a
-  single machine's first measurement isn't a stable baseline). Memory is
-  not benchmarked; that's recorded as an open gap, not implied by "cheap."
+  ~50 KB, and explicit notes that the budget is not yet CI-enforced (a
+  single machine's first measurement isn't a stable baseline) and that
+  `compute_diagnostics` and memory are open benchmarking gaps, not implied
+  by "cheap."
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`
