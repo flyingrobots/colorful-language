@@ -120,7 +120,8 @@ the consumer boundary.
   `fast` disambiguate from local sentence context
 - **Proper nouns** (mid-sentence capitalized words) → highlighted
 - **Numbers** → highlighted
-- **Quotes** → highlighted as strings
+- **Quotation marks** → highlighted as strings; the words they enclose keep
+  their own roles
 - **Sentence structure** made visible
 - Unlisted content words stay clean (skeleton mode; no color overload)
 
