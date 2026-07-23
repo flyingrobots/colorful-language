@@ -1,0 +1,378 @@
+{
+  "contractVersion": "colorful.syntax/v1",
+  "diagnostics": [],
+  "schemaHash": "sha256:f090e7ee24920d7b8c55e8da34e0f70d863414d8ba0c20b52a5913c3d0884c20",
+  "source": {
+    "contentHash": "sha256:3a075d5891253fcaefb2eab7c9c10ce6e4fd34c23b3ecd2b4f3053e657f6910a",
+    "unitId": "witness/fixture.txt",
+    "utf8ByteLength": 109
+  },
+  "structure": [
+    {
+      "byteRange": {
+        "endUtf8": 60,
+        "startUtf8": 0
+      },
+      "childNodeIds": [
+        2
+      ],
+      "depth": 0,
+      "kind": "PARAGRAPH",
+      "nodeId": 0
+    },
+    {
+      "byteRange": {
+        "endUtf8": 108,
+        "startUtf8": 62
+      },
+      "childNodeIds": [
+        3,
+        4
+      ],
+      "depth": 0,
+      "kind": "PARAGRAPH",
+      "nodeId": 1
+    },
+    {
+      "byteRange": {
+        "endUtf8": 60,
+        "startUtf8": 0
+      },
+      "childNodeIds": [],
+      "depth": 1,
+      "kind": "SENTENCE",
+      "nodeId": 2
+    },
+    {
+      "byteRange": {
+        "endUtf8": 78,
+        "startUtf8": 62
+      },
+      "childNodeIds": [],
+      "depth": 1,
+      "kind": "SENTENCE",
+      "nodeId": 3
+    },
+    {
+      "byteRange": {
+        "endUtf8": 108,
+        "startUtf8": 79
+      },
+      "childNodeIds": [],
+      "depth": 1,
+      "kind": "SENTENCE",
+      "nodeId": 4
+    }
+  ],
+  "tokens": [
+    {
+      "byteRange": {
+        "endUtf8": 3,
+        "startUtf8": 0
+      },
+      "functionKind": "ARTICLE",
+      "lexicalClass": "FUNCTION",
+      "occurrenceId": 0,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 9,
+        "startUtf8": 4
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 1,
+      "openClassKind": "ADJECTIVE",
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 15,
+        "startUtf8": 10
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 2,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 19,
+        "startUtf8": 16
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 3,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 23,
+        "startUtf8": 20
+      },
+      "functionKind": "AUXILIARY",
+      "lexicalClass": "FUNCTION",
+      "occurrenceId": 4,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 27,
+        "startUtf8": 24
+      },
+      "functionKind": "NEGATOR",
+      "lexicalClass": "FUNCTION",
+      "occurrenceId": 5,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 32,
+        "startUtf8": 28
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 6,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 37,
+        "startUtf8": 33
+      },
+      "functionKind": "PREPOSITION",
+      "lexicalClass": "FUNCTION",
+      "occurrenceId": 7,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 40,
+        "startUtf8": 38
+      },
+      "functionKind": null,
+      "lexicalClass": null,
+      "occurrenceId": 8,
+      "openClassKind": null,
+      "tokenKind": "NUMBER"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 45,
+        "startUtf8": 41
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 9,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 50,
+        "startUtf8": 46
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 10,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 53,
+        "startUtf8": 51
+      },
+      "functionKind": "PREPOSITION",
+      "lexicalClass": "FUNCTION",
+      "occurrenceId": 11,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 59,
+        "startUtf8": 54
+      },
+      "functionKind": null,
+      "lexicalClass": "PROPER_NOUN_CANDIDATE",
+      "occurrenceId": 12,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 60,
+        "startUtf8": 59
+      },
+      "functionKind": null,
+      "lexicalClass": null,
+      "occurrenceId": 13,
+      "openClassKind": null,
+      "tokenKind": "PUNCTUATION"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 63,
+        "startUtf8": 62
+      },
+      "functionKind": null,
+      "lexicalClass": null,
+      "occurrenceId": 14,
+      "openClassKind": null,
+      "tokenKind": "QUOTE"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 66,
+        "startUtf8": 63
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 15,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 67,
+        "startUtf8": 66
+      },
+      "functionKind": null,
+      "lexicalClass": null,
+      "occurrenceId": 16,
+      "openClassKind": null,
+      "tokenKind": "PUNCTUATION"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 68,
+        "startUtf8": 67
+      },
+      "functionKind": null,
+      "lexicalClass": null,
+      "occurrenceId": 17,
+      "openClassKind": null,
+      "tokenKind": "QUOTE"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 72,
+        "startUtf8": 69
+      },
+      "functionKind": "PRONOUN",
+      "lexicalClass": "FUNCTION",
+      "occurrenceId": 18,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 77,
+        "startUtf8": 73
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 19,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 78,
+        "startUtf8": 77
+      },
+      "functionKind": null,
+      "lexicalClass": null,
+      "occurrenceId": 20,
+      "openClassKind": null,
+      "tokenKind": "PUNCTUATION"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 83,
+        "startUtf8": 79
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 21,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 87,
+        "startUtf8": 84
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 22,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 92,
+        "startUtf8": 88
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 23,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 96,
+        "startUtf8": 93
+      },
+      "functionKind": "CONJUNCTION",
+      "lexicalClass": "FUNCTION",
+      "occurrenceId": 24,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 101,
+        "startUtf8": 97
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 25,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 107,
+        "startUtf8": 102
+      },
+      "functionKind": null,
+      "lexicalClass": "CONTENT",
+      "occurrenceId": 26,
+      "openClassKind": null,
+      "tokenKind": "WORD"
+    },
+    {
+      "byteRange": {
+        "endUtf8": 108,
+        "startUtf8": 107
+      },
+      "functionKind": null,
+      "lexicalClass": null,
+      "occurrenceId": 27,
+      "openClassKind": null,
+      "tokenKind": "PUNCTUATION"
+    }
+  ],
+  "vocabularyHash": "sha256:c4f1a36f839ba6e56955c60c8fa45f8d6692685fd137eed2a084416f52531461"
+}

@@ -46,6 +46,21 @@ const FUNCTION_KINDS = new Set([
 ]);
 const OUTLINE_KINDS = new Set(["PARAGRAPH", "SENTENCE"]);
 const DIAGNOSTIC_SEVERITIES = new Set(["ERROR", "WARNING", "INFO"]);
+// The complete `colorful.syntax/v1` DocumentAnalysis field set (matches
+// crates/colorful-ir/ts/syntax_v1.ts's generated `DocumentAnalysis`
+// interface). A key outside this set is not a wire field at all -- an
+// artifact carrying one is malformed the same way a missing or wrongly
+// typed field is, so it is rejected here rather than silently ignored.
+const DOCUMENT_ANALYSIS_FIELDS = new Set([
+  "contractVersion",
+  "schemaHash",
+  "vocabularyHash",
+  "source",
+  "tokens",
+  "structure",
+  "diagnostics",
+  "derivation",
+]);
 // Every GraphQL `Int` in colorful.syntax/v1 lowers to a signed 32-bit Rust
 // `i32`, not an arbitrary JS safe integer -- a value the generated Rust DTO
 // cannot represent is exactly the kind of artifact admission must reject.
@@ -438,6 +453,11 @@ function requireEnumOrNullField(value, allowed, label) {
 // undefined" a few checks later.
 function validateShape(ir) {
   if (!isPlainObject(ir)) fail("E_ARTIFACT_SHAPE", "artifact must be an object");
+  for (const key of Object.keys(ir)) {
+    if (!DOCUMENT_ANALYSIS_FIELDS.has(key)) {
+      fail("E_ARTIFACT_SHAPE", `unknown top-level field: ${key}`);
+    }
+  }
   if (typeof ir.contractVersion !== "string") fail("E_ARTIFACT_SHAPE", "contractVersion must be a string");
   if (typeof ir.schemaHash !== "string") fail("E_ARTIFACT_SHAPE", "schemaHash must be a string");
   if (typeof ir.vocabularyHash !== "string") fail("E_ARTIFACT_SHAPE", "vocabularyHash must be a string");

@@ -79,9 +79,24 @@ consumer all derive from this manifest.
 
 ## Guarantees
 
-- **Cross-language round-trip.** The IR survives `Rust → JSON → TypeScript → JSON
-  → Rust` byte-for-byte (`scripts/ir-witness.sh`, enforced in CI). Producer and
-  consumer can never disagree about the shape.
+- **Cross-language round-trip.** A *valid* document survives
+  `Rust → JSON → TypeScript → JSON → Rust` byte-for-byte (`scripts/ir-witness.sh`,
+  enforced in CI): the TS leg (`witness/ir-canonicalize.mjs`) and the Rust leg
+  (`examples/recanon.rs`) each independently validate the decoded document
+  against the contract and the real source bytes before re-emitting it, so
+  neither leg can launder a document into clean-looking canonical JSON without
+  first agreeing it's valid.
+- **Malformed artifacts are rejected, not laundered.** The TS leg runs the same
+  admission gate the graft reference consumer uses
+  (`validateArtifact` — unknown top-level fields, missing fields, wrongly typed
+  fields, and the usual range/hash checks) before canonicalizing, proven
+  against three checked-in negative fixtures under `witness/negative/` (an
+  unknown field, a missing field, a wrong-typed field) that the witness
+  asserts are rejected on every run. This is proven for the TS leg
+  specifically; the Rust leg's generated `DocumentAnalysis` deserializes via
+  `serde`'s default (unknown-field-tolerant) behavior, so an unknown top-level
+  field is not yet independently proven rejected on the Rust side — a known
+  gap, not a claimed guarantee.
 - **Structural invariants** (asserted on a corpus): token ranges are ordered,
   in-bounds, non-overlapping, and on char boundaries; every `structure` node's
   range contains its children; the source digest matches.

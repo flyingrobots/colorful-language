@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The IR witness's TypeScript leg now actually validates.**
+  `witness/ir-canonicalize.mjs` previously parsed and canonicalized a
+  `DocumentAnalysis` with zero structural validation. It now runs the graft
+  reference consumer's `validateArtifact` admission gate (unknown/missing/
+  wrongly-typed field checks, plus the existing range/hash checks) against
+  the decoded document and the real source bytes before re-emitting, so a
+  malformed artifact is rejected instead of canonicalized. Three checked-in
+  negative fixtures under `witness/negative/` (an unknown top-level field, a
+  missing field, a wrong-typed field) prove the rejection on every
+  `scripts/ir-witness.sh` run. `consumers/graft-projection.mjs`'s
+  `validateArtifact` also gains an unknown-top-level-field check it didn't
+  have before (an artifact carrying a field outside the contract was
+  previously silently ignored, not rejected) — this affects the shipped
+  graft reference consumer, not just the witness.
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`

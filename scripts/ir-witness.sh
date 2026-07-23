@@ -23,8 +23,11 @@ echo "A: Rust → canonical JSON"
 # (what B and C produce) has none, so strip the trailing newline.
 printf '%s' "$(./target/debug/colorful ir witness/fixture.txt)" > "$work/a.json"
 
-echo "B: TypeScript decode → canonical JSON"
-node witness/ir-canonicalize.mjs < "$work/a.json" > "$work/b.json"
+echo "B: TypeScript decode → validate → canonical JSON"
+# Pass the source so the TS leg validates the decoded document against the
+# contract and the real bytes (the same admission gate the graft reference
+# consumer runs) before re-emitting -- symmetric with the Rust leg below.
+node witness/ir-canonicalize.mjs witness/fixture.txt < "$work/a.json" > "$work/b.json"
 
 echo "C: Rust decode → validate → canonical JSON"
 # Pass the source so recanon validates the decoded document against the real
@@ -46,5 +49,15 @@ else
   echo "  ❌ tsc not found; cannot type-check generated TS contract" >&2
   exit 1
 fi
+
+echo "Negative fixtures: the TS leg must reject every malformed artifact..."
+for fixture in witness/negative/*.json; do
+  name="$(basename "$fixture" .json)"
+  if node witness/ir-canonicalize.mjs witness/fixture.txt < "$fixture" > /dev/null 2>"$work/negative-$name.err"; then
+    echo "  ❌ $name: expected rejection, but the TS leg accepted it" >&2
+    exit 1
+  fi
+  echo "  ✅ $name rejected: $(cat "$work/negative-$name.err")"
+done
 
 echo "WITNESS PASSED"

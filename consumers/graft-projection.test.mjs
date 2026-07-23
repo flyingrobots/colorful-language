@@ -418,6 +418,11 @@ assert.doesNotThrow(() => validateArtifact(source, ir));
 assert.equal(errorCode(() => validateArtifact(source, null)), "E_ARTIFACT_SHAPE");
 assert.equal(errorCode(() => validateArtifact(source, validIr({ tokens: "nope" }))), "E_ARTIFACT_SHAPE");
 assert.equal(
+  errorCode(() => validateArtifact(source, validIr({ unexpectedField: "surprise" }))),
+  "E_ARTIFACT_SHAPE",
+  "an unknown top-level field must be rejected, not silently ignored",
+);
+assert.equal(
   errorCode(() => validateArtifact(source, validIr({ source: { ...ir.source, utf8ByteLength: "13" } }))),
   "E_ARTIFACT_SHAPE",
   "a non-integer utf8ByteLength must be rejected before it's ever compared",
