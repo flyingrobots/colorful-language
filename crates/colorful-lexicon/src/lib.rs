@@ -506,7 +506,7 @@ impl Lexicon for SeedOpenClassLexicon {
 /// It first delegates to [`LexicalAnnotator`] with the supplied [`Lexicon`], so
 /// closed-class, number, seed-open-class, punctuation, and proper-noun behavior
 /// remain centralized. It then refines only undifferentiated [`PosClass::Content`]
-/// tokens whose lexeme appears in the small [`CONTEXTUAL_WORDS`] table.
+/// tokens whose lexeme appears in the small [`AMBIGUOUS_WORDS`] table.
 #[derive(Debug, Clone, Copy)]
 pub struct ContextualOpenClassAnnotator<L = SeedOpenClassLexicon> {
     lexicon: L,
@@ -922,13 +922,22 @@ mod tests {
         for case in CASES {
             let previous = ctx(case.previous);
             let next = ctx(case.next);
+
+            // The oracle: the actual production function, not a re-derived
+            // lookup -- a regression in contextual_kind itself (e.g. a wrong
+            // fallback) must fail this assertion.
+            let got = contextual_kind(case.word, previous, next);
+
+            // Only for the failure message: find which Sense (if any) this
+            // case's context matches, so the panic cites the real rule's own
+            // evidence rather than a rationale restated in the test.
             let normalized = case.word.to_ascii_lowercase();
             let matched = AMBIGUOUS_WORDS
                 .get(normalized.as_str())
                 .and_then(|senses| senses.iter().find(|sense| (sense.matches)(previous, next)));
 
             assert_eq!(
-                matched.map(|sense| sense.kind),
+                got,
                 case.expected,
                 "{}: {}",
                 case.word,
