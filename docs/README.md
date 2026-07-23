@@ -20,6 +20,23 @@ proven by deterministic executable evidence.
 | `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |
 | [`RELEASING.md`](RELEASING.md) | The release lifecycle, profile adapter, gates, publication, verification, and retrospective runbook. |
 
+## Self-consistency checks
+
+Executable tests that keep a current-truth doc synchronized with the code it
+describes, rather than relying on a reviewer to notice drift by eye.
+
+- **README architecture ports.** The top-level [`../README.md`](../README.md)
+  "Architecture" section names `colorful-core`'s public port traits
+  (`Parser`, `Lexicon`, `Annotator`, `Analyzer`). *Requirement:* the
+  documented port bullets and the crate's actual `pub trait` set must match
+  exactly, bidirectionally — a renamed, added, or removed port fails this
+  test instead of the README silently drifting. *Oracle:* set equality
+  between the parsed README bullet names and the `pub trait` names scanned
+  from `colorful-core/src/lib.rs`. *Evidence:*
+  `crates/colorful-core/tests/port_inventory.rs`
+  `readme_architecture_names_every_public_port_trait`. *Status:*
+  implemented.
+
 ## Design records
 
 Proposal-era decisions, written before implementation. They explain *why* and do
