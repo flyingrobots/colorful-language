@@ -1,7 +1,7 @@
 <div align="center"><h1>colorful-language</h1>
 <h3><code>IDE-grade syntax highlighting for English prose.</code></h3></div>
 
-_Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotes glow as **strings**, and the skeleton of every sentence becomes visible._
+_Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotation marks glow as **strings** while the words inside keep their own roles, and the skeleton of every sentence becomes visible._
 
 ## Why?
 
