@@ -577,7 +577,8 @@ pub fn lint_report(name: &str, source: &str, findings: &[Finding]) -> String {
 
 /// The 1-based `(line, column)` of byte offset `byte` in `source`, counting
 /// columns in characters. Lines are split on `\n`.
-fn line_col(source: &str, byte: usize) -> (usize, usize) {
+#[must_use]
+pub fn line_col(source: &str, byte: usize) -> (usize, usize) {
     let mut line = 1usize;
     let mut col = 1usize;
     for (i, ch) in source.char_indices() {

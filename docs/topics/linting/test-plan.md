@@ -21,6 +21,14 @@ Requirements:
   newlines in its line/column arithmetic.
 - **LINT-8** The LSP maps findings to diagnostics carrying range, severity, rule
   code, and the `colorful` source, with UTF-16 columns.
+- **LINT-9** Reviewed golden input/output fixtures pin the exact CLI report for
+  each rule, a false-positive near-miss per rule, mixed-rule ordering, and
+  CRLF line endings; a harness compares the linter's actual output against
+  each fixture's checked-in expected file and fails the build on any drift.
+- **LINT-10** For the same input, the CLI's findings and the LSP's diagnostics
+  never disagree: same rule codes in the same order, same severities, same
+  messages, and equivalent positions (UTF-8 columns vs. UTF-16 columns, cross-
+  checked on ASCII-only fixtures where the two coincide).
 
 ## Cases
 
@@ -102,3 +110,26 @@ All cases are implemented.
 - **LINT-8d** — *Requirement:* LINT-8. *Behavior:* clean prose yields no
   diagnostics. *Oracle:* empty diagnostics. *Evidence:* `colorful-lsp`
   `tests::clean_prose_yields_no_diagnostics`. *Status:* implemented.
+- **LINT-9a** — *Requirement:* LINT-9. *Behavior:* seven reviewed fixtures
+  (`weak-word`, `run-on`, `length-outlier`, `passive-voice`,
+  `mixed-ordering`, `false-positives`, `crlf-line-endings`) each pin the
+  exact `colorful lint`-style report for a real prose sample, including a
+  false-positive near-miss per rule (an exactly-40-word active-voice
+  sentence with no filler words), multi-rule source ordering, and a
+  literal `\r\n`-encoded fixture. *Oracle:* exact string equality between
+  the linter's live output and each fixture's checked-in `.golden` file.
+  *Evidence:* `crates/colorful-cli/fixtures/lint/*.{txt,golden}`;
+  `colorful-cli`
+  `tests::golden_fixtures_match_the_reviewed_cli_report` (in
+  `crates/colorful-cli/tests/lint_golden_fixtures.rs`). Verified to
+  actually fail on drift by deliberately corrupting a golden file and
+  confirming the test fails, then restoring it. *Status:* implemented.
+- **LINT-10a** — *Requirement:* LINT-10. *Behavior:* for every LINT-9
+  fixture, `colorful_lsp::compute_diagnostics` and `ProseLinter::analyze`
+  report the same findings in the same order: equal rule codes,
+  severities, and messages, and positions that agree once UTF-16 and
+  UTF-8-character columns are reconciled (both are ASCII, so they
+  coincide). *Oracle:* per-finding field equality. *Evidence:*
+  `colorful-cli` `tests::cli_and_lsp_agree_on_every_fixture_finding` (in
+  `crates/colorful-cli/tests/lint_golden_fixtures.rs`). *Status:*
+  implemented.

@@ -30,9 +30,15 @@ exactly as it stays free of a concrete parser or lexicon.
 
 `ProseLinter` is the `v0` `Analyzer`: an adapter that composes the rule pack over
 a `LintConfig` (thresholds plus the filler-word list, all with `Default`s). Every
-rule is shallow, deterministic, and pinned by golden fixtures — no model, no
-network — so the same input always yields the same findings. New rules are added
-here, never in the core or the surfaces.
+rule is shallow and deterministic — no model, no network — so the same input
+always yields the same findings, and each is pinned by reviewed golden
+input/output fixtures under
+[`crates/colorful-cli/fixtures/lint/`](../../../crates/colorful-cli/fixtures/lint/)
+with a harness (`crates/colorful-cli/tests/lint_golden_fixtures.rs`) that
+fails the build if the linter's actual output ever drifts from a fixture's
+checked-in expected report. The same fixtures also pin that the CLI and LSP
+report identical findings for identical input. New rules are added here,
+never in the core or the surfaces.
 
 | Rule | Severity | Heuristic |
 | --- | --- | --- |

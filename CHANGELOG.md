@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Golden fixtures for the prose-linting rule pack.** Seven reviewed
+  input/output fixtures under `crates/colorful-cli/fixtures/lint/` pin the
+  exact CLI report for each of the four lint rules, a false-positive
+  near-miss per rule, multi-rule source ordering, and CRLF line endings. A
+  new harness (`crates/colorful-cli/tests/lint_golden_fixtures.rs`) fails
+  the build if the linter's actual output ever drifts from a fixture's
+  checked-in expected report, and separately asserts that `colorful-lsp`'s
+  diagnostics never disagree with the CLI's findings for the same input.
+  `colorful_cli::line_col` is now public (previously private) so the
+  harness can cross-check CLI and LSP positions directly.
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`
