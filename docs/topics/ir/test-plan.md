@@ -176,7 +176,8 @@ Requirements:
   to_string()` equality (exact for most variants; a path-prefix check for
   `IllegalTokenAxes` and `DanglingChildRef`, whose exact index depends on
   fixture shape rather than the invariant under test); relative positions of
-  one error per stage. *Evidence type:* unit +
+  one error from each of the seven stages, including source identity.
+  *Evidence type:* unit +
   integration test. *Evidence:* `colorful-ir`
   `integration::rejects_wrong_contract_schema_and_vocabulary`,
   `integration::rejects_content_hash_and_byte_length_against_the_real_source`,

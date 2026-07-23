@@ -1790,13 +1790,13 @@ mod integration {
 
     #[test]
     fn error_order_follows_the_seven_validator_stages() {
-        // Trip one invariant in each of the six stages that can fail on this
-        // fixture (source identity is left valid), then assert the returned
-        // errors appear in the fixed stage order `validate_document` runs:
-        // contract identity, token ranges, token axes, structure graph,
-        // diagnostics, derivation. This pins the ordering contract itself —
-        // nothing else in this suite fails if a future edit reorders the
-        // `errors.extend(...)` calls in `validate_document`.
+        // Trip one invariant in each of the seven stages, then assert the
+        // returned errors appear in the fixed stage order `validate_document`
+        // runs: contract identity, source identity, token ranges, token
+        // axes, structure graph, diagnostics, derivation. This pins the
+        // ordering contract itself — nothing else in this suite fails if a
+        // future edit reorders the `errors.extend(...)` calls in
+        // `validate_document`.
         use syntax_v1::{LexicalClass, OpenClassKind};
 
         // A mid-sentence capitalized word ("Paris", not sentence-initial) is
@@ -1807,6 +1807,12 @@ mod integration {
 
         // Stage: contract identity.
         doc.contract_version = "wrong".to_string();
+
+        // Stage: source identity — a declared length that lies about the
+        // real bytes. `ctx.length` always uses the real byte count when a
+        // source is supplied, so this cannot cascade into spurious
+        // out-of-bounds errors in a later stage.
+        doc.source.utf8_byte_length += 1;
 
         // Stage: token ranges.
         doc.tokens[0].byte_range.start_utf8 = -1;
@@ -1852,6 +1858,7 @@ mod integration {
 
         let contract_pos =
             position_of(&|e| matches!(e, ValidationError::UnsupportedContractVersion { .. }));
+        let source_pos = position_of(&|e| matches!(e, ValidationError::ByteLengthMismatch { .. }));
         let token_range_pos = position_of(&|e| matches!(e, ValidationError::NegativeOffset { .. }));
         let token_axes_pos =
             position_of(&|e| matches!(e, ValidationError::IllegalTokenAxes { .. }));
@@ -1866,14 +1873,16 @@ mod integration {
         let derivation_pos = position_of(&|e| matches!(e, ValidationError::EmptyDerivation { .. }));
 
         assert!(
-            contract_pos < token_range_pos
+            contract_pos < source_pos
+                && source_pos < token_range_pos
                 && token_range_pos < token_axes_pos
                 && token_axes_pos < structure_pos
                 && structure_pos < diagnostics_pos
                 && diagnostics_pos < derivation_pos,
-            "expected stage order contract < token_ranges < token_axes < structure \
-             < diagnostics < derivation, got positions {contract_pos}, {token_range_pos}, \
-             {token_axes_pos}, {structure_pos}, {diagnostics_pos}, {derivation_pos} in {errors:?}"
+            "expected stage order contract < source < token_ranges < token_axes < structure \
+             < diagnostics < derivation, got positions {contract_pos}, {source_pos}, \
+             {token_range_pos}, {token_axes_pos}, {structure_pos}, {diagnostics_pos}, \
+             {derivation_pos} in {errors:?}"
         );
     }
 
