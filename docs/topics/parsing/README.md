@@ -13,8 +13,11 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
 `Span` of byte offsets into the source.
 
 - **Words.** A word is a run of Unicode letters, allowing internal apostrophes
-  and hyphens (`don't`, `well-being`). Numbers (`150`, `3.14`, `1,000`) are also
-  emitted as word nodes; the lexicon decides they are numeric.
+  and hyphens (`don't`, `well-being`), and — once the word starts with a
+  letter — internal digits too (`covid19`, `H2O` are each one word). A token
+  that starts with a digit is a number instead (`3.5`), never a word. Numbers
+  (`150`, `3.14`, `1,000`) are also emitted as word nodes; the lexicon decides
+  they are numeric.
 - **Sentences.** A run of `.`/`!`/`?` ends a sentence (the terminator is the
   sentence's last child). Text with no terminator flushes as a single trailing
   sentence. A closing quote or bracket sitting *immediately* after the terminator
@@ -24,9 +27,13 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
   `Punct` nodes.
 - **Whitespace.** ASCII and common Unicode spaces (NBSP, thin space, ideographic
   space, …) separate tokens and are skipped, not emitted as nodes.
-- **Totality.** Parsing never panics. Any character the lexer cannot otherwise
-  classify (an emoji, a stray symbol) becomes a `Punct` node, so no input is
-  rejected and no bytes are dropped.
+- **Totality (release builds).** Parsing never panics or crashes on any input
+  — including pathologically long single tokens. Any character the lexer
+  cannot otherwise classify (an emoji, a stray symbol) becomes a `Punct` node,
+  so no input is rejected and no bytes are dropped. In a **debug** build, an
+  extremely long single token can instead exhaust the thread's stack (see
+  *Known limitations* below); the shipped release binaries do not have this
+  limitation, so this is the guarantee that actually holds for them.
 
 ## Invariants
 
@@ -37,8 +44,14 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
 ## Known limitations (v0)
 
 - Structure is shallow: no clause nesting, no parenthetical grouping.
-- In debug builds, `logos` recurses once per character, so a single token tens
-  of thousands of characters long can exhaust a small stack. Release builds
-  (the shipped binaries) lower the lexer to a loop and are unaffected.
+- **Debug-build stack limit on a single giant token.** `logos` only lowers its
+  lexer to a loop under optimizations; in an unoptimized (debug) build it
+  recurses once per character instead, so one token tens of thousands of
+  characters long can exhaust the thread's default stack and abort the
+  process — not a catchable panic, a hard crash. Release builds (what ships)
+  use the loop form and have no such limit. The test suite exercises a
+  10,000-character single token from a dedicated thread with a 16 MiB stack
+  specifically to give this case a fair, non-flaky run even in debug mode
+  (see the test plan's giant-token strategy).
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.
