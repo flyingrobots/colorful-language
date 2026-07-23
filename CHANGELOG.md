@@ -98,6 +98,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CLI line/column reporting missed non-LF line endings.**
+  `colorful_cli::line_col` (used by `colorful lint`'s report and
+  `diagnose --json`'s `line`/`column` fields) only split on `\n`, so a `\r\n`
+  pair double-counted as two line breaks and a bare `\r` (classic Mac line
+  endings) never advanced the line at all — disagreeing with
+  `colorful_lsp`'s `LineIndex`, which already handled both correctly. Fixed
+  to recognize `\n`, `\r\n` (as one break), and a bare `\r`, matching the
+  LSP exactly.
 - **Paragraph boundaries missed non-LF line endings.** `colorful_ir`'s outline
   builder counted raw `\n` bytes to detect a blank line, so a source using `\r`
   only (classic Mac line endings) never split into paragraphs. A named

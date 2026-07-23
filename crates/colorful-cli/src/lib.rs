@@ -576,20 +576,37 @@ pub fn lint_report(name: &str, source: &str, findings: &[Finding]) -> String {
 }
 
 /// The 1-based `(line, column)` of byte offset `byte` in `source`, counting
-/// columns in characters. Lines are split on `\n`.
+/// columns in characters. Recognizes `\n`, `\r\n`, and a bare `\r` as line
+/// terminators — a `\r\n` pair counts as one line break, never two — matching
+/// `colorful-lsp`'s `LineIndex` exactly, so the CLI and the LSP never
+/// disagree about which line a position falls on.
 #[must_use]
 pub fn line_col(source: &str, byte: usize) -> (usize, usize) {
     let mut line = 1usize;
     let mut col = 1usize;
+    let mut prev_was_cr = false;
     for (i, ch) in source.char_indices() {
         if i >= byte {
             break;
         }
-        if ch == '\n' {
-            line += 1;
-            col = 1;
-        } else {
-            col += 1;
+        if prev_was_cr && ch == '\n' {
+            // The second half of a \r\n pair already broke the line; it
+            // isn't a character of the new line, so it doesn't advance col.
+            prev_was_cr = false;
+            continue;
+        }
+        prev_was_cr = false;
+        match ch {
+            '\n' => {
+                line += 1;
+                col = 1;
+            }
+            '\r' => {
+                line += 1;
+                col = 1;
+                prev_was_cr = true;
+            }
+            _ => col += 1,
         }
     }
     (line, col)
@@ -947,6 +964,19 @@ mod tests {
         assert_eq!(line_col(src, 0), (1, 1));
         assert_eq!(line_col(src, 12), (2, 1));
         assert_eq!(line_col(src, 25), (3, 1));
+    }
+
+    #[test]
+    fn lint_line_col_treats_crlf_as_one_break_and_bare_cr_as_a_break() {
+        // \r\n is one break, not two.
+        let crlf = "First.\r\nThis is just wrong.";
+        assert_eq!(line_col(crlf, 8), (2, 1));
+
+        // A bare \r (classic Mac line endings, no \n anywhere) is still a
+        // break -- matching colorful_lsp::LineIndex, which treats it the
+        // same way, so the CLI and LSP never disagree about the line.
+        let bare_cr = "First.\rThis is just wrong.";
+        assert_eq!(line_col(bare_cr, 7), (2, 1));
     }
 
     #[test]

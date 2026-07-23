@@ -102,16 +102,31 @@ fn cli_and_lsp_agree_on_every_fixture_finding() {
             // These fixtures are ASCII-only, so UTF-8 character columns and
             // UTF-16 code-unit columns coincide: the LSP's 0-based line/
             // character should equal the CLI's 1-based line/column minus one.
-            let (cli_line, cli_col) = colorful_cli::line_col(&source, finding.span.start);
+            // Check both ends of the range -- a truncated or extended end
+            // would still leave the start matching, so start alone can't
+            // prove the ranges agree.
+            let (start_line, start_col) = colorful_cli::line_col(&source, finding.span.start);
             assert_eq!(
                 diagnostic.range.start.line as usize,
-                cli_line - 1,
-                "{name}: line mismatch for {code}"
+                start_line - 1,
+                "{name}: start line mismatch for {code}"
             );
             assert_eq!(
                 diagnostic.range.start.character as usize,
-                cli_col - 1,
-                "{name}: column mismatch for {code}"
+                start_col - 1,
+                "{name}: start column mismatch for {code}"
+            );
+
+            let (end_line, end_col) = colorful_cli::line_col(&source, finding.span.end);
+            assert_eq!(
+                diagnostic.range.end.line as usize,
+                end_line - 1,
+                "{name}: end line mismatch for {code}"
+            );
+            assert_eq!(
+                diagnostic.range.end.character as usize,
+                end_col - 1,
+                "{name}: end column mismatch for {code}"
             );
         }
     }

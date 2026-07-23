@@ -127,9 +127,11 @@ All cases are implemented.
 - **LINT-10a** — *Requirement:* LINT-10. *Behavior:* for every LINT-9
   fixture, `colorful_lsp::compute_diagnostics` and `ProseLinter::analyze`
   report the same findings in the same order: equal rule codes,
-  severities, and messages, and positions that agree once UTF-16 and
+  severities, and messages, and a *complete* range match — both the start
+  and the end position, not just the start — once UTF-16 and
   UTF-8-character columns are reconciled (both are ASCII, so they
-  coincide). *Oracle:* per-finding field equality. *Evidence:*
-  `colorful-cli` `tests::cli_and_lsp_agree_on_every_fixture_finding` (in
+  coincide). *Oracle:* per-finding field equality, including
+  `range.start` and `range.end` independently. *Evidence:* `colorful-cli`
+  `tests::cli_and_lsp_agree_on_every_fixture_finding` (in
   `crates/colorful-cli/tests/lint_golden_fixtures.rs`). *Status:*
   implemented.
