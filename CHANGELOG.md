@@ -23,12 +23,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `from_classification` rejects a missing or duplicate pass identity;
   `validate_document` rejects the same on a received artifact.
 - **Shared CLI argument parser.** `colorful-cli`'s four subcommands (`color`,
-  `ir`, `diagnose`, `lint`) now parse arguments through one `parse_args`
-  function instead of four hand-rolled copies. `--` then a bare `-` now
-  correctly means stdin instead of a literal file named `-`; a flag-shaped
-  argument after `--` (e.g. `--weird-file`) is accepted as a literal path
-  everywhere, not just in the default subcommand; and "at most one `FILE`
-  operand" is now enforced uniformly instead of only in `diagnose`.
+  `ir`, `diagnose`, `lint`) now parse arguments through one `parse_input_args`
+  function instead of four hand-rolled copies, keyed on a `Command` enum that
+  centralizes each command's recognized flags and `--help` text in one place
+  instead of scattering them across each `run_*` call site. `--` then a bare
+  `-` now correctly means stdin instead of a literal file named `-`; a
+  flag-shaped argument after `--` (e.g. `--weird-file`) is accepted as a
+  literal path everywhere, not just in the default subcommand; and "at most
+  one `FILE` operand" is now enforced uniformly instead of only in
+  `diagnose`. A matrix test
+  (`input_args_matrix_has_identical_operand_semantics_across_commands`)
+  exercises every command against the option terminator, the stdin sentinel,
+  an unknown flag, and zero/one/two file operands, asserting identical
+  behavior across all four. All of this is internal to `colorful-cli`, not
+  part of its public API.
 - **Graft reference consumer artifact validation.** The JS reference consumer
   (`consumers/graft-projection.mjs`) gains `validateArtifact(buffer, ir)`, an
   ordered admission gate `project()` now runs unconditionally: top-level
