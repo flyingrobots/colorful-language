@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   diagnostics never disagree with the CLI's findings for the same input.
   `colorful_cli::line_col` is now public (previously private) so the
   harness can cross-check CLI and LSP positions directly.
+- **`colorful-lexicon`'s ambiguous-word rules are now named, data-driven
+  senses.** `contextual_kind` previously hand-matched each ambiguous lexeme
+  (`book`, `record`, `lead`, `fast`) against a separate senses-only table,
+  with a catch-all branch that would silently do nothing for a word absent
+  from the code even if present in the table (or vice versa). Each lexeme is
+  now a `Sense` list — class, named evidence, and the context check that
+  fires it, bundled together — checked in declaration order (the first
+  match wins); there is no catch-all, so a sense can't exist in the data
+  without the logic that makes it fire. A corpus test
+  (`ambiguous_word_corpus_matches_expected_sense_with_rationale`) exercises
+  every sense plus a no-match and an unrecognized-word case, citing each
+  matched rule's own evidence on failure. Internal to `colorful-lexicon`,
+  not a public API change.
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`
@@ -33,12 +46,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `from_classification` rejects a missing or duplicate pass identity;
   `validate_document` rejects the same on a received artifact.
 - **Shared CLI argument parser.** `colorful-cli`'s four subcommands (`color`,
-  `ir`, `diagnose`, `lint`) now parse arguments through one `parse_args`
-  function instead of four hand-rolled copies. `--` then a bare `-` now
-  correctly means stdin instead of a literal file named `-`; a flag-shaped
-  argument after `--` (e.g. `--weird-file`) is accepted as a literal path
-  everywhere, not just in the default subcommand; and "at most one `FILE`
-  operand" is now enforced uniformly instead of only in `diagnose`.
+  `ir`, `diagnose`, `lint`) now parse arguments through one `parse_input_args`
+  function instead of four hand-rolled copies, keyed on a `Command` enum that
+  centralizes each command's recognized flags and `--help` text in one place
+  instead of scattering them across each `run_*` call site. `--` then a bare
+  `-` now correctly means stdin instead of a literal file named `-`; a
+  flag-shaped argument after `--` (e.g. `--weird-file`) is accepted as a
+  literal path everywhere, not just in the default subcommand; and "at most
+  one `FILE` operand" is now enforced uniformly instead of only in
+  `diagnose`. A matrix test
+  (`input_args_matrix_has_identical_operand_semantics_across_commands`)
+  exercises every command against the option terminator, the stdin sentinel,
+  an unknown flag, and zero/one/two file operands, asserting identical
+  behavior across all four. All of this is internal to `colorful-cli`, not
+  part of its public API.
 - **Graft reference consumer artifact validation.** The JS reference consumer
   (`consumers/graft-projection.mjs`) gains `validateArtifact(buffer, ir)`, an
   ordered admission gate `project()` now runs unconditionally: top-level

@@ -375,6 +375,26 @@ mod tests {
     }
 
     #[test]
+    fn quote_marks_are_string_role_and_enclosed_words_keep_their_own_role() {
+        // `"The cat is 3."` -- the quote marks pin to the `string` role
+        // (index 3), and the enclosed words keep their own distinct roles
+        // (keyword, noun, keyword, number) exactly as the unquoted sentence
+        // does in `single_line_tokens_are_delta_encoded`: the whole quoted
+        // span is never collapsed into one `string` token.
+        assert_eq!(
+            semantic_tokens("\"The cat is 3.\""),
+            vec![
+                tok(0, 0, 1, 3), // opening " (string)
+                tok(0, 1, 3, 0), // The     (keyword)
+                tok(0, 4, 3, 4), // cat     (noun)
+                tok(0, 4, 2, 0), // is      (keyword)
+                tok(0, 3, 1, 2), // 3       (number)
+                tok(0, 2, 1, 3), // closing " (string)
+            ]
+        );
+    }
+
+    #[test]
     fn unlisted_content_and_punctuation_are_unstyled() {
         // "zebra" is not in the seed lexicon, and punctuation never emits an LSP
         // semantic token.
