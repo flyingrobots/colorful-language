@@ -26,3 +26,10 @@ colorful-ir = { workspace = true }
 colorful-lint = { workspace = true }
 colorful-projection = { workspace = true }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "colorize_bench"
+harness = false

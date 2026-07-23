@@ -83,7 +83,39 @@ The default CLI/LSP use `ContextualOpenClassAnnotator`, so open-class rows appea
 for the small seed table and the supported contextual patterns. Unknown content
 remains `Content` and is still unstyled.
 
-Incrementality is `v0`-simple: each request reparses the whole document, which is
-cheap for prose. A shipped editor theme remains future work.
+Incrementality is `v0`-simple: each request reparses the whole document. See
+*Performance* below for what that costs in practice. A shipped editor theme
+remains future work.
+
+## Performance
+
+Measured, not asserted: `cargo bench -p colorful-cli` and
+`cargo bench -p colorful-lsp` (release-profile `criterion` benchmarks,
+`crates/colorful-cli/benches/colorize_bench.rs` and
+`crates/colorful-lsp/benches/semantic_tokens_bench.rs`) time the CLI's
+`colorize()` path and the LSP's `compute_semantic_tokens()` path — the full
+per-edit cost under `v0`'s reparse-the-whole-document model — over two
+fixtures: the committed 899-byte `editor-smoke-prose.txt` sample, and a
+45 KB corpus built by repeating it 50×.
+
+**2026-07-23, `rustc 1.96.0`, Apple M1 Pro, 16 GB RAM, macOS (Darwin 25.3.0),
+release profile (`cargo bench`), median of 100 samples:**
+
+| Path | 899 B (small) | 45 KB (medium) |
+| --- | --- | --- |
+| CLI `colorize()` | ~21 µs | ~1.04 ms |
+| LSP `compute_semantic_tokens()` | ~25 µs | ~1.24 ms |
+
+**Budget:** under 16 ms (one 60 Hz frame) for documents up to ~50 KB, on
+comparable hardware — chosen as a product-relevant "feels instant" ceiling,
+not a multiple of today's number; today's medium-corpus measurements sit
+roughly 13–15× under it. This budget is **not yet a CI gate**: a single
+machine's first measurement isn't a stable baseline to enforce against, and
+turning it into a hard failure before establishing one would just make CI
+flaky on noisy hardware. Re-run the benchmarks and update this table when the
+hot path changes meaningfully.
+
+Memory is not yet benchmarked — no allocation or peak-RSS profiling exists
+today. Treat that as an open gap, not an implied "cheap" claim.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

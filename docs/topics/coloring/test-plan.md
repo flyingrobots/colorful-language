@@ -23,6 +23,10 @@ Requirements:
   disambiguation for the supported ambiguous set.
 - **COL-10** The CLI emits a machine-readable diagnostic report that explains
   each token's class and presentation projection.
+- **COL-11** Release-mode latency for the CLI's and the LSP's full per-edit
+  path is measured (not asserted) against a small and a medium fixture, with
+  hardware, toolchain, and date published alongside the numbers, and a
+  stated (not yet CI-enforced) budget.
 
 ## Cases
 
@@ -112,6 +116,16 @@ Requirements:
   *Evidence:* `crates/colorful-cli/fixtures/editor-smoke-prose.txt`;
   `colorful-cli` `tests::diagnose_json_covers_editor_smoke_fixture`. *Status:*
   implemented.
+- **COL-11a** — *Requirement:* COL-11. *Behavior:* `colorize()` and
+  `compute_semantic_tokens()` are timed over a 899-byte real fixture and a
+  45 KB corpus (the same fixture repeated 50×) in release profile.
+  *Oracle:* `criterion` benchmark output; no assertion beyond "the benchmark
+  runs" — the published figures in `docs/topics/coloring/README.md`'s
+  *Performance* section are read and updated by a human, not enforced by
+  CI. *Evidence:* `crates/colorful-cli/benches/colorize_bench.rs`;
+  `crates/colorful-lsp/benches/semantic_tokens_bench.rs`; `cargo bench -p
+  colorful-cli`; `cargo bench -p colorful-lsp`. *Status:* implemented
+  (measurement only — not yet a CI gate; see *Known gaps*).
 
 ## Known gaps
 
@@ -120,3 +134,9 @@ Requirements:
 - The title-case proper-noun guard is heuristic: a short capitalized line with no
   lowercase content word (for example `I am Groot`) can be read as a title and
   suppress a genuine proper noun. Accepted in `v0` as the conservative direction.
+- The COL-11 performance budget (16 ms up to ~50 KB) is documented but not
+  CI-enforced: one machine's first measurement is not a stable baseline, and
+  benchmark timing on shared CI runners is noisy enough that a hard gate
+  today would fail on infrastructure variance, not real regressions. Wire it
+  into CI once a run of stable baselines exists. No memory/allocation
+  profiling exists yet either.

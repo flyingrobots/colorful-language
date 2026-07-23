@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Measured release-mode benchmarks replace unsubstantiated performance
+  claims.** README.md's "Blazing fast" and the coloring topic's "cheap for
+  prose" named no hardware, corpus, or number. Added
+  `crates/colorful-cli/benches/colorize_bench.rs` and
+  `crates/colorful-lsp/benches/semantic_tokens_bench.rs` (`criterion`,
+  `cargo bench -p colorful-cli` / `-p colorful-lsp`), timing the CLI's
+  `colorize()` and the LSP's `compute_semantic_tokens()` — `v0`'s full
+  per-edit cost, since both reparse the whole document — over a 899-byte
+  real fixture and a 45 KB corpus. `docs/topics/coloring/README.md` gets a
+  new *Performance* section with the actual measured figures (2026-07-23,
+  `rustc 1.96.0`, Apple M1 Pro), a stated 16 ms budget for documents up to
+  ~50 KB, and an explicit note that the budget is not yet CI-enforced (a
+  single machine's first measurement isn't a stable baseline). Memory is
+  not benchmarked; that's recorded as an open gap, not implied by "cheap."
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`
