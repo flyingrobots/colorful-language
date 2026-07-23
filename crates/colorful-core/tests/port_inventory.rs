@@ -2,6 +2,35 @@
 //! actual public traits: if a `pub trait` is added, renamed, or removed there
 //! without updating the README, this test fails instead of the docs quietly
 //! drifting from the real port inventory.
+//!
+//! Cited as a self-consistency check in `docs/README.md`.
+
+use std::collections::BTreeSet;
+
+/// Every `pub trait NAME` declared in `core_source`.
+fn trait_names(core_source: &str) -> BTreeSet<&str> {
+    core_source
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("pub trait "))
+        .filter_map(|rest| {
+            rest.split(|c: char| !c.is_alphanumeric() && c != '_')
+                .next()
+        })
+        .filter(|name| !name.is_empty())
+        .collect()
+}
+
+/// Every port name documented as a `- \`Name\` — ...` bullet directly under
+/// `architecture_section`. Only a real bullet counts -- a name merely
+/// mentioned in surrounding prose does not, so deleting a bullet (even while
+/// prose elsewhere still says the word) is detected.
+fn documented_port_names(architecture_section: &str) -> BTreeSet<&str> {
+    architecture_section
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("- `"))
+        .filter_map(|rest| rest.split('`').next())
+        .collect()
+}
 
 #[test]
 fn readme_architecture_names_every_public_port_trait() {
@@ -24,33 +53,26 @@ fn readme_architecture_names_every_public_port_trait() {
         .split("## Architecture")
         .nth(1)
         .expect("README.md has an ## Architecture section");
-    // Stop at the next top-level heading so a port name mentioned elsewhere
-    // in the README can't produce a false pass.
+    // Stop at the next top-level heading so a bullet from an unrelated
+    // section can't be picked up.
     let architecture_section = architecture_section
         .split("\n## ")
         .next()
         .unwrap_or(architecture_section);
 
-    let mut port_traits_found = 0;
-    for line in core_source.lines() {
-        let Some(rest) = line.trim().strip_prefix("pub trait ") else {
-            continue;
-        };
-        let name = rest
-            .split(|c: char| !c.is_alphanumeric() && c != '_')
-            .next()
-            .filter(|s| !s.is_empty())
-            .expect("a trait name follows `pub trait `");
-        port_traits_found += 1;
-        assert!(
-            architecture_section.contains(name),
-            "colorful-core exports `pub trait {name}` but README.md's \
-             Architecture section doesn't mention it -- update the port list"
-        );
-    }
+    let documented = documented_port_names(architecture_section);
+    let actual = trait_names(core_source);
 
     assert!(
-        port_traits_found > 0,
+        !actual.is_empty(),
         "expected to find at least one `pub trait` in colorful-core/src/lib.rs"
+    );
+    // Exact, bidirectional equality: a trait missing from the README bullets
+    // fails (drift the old version of this test caught), and so does a
+    // README bullet naming a trait that no longer exists (drift it did not).
+    assert_eq!(
+        documented, actual,
+        "README.md's Architecture port bullets and colorful-core's `pub trait`s \
+         must match exactly -- left is documented, right is actual"
     );
 }
