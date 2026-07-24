@@ -107,9 +107,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`error_order_follows_the_seven_validator_stages`) pins the new stage
   order. Any downstream code matching on the old field names, or depending
   on the exact previous interleaving, must update.
+- **`syntax_schema_hash()` now normalizes against description-only edits.**
+  It previously hashed `colorful.syntax/v1`'s raw SDL bytes verbatim,
+  so a cosmetic GraphQL description fix (with no field, type, or wire
+  behavior change) would still change `schemaHash` and, transitively,
+  `contractVersion` compatibility checks. It now strips description string
+  literals before hashing; a real shape change (a new field, a renamed
+  type, a new enum value) still changes the hash. `schemaHash`'s current
+  value has therefore changed as of this release even though nothing in the
+  wire contract's shape did — treat this the same as any other
+  `contractVersion`-adjacent identity change.
 
 ### Fixed
 
+- **`DerivationStep`'s schema description overstated `derivation` as full
+  provenance.** `colorful.syntax/v1`'s SDL described `DerivationStep` as "for
+  provenance and replay"; the actual guarantee (IR-8) is a trace seed — an
+  honest `passId`/`ruleId` producer identity, not yet replayable provenance,
+  as `docs/topics/ir/{README.md,test-plan.md}` already correctly stated.
+  Corrected the description in both `contracts/colorful/syntax.v1.graphql`
+  and its package-local copy, and softened matching "provenance" language in
+  `colorful-ir`'s own doc comments. `syntax_schema_hash()` now strips GraphQL
+  description strings before hashing (see below), so this description-only
+  correction does not change `schemaHash`.
 - **Paragraph boundaries missed non-LF line endings.** `colorful_ir`'s outline
   builder counted raw `\n` bytes to detect a blank line, so a source using `\r`
   only (classic Mac line endings) never split into paragraphs. A named
