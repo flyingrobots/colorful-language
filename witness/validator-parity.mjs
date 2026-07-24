@@ -10,7 +10,10 @@ import {
   validateWireContract,
 } from "../consumers/graft-projection.mjs";
 
-const MATRIX_URL = new URL("./validator-parity.json", import.meta.url);
+const MATRIX_URL = new URL(
+  "../crates/colorful-ir/tests/fixtures/validator-parity.json",
+  import.meta.url,
+);
 
 function decodePointerToken(token) {
   return token.replaceAll("~1", "/").replaceAll("~0", "~");

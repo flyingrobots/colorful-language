@@ -139,7 +139,7 @@ Requirements:
   the expected Rust variant is present; JavaScript throws the expected
   `GraftProjectionError.code`; no matrix case is silently skipped. *Evidence
   type:* shared fixture matrix plus Rust/JavaScript executable witnesses.
-  *Evidence:* `witness/validator-parity.json`,
+  *Evidence:* `crates/colorful-ir/tests/fixtures/validator-parity.json`,
   `colorful-ir` `integration::shared_validator_parity_matrix_covers_every_error_variant`,
   `witness/validator-parity.mjs`, and `scripts/ir-witness.sh`. *Status:*
   implemented.

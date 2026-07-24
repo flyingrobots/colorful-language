@@ -1318,7 +1318,7 @@ mod integration {
         let tree = parser.parse(source);
         let tokens = annotator.annotate(source, &tree);
         from_classification(
-            "witness/validator-parity.txt",
+            "crates/colorful-ir/tests/fixtures/validator-parity.txt",
             source,
             &tree,
             &tokens,
@@ -1345,8 +1345,8 @@ mod integration {
 
     #[test]
     fn shared_validator_parity_matrix_covers_every_error_variant() {
-        const SOURCE: &str = include_str!("../../../witness/validator-parity.txt");
-        const MATRIX: &str = include_str!("../../../witness/validator-parity.json");
+        const SOURCE: &str = include_str!("../tests/fixtures/validator-parity.txt");
+        const MATRIX: &str = include_str!("../tests/fixtures/validator-parity.json");
 
         let matrix: ValidatorParityMatrix =
             serde_json::from_str(MATRIX).expect("validator parity matrix must deserialize");
