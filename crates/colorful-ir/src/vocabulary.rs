@@ -136,7 +136,10 @@ pub fn hash() -> String {
 
 /// The [`VisualRole`] for a token's axes, per the manifest. A `WORD` is
 /// disambiguated by its [`LexicalClass`] and, for content words, an optional
-/// [`OpenClassKind`]; every other [`TokenKind`] carries neither.
+/// [`OpenClassKind`]; every other [`TokenKind`] carries neither. Returns `None`
+/// when caller-supplied axes have no authored mapping. This fallible return
+/// type is part of the v0.4 public API: callers decide how an uncovered
+/// combination degrades instead of this boundary panicking on their behalf.
 #[must_use]
 pub fn visual_role(
     token_kind: &TokenKind,
@@ -155,7 +158,9 @@ pub fn visual_role(
 }
 
 /// The [`VisualRole`] for a `colorful-core` [`PosClass`], via the same token axes
-/// the IR projection uses — the bridge every surface calls.
+/// the IR projection uses — the bridge every surface calls. The validated
+/// embedded manifest covers every current `PosClass`, so all current inputs map
+/// to `Some`; callers must nevertheless handle this v0.4 `Option` signature.
 #[must_use]
 pub fn visual_role_for(class: PosClass) -> Option<VisualRole> {
     let (token_kind, lexical_class, _function_kind, open_class_kind) = crate::token_axes(class);
@@ -166,7 +171,10 @@ pub fn visual_role_for(class: PosClass) -> Option<VisualRole> {
     )
 }
 
-/// The per-surface [`RoleProjection`] for a [`VisualRole`].
+/// The per-surface [`RoleProjection`] for a [`VisualRole`]. Manifest validation
+/// requires complete coverage of the current generated enum, so every current
+/// role maps to `Some`; callers must nevertheless handle this v0.4 `Option`
+/// signature.
 #[must_use]
 pub fn projection(role: &VisualRole) -> Option<&'static RoleProjection> {
     manifest()
@@ -423,6 +431,23 @@ mod tests {
     #[test]
     fn visual_role_returns_none_for_uncovered_axes() {
         assert_eq!(visual_role(&TokenKind::Word, None, None), None);
+    }
+
+    #[test]
+    fn public_lookup_signatures_pin_the_v04_fallible_contract() {
+        type VisualRoleLookup = for<'a, 'b, 'c> fn(
+            &'a TokenKind,
+            Option<&'b LexicalClass>,
+            Option<&'c OpenClassKind>,
+        ) -> Option<VisualRole>;
+        type ProjectionLookup = for<'a> fn(&'a VisualRole) -> Option<&'static RoleProjection>;
+
+        let axes_lookup: VisualRoleLookup = visual_role;
+        let class_lookup: fn(PosClass) -> Option<VisualRole> = visual_role_for;
+        let projection_lookup: ProjectionLookup = projection;
+        assert_eq!(axes_lookup(&TokenKind::Word, None, None), None);
+        assert_eq!(class_lookup(PosClass::Content), Some(VisualRole::Unstyled));
+        assert!(projection_lookup(&VisualRole::Unstyled).is_some());
     }
 
     #[test]

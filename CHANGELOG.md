@@ -135,6 +135,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking vocabulary lookup API queued for v0.4.0.**
+  `colorful_ir::vocabulary::{visual_role, visual_role_for, projection}` now
+  return `Option` instead of a bare `VisualRole` / `RoleProjection` reference.
+  This is an intentional major-line change, not patch-compatible behavior:
+  callers adopting `0.4.x` must handle the fallible result explicitly. No
+  compatibility wrappers preserve the old panic/`.expect()` contract. The
+  public axis lookup returns `None` for caller-supplied combinations without an
+  authored mapping; manifest validation guarantees every current `PosClass`
+  and generated `VisualRole` maps to `Some`. A compile-time signature test
+  durably pins all three `Option` return types.
 - **Breaking API queued for v0.4.0.** `colorful_ir::from_classification` is a
   public function and now takes two additional mandatory parameters,
   `parser_identity: PassIdentity` and `annotator_identity: PassIdentity`.
@@ -212,11 +222,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   times, vacuously passing validation despite claiming no producer identity at
   all. `validate_document` now rejects an empty `derivation` explicitly via
   `ValidationError::EmptyDerivation`.
-- **Total vocabulary lookups.** `colorful_ir::vocabulary::visual_role`,
-  `visual_role_for`, and `projection` return `Option` instead of
-  panicking/`.expect()`-ing on an uncovered axis combination or a manifest
-  missing a role's projection; `colorful-cli` and `colorful-lsp` propagate the
-  `None` through to "no styling" instead of crashing.
 
 ### Security
 

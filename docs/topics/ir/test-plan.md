@@ -1,7 +1,8 @@
 # IR — Test Plan
 
-Verification for the Stage 1 surface IR (`colorful.syntax/v1`). All cases are
-**implemented**; see [architecture](architecture.md) for the design of record.
+Verification for the Stage 1 surface IR (`colorful.syntax/v1`). Cases record
+their implementation status individually; see [architecture](architecture.md)
+for the design of record.
 
 Requirements:
 
@@ -47,6 +48,11 @@ Requirements:
   change (including formatting, type, field, or enum edits) does — and both
   sides of the language boundary (`colorful-ir` and the Graft reference
   consumer) normalize identically.
+- **IR-13** Public vocabulary lookups return `Option`: caller-supplied,
+  uncovered token axes fail soft instead of panicking, the validated embedded
+  manifest gives complete coverage for every current `PosClass` and generated
+  `VisualRole`, and all three fallible signatures are an explicitly documented
+  breaking API change in the queued v0.4.0 line, never a silent patch release.
 
 ## Cases
 
@@ -282,6 +288,35 @@ Requirements:
   strings; cross-language hash equality verified manually against the real
   contract at authoring time. *Evidence type:* unit test. *Evidence:*
   `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **IR-13a** — *Requirement:* IR-13. *Behavior:* public `visual_role` returns
+  `None` for caller-supplied axes without an authored mapping, while manifest
+  validation and public lookups prove every current `PosClass` and generated
+  `VisualRole` maps to `Some`. *Oracle:* exact `Option` equality through the
+  public API plus complete manifest coverage. *Evidence type:* unit test.
+  *Evidence:* `colorful-ir`
+  `vocabulary::tests::visual_role_returns_none_for_uncovered_axes`,
+  `pos_classes_map_to_the_expected_roles`, and
+  `manifest_parses_and_every_role_has_a_projection`. *Status:* implemented.
+- **IR-13b** — *Requirement:* IR-13. *Behavior:* the v0.4.0 changelog names
+  `visual_role`, `visual_role_for`, and `projection` changing from total return
+  values to `Option` as a breaking API, and a semver comparison against
+  `v0.3.0` is interpreted alongside a checked-in compile-time signature
+  contract instead of allowing the change to masquerade as patch-compatible.
+  *Oracle:* the changelog explicitly calls the signatures breaking; a unit
+  test assigns all three public functions to exact `Option`-returning function
+  pointer types; the ordinary semver run accepts the declared v0.3 → v0.4
+  major-line transition; a forced patch audit fails. *Evidence type:* unit
+  test, documentation, and semver audit. *Evidence:* `colorful-ir`
+  `vocabulary::tests::public_lookup_signatures_pin_the_v04_fallible_contract`;
+  `[Unreleased]` changelog entry; public API docs in
+  `crates/colorful-ir/src/vocabulary.rs`; recorded `cargo-semver-checks 0.49.0`
+  runs on 2026-07-23:
+  `cargo semver-checks --package colorful-ir --baseline-rev v0.3.0` exited zero
+  after identifying a major change (therefore running zero applicable checks),
+  while the same command with `--release-type patch` ran 223 checks and exited
+  100 with five categories of major API violation. The tool did not report
+  return-type changes; the checked-in compile-time signature test covers that
+  gap rather than overstating the tool's coverage. *Status:* implemented.
 
 ## Known gaps / risks
 
