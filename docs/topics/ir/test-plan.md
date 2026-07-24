@@ -139,10 +139,10 @@ Requirements:
   the expected Rust variant is present; JavaScript throws the expected
   `GraftProjectionError.code`; no matrix case is silently skipped. *Evidence
   type:* shared fixture matrix plus Rust/JavaScript executable witnesses.
-  *Evidence:* planned `witness/validator-parity.json`,
+  *Evidence:* `witness/validator-parity.json`,
   `colorful-ir` `integration::shared_validator_parity_matrix_covers_every_error_variant`,
   `witness/validator-parity.mjs`, and `scripts/ir-witness.sh`. *Status:*
-  planned.
+  implemented.
 - **IR-5a** — *Requirement:* IR-5. *Behavior:* `from_classification` projects
   `colorful-core` types into the DTO; `colorful-core` does not depend on generated
   types. *Oracle:* `colorful-core` compiles standalone. *Evidence:*

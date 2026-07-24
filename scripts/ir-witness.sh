@@ -82,4 +82,14 @@ for fixture in witness/negative/*.json; do
   echo "  ✅ $name rejected for the expected reason: $actual"
 done
 
+echo "Cross-language validator parity: one mutation matrix, two independent validators..."
+printf '%s' \
+  "$(./target/debug/colorful ir witness/validator-parity.txt)" \
+  > "$work/validator-parity-base.json"
+COLORFUL_VALIDATOR_PARITY_DOCUMENT="$work/validator-parity-base.json" \
+  cargo test -q -p colorful-ir shared_validator_parity_matrix_covers_every_error_variant
+node witness/validator-parity.mjs \
+  witness/validator-parity.txt \
+  "$work/validator-parity-base.json"
+
 echo "WITNESS PASSED"

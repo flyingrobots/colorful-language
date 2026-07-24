@@ -138,6 +138,15 @@ consumer all derive from this manifest.
   `escape_debug()` first, so a malformed artifact cannot forge extra log
   lines or terminal escape sequences in a consumer that prints the error
   text — the `recanon` witness leg being the concrete case that does.
+- **Cross-language validator parity.** One shared 18-case declarative mutation
+  matrix starts both validators from the same canonical Rust-produced Unicode
+  document, then requires each mutation to produce its named Rust
+  `ValidationError` variant and stable JavaScript `GraftProjectionError.code`.
+  Rust's exhaustive variant matcher makes a newly added public validation
+  error a compile-time inventory change; case-count equality then requires a
+  corresponding shared mutation. Graft's additional token wire-ordering check
+  remains outside this matrix because it is deliberately stricter than the
+  shared wire contract. `scripts/ir-witness.sh` runs both legs.
 
 ## Known limitations (Stage 1)
 
