@@ -120,7 +120,7 @@ function checkFile(repoRoot, mdPath) {
     }
 
     const resolved = resolve(fileDir, pathPart);
-    
+
     // Check for link escaping the repository root
     const rel = relative(repoRoot, resolved);
     if (rel.startsWith("..") || isAbsolute(rel)) {
@@ -141,7 +141,7 @@ function checkFile(repoRoot, mdPath) {
         failures.push(`${label}: anchor "#${anchor}" on a directory link "${pathPart}" is not checkable`);
         continue;
       }
-      
+
       const isMarkdown = resolved.endsWith(".md");
       if (isMarkdown) {
         const targetMarkdown = readFileSync(resolved, "utf8");
@@ -155,12 +155,12 @@ function checkFile(repoRoot, mdPath) {
           failures.push(`${label}: invalid line anchor "#${anchor}" on non-Markdown file "${pathPart}"`);
           continue;
         }
-        
+
         const fileContent = readFileSync(resolved, "utf8");
         const totalLines = fileContent.split("\n").length;
         const startLine = parseInt(lineMatch[1], 10);
         const endLine = lineMatch[2] ? parseInt(lineMatch[2], 10) : startLine;
-        
+
         if (startLine < 1 || startLine > totalLines || endLine < startLine || endLine > totalLines) {
           failures.push(`${label}: line anchor "#${anchor}" out of bounds (file has ${totalLines} lines) for "${pathPart}"`);
         }

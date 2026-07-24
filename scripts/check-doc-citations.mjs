@@ -87,12 +87,12 @@ function isRangeCitation(span) {
 function looksLikeCitedPath(span) {
   if (/\s/.test(span)) return false; // a shell command or prose fragment, not a bare path
   if (isPlaceholderPath(span) || isRangeCitation(span)) return false;
-  
+
   if (span.includes("/")) {
     const firstSegment = span.split("/")[0];
     return KNOWN_ROOTS.has(firstSegment);
   }
-  
+
   const lower = span.toLowerCase();
   if (KNOWN_ROOTS.has(span)) return true;
   if (!span.includes(".")) return false;
@@ -122,12 +122,12 @@ function wildcardToRegExp(pattern) {
 
 function globMatch(repoRoot, pattern) {
   const segments = pattern.split("/");
-  
+
   const matchSegment = (dir, index) => {
     if (index === segments.length) {
       return existsSync(dir);
     }
-    
+
     const segment = segments[index];
     if (segment.includes("*")) {
       if (!existsSync(dir)) return false;
@@ -150,7 +150,7 @@ function globMatch(repoRoot, pattern) {
       return matchSegment(join(dir, segment), index + 1);
     }
   };
-  
+
   return matchSegment(repoRoot, 0);
 }
 
@@ -174,10 +174,10 @@ function checkFile(repoRoot, mdPath) {
 
   const markdown = readFileSync(mdPath, "utf8");
   const lines = markdown.split("\n");
-  
+
   const blocks = [];
   let currentBlock = null;
-  
+
   for (const line of lines) {
     if (/^\s*[-*]\s+\*\*[^*]+\*\*/.test(line)) {
       if (currentBlock) {
@@ -201,7 +201,7 @@ function checkFile(repoRoot, mdPath) {
   if (currentBlock) {
     blocks.push(currentBlock);
   }
-  
+
   for (const block of blocks) {
     const blockText = block.lines.join("\n");
     if (block.isCase) {
@@ -210,7 +210,7 @@ function checkFile(repoRoot, mdPath) {
         continue;
       }
     }
-    
+
     for (const span of extractInlineCodeSpans(blockText)) {
       if (!looksLikeCitedPath(span)) continue;
 
@@ -261,7 +261,7 @@ function runSelfTest() {
     assert.ok(!messages.includes("colorful-core"), "a bare crate name (no slash, unknown root) must not be flagged");
     assert.ok(!messages.includes("--version"), "a CLI flag must not be flagged");
     assert.ok(!messages.includes("cargo test"), "a shell command must not be flagged");
-    
+
     assert.ok(!messages.includes("planned_nonexistent.rs"), "a path in a planned case must not be flagged");
     assert.ok(messages.includes("does_not_exist_in_impl.rs"), "a broken citation in an implemented case must be flagged");
 
