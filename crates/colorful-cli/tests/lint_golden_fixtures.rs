@@ -11,7 +11,8 @@
 //! so the CLI and LSP surfaces can never silently disagree about what a
 //! document's problems are -- only how a position is encoded (UTF-8 columns
 //! for the CLI, UTF-16 for the LSP) is allowed to differ, and even that is
-//! cross-checked for these ASCII-only fixtures.
+//! cross-checked directly for the ASCII golden fixtures and by a dedicated
+//! Unicode + mixed-line-ending parity case below.
 
 use colorful_cli::lint_report;
 use colorful_core::{Analyzer, Annotator, Parser, Severity};
@@ -129,5 +130,103 @@ fn cli_and_lsp_agree_on_every_fixture_finding() {
                 "{name}: end column mismatch for {code}"
             );
         }
+    }
+}
+
+/// Independently resolve one byte offset into the two position encodings under
+/// test: the CLI's 1-based Unicode-scalar line/column and the LSP's 0-based
+/// UTF-16 line/character. `\r\n`, bare `\r`, and bare `\n` are each one logical
+/// line break.
+fn expected_positions(source: &str, byte: usize) -> ((usize, usize), (u32, u32)) {
+    assert!(
+        source.is_char_boundary(byte),
+        "oracle byte offset must be a character boundary"
+    );
+
+    let mut cli_line = 1usize;
+    let mut cli_col = 1usize;
+    let mut lsp_line = 0u32;
+    let mut lsp_character = 0u32;
+    let mut chars = source[..byte].chars().peekable();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\r' => {
+                if chars.peek() == Some(&'\n') {
+                    chars.next();
+                }
+                cli_line += 1;
+                cli_col = 1;
+                lsp_line += 1;
+                lsp_character = 0;
+            }
+            '\n' => {
+                cli_line += 1;
+                cli_col = 1;
+                lsp_line += 1;
+                lsp_character = 0;
+            }
+            _ => {
+                cli_col += 1;
+                lsp_character += ch.len_utf16() as u32;
+            }
+        }
+    }
+
+    ((cli_line, cli_col), (lsp_line, lsp_character))
+}
+
+#[test]
+fn cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings() {
+    // Each finding follows both an astral scalar (two UTF-16 code units, one
+    // Unicode scalar) and a combining mark (one unit/scalar). The four lines
+    // exercise CRLF, bare CR, and LF in a single source.
+    let source =
+        "😀 cafe\u{301} just.\r\n😀 cafe\u{301} just.\r😀 cafe\u{301} just.\n😀 cafe\u{301} just.";
+    let parser = ProseParser::new();
+    let annotator = ContextualOpenClassAnnotator::default();
+    let tree = parser.parse(source);
+    let tokens = annotator.annotate(source, &tree);
+    let cli_findings = ProseLinter::new().analyze(source, &tree, &tokens);
+    let lsp_diagnostics =
+        colorful_lsp::compute_diagnostics(source, &parser, &annotator, &ProseLinter::new());
+
+    assert_eq!(cli_findings.len(), 4, "one weak-word finding per line");
+    assert_eq!(lsp_diagnostics.len(), cli_findings.len());
+
+    for (index, (finding, diagnostic)) in
+        cli_findings.iter().zip(lsp_diagnostics.iter()).enumerate()
+    {
+        let expected_line = index + 1;
+        assert_eq!(finding.rule.code(), "weak-word");
+        assert_eq!(finding.span.slice(source), "just");
+        assert_eq!(diagnostic.message, finding.message);
+
+        let (cli_start, lsp_start) = expected_positions(source, finding.span.start);
+        let (cli_end, lsp_end) = expected_positions(source, finding.span.end);
+        assert_eq!(cli_start.0, expected_line, "CLI start human line");
+        assert_eq!(cli_end.0, expected_line, "CLI end human line");
+        assert_eq!(
+            colorful_cli::line_col(source, finding.span.start),
+            cli_start,
+            "CLI start position"
+        );
+        assert_eq!(
+            colorful_cli::line_col(source, finding.span.end),
+            cli_end,
+            "CLI end position"
+        );
+        assert_eq!(
+            (
+                diagnostic.range.start.line,
+                diagnostic.range.start.character
+            ),
+            lsp_start,
+            "LSP start position"
+        );
+        assert_eq!(
+            (diagnostic.range.end.line, diagnostic.range.end.character),
+            lsp_end,
+            "LSP end position"
+        );
     }
 }

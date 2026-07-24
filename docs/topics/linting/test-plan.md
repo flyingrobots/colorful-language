@@ -143,6 +143,6 @@ All cases are implemented.
   the surface-specific scalar and UTF-16 columns. *Oracle:* rule/message/span
   equality, 1-based CLI line equality, 0-based LSP line equality, and exact
   start/end column equality in each surface's encoding. *Evidence type:*
-  integration test. *Evidence:* planned `colorful-cli`
+  integration test. *Evidence:* `colorful-cli`
   `tests::cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings`.
-  *Status:* planned.
+  *Status:* implemented.
