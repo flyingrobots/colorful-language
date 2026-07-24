@@ -62,7 +62,19 @@ colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt \
   | python3 -m json.tool
 ```
 
-<div align="center"><img width="739" height="817" alt="Screenshot 2026-06-21 at 12 20 52" src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
+<div align="center"><img width="739" height="817" alt="A terminal running `cat README.md | colorful`: this file's own prose rendered with function words in bold magenta, proper nouns and acronyms in bold yellow, quoted phrases in green, and unlisted content words left in the default color." src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
+
+The screenshot above pipes this README through `colorful` itself. The visible
+token-role mapping (see [`docs/topics/coloring/`](docs/topics/coloring/) for
+the exact contract):
+
+| What's highlighted | Example | Terminal color |
+| --- | --- | --- |
+| Closed-class function words | `and`, `for`, `the`, `is`, `with` | bold magenta |
+| Proper nouns and capitalized acronyms | `English`, `NLP`, `CLI`, `LSP` | bold yellow |
+| Quotation marks (and the phrase they enclose) | `"correct, deep"` | green |
+| Numbers | `0.1.0` | cyan |
+| Everything else (unlisted content words) | — | default terminal color |
 
 ---
 
