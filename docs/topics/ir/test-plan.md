@@ -1,7 +1,8 @@
 # IR — Test Plan
 
-Verification for the Stage 1 surface IR (`colorful.syntax/v1`). All cases are
-**implemented**; see [architecture](architecture.md) for the design of record.
+Verification for the Stage 1 surface IR (`colorful.syntax/v1`). Cases record
+their implementation status individually; see [architecture](architecture.md)
+for the design of record.
 
 Requirements:
 
@@ -47,6 +48,10 @@ Requirements:
   change (including formatting, type, field, or enum edits) does — and both
   sides of the language boundary (`colorful-ir` and the Graft reference
   consumer) normalize identically.
+- **IR-13** Public vocabulary lookups fail soft instead of panicking when a
+  caller supplies uncovered token axes or a lookup table lacks a requested
+  key; the resulting `Option` return types are an explicitly documented
+  breaking API change in the queued v0.4.0 line, never a silent patch release.
 
 ## Cases
 
@@ -282,6 +287,22 @@ Requirements:
   strings; cross-language hash equality verified manually against the real
   contract at authoring time. *Evidence type:* unit test. *Evidence:*
   `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **IR-13a** — *Requirement:* IR-13. *Behavior:* the lookup operations behind
+  `visual_role` and `projection` return `None` for a key absent from a sparse
+  table, while every current `PosClass` and generated `VisualRole` still maps
+  to `Some`. *Oracle:* exact `Option` equality over sparse and complete
+  manifests. *Evidence type:* unit test. *Evidence:* planned
+  `colorful-ir` vocabulary lookup tests. *Status:* planned.
+- **IR-13b** — *Requirement:* IR-13. *Behavior:* the v0.4.0 changelog names
+  `visual_role`, `visual_role_for`, and `projection` changing from total return
+  values to `Option` as a breaking API, and a semver comparison against
+  `v0.3.0` reports the incompatible signatures instead of allowing them to
+  masquerade as a patch-compatible change. *Oracle:* changelog review and
+  `cargo semver-checks` reports the expected public API incompatibilities.
+  *Evidence type:* documentation plus semver audit. *Evidence:* planned
+  `[Unreleased]` changelog entry and a recorded
+  `cargo semver-checks --package colorful-ir --baseline-rev v0.3.0` run.
+  *Status:* planned.
 
 ## Known gaps / risks
 
