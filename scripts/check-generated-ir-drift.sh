@@ -62,8 +62,7 @@ check "$gen_ts/syntax_v1.ts" "$root/crates/colorful-ir/ts/syntax_v1.ts"
 check "$gen_ts/vocabulary_v1.ts" "$root/crates/colorful-ir/ts/vocabulary_v1.ts"
 
 if [[ "$drift" -ne 0 ]]; then
-  fail "committed generated output is stale -- run" \
-    "'COLORFUL_WESLEY_ROOT=<wesley 0.1.1 checkout> bash scripts/gen-ir.sh' and commit the diff"
+  fail "committed generated output is stale -- check out flyingrobots/wesley at commit $WESLEY_COMMIT, run 'COLORFUL_WESLEY_ROOT=<path> bash scripts/gen-ir.sh', and commit the diff"
 fi
 
 echo "check-generated-ir-drift passed: committed generated output matches pinned Wesley $REQUIRED_WESLEY_VERSION."

@@ -57,7 +57,7 @@ Requirements:
   `contracts/colorful/*.graphql` today; generation happens into a temporary
   directory, never overwriting the checkout. *Oracle:* `cmp` byte equality
   per generated file; non-zero exit and a unified diff on any drift.
-  *Evidence:* `scripts/check-generated-ir-drift.sh`; CI job
+  *Evidence type:* executable script check. *Evidence:* `scripts/check-generated-ir-drift.sh`; CI job
   `generated-ir-drift`; `scripts/release-prep.sh`. *Status:* implemented.
 - **IR-2a (the gate)** — *Requirement:* IR-2. *Behavior:* a `DocumentAnalysis`
   round-trips `Rust → JSON A → TS decode → JSON B → Rust decode → JSON C`.

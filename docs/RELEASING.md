@@ -289,6 +289,7 @@ That script runs:
 - package witness;
 - release build;
 - IR witness, including generated TypeScript contract type-checking;
+- Wesley-generated IR contract drift check (clones and compiles pinned Wesley);
 - Graft reference consumer test;
 - VS Code extension compile;
 - Zed extension compile with locked Cargo metadata;
