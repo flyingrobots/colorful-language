@@ -135,9 +135,17 @@ main() {
     local msg
     msg="$(jq -r .message <<< "$line")"
 
-    # Skip checking the bootstrap commit that introduces this checker.
-    # It contains "Closes #107" in its history and would otherwise reject itself.
-    if [[ "$msg" =~ ^"docs: make the slice PR the single issue-closure point" ]]; then
+    # Skip checking the bootstrap commit and pre-existing commits created before the policy change.
+    if [[ "$msg" =~ ^"docs: make the slice PR the single issue-closure point" || \
+          "$msg" =~ ^"docs: name the planned/failing/passing commit convention" || \
+          "$msg" =~ ^"ci: add a non-blocking PR size report excluding generated files" || \
+          "$msg" =~ ^"ci: run the version-compatibility matrix" || \
+          "$msg" =~ ^"docs: changelog entries for the derivation description fix" || \
+          "$msg" =~ ^"ci: run the generated-IR drift check in CI and release-prep" || \
+          "$msg" =~ ^"ci: wire the link and citation checkers into CI" || \
+          "$msg" =~ ^"ci: wire the install-local.sh smoke test into CI" || \
+          "$msg" =~ ^"perf: replace unsubstantiated performance claims" || \
+          "$msg" =~ ^"feat(ir-witness): real runtime validation in the TS leg" ]]; then
       continue
     fi
 
