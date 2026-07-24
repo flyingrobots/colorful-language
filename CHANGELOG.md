@@ -145,6 +145,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Product maturity is now an explicit third roadmap axis.** The preserved
+  moonshot phases now sit alongside M0–M4 evidence tracks that organize the
+  34-issue non-epic intake snapshot around reproducibility, boundary integrity,
+  responsive analysis, distribution, and observed user value.
+  The deep-end evidence gate freezes new provenance, Controlled Natural English,
+  and Edict surface expansion until the current boundary, LSP, distribution,
+  independent consumer, and product-value obligations have executable evidence.
+  The documentation index and owning topic test plans now route that work
+  through issue-linked planned cases instead of presenting it as current
+  behavior.
 - **Breaking vocabulary lookup API queued for v0.4.0.**
   `colorful_ir::vocabulary::{visual_role, visual_role_for, projection}` now
   return `Option` instead of a bare `VisualRole` / `RoleProjection` reference.
