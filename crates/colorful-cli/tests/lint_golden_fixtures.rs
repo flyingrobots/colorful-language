@@ -197,9 +197,27 @@ fn cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings() {
         cli_findings.iter().zip(lsp_diagnostics.iter()).enumerate()
     {
         let expected_line = index + 1;
-        assert_eq!(finding.rule.code(), "weak-word");
+        let code = finding.rule.code();
+        assert_eq!(code, "weak-word");
         assert_eq!(finding.span.slice(source), "just");
-        assert_eq!(diagnostic.message, finding.message);
+        let diagnostic_code = match &diagnostic.code {
+            Some(tower_lsp::lsp_types::NumberOrString::String(code)) => code.as_str(),
+            other => panic!("line {expected_line}: expected string diagnostic code, got {other:?}"),
+        };
+        assert_eq!(diagnostic_code, code, "line {expected_line}: rule mismatch");
+        assert_eq!(
+            diagnostic.message, finding.message,
+            "line {expected_line}: message mismatch"
+        );
+        let expected_severity = match finding.severity {
+            Severity::Warning => tower_lsp::lsp_types::DiagnosticSeverity::WARNING,
+            Severity::Info => tower_lsp::lsp_types::DiagnosticSeverity::INFORMATION,
+        };
+        assert_eq!(
+            diagnostic.severity,
+            Some(expected_severity),
+            "line {expected_line}: severity mismatch"
+        );
 
         let (cli_start, lsp_start) = expected_positions(source, finding.span.start);
         let (cli_end, lsp_end) = expected_positions(source, finding.span.end);

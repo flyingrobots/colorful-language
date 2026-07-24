@@ -140,9 +140,10 @@ All cases are implemented.
   findings after an astral scalar and a combining mark on lines separated by
   LF, CRLF, and bare CR; CLI and LSP agree on each finding's complete byte span
   and human line, while an independent oracle converts the span endpoints to
-  the surface-specific scalar and UTF-16 columns. *Oracle:* rule/message/span
-  equality, 1-based CLI line equality, 0-based LSP line equality, and exact
-  start/end column equality in each surface's encoding. *Evidence type:*
+  the surface-specific scalar and UTF-16 columns. *Oracle:*
+  rule/severity/message/span equality, 1-based CLI line equality, 0-based LSP
+  line equality, and exact start/end column equality in each surface's
+  encoding. *Evidence type:*
   integration test. *Evidence:* `colorful-cli`
   `tests::cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings`.
   *Status:* implemented.
