@@ -24,6 +24,7 @@ cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --all --locked
 bash scripts/package-witness.sh
+bash scripts/smoke-test-install-local.sh
 cargo build --release --locked
 npm --prefix editors/vscode ci
 export PATH="$root/editors/vscode/node_modules/.bin:$PATH"

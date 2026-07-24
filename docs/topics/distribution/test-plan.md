@@ -32,8 +32,15 @@ Verification for install paths and published artifacts.
   implemented in workflow.
 - **DIST-4a** — *Requirement:* DIST-4. *Behavior:* `scripts/install-local.sh`
   installs `colorful` under `$COLORFUL_HOME/bin`, defaulting to
-  `$HOME/.colorful-language/bin`. *Oracle:* script review. *Evidence:*
-  `scripts/install-local.sh`. *Status:* implemented.
+  `$HOME/.colorful-language/bin`; a smoke test installs into a fresh
+  temporary `COLORFUL_HOME`, verifies `bin/colorful --version`, reruns
+  against the same `COLORFUL_HOME` to prove the documented "re-run to
+  upgrade" path is idempotent (`--force`), and asserts the real
+  `$HOME/.colorful-language` is never touched. *Oracle:* script exit code;
+  version-string equality across the two runs; before/after equality of the
+  real install directory's state. *Evidence:*
+  `scripts/smoke-test-install-local.sh`; CI job `install-local-smoke`;
+  `scripts/release-prep.sh`. *Status:* implemented.
 - **DIST-5a** — *Requirement:* DIST-5. *Behavior:* Homebrew is not documented as
   an install path until a formula or tap exists. *Oracle:* documentation review.
   *Evidence:* `README.md`; `docs/topics/distribution/README.md`. *Status:*
