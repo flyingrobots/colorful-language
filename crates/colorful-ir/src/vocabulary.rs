@@ -426,6 +426,44 @@ mod tests {
     }
 
     #[test]
+    fn visual_role_lookup_returns_none_when_sparse_manifest_lacks_key() {
+        let mut value = manifest_value();
+        value["classRoles"]
+            .as_array_mut()
+            .expect("classRoles is an array")
+            .retain(|rule| {
+                !(rule["tokenKind"].as_str() == Some("WORD")
+                    && rule["lexicalClass"].as_str() == Some("CONTENT")
+                    && rule["openClassKind"].as_str() == Some("NOUN"))
+            });
+        let sparse: Manifest =
+            serde_json::from_value(value).expect("sparse manifest still has a valid JSON shape");
+
+        assert_eq!(
+            visual_role_in(
+                &sparse,
+                &TokenKind::Word,
+                Some(&LexicalClass::Content),
+                Some(&OpenClassKind::Noun),
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn projection_lookup_returns_none_when_sparse_manifest_lacks_key() {
+        let mut value = manifest_value();
+        value["roleProjections"]
+            .as_array_mut()
+            .expect("roleProjections is an array")
+            .retain(|projection| projection["visualRole"].as_str() != Some("NOUN"));
+        let sparse: Manifest =
+            serde_json::from_value(value).expect("sparse manifest still has a valid JSON shape");
+
+        assert!(projection_in(&sparse, &VisualRole::Noun).is_none());
+    }
+
+    #[test]
     fn pos_classes_map_to_the_expected_roles() {
         use colorful_core::FunctionKind;
         assert_eq!(
