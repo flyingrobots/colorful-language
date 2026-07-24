@@ -254,6 +254,11 @@ For documentation changes:
 ```bash
 markdownlint-cli2 "**/*.md"
 git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+node scripts/check-internal-links.mjs
+node scripts/check-doc-citations.mjs
 ```
+
+See `docs/DOCUMENTATION_STANDARDS.md` §8 for what these enforce and what
+remains a known gap.
 
 GitHub Actions runs the same checks as the merge gate.
