@@ -464,181 +464,272 @@ impl core::fmt::Display for Path {
     }
 }
 
-/// One reason a [`syntax_v1::DocumentAnalysis`] failed validation.
-///
-/// The variants name the broken invariant precisely so a consumer (or the
-/// witness) can report exactly which lie it rejected. Every variant carries a
-/// [`Path`] pointing at exactly where in the document the invariant broke.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ValidationError {
-    /// `contractVersion` is not the one this build understands.
-    UnsupportedContractVersion {
-        /// Always `contractVersion`.
-        path: Path,
-        /// The version the document declared.
-        found: String,
-    },
-    /// `schemaHash` does not match this build's `colorful.syntax/v1` SDL.
-    SchemaHashMismatch {
-        /// Always `schemaHash`.
-        path: Path,
-        /// The hash this build expects.
-        expected: String,
-        /// The hash the document declared.
-        found: String,
-    },
-    /// `vocabularyHash` is not a vocabulary this build recognizes.
-    VocabularyHashMismatch {
-        /// Always `vocabularyHash`.
-        path: Path,
-        /// The hash this build expects.
-        expected: String,
-        /// The hash the document declared.
-        found: String,
-    },
-    /// `source.contentHash` does not match the supplied source bytes.
-    ContentHashMismatch {
-        /// Always `source.contentHash`.
-        path: Path,
-        /// The hash of the supplied source.
-        expected: String,
-        /// The hash the document declared.
-        found: String,
-    },
-    /// `source.utf8ByteLength` does not match the supplied source bytes.
-    ByteLengthMismatch {
-        /// Always `source.utf8ByteLength`.
-        path: Path,
-        /// The declared length.
-        declared: i32,
-        /// The actual source length.
-        actual: usize,
-    },
-    /// `source.utf8ByteLength` is negative, which no byte length can be. Checked
-    /// even without a source, so a nonsensical length never passes silently.
-    NegativeByteLength {
-        /// Always `source.utf8ByteLength`.
-        path: Path,
-        /// The offending declared length.
-        value: i32,
-    },
-    /// The supplied source bytes are not valid UTF-8.
-    SourceNotUtf8 {
-        /// Always `source`.
-        path: Path,
-    },
-    /// A byte offset was negative.
-    NegativeOffset {
-        /// The offending `startUtf8`/`endUtf8` field.
-        path: Path,
-        /// The offending value.
-        value: i32,
-    },
-    /// A range's start is past its end.
-    RangeOutOfOrder {
-        /// The `byteRange` whose start exceeds its end.
-        path: Path,
-        /// The start offset.
-        start: i32,
-        /// The end offset.
-        end: i32,
-    },
-    /// A range extends past the end of the source.
-    RangeOutOfBounds {
-        /// The offending `endUtf8` field.
-        path: Path,
-        /// The end offset.
-        end: i32,
-        /// The source length the range exceeded.
-        length: i64,
-    },
-    /// A range edge does not fall on a UTF-8 character boundary.
-    RangeNotOnCharBoundary {
-        /// The offending `startUtf8`/`endUtf8` field.
-        path: Path,
-        /// The offending offset.
-        offset: i32,
-    },
-    /// A token's `tokenKind` / `lexicalClass` / `functionKind` /
-    /// `openClassKind` axes are an illegal combination under the
-    /// `colorful.syntax/v1` contract.
-    IllegalTokenAxes {
-        /// The offending `tokens[i]`.
-        path: Path,
-        /// The token's occurrence id.
-        occurrence_id: i32,
-        /// What is wrong with the combination.
-        detail: &'static str,
-    },
-    /// Two tokens share an `occurrenceId`.
-    DuplicateTokenId {
-        /// The `tokens[i]` where the duplicate was found.
-        path: Path,
-        /// The duplicated id.
-        occurrence_id: i32,
-    },
-    /// Two outline nodes share a `nodeId`.
-    DuplicateNodeId {
-        /// The `structure[i]` where the duplicate was found.
-        path: Path,
-        /// The duplicated id.
-        node_id: i32,
-    },
-    /// An outline node's `childNodeIds` references a node that does not exist.
-    DanglingChildRef {
-        /// The offending `structure[i].childNodeIds[j]`.
-        path: Path,
-        /// The missing child id.
-        child: i32,
-    },
-    /// A derivation step's `passId` or `ruleId` is empty — the invalid-by-
-    /// construction placeholder a producer reports when it never overrode
-    /// `pass_identity()`.
-    MissingDerivationIdentity {
-        /// The offending `derivation[i]`.
-        path: Path,
-    },
-    /// Two derivation steps share a `passId`.
-    DuplicateDerivationPassId {
-        /// The `derivation[i]` where the duplicate was found.
-        path: Path,
-        /// The duplicated pass id.
-        pass_id: String,
-    },
-    /// `derivation` is empty — the document claims no producer ran at all,
-    /// which is never valid: a per-step identity check that only runs inside
-    /// a loop over `derivation` is vacuously satisfied by an empty list, so
-    /// this must be rejected explicitly rather than relying on the loop.
-    EmptyDerivation {
-        /// Always `derivation`.
-        path: Path,
-    },
+macro_rules! define_validation_errors {
+    (
+        $(#[$enum_meta:meta])*
+        pub enum $name:ident {
+            $(
+                $(#[$variant_meta:meta])*
+                $variant:ident {
+                    $(#[$path_meta:meta])*
+                    $path:ident: Path,
+                    $(
+                        $(#[$field_meta:meta])*
+                        $field:ident: $field_ty:ty,
+                    )*
+                } => |$formatter:ident| $display:block
+            ),+ $(,)?
+        }
+    ) => {
+        $(#[$enum_meta])*
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        pub enum $name {
+            $(
+                $(#[$variant_meta])*
+                $variant {
+                    $(#[$path_meta])*
+                    $path: Path,
+                    $(
+                        $(#[$field_meta])*
+                        $field: $field_ty,
+                    )*
+                },
+            )+
+        }
+
+        impl $name {
+            /// The path this error points at.
+            #[must_use]
+            pub fn path(&self) -> &Path {
+                match self {
+                    $(Self::$variant { $path, .. } => $path,)+
+                }
+            }
+
+            #[cfg(test)]
+            const VARIANT_NAMES: &'static [&'static str] = &[
+                $(stringify!($variant),)+
+            ];
+
+            #[cfg(test)]
+            fn variant_name(&self) -> &'static str {
+                match self {
+                    $(Self::$variant { .. } => stringify!($variant),)+
+                }
+            }
+        }
+
+        impl core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                match self {
+                    $(
+                        Self::$variant {
+                            $path,
+                            $($field,)*
+                        } => {
+                            let $formatter = f;
+                            $(let _ = $field;)*
+                            $display
+                        }
+                    )+
+                }
+            }
+        }
+    };
 }
 
-impl ValidationError {
-    /// The path this error points at.
-    #[must_use]
-    pub fn path(&self) -> &Path {
-        match self {
-            Self::UnsupportedContractVersion { path, .. }
-            | Self::SchemaHashMismatch { path, .. }
-            | Self::VocabularyHashMismatch { path, .. }
-            | Self::ContentHashMismatch { path, .. }
-            | Self::ByteLengthMismatch { path, .. }
-            | Self::NegativeByteLength { path, .. }
-            | Self::SourceNotUtf8 { path }
-            | Self::NegativeOffset { path, .. }
-            | Self::RangeOutOfOrder { path, .. }
-            | Self::RangeOutOfBounds { path, .. }
-            | Self::RangeNotOnCharBoundary { path, .. }
-            | Self::IllegalTokenAxes { path, .. }
-            | Self::DuplicateTokenId { path, .. }
-            | Self::DuplicateNodeId { path, .. }
-            | Self::DanglingChildRef { path, .. }
-            | Self::MissingDerivationIdentity { path }
-            | Self::DuplicateDerivationPassId { path, .. }
-            | Self::EmptyDerivation { path } => path,
-        }
+define_validation_errors! {
+    /// One reason a [`syntax_v1::DocumentAnalysis`] failed validation.
+    ///
+    /// The variants name the broken invariant precisely so a consumer (or the
+    /// witness) can report exactly which lie it rejected. Every variant carries a
+    /// [`Path`] pointing at exactly where in the document the invariant broke.
+    pub enum ValidationError {
+        /// `contractVersion` is not the one this build understands.
+        UnsupportedContractVersion {
+            /// Always `contractVersion`.
+            path: Path,
+            /// The version the document declared.
+            found: String,
+        } => |f| {
+            let found = escape_untrusted(found);
+            write!(f, "at {path}: unsupported contract version `{found}`")
+        },
+        /// `schemaHash` does not match this build's `colorful.syntax/v1` SDL.
+        SchemaHashMismatch {
+            /// Always `schemaHash`.
+            path: Path,
+            /// The hash this build expects.
+            expected: String,
+            /// The hash the document declared.
+            found: String,
+        } => |f| {
+            let found = escape_untrusted(found);
+            write!(f, "at {path}: expected `{expected}`, found `{found}`")
+        },
+        /// `vocabularyHash` is not a vocabulary this build recognizes.
+        VocabularyHashMismatch {
+            /// Always `vocabularyHash`.
+            path: Path,
+            /// The hash this build expects.
+            expected: String,
+            /// The hash the document declared.
+            found: String,
+        } => |f| {
+            let found = escape_untrusted(found);
+            write!(f, "at {path}: expected `{expected}`, found `{found}`")
+        },
+        /// `source.contentHash` does not match the supplied source bytes.
+        ContentHashMismatch {
+            /// Always `source.contentHash`.
+            path: Path,
+            /// The hash of the supplied source.
+            expected: String,
+            /// The hash the document declared.
+            found: String,
+        } => |f| {
+            let found = escape_untrusted(found);
+            write!(f, "at {path}: expected `{expected}`, found `{found}`")
+        },
+        /// `source.utf8ByteLength` does not match the supplied source bytes.
+        ByteLengthMismatch {
+            /// Always `source.utf8ByteLength`.
+            path: Path,
+            /// The declared length.
+            declared: i32,
+            /// The actual source length.
+            actual: usize,
+        } => |f| {
+            write!(f, "at {path}: declared {declared}, actual {actual}")
+        },
+        /// `source.utf8ByteLength` is negative, which no byte length can be.
+        /// Checked even without a source, so a nonsensical length never passes
+        /// silently.
+        NegativeByteLength {
+            /// Always `source.utf8ByteLength`.
+            path: Path,
+            /// The offending declared length.
+            value: i32,
+        } => |f| {
+            write!(f, "at {path}: {value} is negative")
+        },
+        /// The supplied source bytes are not valid UTF-8.
+        SourceNotUtf8 {
+            /// Always `source`.
+            path: Path,
+        } => |f| {
+            write!(f, "at {path}: not valid UTF-8")
+        },
+        /// A byte offset was negative.
+        NegativeOffset {
+            /// The offending `startUtf8`/`endUtf8` field.
+            path: Path,
+            /// The offending value.
+            value: i32,
+        } => |f| {
+            write!(f, "at {path}: {value} is negative")
+        },
+        /// A range's start is past its end.
+        RangeOutOfOrder {
+            /// The `byteRange` whose start exceeds its end.
+            path: Path,
+            /// The start offset.
+            start: i32,
+            /// The end offset.
+            end: i32,
+        } => |f| {
+            write!(f, "at {path}: start {start} exceeds end {end}")
+        },
+        /// A range extends past the end of the source.
+        RangeOutOfBounds {
+            /// The offending `endUtf8` field.
+            path: Path,
+            /// The end offset.
+            end: i32,
+            /// The source length the range exceeded.
+            length: i64,
+        } => |f| {
+            write!(f, "at {path}: {end} exceeds source length {length}")
+        },
+        /// A range edge does not fall on a UTF-8 character boundary.
+        RangeNotOnCharBoundary {
+            /// The offending `startUtf8`/`endUtf8` field.
+            path: Path,
+            /// The offending offset.
+            offset: i32,
+        } => |f| {
+            write!(f, "at {path}: {offset} is not a UTF-8 character boundary")
+        },
+        /// A token's `tokenKind` / `lexicalClass` / `functionKind` /
+        /// `openClassKind` axes are an illegal combination under the
+        /// `colorful.syntax/v1` contract.
+        IllegalTokenAxes {
+            /// The offending `tokens[i]`.
+            path: Path,
+            /// The token's occurrence id.
+            occurrence_id: i32,
+            /// What is wrong with the combination.
+            detail: &'static str,
+        } => |f| {
+            write!(f, "at {path}: {detail}")
+        },
+        /// Two tokens share an `occurrenceId`.
+        DuplicateTokenId {
+            /// The `tokens[i]` where the duplicate was found.
+            path: Path,
+            /// The duplicated id.
+            occurrence_id: i32,
+        } => |f| {
+            write!(f, "at {path}: duplicate occurrenceId {occurrence_id}")
+        },
+        /// Two outline nodes share a `nodeId`.
+        DuplicateNodeId {
+            /// The `structure[i]` where the duplicate was found.
+            path: Path,
+            /// The duplicated id.
+            node_id: i32,
+        } => |f| {
+            write!(f, "at {path}: duplicate nodeId {node_id}")
+        },
+        /// An outline node's `childNodeIds` references a node that does not
+        /// exist.
+        DanglingChildRef {
+            /// The offending `structure[i].childNodeIds[j]`.
+            path: Path,
+            /// The missing child id.
+            child: i32,
+        } => |f| {
+            write!(f, "at {path}: references missing child {child}")
+        },
+        /// A derivation step's `passId` or `ruleId` is empty — the invalid-by-
+        /// construction placeholder a producer reports when it never overrode
+        /// `pass_identity()`.
+        MissingDerivationIdentity {
+            /// The offending `derivation[i]`.
+            path: Path,
+        } => |f| {
+            write!(f, "at {path}: empty passId or ruleId")
+        },
+        /// Two derivation steps share a `passId`.
+        DuplicateDerivationPassId {
+            /// The `derivation[i]` where the duplicate was found.
+            path: Path,
+            /// The duplicated pass id.
+            pass_id: String,
+        } => |f| {
+            let pass_id = escape_untrusted(pass_id);
+            write!(f, "at {path}: duplicate passId `{pass_id}`")
+        },
+        /// `derivation` is empty — the document claims no producer ran at all,
+        /// which is never valid: a per-step identity check that only runs inside
+        /// a loop over `derivation` is vacuously satisfied by an empty list, so
+        /// this must be rejected explicitly rather than relying on the loop.
+        EmptyDerivation {
+            /// Always `derivation`.
+            path: Path,
+        } => |f| {
+            write!(f, "at {path}: must not be empty")
+        },
     }
 }
 
@@ -655,67 +746,6 @@ impl ValidationError {
 /// materializing the whole (attacker-sized) escaped string in memory.
 fn escape_untrusted(value: &str) -> core::str::EscapeDebug<'_> {
     value.escape_debug()
-}
-
-impl core::fmt::Display for ValidationError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let path = self.path();
-        match self {
-            Self::UnsupportedContractVersion { found, .. } => {
-                let found = escape_untrusted(found);
-                write!(f, "at {path}: unsupported contract version `{found}`")
-            }
-            Self::SchemaHashMismatch {
-                expected, found, ..
-            }
-            | Self::VocabularyHashMismatch {
-                expected, found, ..
-            }
-            | Self::ContentHashMismatch {
-                expected, found, ..
-            } => {
-                let found = escape_untrusted(found);
-                write!(f, "at {path}: expected `{expected}`, found `{found}`")
-            }
-            Self::ByteLengthMismatch {
-                declared, actual, ..
-            } => {
-                write!(f, "at {path}: declared {declared}, actual {actual}")
-            }
-            Self::NegativeByteLength { value, .. } => {
-                write!(f, "at {path}: {value} is negative")
-            }
-            Self::SourceNotUtf8 { .. } => write!(f, "at {path}: not valid UTF-8"),
-            Self::NegativeOffset { value, .. } => write!(f, "at {path}: {value} is negative"),
-            Self::RangeOutOfOrder { start, end, .. } => {
-                write!(f, "at {path}: start {start} exceeds end {end}")
-            }
-            Self::RangeOutOfBounds { end, length, .. } => {
-                write!(f, "at {path}: {end} exceeds source length {length}")
-            }
-            Self::RangeNotOnCharBoundary { offset, .. } => {
-                write!(f, "at {path}: {offset} is not a UTF-8 character boundary")
-            }
-            Self::IllegalTokenAxes { detail, .. } => write!(f, "at {path}: {detail}"),
-            Self::DuplicateTokenId { occurrence_id, .. } => {
-                write!(f, "at {path}: duplicate occurrenceId {occurrence_id}")
-            }
-            Self::DuplicateNodeId { node_id, .. } => {
-                write!(f, "at {path}: duplicate nodeId {node_id}")
-            }
-            Self::DanglingChildRef { child, .. } => {
-                write!(f, "at {path}: references missing child {child}")
-            }
-            Self::MissingDerivationIdentity { .. } => {
-                write!(f, "at {path}: empty passId or ruleId")
-            }
-            Self::DuplicateDerivationPassId { pass_id, .. } => {
-                let pass_id = escape_untrusted(pass_id);
-                write!(f, "at {path}: duplicate passId `{pass_id}`")
-            }
-            Self::EmptyDerivation { .. } => write!(f, "at {path}: must not be empty"),
-        }
-    }
 }
 
 /// The non-empty set of reasons a document failed validation. Validation runs
@@ -1248,44 +1278,6 @@ mod integration {
         .expect("projection within i32 range")
     }
 
-    macro_rules! validation_error_inventory {
-        ($($variant:ident),+ $(,)?) => {
-            const ALL_VALIDATION_ERROR_NAMES: &[&str] = &[$(stringify!($variant)),+];
-
-            fn validation_error_name(error: &ValidationError) -> &'static str {
-                match error {
-                    $(ValidationError::$variant { .. } => stringify!($variant)),+
-                }
-            }
-        };
-    }
-
-    // One deliberately exhaustive matcher is the inventory oracle for the
-    // shared Rust/JavaScript parity matrix. Adding a public ValidationError
-    // variant makes this matcher fail to compile until the inventory is
-    // updated; the test below then fails until the matrix gains exactly one
-    // corresponding mutation.
-    validation_error_inventory!(
-        UnsupportedContractVersion,
-        SchemaHashMismatch,
-        VocabularyHashMismatch,
-        ContentHashMismatch,
-        ByteLengthMismatch,
-        NegativeByteLength,
-        SourceNotUtf8,
-        NegativeOffset,
-        RangeOutOfOrder,
-        RangeOutOfBounds,
-        RangeNotOnCharBoundary,
-        IllegalTokenAxes,
-        DuplicateTokenId,
-        DuplicateNodeId,
-        DanglingChildRef,
-        MissingDerivationIdentity,
-        DuplicateDerivationPassId,
-        EmptyDerivation,
-    );
-
     #[derive(serde::Deserialize)]
     #[serde(rename_all = "camelCase", deny_unknown_fields)]
     struct ValidatorParityMatrix {
@@ -1355,10 +1347,10 @@ mod integration {
             "unsupported parity matrix version"
         );
 
-        let inventory: BTreeSet<_> = ALL_VALIDATION_ERROR_NAMES.iter().copied().collect();
+        let inventory: BTreeSet<_> = ValidationError::VARIANT_NAMES.iter().copied().collect();
         assert_eq!(
             inventory.len(),
-            ALL_VALIDATION_ERROR_NAMES.len(),
+            ValidationError::VARIANT_NAMES.len(),
             "Rust ValidationError inventory contains a duplicate"
         );
         let matrix_errors: BTreeSet<_> = matrix
@@ -1443,7 +1435,7 @@ mod integration {
                 Ok(()) => panic!("{}: Rust validator accepted the mutation", test_case.name),
                 Err(errors) => errors,
             };
-            let actual: BTreeSet<_> = errors.0.iter().map(validation_error_name).collect();
+            let actual: BTreeSet<_> = errors.0.iter().map(ValidationError::variant_name).collect();
             assert!(
                 actual.contains(test_case.rust_error.as_str()),
                 "{}: expected Rust error {}, got {:?}",
