@@ -380,8 +380,8 @@ facts. Do not use them for long narrative passages or multi-step procedures.
 Use one canonical term for each concept. Define unfamiliar terms at first use.
 Mention a common alias once when it materially improves search or recognition.
 
-Shared Colorful vocabulary belongs in topic references or a future
-`docs/glossary.md`. A glossary is a lookup aid, not a prerequisite for
+Shared Colorful vocabulary belongs in topic references or a future glossary
+page. A glossary is a lookup aid, not a prerequisite for
 understanding a page.
 
 Use exact names consistently:
@@ -424,6 +424,8 @@ Run the repository documentation gate for documentation changes:
 ```bash
 markdownlint-cli2 "**/*.md"
 git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+node scripts/check-internal-links.mjs
+node scripts/check-doc-citations.mjs
 ```
 
 When workflows change, also run:
@@ -432,22 +434,39 @@ When workflows change, also run:
 actionlint .github/workflows/*.yml
 ```
 
-CI SHOULD block on facts it can determine reliably:
+CI SHOULD block on facts it can determine reliably. Bullets below name the
+concrete mechanism where one exists; the rest remain aspirational until an
+implementation lands:
 
-- malformed Markdown;
-- broken internal links and explicit anchors once link checking is available;
+- malformed Markdown — `markdownlint-cli2` (CI job `docs`);
+- broken internal links and explicit anchors — deterministic and offline,
+  `scripts/check-internal-links.mjs` (CI job `docs`); external-link health
+  stays advisory (see below), since network instability must never block a
+  merge;
+- references to files that do not exist — deterministic and offline,
+  `scripts/check-doc-citations.mjs` (CI job `docs`); this does not yet
+  verify a cited *symbol* or *test name* inside an existing file, only that
+  the cited path itself exists — a known gap;
+- stale generated reference — a pinned-Wesley drift check (CI job
+  `generated-ir-drift`) covers the generated IR contract; other generated
+  references have no drift check yet;
 - failed examples or tutorials declared executable;
-- stale generated reference;
 - undocumented public commands, options, settings, fields, statuses, or errors
   when coverage is required;
 - invalid diagrams present in changed pages;
 - informative images without alt text or a registered textual equivalent;
 - changed contract behavior without updated evidence or an approved
   `docs-impact: none` declaration;
-- references to files, symbols, tests, schemas, or workflows that do not exist;
+- references to symbols, tests, schemas, or workflows that do not exist
+  (beyond the file-path check above);
 - destructive examples without a preceding warning marker;
 - copied examples containing known real credentials or forbidden production
   identifiers.
+
+`docs/audits/**` and `docs/goalposts/**` are historical snapshots (§2), so
+`check-doc-citations.mjs` does not hold their citations — an old branch
+name, a line number from the time of the snapshot — to the same
+"must still resolve today" bar as a living topic or workflow reference.
 
 The following SHOULD normally be advisory:
 
