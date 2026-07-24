@@ -261,6 +261,12 @@ on `main`; contributions that grow the rule pack, improve editor/theme
 packaging, or continue the deeper controlled-English roadmap are especially
 welcome right now.
 
+For the full documentation corpus — every topic's current behavior and test
+plan, design records, and release packets — start at the
+[documentation spine](docs/README.md). Contributor-facing repository
+operations, including the release process, are indexed in
+[`docs/workflows/`](docs/workflows/README.md).
+
 ---
 
 ## License
