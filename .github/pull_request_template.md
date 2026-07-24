@@ -2,7 +2,10 @@
 
 ## What changed
 
-<!-- One or two sentences. Link the slice issue: Closes #NN -->
+<!-- One or two sentences. Link the slice issue here: Closes #NN
+     This is the one place that should close the issue — commits in this
+     branch should use `Refs #NN`, not a closing keyword. See CONTRIBUTING.md
+     "Commits and Pull Requests". -->
 
 ## Evidence
 

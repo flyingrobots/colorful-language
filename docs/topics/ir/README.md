@@ -82,9 +82,12 @@ consumer all derive from this manifest.
 - **Cross-language round-trip.** The IR survives `Rust → JSON → TypeScript → JSON
   → Rust` byte-for-byte (`scripts/ir-witness.sh`, enforced in CI). Producer and
   consumer can never disagree about the shape.
-- **Structural invariants** (asserted on a corpus): token ranges are ordered,
-  in-bounds, non-overlapping, and on char boundaries; every `structure` node's
-  range contains its children; the source digest matches.
+- **Structural invariants** (asserted on a committed corpus spanning empty
+  input, Unicode, CR/LF variants, punctuation-only input, long tokens,
+  multiple paragraphs, and contextual ambiguity — every fixture checked by
+  the same oracle function): token ranges are ordered, in-bounds,
+  non-overlapping, and on char boundaries; every `structure` node's range
+  contains its children; the source digest matches.
 - **Structured, path-aware validation errors.** `validate_document` reports
   every failure as a `ValidationError` carrying a `Path` (e.g.
   `tokens[3].byteRange.startUtf8`) naming exactly where the invariant broke,
