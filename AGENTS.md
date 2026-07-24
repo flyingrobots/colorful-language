@@ -142,6 +142,12 @@ implementation, honest current reference.
 - One logical change per commit. Use
   [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
+- For a slice with a meaningful behavior change, land the delivery loop steps
+  as three separate commits: a planned-case commit (adds the case to the test plan with status 'planned'),
+  a failing-evidence commit (adds the failing test/fixture/dependency), and a
+  passing-implementation commit (implements the code and flips the test plan
+  status to 'implemented'). Tiny-fix exceptions apply as described in
+  `CONTRIBUTING.md`.
 - Reference the slice issue in the footer: `Closes #NN`.
 - A breaking change carries a `BREAKING CHANGE:` footer and warrants a version
   bump.

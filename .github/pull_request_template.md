@@ -11,9 +11,10 @@
 
 <!-- Name which commits in this branch are the planned-case / failing-evidence
      / passing-implementation trio (see CONTRIBUTING.md "Commit Shape: Planned,
-     Failing, Passing"), or say this is a tiny, indivisible fix and why. Either
-     way, commits are append-only: fixes land as new commits, never an amend,
-     rebase, or squash. -->
+     Failing, Passing"), or explain if this is a non-behavior change (docs,
+     refactoring, etc.) or a tiny, indivisible fix. Either way, once pushed to
+     a shared branch, commits are append-only (no force-push, rebase, squash,
+     or amend). -->
 
 ## Checklist
 

@@ -138,8 +138,9 @@ separate, append-only commits, in this order:
    the new case: requirement ID, oracle, evidence type, status `planned`. No
    production code changes.
 2. **Failing-evidence commit** — adds the smallest deterministic test that
-   fails against the current code. Only the test; it must actually fail when
-   run.
+   fails against the current code, plus any minimal test-only support (fixtures,
+   test plans, or test-only dependencies) needed to execute it. Production
+   implementation must be excluded.
 3. **Passing-implementation commit** — implements the behavior, turns the test
    green, and flips the test plan's case to `implemented` with the real test
    name.
@@ -153,8 +154,8 @@ existing assertion are typical examples.
 
 This is structure, not a new correction policy: fix mistakes in any of the
 three commits with a new commit, same as always (see "Commits and Pull
-Requests" below) — never amend, rebase, or squash to fold a fix backward into
-an earlier commit.
+Requests" below) — never amend, rebase, or squash on shared branches to fold
+a fix backward into an earlier commit.
 
 ## How To Maintain The Documentation Corpus
 
