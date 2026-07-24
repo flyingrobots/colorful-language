@@ -139,12 +139,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `colorful_ir::vocabulary::{visual_role, visual_role_for, projection}` now
   return `Option` instead of a bare `VisualRole` / `RoleProjection` reference.
   This is an intentional major-line change, not patch-compatible behavior:
-  callers adopting `0.4.x` must handle an uncovered token-axis combination or
-  role projection explicitly. No compatibility wrappers preserve the old
-  panic/`.expect()` contract; the v0.4 API makes fail-soft handling visible at
-  every call site. Sparse-table tests prove the underlying lookups return
-  `None`, while complete-manifest tests prove every current `PosClass` and
-  generated `VisualRole` still maps to `Some`.
+  callers adopting `0.4.x` must handle the fallible result explicitly. No
+  compatibility wrappers preserve the old panic/`.expect()` contract. The
+  public axis lookup returns `None` for caller-supplied combinations without an
+  authored mapping; manifest validation guarantees every current `PosClass`
+  and generated `VisualRole` maps to `Some`. A compile-time signature test
+  durably pins all three `Option` return types.
 - **Breaking API queued for v0.4.0.** `colorful_ir::from_classification` is a
   public function and now takes two additional mandatory parameters,
   `parser_identity: PassIdentity` and `annotator_identity: PassIdentity`.

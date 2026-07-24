@@ -92,11 +92,11 @@ axes (`tokenKind`, `lexicalClass`, optional `openClassKind`) map to
 mapping changes the contract identity. The CLI, LSP, and graft reference
 consumer all derive from this manifest. The public Rust lookups
 `visual_role`, `visual_role_for`, and `projection` return `Option`: every
-current `PosClass` and generated `VisualRole` maps to `Some`, while an
-uncovered token-axis combination or future role can degrade to no styling
-without panicking. These fallible signatures are an intentional breaking API
-change in the queued v0.4.0 line; downstream callers moving from v0.3 must
-handle `None`.
+current `PosClass` and generated `VisualRole` maps to `Some` because manifest
+validation requires complete coverage, while caller-supplied token axes without
+an authored mapping return `None`. These fallible signatures are an intentional
+breaking API change in the queued v0.4.0 line; downstream callers moving from
+v0.3 must handle the `Option` result.
 
 ## Guarantees
 
