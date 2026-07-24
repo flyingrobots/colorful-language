@@ -105,8 +105,8 @@ export function stripGraphqlDescriptions(sdl) {
   // which `.join("\n")` would then turn back into a trailing newline Rust's
   // normalized string never has -- producing a different hash on each side
   // of the language boundary for the exact same contract.
-  const lines = sdl.split(/\r\n|\r|\n/);
-  if (lines.length > 0 && lines[lines.length - 1] === "" && /\r\n$|\r$|\n$/.test(sdl)) {
+  const lines = sdl.split(/\r\n|\n/);
+  if (lines.length > 0 && lines[lines.length - 1] === "" && /\r\n$|\n$/.test(sdl)) {
     lines.pop();
   }
   return lines

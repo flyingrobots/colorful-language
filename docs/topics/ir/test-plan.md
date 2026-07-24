@@ -37,10 +37,11 @@ Requirements:
   stages so the overall error order is deterministic, and never lets
   untrusted document content forge output when its `Display` rendering is
   printed by a consumer.
-- **IR-12** `schemaHash` is normalized against GraphQL description-string
-  edits — only a real shape change (a field, type, or enum-value change)
-  changes it — and both sides of the language boundary (`colorful-ir` and
-  the Graft reference consumer) normalize identically.
+- **IR-12** `schemaHash` is normalized against GraphQL description-line
+  edits — a description-only line edit does not change the hash, but any other
+  change (including formatting, type, field, or enum edits) does — and both
+  sides of the language boundary (`colorful-ir` and the Graft reference
+  consumer) normalize identically.
 
 ## Cases
 
@@ -215,10 +216,10 @@ Requirements:
   `integration::validation_error_display_escapes_untrusted_document_strings`.
   *Status:* implemented.
 
-- **IR-12a** — *Requirement:* IR-12. *Behavior:* a description-only SDL edit
-  does not change the normalized hash, but a real field/type edit still
-  does. *Oracle:* hash equality/inequality on synthetic SDL strings.
-  *Evidence type:* unit test. *Evidence:* `colorful-ir`
+- **IR-12a** — *Requirement:* IR-12. *Behavior:* a description-only line edit
+  does not change the normalized hash, but any other edit (including formatting
+  or shape changes) still does. *Oracle:* hash equality/inequality on synthetic
+  SDL strings. *Evidence type:* unit test. *Evidence:* `colorful-ir`
   `tests::strip_graphql_descriptions_removes_only_description_lines`,
   `tests::schema_hash_is_unchanged_by_a_description_only_edit`,
   `tests::schema_hash_changes_when_shape_changes`. *Status:* implemented.

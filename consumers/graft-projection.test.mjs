@@ -772,6 +772,13 @@ assert.throws(
     stripGraphqlDescriptions("type Foo {\n  bar: Int!\n}"),
     "an optional trailing newline must not change the normalized SDL",
   );
+
+  // Verify that a lone carriage return \r is NOT split (matching Rust str::lines() behavior).
+  assert.equal(
+    stripGraphqlDescriptions('"A description."\rtype Foo {\n  bar: Int!\n}'),
+    '"A description."\rtype Foo {\n  bar: Int!\n}',
+    "lone carriage returns must not be split or stripped",
+  );
 }
 
 console.log("graft-projection: all assertions passed");

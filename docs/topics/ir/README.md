@@ -37,11 +37,11 @@ A `DocumentAnalysis` carries:
 - `derivation` — a trace seed per pass (`passId`, `ruleId`, `sourceRanges`,
   `compilerBuildHash`), not yet replayable provenance.
 - `contractVersion`, `schemaHash`, `vocabularyHash` — the exact contract identity.
-  `schemaHash` is normalized against GraphQL description-string edits: it
+  `schemaHash` is normalized against GraphQL description-line edits: it
   hashes `contracts/colorful/syntax.v1.graphql` with description lines
   stripped, so a documentation-only description fix does not change the
-  hash, while a real shape change (a new field, a renamed type, a new enum
-  value) still does. Both `colorful-ir`'s `syntax_schema_hash()` and the
+  hash, while any other edit (including formatting, type, field, or enum
+  changes) still does. Both `colorful-ir`'s `syntax_schema_hash()` and the
   Graft reference consumer's `schemaHash()` normalize identically, so the
   two sides of the language boundary never disagree over a cosmetic
   description edit.
