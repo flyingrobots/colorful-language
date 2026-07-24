@@ -24,7 +24,8 @@ phf = { version = "0.11", features = ["macros"] }
 ropey = "1.6"
 tower-lsp = "0.20"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std"] }
-dashmap = "6"
+# Match tower-lsp 0.20's direct dependency so the LSP links one DashMap copy.
+dashmap = "5.5.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
