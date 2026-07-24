@@ -142,7 +142,14 @@ implementation, honest current reference.
 - One logical change per commit. Use
   [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
-- Reference the slice issue in the footer: `Closes #NN`.
+- **Issue closure happens on the slice PR, not on individual commits.** Put
+  `Closes #NN` in the pull request description (see
+  `.github/pull_request_template.md`), never in a commit trailer. A commit may
+  reference the issue for traceability (`Refs #NN`), but must not use a
+  closing keyword (`Closes`/`Fixes`/`Resolves`) — this repo merges via merge
+  commits, so a closing keyword on a non-final commit would close the issue
+  before the PR is done. A CI check enforces this on every pull request; see
+  `scripts/check-closure-contract.sh`.
 - A breaking change carries a `BREAKING CHANGE:` footer and warrants a version
   bump.
 - History is append-only: **no** force-push, rebase, squash, or amend on shared
