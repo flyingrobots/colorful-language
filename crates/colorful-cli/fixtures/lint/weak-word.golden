@@ -1,0 +1,4 @@
+weak-word.txt:1:9: info [weak-word]: weak word 'just'
+weak-word.txt:1:16: info [weak-word]: weak word 'really'
+weak-word.txt:1:42: info [weak-word]: weak word 'actually'
+weak-word.txt:1:51: info [weak-word]: weak word 'quite'

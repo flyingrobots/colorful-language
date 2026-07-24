@@ -75,7 +75,13 @@ jobs:
       - run: bash scripts/package-witness.sh
 
       # Publish in dependency order. `cargo publish` waits for each crate to land
-      # in the index before returning, so dependents resolve.
+      # in the index before returning, so dependents resolve. colorful-lsp must
+      # publish before colorful-cli: colorful-cli's dev-dependencies include a
+      # versioned `colorful-lsp = { path = ..., version = "..." }` (used only by
+      # its lint golden-fixture parity test), and cargo requires a versioned
+      # dependency -- dev or not -- to resolve from the registry at publish
+      # time. colorful-lsp does not depend on colorful-cli, so this ordering
+      # introduces no cycle.
       - name: Publish to crates.io
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
@@ -85,7 +91,7 @@ jobs:
           crate_ready() {
             cargo info --quiet "$1@$version" --registry crates-io >/dev/null
           }
-          for crate in colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-projection colorful-cli colorful-lsp; do
+          for crate in colorful-core colorful-lexicon colorful-parse colorful-ir colorful-lint colorful-projection colorful-lsp colorful-cli; do
             echo "::group::publish $crate"
             if crate_ready "$crate"; then
               echo "$crate $version is already available in the crates.io index; verifying and continuing."

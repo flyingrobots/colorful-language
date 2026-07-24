@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Golden fixtures for the prose-linting rule pack.** Seven reviewed
+  input/output fixtures under `crates/colorful-cli/fixtures/lint/` pin the
+  exact CLI report for each of the four lint rules, a false-positive
+  near-miss per rule, multi-rule source ordering, and CRLF line endings. A
+  new harness (`crates/colorful-cli/tests/lint_golden_fixtures.rs`) fails
+  the build if the linter's actual output ever drifts from a fixture's
+  checked-in expected report, and separately asserts that `colorful-lsp`'s
+  diagnostics never disagree with the CLI's findings for the same input.
+  `colorful_cli::line_col` is now public (previously private) so the
+  harness can cross-check CLI and LSP positions directly.
 - **`colorful-lexicon`'s ambiguous-word rules are now named, data-driven
   senses.** `contextual_kind` previously hand-matched each ambiguous lexeme
   (`book`, `record`, `lead`, `fast`) against a separate senses-only table,
@@ -22,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every sense plus a no-match and an unrecognized-word case, citing each
   matched rule's own evidence on failure. Internal to `colorful-lexicon`,
   not a public API change.
-
 - **`colorful-projection` crate.** A single `build_document` front door parses,
   annotates, and classifies source text into an `AnalyzedDocument` (tree +
   tokens + canonical `DocumentAnalysis`), so `colorful-cli`'s `diagnose_json`
@@ -110,6 +119,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CLI line/column reporting missed non-LF line endings.**
+  `colorful_cli::line_col` (used by `colorful lint`'s report and
+  `diagnose --json`'s `line`/`column` fields) only split on `\n`, so a `\r\n`
+  pair double-counted as two line breaks and a bare `\r` (classic Mac line
+  endings) never advanced the line at all — disagreeing with
+  `colorful_lsp`'s `LineIndex`, which already handled both correctly. Fixed
+  to recognize `\n`, `\r\n` (as one break), and a bare `\r`, matching the
+  LSP exactly.
 - **Paragraph boundaries missed non-LF line endings.** `colorful_ir`'s outline
   builder counted raw `\n` bytes to detect a blank line, so a source using `\r`
   only (classic Mac line endings) never split into paragraphs. A named
