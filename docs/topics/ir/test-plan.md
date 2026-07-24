@@ -388,9 +388,13 @@ Requirements:
   path and display behavior without three synchronized hand edits. *Oracle:* a
   compile-time inventory and rendering tests fail when any generated/derived
   member is missing. *Evidence type:* declarative error definition and unit
-  tests. *Tracking:*
-  [#80](https://github.com/flyingrobots/colorful-language/issues/80).
-  *Status:* planned.
+  tests. *Evidence:* `colorful-ir` `define_validation_errors!`,
+  `integration::shared_validator_parity_matrix_covers_every_error_variant`,
+  `integration::validation_error_display_renders_path_and_message`,
+  `integration::validation_errors_display_lists_every_error_by_display_not_debug`,
+  and `integration::validation_error_display_escapes_untrusted_document_strings`.
+  *Tracking:* [#80](https://github.com/flyingrobots/colorful-language/issues/80).
+  *Status:* implemented.
 - **IR-18b** — *Requirement:* IR-18. *Behavior:* the validator complexity budget
   is enforced by a reproducible tool or explicitly retired with documented
   rationale. *Oracle:* a deliberate over-budget fixture fails the named check,
@@ -433,8 +437,7 @@ Requirements:
 - Public adapter/projection rejection remains open in IR-15a.
 - Generated vocabulary validation and process-level refusal evidence remain
   open in IR-16a and IR-17a.
-- Validator-definition, complexity-policy, and mutation evidence remains open
-  in IR-18a through IR-18c.
+- Complexity-policy and mutation evidence remains open in IR-18b and IR-18c.
 - The independent two-version consumer and
   [product-evidence decision](architecture.md#product-evidence-gate) remains
   open in IR-19a.

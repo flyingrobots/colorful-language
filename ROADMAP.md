@@ -99,7 +99,8 @@ covered; new code cannot silently lower the accepted baseline.
 **User job:** an adapter or independent consumer can reject malformed data
 deterministically and use valid data without reverse-engineering Colorful.
 
-- **Validator maintainability:** reduce synchronized error-definition edits
+- **Validator maintainability:** keep validation error metadata in one
+  declarative definition
   [#80](https://github.com/flyingrobots/colorful-language/issues/80), make the
   complexity budget enforceable or explicitly retire it
   [#81](https://github.com/flyingrobots/colorful-language/issues/81), and use
