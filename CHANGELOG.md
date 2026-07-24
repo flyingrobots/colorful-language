@@ -163,6 +163,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Documented downstream discovery floor corrected from `0.2.1` to `0.3.0`.**
+  `README.md` and the downstream-consumers topic stated Graft/jedit discovery
+  requires `colorful --version` to report `0.2.1` or newer. A new executable
+  compatibility matrix (`scripts/version-compat-matrix.sh`), which builds the
+  real, immutable `v0.2.1` and `v0.3.0` tags, proves this floor was never
+  satisfiable: the `--version` flag itself did not exist until five commits
+  after the `v0.2.1` tag (first shipping in `v0.3.0`), so a version-probing
+  discovery mechanism cannot detect `v0.2.1` as compatible. The docs now state
+  the provable floor, `0.3.0`.
 - **CLI line/column reporting missed non-LF line endings.**
   `colorful_cli::line_col` (used by `colorful lint`'s report and
   `diagnose --json`'s `line`/`column` fields) only split on `\n`, so a `\r\n`

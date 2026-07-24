@@ -52,7 +52,18 @@ ranges into row/column spans for Graft syntax classes.
 
 jedit receives Colorful prose structure through Graft. Graft discovers Colorful
 by finding a `colorful` CLI on `PATH`, requiring `colorful --version` to report
-`0.2.1` or newer, and running `colorful ir -` for `.txt` buffers.
+`0.3.0` or newer, and running `colorful ir -` for `.txt` buffers.
+
+The floor is `0.3.0`. `scripts/version-compat-matrix.sh` builds the real,
+immutable `v0.2.1` and `v0.3.0` tags in isolated prefixes and proves why: the
+`--version` flag did not exist at `v0.2.1` (it was added five commits later,
+in `fix(cli): support downstream Colorful discovery`, and first ships in
+`v0.3.0`), so a version-probing discovery mechanism cannot detect `v0.2.1` as
+compatible — the probe itself fails against it. The matrix also confirms both
+tags' `colorful ir` output remains a self-consistent `colorful.syntax/v1`
+artifact for that era's own reference consumer, and that `openClassKind` is
+absent from `v0.2.1`'s output and present in `v0.3.0`'s (an additive field, not
+something an older consumer needs to specially handle).
 
 For source-checkout development, install the CLI into a stable user directory:
 

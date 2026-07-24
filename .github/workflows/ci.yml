@@ -78,6 +78,20 @@ jobs:
             "origin/${{ github.event.pull_request.base.ref }}" \
             "${{ github.event.pull_request.head.sha }}"
 
+  version-compat-matrix:
+    name: Downstream discovery version-compat matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: bash scripts/version-compat-matrix.sh
+
   closure-contract:
     name: Issue-closure contract
     runs-on: ubuntu-latest

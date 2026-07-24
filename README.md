@@ -107,7 +107,12 @@ current integration boundary, evidence, and theme caveats.
 
 jedit receives prose structure through Graft. Graft discovers Colorful by finding
 a `colorful` CLI on `PATH`, checking that `colorful --version` reports version
-`0.2.1` or newer, and then projecting `.txt` buffers through `colorful ir -`.
+`0.3.0` or newer, and then projecting `.txt` buffers through `colorful ir -`.
+The floor is `0.3.0`, not `0.2.1`: the `--version` flag itself did not exist
+until after the `v0.2.1` tag, so a version-probing discovery mechanism cannot
+detect `v0.2.1` as compatible in the first place. See
+[`docs/topics/downstream-consumers/`](docs/topics/downstream-consumers/) for
+the executable compatibility matrix that proves this.
 
 For source-checkout development, install the local CLI into a stable user
 directory:

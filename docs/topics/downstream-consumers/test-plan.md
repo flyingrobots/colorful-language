@@ -14,7 +14,7 @@ workspace.
 - **CONSUMER-4** Open-class roles project through the vocabulary manifest, not a
   private class table.
 - **CONSUMER-5** jedit/Graft discovery depends on a `colorful` CLI with version
-  `0.2.1` or newer.
+  `0.3.0` or newer.
 - **CONSUMER-6** The reference consumer validates a received artifact's
   structural shape, contract identity, and internal consistency before
   projecting it — rejecting malformed input rather than repairing or clamping
@@ -56,9 +56,16 @@ workspace.
   assertions. *Evidence:* `consumers/graft-projection.test.mjs`. *Status:*
   implemented.
 - **CONSUMER-5a** — *Requirement:* CONSUMER-5. *Behavior:* repository docs state
-  the Graft/jedit CLI version floor as `0.2.1` or newer. *Oracle:* documentation
-  review. *Evidence:* `README.md`; this topic. *Status:* implemented as docs;
-  enforced in the downstream Graft repository.
+  the Graft/jedit CLI version floor as `0.3.0` or newer, and an executable
+  compatibility matrix proves the floor against the real, immutable `v0.2.1`
+  and `v0.3.0` tags: `v0.2.1`'s `--version` probe fails (the flag did not
+  exist yet), `v0.3.0`'s succeeds and reports `colorful 0.3.0`, and both
+  tags' `colorful ir` output remains a self-consistent artifact for their
+  era's own reference consumer, with `openClassKind` absent from `v0.2.1`'s
+  output and present in `v0.3.0`'s. *Oracle:* script exit code and printed
+  assertions. *Evidence:* `scripts/version-compat-matrix.sh`; `README.md`;
+  this topic. *Status:* implemented; the version-gate enforcement itself
+  still lives in the downstream Graft repository.
 - **CONSUMER-6a** — *Requirement:* CONSUMER-6. *Behavior:* a malformed
   top-level shape, wrong `contractVersion`, wrong declared byte length, or
   invalid UTF-8 source is rejected with a stable `GraftProjectionError.code`
