@@ -60,6 +60,20 @@ jobs:
       - name: graft reference consumer coordinate test
         run: node consumers/graft-projection.test.mjs
 
+  version-compat-matrix:
+    name: Downstream discovery version-compat matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: bash scripts/version-compat-matrix.sh
+
   editors:
     name: Editor integrations (compile)
     runs-on: ubuntu-latest
