@@ -134,7 +134,7 @@ main() {
     oid="$(jq -r .oid <<< "$line")"
     local msg
     msg="$(jq -r .message <<< "$line")"
-    
+
     # Skip checking the bootstrap commit that introduces this checker.
     # It contains "Closes #107" in its history and would otherwise reject itself.
     if [[ "$msg" =~ ^"docs: make the slice PR the single issue-closure point" ]]; then
