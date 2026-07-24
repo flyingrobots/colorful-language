@@ -969,24 +969,56 @@ mod tests {
         // distinct from LEX-7/negation_is_its_own_kind below, which proves
         // two specific negator words (not just "one representative word per
         // kind") classify as Negator.
-        const KINDS: &[FunctionKind] = &[
-            FunctionKind::Article,
-            FunctionKind::Preposition,
-            FunctionKind::Conjunction,
-            FunctionKind::Pronoun,
-            FunctionKind::Auxiliary,
-            FunctionKind::Determiner,
-            FunctionKind::Negator,
-        ];
-
-        for &kind in KINDS {
+        let test_kind = |kind: FunctionKind| {
             let word = representative_word(kind);
             assert_eq!(
                 classify(word),
                 PosClass::Function(kind),
                 "expected {word:?} to classify as {kind:?}"
             );
+        };
+
+        let mut verified = std::collections::HashSet::new();
+        let mut run_and_record = |kind: FunctionKind| {
+            verified.insert(kind);
+            match kind {
+                FunctionKind::Article => test_kind(FunctionKind::Article),
+                FunctionKind::Preposition => test_kind(FunctionKind::Preposition),
+                FunctionKind::Conjunction => test_kind(FunctionKind::Conjunction),
+                FunctionKind::Pronoun => test_kind(FunctionKind::Pronoun),
+                FunctionKind::Auxiliary => test_kind(FunctionKind::Auxiliary),
+                FunctionKind::Determiner => test_kind(FunctionKind::Determiner),
+                FunctionKind::Negator => test_kind(FunctionKind::Negator),
+            }
+        };
+
+        run_and_record(FunctionKind::Article);
+        run_and_record(FunctionKind::Preposition);
+        run_and_record(FunctionKind::Conjunction);
+        run_and_record(FunctionKind::Pronoun);
+        run_and_record(FunctionKind::Auxiliary);
+        run_and_record(FunctionKind::Determiner);
+        run_and_record(FunctionKind::Negator);
+
+        // Ensure every variant in verified is checked against compile-time variants
+        for &kind in &verified {
+            match kind {
+                FunctionKind::Article => {}
+                FunctionKind::Preposition => {}
+                FunctionKind::Conjunction => {}
+                FunctionKind::Pronoun => {}
+                FunctionKind::Auxiliary => {}
+                FunctionKind::Determiner => {}
+                FunctionKind::Negator => {}
+            }
         }
+
+        // Failure here guarantees omission of any newly added FunctionKind variants
+        assert_eq!(
+            verified.len(),
+            7,
+            "not all FunctionKind variants were executed by the test"
+        );
     }
 
     #[test]
