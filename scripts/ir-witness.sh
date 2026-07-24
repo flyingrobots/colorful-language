@@ -6,7 +6,8 @@
 #   TS    ──canonicalize──▶ canonical JSON B
 #   Rust  ──decode+canon──▶ canonical JSON C
 #
-# Pass iff A == B == C, and the generated TS contract type compiles.
+# Pass iff A == B == C, the generated TS contract type compiles, and every
+# process-level negative case fails with its stable category and no output.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -129,6 +130,16 @@ assert_process_rejection() {
 
   local stdout="$work/process-$boundary-$case_name.out"
   local stderr="$work/process-$boundary-$case_name.err"
+  local expected_prefix
+  local actual_first_line
+  case "$boundary" in
+    ts) expected_prefix="ir-canonicalize: $expected_code:" ;;
+    rust) expected_prefix="recanon: $expected_code:" ;;
+    *)
+      echo "  ❌ unknown process boundary: $boundary" >&2
+      exit 1
+      ;;
+  esac
   local status
   set +e
   "$@" < "$artifact" > "$stdout" 2> "$stderr"
@@ -144,8 +155,9 @@ assert_process_rejection() {
     echo "  ❌ $boundary/$case_name: rejection wrote canonical output" >&2
     exit 1
   fi
-  if ! grep -Fq "$expected_code" "$stderr"; then
-    echo "  ❌ $boundary/$case_name: missing stable code $expected_code" >&2
+  actual_first_line="$(head -n 1 "$stderr")"
+  if [[ "$actual_first_line" != "$expected_prefix"* ]]; then
+    echo "  ❌ $boundary/$case_name: expected prefix $expected_prefix" >&2
     sed 's/^/     stderr: /' "$stderr" >&2
     exit 1
   fi

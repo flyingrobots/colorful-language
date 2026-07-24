@@ -390,9 +390,11 @@ Requirements:
   `illegal-axes`, `fractional-offset`, `out-of-range-offset`, `missing-field`,
   and `identity-precedence` in `witness/process-negative.mjs`; alternate source
   `witness/negative/mismatched-source.txt`; process runner and assertions in
-  `scripts/ir-witness.sh`. *Tracking:*
+  `scripts/ir-witness.sh` (`assert_process_rejection` and the `process_cases`
+  loop); stable Rust categories from `ValidationError::code`; stable Node
+  categories from `GraftProjectionError.code` and `E_JSON_DECODE`. *Tracking:*
   [#148](https://github.com/flyingrobots/colorful-language/issues/148).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-18a** — *Requirement:* IR-18. *Behavior:* adding a
   `ValidationError` variant requires one authored definition that supplies its
   path and display behavior without three synchronized hand edits. *Oracle:* a

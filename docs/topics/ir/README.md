@@ -125,6 +125,15 @@ v0.3 must handle the `Option` result.
   (unknown-field-tolerant) behavior, so an unknown field is not yet
   independently proven rejected on the Rust side — a known gap, not a
   claimed guarantee.
+- **Process refusals have stable categories and no output.** The witness runs
+  both real boundary executables against ten deterministic cases: mismatched
+  source bytes, invalid JSON, wrong contract/schema/vocabulary identities,
+  illegal token axes, fractional and out-of-range offsets, a missing required
+  field, and one multi-identity corruption that pins contract-version failure
+  first. Every Node and Rust leg must exit exactly `1`, include its stable code
+  on stderr, and leave stdout empty. Rust semantic validation categories come
+  from `ValidationError::code`; JSON/DTO failures use `E_JSON_DECODE`. The Node
+  leg reports `GraftProjectionError.code` or `E_JSON_DECODE`.
 - **Structural invariants** (asserted on a committed corpus spanning empty
   input, Unicode, CR/LF variants, punctuation-only input, long tokens,
   multiple paragraphs, and contextual ambiguity — every fixture checked by
@@ -134,7 +143,8 @@ v0.3 must handle the `Option` result.
 - **Structured, path-aware validation errors.** `validate_document` reports
   every failure as a `ValidationError` carrying a `Path` (e.g.
   `tokens[3].byteRange.startUtf8`) naming exactly where the invariant broke,
-  rather than a prose string a consumer has to parse. Validation runs as
+  plus a stable `code()` equal to its variant name, rather than making a
+  process consumer parse display prose. Validation runs as
   seven fixed, independently testable stages — contract identity, source
   identity, token ranges, token axes, structure graph, diagnostics,
   derivation — concatenated in that order, so the error order is
