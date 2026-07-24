@@ -128,6 +128,21 @@ Requirements:
   Verified the negative-fixtures step actually catches a regression: removed
   the unknown-field check, confirmed `scripts/ir-witness.sh` failed exactly
   on the `unknown-field` fixture, then restored it. *Status:* implemented.
+- **IR-4e** — *Requirement:* IR-4. *Behavior:* one shared declarative mutation
+  matrix covers every Rust `ValidationError` variant that has an overlapping
+  JavaScript `validateWireContract` rejection: both validators start from the
+  same canonical producer document, apply the same mutation and optional
+  source-byte override, and reject with the matrix's named Rust variant /
+  stable JavaScript error code. Graft-only token wire ordering remains outside
+  the matrix because it is deliberately stricter than the wire contract.
+  *Oracle:* exact case-count equality with the public Rust variant inventory;
+  the expected Rust variant is present; JavaScript throws the expected
+  `GraftProjectionError.code`; no matrix case is silently skipped. *Evidence
+  type:* shared fixture matrix plus Rust/JavaScript executable witnesses.
+  *Evidence:* planned `witness/validator-parity.json`,
+  `colorful-ir` `integration::shared_validator_parity_matrix_covers_every_error_variant`,
+  `witness/validator-parity.mjs`, and `scripts/ir-witness.sh`. *Status:*
+  planned.
 - **IR-5a** — *Requirement:* IR-5. *Behavior:* `from_classification` projects
   `colorful-core` types into the DTO; `colorful-core` does not depend on generated
   types. *Oracle:* `colorful-core` compiles standalone. *Evidence:*
