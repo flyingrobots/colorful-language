@@ -188,7 +188,12 @@ For documentation changes:
 ```bash
 markdownlint-cli2 "**/*.md"
 git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+node scripts/check-internal-links.mjs
+node scripts/check-doc-citations.mjs
 ```
+
+See `docs/DOCUMENTATION_STANDARDS.md` §8 for what these enforce and what
+remains a known gap.
 
 If you touch a GitHub Actions workflow, validate it before pushing — a bad
 workflow fails with zero useful logs:

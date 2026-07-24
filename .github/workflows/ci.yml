@@ -23,6 +23,17 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v23
         with:
           globs: "**/*.md"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Self-test the internal-link checker
+        run: node scripts/check-internal-links.mjs --self-test
+      - name: Check internal links and anchors
+        run: node scripts/check-internal-links.mjs
+      - name: Self-test the doc-citation checker
+        run: node scripts/check-doc-citations.mjs --self-test
+      - name: Check cited file paths exist
+        run: node scripts/check-doc-citations.mjs
 
   rust:
     name: Rust (fmt, clippy, test)

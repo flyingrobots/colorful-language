@@ -39,7 +39,7 @@ the authoritative current size.
 
 - **Closed class as keywords.** Function words are a fixed, enumerable list, so
   they are stored like language keywords — no machine learning. See
-  `docs/design/0001`.
+  [ADR-0001](../../design/0001-scope-and-delivery.md).
 - **Proper nouns are not decided here.** Detecting a proper noun needs sentence
   context (is the word capitalized *and* not sentence-initial?), so it is applied
   by `colorful_core::LexicalAnnotator`, not by the lexicon. See the
