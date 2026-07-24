@@ -22,11 +22,14 @@ Requirements:
   senses-only table, so a sense can't be declared without the logic that
   makes it fire, and there is no catch-all branch that could silently
   swallow an unrecognized word into the wrong class.
+- **LEX-11** Numeric recognition has one scanner contract shared with parsing:
+  separators are singular and surrounded by numeric characters, and Unicode
+  numeric behavior is explicit.
 
 ## Cases
 
-All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
-(`crates/colorful-lexicon/src/lib.rs`).
+Implemented and planned cases are listed below. Implemented lexicon evidence
+lives in `crates/colorful-lexicon/src/lib.rs`.
 
 - **LEX-1a** — *Requirement:* LEX-1. *Behavior:* a representative word for
   each of all seven `FunctionKind` variants — `Article`, `Preposition`,
@@ -97,9 +100,18 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
   directly. *Evidence:*
   `tests::ambiguous_word_corpus_matches_expected_sense_with_rationale`.
   *Status:* implemented.
+- **LEX-11a** — *Requirement:* LEX-11. *Behavior:* parser token formation and
+  lexicon `is_number` agree for integers, decimals, grouping, Unicode numerics,
+  repeated separators, and leading/trailing separators. *Oracle:* exact parser
+  token spans and lexicon `PosClass` equality for one shared table; malformed
+  forms are rejected by both surfaces. *Evidence type:* cross-crate table-driven
+  parity test. *Tracking:*
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
+  *Status:* planned.
 
 ## Known gaps
 
 - No regression fixture yet asserting the full word list; the size floor and
   per-kind samples are the current guard. The duplicate-key check is enforced at
   compile time by `phf`.
+- Numeric-recognition parity remains open in LEX-11a.

@@ -33,6 +33,22 @@ Requirements:
   budget. `compute_semantic_tokens()` answers a `semanticTokens/full`
   request specifically — it is not the `did_change` handler, which calls
   `compute_diagnostics` instead (not yet benchmarked).
+- **COL-13** Real `colorful-lsp` process tests cover the public JSON-RPC
+  lifecycle, diagnostics, and semantic-token contract.
+- **COL-14** Packaged editor evidence covers activation, incremental edits,
+  diagnostics, semantic tokens, shutdown, and theme fallback.
+- **COL-15** Versioned document state prevents stale analysis from publishing
+  after a newer edit and exposes deterministic cancellation/backpressure
+  evidence.
+- **COL-16** A release-mode overload harness measures the supported document
+  envelope, including queue delay, peak RSS, stale-result count, and time to the
+  latest diagnostic.
+- **COL-17** Fixed-corpus release benchmarks measure every major analysis and
+  projection stage without turning noisy wall-clock results into correctness
+  gates.
+- **COL-18** Bounded deterministic fuzz/property evidence covers arbitrary
+  Unicode, malformed public structures, range legality, source round-trip, and
+  CLI/LSP coordinate parity.
 
 ## Cases
 
@@ -140,11 +156,62 @@ Requirements:
   *Evidence:* `crates/colorful-cli/fixtures/invalid-utf8.bin`; `colorful-cli`
   `tests::invalid_utf8_file_is_rejected_across_every_command`. *Status:*
   implemented.
+- **COL-13a** — *Requirement:* COL-13. *Behavior:* a workspace integration test
+  starts the real `colorful-lsp` binary and exercises initialize, open, change,
+  tokens, diagnostics, close, shutdown, and process failure. *Oracle:* exact
+  JSON-RPC response/notification sequence, exit status, and final document
+  version. *Evidence type:* process-level integration test. *Tracking:*
+  [#133](https://github.com/flyingrobots/colorful-language/issues/133).
+  *Status:* planned.
+- **COL-14a** — *Requirement:* COL-14. *Behavior:* clean installed VS Code/Open
+  VSX and Zed packages activate for Plain Text and Markdown, report a missing
+  server, render semantic tokens and diagnostics, apply an incremental edit,
+  shut down, and retain a readable fallback theme. *Oracle:* scripted transcript
+  equality plus headless activation and visual/text-equivalent smoke oracles.
+  *Evidence type:* packaged-editor integration test and reviewed visual
+  artifact. *Tracking:*
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
+  *Status:* planned.
+- **COL-15a** — *Requirement:* COL-15. *Behavior:* a deterministic concurrency
+  test forces an older computation to finish last while only the newest
+  generation may publish diagnostics or tokens. *Oracle:* publication log
+  contains only the latest generation; cancellation and stale-result counters
+  match the forced schedule. *Evidence type:* deterministic async regression
+  test. *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* planned.
+- **COL-16a** — *Requirement:* COL-16. *Behavior:* four concurrent semantic and
+  diagnostic requests plus rapid versioned edits run against 1, 5, and 10 MB
+  documents in release mode under an explicit supported-envelope SLO. *Oracle:*
+  queue delay, peak RSS, stale-result count, and time-to-latest-diagnostic stay
+  within the reviewed 5 MB limits; larger inputs degrade with a stable overload
+  outcome. *Evidence type:* release benchmark and process metrics report.
+  *Tracking:*
+  [#122](https://github.com/flyingrobots/colorful-language/issues/122).
+  *Status:* planned.
+- **COL-17a** — *Requirement:* COL-17. *Behavior:* parsing, annotation, lint,
+  IR serialization/validation, semantic-token generation, incremental edits,
+  and Graft projection run over fixed corpora and sizes in release mode.
+  *Oracle:* versioned benchmark output records throughput, allocations,
+  hardware, toolchain, and reviewed regression tolerances without gating
+  correctness CI on noisy timing. *Evidence type:* Criterion or equivalent
+  benchmark suite and published baseline. *Tracking:*
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+  *Status:* planned.
+- **COL-18a** — *Requirement:* COL-18. *Behavior:* a bounded seeded corpus
+  generates valid Unicode plus malformed public trees and IR mutations and
+  exercises parser, annotator, projection, validation, and UTF-16 indexing.
+  *Oracle:* no panic; legal ordered ranges and source round-trip for accepted
+  data; deterministic rejection for malformed data; CLI/LSP coordinate parity.
+  *Evidence type:* property tests, fuzz targets, and a deterministic CI corpus.
+  *Tracking:*
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+  *Status:* planned.
 
 ## Known gaps
 
-- The end-to-end LSP handshake (`initialize` → `semanticTokens/full`) is verified
-  manually; an automated integration harness is a future addition.
+- The end-to-end LSP handshake (`initialize` → `semanticTokens/full`) remains
+  manual until COL-13a and COL-14a land.
 - The title-case proper-noun guard is heuristic: a short capitalized line with no
   lowercase content word (for example `I am Groot`) can be read as a title and
   suppress a genuine proper noun. Accepted in `v0` as the conservative direction.
@@ -154,4 +221,7 @@ Requirements:
   today would fail on infrastructure variance, not real regressions. Wire it
   into CI once a run of stable baselines exists. `compute_diagnostics` (what
   `did_change` actually calls) has no benchmark yet, and neither does memory/
-  allocation.
+  allocation. COL-15a through COL-17a own the document-state,
+  supported-envelope, and broader benchmark evidence.
+- Parser, projection, validation, and coordinate invariants do not yet have a
+  bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.

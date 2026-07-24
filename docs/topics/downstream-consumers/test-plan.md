@@ -20,6 +20,15 @@ workspace.
   projecting it — rejecting malformed input rather than repairing or clamping
   it — via one ordered `validateArtifact` admission gate: cheap structural
   checks first, expensive hashes last.
+- **CONSUMER-7** Shared received-artifact invariants remain explicit across Rust
+  and JavaScript while Graft-specific admission rules stay separately named.
+- **CONSUMER-8** Rust and JavaScript role/key validators are generated from one
+  vocabulary authority and fail CI on regeneration drift.
+- **CONSUMER-9** Process-level witness failures reject malformed artifacts under
+  stable error categories without emitting canonical output.
+- **CONSUMER-10** An independent consumer proves validation, rendering,
+  incompatible-version rejection, and migration across two contract versions,
+  then compares that effort with CLI text and LSP tokens.
 
 ## Cases
 
@@ -122,6 +131,44 @@ workspace.
   `colorful_ir::validate_document`'s own derivation checks exactly. *Oracle:*
   JavaScript assertions on `err.code`. *Evidence type:* unit test.
   *Evidence:* `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **CONSUMER-7a** — *Requirement:* CONSUMER-7. *Behavior:* when
+  `validate_document` adopts inter-token and structure-graph invariants,
+  `validateWireContract` adopts the shared received-artifact scope while
+  `validateGraftTokenOrder` remains explicitly Graft-specific. The existing
+  JavaScript token-order check is not presented as evidence that the unfinished
+  Rust validator already rejects every new invariant. *Oracle:* one shared
+  mutation matrix names the expected Rust variant and JavaScript error code for
+  each shared invariant, with Graft-only cases separately inventoried.
+  *Evidence type:* cross-language mutation fixtures and executable parity tests.
+  *Tracking:*
+  [#126](https://github.com/flyingrobots/colorful-language/issues/126).
+  *Status:* planned.
+- **CONSUMER-8a** — *Requirement:* CONSUMER-8. *Behavior:* one schema artifact
+  generates Rust and JavaScript role/key validators, and either stale consumer
+  fails regeneration CI. *Oracle:* generated files are byte-identical to fresh
+  output and both consumers accept/reject the same manifest keys.
+  *Evidence type:* generator drift check and cross-language fixtures.
+  *Tracking:*
+  [#145](https://github.com/flyingrobots/colorful-language/issues/145).
+  *Status:* planned.
+- **CONSUMER-9a** — *Requirement:* CONSUMER-9. *Behavior:* real witness
+  processes reject mismatched source, invalid JSON, wrong hashes, illegal axes,
+  fractional/out-of-range offsets, and missing fields with no canonical output.
+  *Oracle:* nonzero status, exact stable error category, and empty canonical
+  output for every fixture. *Evidence type:* process-level negative matrix.
+  *Tracking:*
+  [#148](https://github.com/flyingrobots/colorful-language/issues/148).
+  *Status:* planned.
+- **CONSUMER-10a** — *Requirement:* CONSUMER-10. *Behavior:* a non-Rust
+  consumer validates source identity/schema/vocabulary/version, renders a useful
+  artifact, rejects an incompatible version, and migrates across two contract
+  versions before repeating the job with CLI text and LSP tokens. *Oracle:*
+  exact rejection/rendering/migration results plus a reviewed integration-effort
+  ledger; the contract is simplified rather than expanded if it does not reduce
+  downstream cost. *Evidence type:* independent executable consumer and
+  measured migration report. *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* planned.
 
 ## Open verification gaps
 
@@ -129,3 +176,10 @@ workspace.
   the runtime host.
 - Graft package API compatibility checks belong in the Graft repository; this
   repository keeps only the reference consumer witness.
+- Shared strict-invariant parity remains open in CONSUMER-7a. Producer-local
+  projection-input rejection belongs to IR-15a; it is not a missing Graft
+  admission check.
+- Generated vocabulary authority and process-level refusal evidence remain open
+  in CONSUMER-8a and CONSUMER-9a.
+- Independent consumption, migration, and integration-cost evidence remains
+  open in CONSUMER-10a.

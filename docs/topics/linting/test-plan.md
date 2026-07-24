@@ -30,10 +30,19 @@ Requirements:
   messages, and equivalent positions after reconciling the CLI's
   Unicode-scalar columns with the LSP's UTF-16 columns across ASCII, astral and
   combining Unicode, and LF/CRLF/bare-CR line endings.
+- **LINT-11** Passive-voice detection must distinguish evidenced participles
+  from adjectival complements and keep uncertainty explicit.
+- **LINT-12** Weak-word behavior inside straight and curly quotations must have
+  one documented policy and deterministic balanced, nested, and unbalanced
+  fixtures.
+- **LINT-13** Optional external `Analyzer` adapters must preserve the pure port,
+  deterministic finding order, built-in availability, and CLI/LSP parity.
+- **LINT-14** Product-level lint quality must be measured against a pinned,
+  held-out, human-oracled corpus rather than inferred from built-in fixtures.
 
 ## Cases
 
-All cases are implemented.
+Implemented and planned cases are listed below.
 
 - **LINT-1a** — *Requirement:* LINT-1. *Behavior:* an `Analyzer` can be written
   against the port alone. *Oracle:* finding count and span. *Evidence:*
@@ -147,3 +156,44 @@ All cases are implemented.
   integration test. *Evidence:* `colorful-cli`
   `tests::cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings`.
   *Status:* implemented.
+- **LINT-11a** — *Requirement:* LINT-11. *Behavior:* `was red`, `is sacred`, and
+  reviewed ambiguous adjective constructions are not silently classified as
+  passive voice; participle findings require lexical class plus reviewed
+  dictionary or rule evidence. *Oracle:* exact finding vectors for positive,
+  negative, and ambiguous fixtures plus a published precision measurement
+  before rule expansion. *Evidence type:* deterministic rule fixtures and
+  reviewed evaluation report. *Tracking:*
+  [#138](https://github.com/flyingrobots/colorful-language/issues/138).
+  *Status:* planned.
+- **LINT-12a** — *Requirement:* LINT-12. *Behavior:* the chosen quotation policy
+  produces deterministic weak-word findings for balanced, nested, and
+  unbalanced straight/curly quotes and is identical across CLI and LSP.
+  *Oracle:* exact finding/diagnostic vectors and documented policy equality.
+  *Evidence type:* unit fixtures and cross-surface integration test. *Tracking:*
+  [#139](https://github.com/flyingrobots/colorful-language/issues/139).
+  *Status:* planned.
+- **LINT-13a** — *Requirement:* LINT-13. *Behavior:* a Harper or Vale adapter
+  lives outside `colorful-core`, normalizes findings deterministically, leaves
+  the built-in analyzer usable without network or external binaries, and emits
+  identical CLI/LSP results. *Oracle:* exact ordered finding equality for
+  built-in and external adapters plus stable unavailable-engine behavior.
+  *Evidence type:* adapter contract and process-level parity tests. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
+- **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
+  comparison-tool versions run against blinded development and held-out English
+  corpora spanning the documented prose categories. *Oracle:* preregistered
+  human labels drive precision, recall, latency, memory, install-friction, and
+  task-utility reports; held-out labels remain unavailable during tuning.
+  *Evidence type:* redistributable corpus, blinded annotation packet, and
+  reproducible evaluation harness. *Tracking:*
+  [#155](https://github.com/flyingrobots/colorful-language/issues/155).
+  *Status:* planned.
+
+## Open verification gaps
+
+- Passive-voice precision remains open in LINT-11a.
+- Quotation policy remains open in LINT-12a.
+- Optional external-analyzer parity remains open in LINT-13a.
+- Product-level comparative evidence remains open in LINT-14a; built-in rule
+  fixtures are not a substitute for the held-out oracle.

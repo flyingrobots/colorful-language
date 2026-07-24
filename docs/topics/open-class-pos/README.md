@@ -83,8 +83,8 @@ those malformed combinations.
 The vocabulary manifest maps the explicit open-class axis to distinct abstract
 roles (`NOUN`, `VERB`, `ADJECTIVE`, `ADVERB`) and then to ANSI, LSP token types,
 and graft classes. The default CLI, `colorful ir`, and LSP paths emit those roles
-for seeded and context-disambiguated words. Later slices can replace or extend
-the contextual adapter without changing the parser, IR shape, LSP transport, or
-editor adapters.
+for seeded and context-disambiguated words. The port boundary permits a later
+adapter to replace or extend the contextual implementation without changing the
+parser, IR shape, LSP transport, or editor adapters.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

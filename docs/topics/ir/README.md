@@ -2,9 +2,10 @@
 
 The **intermediate representation** of a prose document: `colorful.syntax/v1`.
 `colorful` parses and classifies English; the IR is the structured, serializable
-form of that analysis, which back-ends (graft, jedit, any editor) consume instead
-of re-deriving structure. See [architecture](architecture.md) for the ladder this
-sits in and the ownership boundaries.
+export of that analysis for out-of-process consumers such as Graft and jedit.
+The CLI and LSP use the shared core tree and classified tokens directly; they do
+not decode the serialized IR. See [architecture](architecture.md) for the ladder
+this sits in and the ownership boundaries.
 
 ## Current behavior
 
@@ -163,7 +164,10 @@ v0.3 must handle the `Option` result.
   would otherwise carry them.
 - The derivation record is a trace seed, not replayable provenance: `passId`
   and `ruleId` now name a real, validated producer identity, but node-level
-  input/output ids, a real `compilerBuildHash`, and artifact hashes come later.
+  input/output ids, a real `compilerBuildHash`, and artifact hashes are not
+  implemented. Expanding that surface is evidence-gated rather than assumed.
 - GraphQL `Int` lowers to `i32`, bounding documents to ~2 GB.
 
-See the [test plan](test-plan.md) for the cases that pin this behavior.
+See the [test plan](test-plan.md) for the cases that pin this behavior and the
+[architecture decision rule](architecture.md#product-evidence-gate) for
+retaining, simplifying, or deliberately versioning the contract.

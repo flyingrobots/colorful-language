@@ -10,10 +10,12 @@
 
 ## Why an IR
 
-`colorful` parses English into structure. That structure is an **intermediate
-representation**: ANSI color, LSP semantic tokens, graft projections, and (later)
-an executable interpreter are all *back-ends* over the same IR — the classic
-compiler shape (front-end → IR → back-ends) pointed at English.
+`colorful` parses English into a core tree and classified token stream. The
+current ANSI and LSP adapters consume those domain values directly.
+`colorful-projection` separately turns the same analysis into the serialized
+`colorful.syntax/v1` **intermediate representation** for Graft, jedit, and other
+out-of-process consumers. The wire IR is therefore an export boundary, not an
+internal object every current surface must decode.
 
 The IR is also a **contract across a language boundary**: a Rust producer
 (`colorful`) and TypeScript consumers (graft, jedit). Hand-writing the types on
@@ -133,3 +135,27 @@ contract break, but the IR does not yet claim replay.
 language server, and the graft consumer all derive their colors from it rather
 than each keeping a private copy. A consumer can compare its manifest hash to an
 artifact's `vocabularyHash` to detect vocabulary drift.
+
+## Product-evidence gate
+
+Stage 1 compatibility is preserved while the project tests whether the wire
+contract lowers real downstream cost. The independent-consumer proof
+[#156](https://github.com/flyingrobots/colorful-language/issues/156) compares
+the same consumer job across `colorful.syntax/v1`, CLI text, and LSP semantic
+tokens, including validation, migration, adapter code, and failure handling.
+
+The decision rule is:
+
+- retain the contract when the independent consumer shows a material
+  correctness, integration, or migration advantage;
+- simplify implementation or optional surface area without changing public v1
+  bytes when the same job can be served more cheaply;
+- introduce a deliberately versioned contract, with migration evidence, when a
+  worthwhile simplification cannot preserve v1 bytes;
+- do not add replayable provenance, CNL, or Edict fields merely to make the
+  contract look more complete.
+
+The broader [deep-end evidence gate](../../../ROADMAP.md#deep-end-evidence-gate)
+controls when new provenance, CNL, and Edict surface area resumes. It preserves
+the compiler ladder above as the long-term design while requiring the current
+product, distribution, and consumer boundary to earn the next expansion.

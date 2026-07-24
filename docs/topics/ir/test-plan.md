@@ -53,6 +53,19 @@ Requirements:
   manifest gives complete coverage for every current `PosClass` and generated
   `VisualRole`, and all three fallible signatures are an explicitly documented
   breaking API change in the queued v0.4.0 line, never a silent patch release.
+- **IR-14** `validate_document` rejects malformed received-artifact token layout
+  and structure graphs, not only malformed individual ranges and identifiers.
+- **IR-15** Public adapter and projection input is validated before IR emission,
+  with typed path-addressed errors and deterministic precedence.
+- **IR-16** Rust and JavaScript vocabulary validators are generated from one
+  schema authority and protected by regeneration drift CI.
+- **IR-17** The IR witness has process-level negative legs for malformed
+  identity, shape, hashes, axes, offsets, and required fields.
+- **IR-18** Validator error definitions and complexity budgets are mechanically
+  checkable, and mutation evidence replaces speculative invariant-gap hunting
+  where it provides value.
+- **IR-19** An independent non-Rust consumer proves two-version migration and
+  whether the IR reduces downstream effort relative to CLI text or LSP tokens.
 
 ## Cases
 
@@ -95,7 +108,7 @@ Requirements:
 - **IR-4a** — *Requirement:* IR-4. *Behavior:* `validate_document` accepts a
   produced document (with and without source) and rejects each malformed
   mutation — wrong contract/schema/vocabulary hash, content-hash and byte-length
-  mismatch against the real source, out-of-order / out-of-bounds / non-char-
+  mismatch against the real source, reversed / out-of-bounds / non-char-
   boundary ranges, negative offsets, illegal token axes, duplicate ids, dangling
   child refs — collecting every failure rather than the first. *Oracle:* expected
   `ValidationError` variants present. *Evidence:* `colorful-ir` `integration`
@@ -115,10 +128,12 @@ Requirements:
   check — against the decoded document and the real source bytes before
   re-emitting, so an unknown field at any nesting level, a missing field, or
   a wrongly typed field is rejected (exit non-zero, for the specific
-  expected reason) rather than canonicalized. Deliberately does *not* enforce
-  non-overlapping token wire order: that is a graft-projection requirement,
-  not part of the wire contract, and `colorful_ir::validate_document` leaves
-  it unchecked. This is proven for the TS leg specifically — the Rust leg's
+  expected reason) rather than canonicalized. It deliberately does *not*
+  currently enforce non-overlapping token wire order: that is a
+  graft-projection requirement today, and `colorful_ir::validate_document`
+  leaves it unchecked. IR-14a is the planned decision to make ordered,
+  non-empty, non-overlapping token layout a shared received-artifact invariant.
+  This is proven for the TS leg specifically — the Rust leg's
   generated `DocumentAnalysis` deserializes via `serde`'s default
   unknown-field-tolerant behavior, so unknown-field rejection is not yet
   proven symmetric across both languages. *Oracle:* the TS leg exits
@@ -332,6 +347,74 @@ Requirements:
   100 with five categories of major API violation. The tool did not report
   return-type changes; the checked-in compile-time signature test covers that
   gap rather than overstating the tool's coverage. *Status:* implemented.
+- **IR-14a** — *Requirement:* IR-14. *Behavior:* `validate_document` extends its
+  current per-range, boundary, identifier, and dangling-reference checks to
+  reject empty, unsorted, and overlapping token ranges; invalid
+  paragraph/sentence kind-depth pairs; cycles; multiple parents; and parent
+  range violations. *Oracle:* one minimal received-artifact mutation per
+  invariant produces the exact path-addressed variant in deterministic stage
+  order, while all produced fixtures remain valid. *Evidence type:* pure helper
+  unit tests and public `validate_document` mutation tests. *Tracking:*
+  [#126](https://github.com/flyingrobots/colorful-language/issues/126).
+  *Status:* planned.
+- **IR-15a** — *Requirement:* IR-15. *Behavior:* public custom
+  parser/annotator ports cannot project reversed, out-of-bounds,
+  non-character-boundary, overlapping, unsorted, or tree-mismatched spans; every
+  successful projection validates against the source. *Oracle:* exact typed
+  `ProjectionError` path and precedence per adversarial input, plus
+  `validate_document(document, Some(source)) == Ok(())` for every success.
+  *Evidence type:* custom-port contract tests and projection integration tests.
+  *Tracking:*
+  [#142](https://github.com/flyingrobots/colorful-language/issues/142) and
+  [#144](https://github.com/flyingrobots/colorful-language/issues/144).
+  *Status:* planned.
+- **IR-16a** — *Requirement:* IR-16. *Behavior:* one schema artifact generates
+  Rust and JavaScript role/key validators, and either stale consumer fails
+  regeneration CI. *Oracle:* fresh generation is byte-identical and both
+  validators accept/reject the same key matrix. *Evidence type:* generator,
+  drift check, and cross-language fixtures. *Tracking:*
+  [#145](https://github.com/flyingrobots/colorful-language/issues/145).
+  *Status:* planned.
+- **IR-17a** — *Requirement:* IR-17. *Behavior:* real witness processes reject
+  mismatched source, invalid JSON, wrong contract/schema/vocabulary hashes,
+  illegal axes, fractional/out-of-range offsets, and missing fields without
+  writing canonical output. *Oracle:* exact nonzero status, stable error
+  category, and empty canonical output for each fixture. *Evidence type:*
+  process-level negative matrix. *Tracking:*
+  [#148](https://github.com/flyingrobots/colorful-language/issues/148).
+  *Status:* planned.
+- **IR-18a** — *Requirement:* IR-18. *Behavior:* adding a
+  `ValidationError` variant requires one authored definition that supplies its
+  path and display behavior without three synchronized hand edits. *Oracle:* a
+  compile-time inventory and rendering tests fail when any generated/derived
+  member is missing. *Evidence type:* declarative error definition and unit
+  tests. *Tracking:*
+  [#80](https://github.com/flyingrobots/colorful-language/issues/80).
+  *Status:* planned.
+- **IR-18b** — *Requirement:* IR-18. *Behavior:* the validator complexity budget
+  is enforced by a reproducible tool or explicitly retired with documented
+  rationale. *Oracle:* a deliberate over-budget fixture fails the named check,
+  or the policy and CI remove the unsupported claim together. *Evidence type:*
+  source-policy test or reviewed policy deletion. *Tracking:*
+  [#81](https://github.com/flyingrobots/colorful-language/issues/81).
+  *Status:* planned.
+- **IR-18c** — *Requirement:* IR-18. *Behavior:* bounded deterministic mutation
+  runs prove the validator tests kill reviewed invariant-breaking mutations and
+  seed useful survivors into normal regression tests. *Oracle:* the pinned
+  mutation corpus reports no unexplained surviving in-scope mutation.
+  *Evidence type:* `cargo-mutants` configuration, bounded CI corpus, and seeded
+  tests. *Tracking:*
+  [#82](https://github.com/flyingrobots/colorful-language/issues/82).
+  *Status:* planned.
+- **IR-19a** — *Requirement:* IR-19. *Behavior:* an independent non-Rust
+  consumer validates source/schema/vocabulary/version, renders a useful
+  artifact, rejects an incompatible version, and migrates across two contract
+  versions before repeating the job with CLI text and LSP tokens. *Oracle:*
+  exact functional results plus a reviewed integration-effort ledger and an
+  explicit retain/simplify/version decision. *Evidence type:* executable
+  consumer and measured migration report. *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* planned.
 
 ## Known gaps / risks
 
@@ -344,3 +427,14 @@ Requirements:
   artifact hashes are deferred.
 - Canonical JSON rules (key order, number formatting) must be specified and
   enforced on both sides for IR-2a to be meaningful.
+- `validate_document` does not yet enforce the received-artifact token-layout
+  and graph invariants in IR-14a. IR-3a/IR-3b prove those properties only for
+  producer output; IR-4a proves the narrower current receiver checks.
+- Public adapter/projection rejection remains open in IR-15a.
+- Generated vocabulary validation and process-level refusal evidence remain
+  open in IR-16a and IR-17a.
+- Validator-definition, complexity-policy, and mutation evidence remains open
+  in IR-18a through IR-18c.
+- The independent two-version consumer and
+  [product-evidence decision](architecture.md#product-evidence-gate) remains
+  open in IR-19a.
