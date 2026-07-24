@@ -1248,44 +1248,6 @@ mod integration {
         .expect("projection within i32 range")
     }
 
-    macro_rules! validation_error_inventory {
-        ($($variant:ident),+ $(,)?) => {
-            const ALL_VALIDATION_ERROR_NAMES: &[&str] = &[$(stringify!($variant)),+];
-
-            fn validation_error_name(error: &ValidationError) -> &'static str {
-                match error {
-                    $(ValidationError::$variant { .. } => stringify!($variant)),+
-                }
-            }
-        };
-    }
-
-    // One deliberately exhaustive matcher is the inventory oracle for the
-    // shared Rust/JavaScript parity matrix. Adding a public ValidationError
-    // variant makes this matcher fail to compile until the inventory is
-    // updated; the test below then fails until the matrix gains exactly one
-    // corresponding mutation.
-    validation_error_inventory!(
-        UnsupportedContractVersion,
-        SchemaHashMismatch,
-        VocabularyHashMismatch,
-        ContentHashMismatch,
-        ByteLengthMismatch,
-        NegativeByteLength,
-        SourceNotUtf8,
-        NegativeOffset,
-        RangeOutOfOrder,
-        RangeOutOfBounds,
-        RangeNotOnCharBoundary,
-        IllegalTokenAxes,
-        DuplicateTokenId,
-        DuplicateNodeId,
-        DanglingChildRef,
-        MissingDerivationIdentity,
-        DuplicateDerivationPassId,
-        EmptyDerivation,
-    );
-
     #[derive(serde::Deserialize)]
     #[serde(rename_all = "camelCase", deny_unknown_fields)]
     struct ValidatorParityMatrix {
@@ -1355,10 +1317,10 @@ mod integration {
             "unsupported parity matrix version"
         );
 
-        let inventory: BTreeSet<_> = ALL_VALIDATION_ERROR_NAMES.iter().copied().collect();
+        let inventory: BTreeSet<_> = ValidationError::VARIANT_NAMES.iter().copied().collect();
         assert_eq!(
             inventory.len(),
-            ALL_VALIDATION_ERROR_NAMES.len(),
+            ValidationError::VARIANT_NAMES.len(),
             "Rust ValidationError inventory contains a duplicate"
         );
         let matrix_errors: BTreeSet<_> = matrix
@@ -1443,7 +1405,11 @@ mod integration {
                 Ok(()) => panic!("{}: Rust validator accepted the mutation", test_case.name),
                 Err(errors) => errors,
             };
-            let actual: BTreeSet<_> = errors.0.iter().map(validation_error_name).collect();
+            let actual: BTreeSet<_> = errors
+                .0
+                .iter()
+                .map(ValidationError::variant_name)
+                .collect();
             assert!(
                 actual.contains(test_case.rust_error.as_str()),
                 "{}: expected Rust error {}, got {:?}",
