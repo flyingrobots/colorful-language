@@ -33,6 +33,14 @@ Verification for editor adapters and the `colorful-lsp` surface.
   classifier emits them. *Oracle:* Rust assertions. *Evidence:*
   `crates/colorful-lsp/src/lib.rs`; `docs/topics/coloring/test-plan.md`.
   *Status:* implemented for the server surface.
+- **EDIT-2b** — *Requirement:* EDIT-2. *Behavior:* for `"The cat is 3."`, only
+  the opening and closing quotation marks get the `string` token type; each
+  enclosed word keeps its own role (keyword, noun, keyword, number) exactly as
+  the unquoted sentence does — the quoted span is never collapsed into one
+  `string` token. *Oracle:* exact semantic-token vector equality, including
+  delta encoding. *Evidence:* `crates/colorful-lsp/src/lib.rs`
+  `tests::quote_marks_are_string_role_and_enclosed_words_keep_their_own_role`.
+  *Status:* implemented.
 - **EDIT-3a** — *Requirement:* EDIT-3. *Behavior:* lint findings become LSP
   diagnostics with ranges, severity, source, and rule code. *Oracle:* Rust
   assertions. *Evidence:* `crates/colorful-lsp/src/main.rs`;

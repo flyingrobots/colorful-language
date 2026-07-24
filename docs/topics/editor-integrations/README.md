@@ -46,7 +46,14 @@ roles, plus Colorful-owned token types for deterministic open-class words:
 | Adverb | `adverb` |
 | Proper noun candidate | `class` |
 | Literal number | `number` |
-| Quoted text | `string` |
+| Quotation mark | `string` |
+
+Only the quotation marks themselves carry the `string` role. The words a
+quote encloses are tokenized and classified like any other word and keep
+their own role (`noun`, `keyword`, unstyled, etc.) — Colorful does not (yet)
+analyze quote spans as a unit, so `"the bright fox"` styles the marks as
+`string` and "the"/"bright"/"fox" independently, not the whole span as one
+string.
 
 The default LSP path uses `ContextualOpenClassAnnotator`, so it emits `noun`,
 `verb`, `adjective`, and `adverb` for the small deterministic seed table and the

@@ -26,6 +26,15 @@ This is the single source of truth both front ends consume.
 
 ## Terminal output (`colorful` CLI)
 
+File and stdin input must be valid UTF-8. Every single-document command
+(`colorful`, `ir`, `diagnose`, `lint`) reads through `std::fs::read_to_string`
+(or the stdin equivalent), which rejects malformed input outright — a file
+containing invalid UTF-8 bytes exits non-zero with
+`stream did not contain valid UTF-8` on stderr, never a silent lossy
+conversion into corrupted-but-readable text. Non-UTF-8 encodings are not
+supported; that would need explicit detection and transcoding, not a change
+to this behavior.
+
 `colorful <file>` (or stdin) renders each token with an ANSI color: function
 words bold magenta (the "keywords"), proper nouns bold yellow, nouns blue, verbs
 red, adjectives yellow, adverbs magenta, numbers cyan, quotes green, punctuation

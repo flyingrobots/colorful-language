@@ -71,9 +71,11 @@ dependencies = [
  "colorful-ir",
  "colorful-lexicon",
  "colorful-lint",
+ "colorful-lsp",
  "colorful-parse",
  "colorful-projection",
  "serde_json",
+ "tower-lsp",
 ]
 
 [[package]]

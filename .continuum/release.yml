@@ -51,6 +51,11 @@ publish:
   github_release: true
   registries:
     - name: crates.io
+      # colorful-lsp before colorful-cli: colorful-cli's dev-dependencies
+      # include a versioned colorful-lsp path dependency (its lint
+      # golden-fixture parity test), and cargo requires a versioned
+      # dependency -- dev or not -- to resolve from the registry at publish
+      # time. colorful-lsp does not depend on colorful-cli.
       packages:
         - colorful-core
         - colorful-lexicon
@@ -58,8 +63,8 @@ publish:
         - colorful-ir
         - colorful-lint
         - colorful-projection
-        - colorful-cli
         - colorful-lsp
+        - colorful-cli
       verify: cargo info {crate}@{version}
   artifacts:
     - name: linux-binaries

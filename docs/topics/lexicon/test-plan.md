@@ -2,7 +2,8 @@
 
 Requirements:
 
-- **LEX-1** Each `FunctionKind` is recognized for representative words.
+- **LEX-1** Each of the seven `FunctionKind` variants is recognized for a
+  representative word.
 - **LEX-2** Lookup is case-insensitive.
 - **LEX-3** Numeric tokens are classified as `Number`; words with letters are not.
 - **LEX-4** Non-function, non-numeric words are `Content` (proper nouns are not
@@ -16,15 +17,28 @@ Requirements:
   adjective, and adverb words while preserving closed-class and number precedence.
 - **LEX-10** The contextual open-class annotator refines a small ambiguous word
   set using local sentence context while preserving existing lexical behavior.
+  Each ambiguous word is a named rule (an ordered list of senses, each with its
+  own evidence check) rather than a hand-matched dispatch over a separate
+  senses-only table, so a sense can't be declared without the logic that
+  makes it fire, and there is no catch-all branch that could silently
+  swallow an unrecognized word into the wrong class.
 
 ## Cases
 
 All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
 (`crates/colorful-lexicon/src/lib.rs`).
 
-- **LEX-1a** — *Requirement:* LEX-1. *Behavior:* a representative word for each of
-  the six kinds classifies correctly. *Oracle:* equality of `PosClass`.
-  *Evidence:* `tests::classifies_each_function_kind`. *Status:* implemented.
+- **LEX-1a** — *Requirement:* LEX-1. *Behavior:* a representative word for
+  each of all seven `FunctionKind` variants — `Article`, `Preposition`,
+  `Conjunction`, `Pronoun`, `Auxiliary`, `Determiner`, `Negator` — classifies
+  to exactly that kind. Table-driven over an exhaustive `match` with no
+  catch-all arm, so an eighth variant added to `FunctionKind` without a
+  matching case here is a compile error, not a silently-uncovered kind. This
+  is distinct from LEX-7a below: LEX-1a proves one representative word per
+  kind (breadth across all seven kinds); LEX-7a proves two specific negator
+  words (depth on one kind's dedicated negation behavior). *Oracle:*
+  equality of `PosClass`, per table entry. *Evidence:*
+  `tests::classifies_each_function_kind`. *Status:* implemented.
 - **LEX-2a** — *Requirement:* LEX-2. *Behavior:* `The`/`AND` classify as their
   function kinds. *Oracle:* equality of `PosClass`. *Evidence:*
   `tests::lookup_is_case_insensitive`. *Status:* implemented.
@@ -46,7 +60,8 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
   contractions classify; curly apostrophe matches. *Oracle:* equality of
   `PosClass`. *Evidence:* `tests::contractions_are_classified`,
   `tests::curly_apostrophe_contractions_match`. *Status:* implemented.
-- **LEX-7a** — *Requirement:* LEX-7. *Behavior:* `not`/`never` are `Negator`.
+- **LEX-7a** — *Requirement:* LEX-7. *Behavior:* both `not` and `never`
+  (not just one representative negator, as LEX-1a covers) are `Negator`.
   *Oracle:* equality of `PosClass`. *Evidence:* `tests::negation_is_its_own_kind`.
   *Status:* implemented.
 - **LEX-8a** — *Requirement:* LEX-8. *Behavior:* `3.`, `.5`, `3..` are not
@@ -73,6 +88,15 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
   unlisted-content behavior. *Oracle:* class vector equality. *Evidence:*
   `tests::contextual_annotator_preserves_existing_precedence`. *Status:*
   implemented.
+- **LEX-10c** — *Requirement:* LEX-10. *Behavior:* a corpus of worked examples
+  — one per sense of `book`/`record`/`lead`/`fast`, plus a case where no
+  sense's evidence matches and a case for a word absent from the rule table
+  entirely — resolves to the expected class (or `None`), citing the matched
+  rule's own named evidence on failure rather than a rationale restated in
+  the test. *Oracle:* per-case class equality against `contextual_kind`
+  directly. *Evidence:*
+  `tests::ambiguous_word_corpus_matches_expected_sense_with_rationale`.
+  *Status:* implemented.
 
 ## Known gaps
 

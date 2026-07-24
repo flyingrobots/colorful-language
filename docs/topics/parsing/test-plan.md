@@ -46,10 +46,20 @@ All cases are implemented. Evidence lives in `colorful-parse` unit tests
 - **PAR-4a** — *Requirement:* PAR-4. *Behavior:* empty/whitespace input is an
   empty document. *Oracle:* empty sentence vector. *Evidence:*
   `tests::empty_input_is_empty_document`. *Status:* implemented.
-- **PAR-4b** — *Requirement:* PAR-4. *Behavior:* adversarial inputs (emoji, long
-  tokens, mixed punctuation) do not panic and yield non-empty, in-bounds,
-  ordered, char-boundary spans. *Oracle:* span invariant assertions. *Evidence:*
-  `tests::parsing_is_total_and_spans_are_well_formed`. *Status:* implemented.
+- **PAR-4b** — *Requirement:* PAR-4. *Behavior:* adversarial inputs (empty,
+  emoji, mixed punctuation, combining marks, zero-width joiners) do not panic
+  and yield non-empty, in-bounds, ordered, char-boundary spans. *Giant-token
+  strategy:* `logos` only lowers to a loop under optimizations; a debug build
+  recurses once per character, so a pathologically long single token (the
+  fixture uses a 10,000-character word) can exhaust a default thread's stack
+  before the assertions ever run — an unrelated environment limit, not a
+  parser bug. The property runs on a dedicated thread with an explicit 16 MiB
+  stack so the giant-token case gets a fair, deterministic run in debug
+  builds too, instead of being skipped or flaking. *Oracle:* span invariant
+  assertions (non-empty, in-bounds, ordered, on char boundaries) plus no
+  panic. *Evidence:* `tests::parsing_is_total_and_spans_are_well_formed`
+  (spawns `tests::check_total_and_well_formed` on the large-stack thread).
+  *Status:* implemented.
 - **PAR-5a** — *Requirement:* PAR-5. *Behavior:* `"Hi." Go.` keeps the closing
   quote in sentence 1; `Hi. "Go."` starts sentence 2 at the opening quote.
   *Oracle:* structural equality. *Evidence:*
