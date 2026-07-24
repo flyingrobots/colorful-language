@@ -31,8 +31,9 @@ authoritative for live state.
 Topic `README.md` files below remain current truth only. Planned behavior belongs
 in the topic's `test-plan.md`, the owning issue, and the roadmap until executable
 evidence lands. A topic test plan should link the canonical issue for each open
-gap, then add stable requirement and case IDs before implementation begins. Do
-not copy the complete backlog into every topic.
+gap, then define stable requirement and case IDs before implementation begins.
+Every case must name its requirement, exact behavior, and explicit oracle, plus
+its evidence type and status. Do not copy the complete backlog into every topic.
 
 ## Self-consistency checks
 
