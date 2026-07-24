@@ -215,6 +215,7 @@ dependencies = [
  "criterion",
  "dashmap",
  "ropey",
+ "serde_json",
  "tokio",
  "tower-lsp",
 ]

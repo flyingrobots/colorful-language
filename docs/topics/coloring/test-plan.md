@@ -49,6 +49,8 @@ Requirements:
 - **COL-18** Bounded deterministic fuzz/property evidence covers arbitrary
   Unicode, malformed public structures, range legality, source round-trip, and
   CLI/LSP coordinate parity.
+- **COL-19** Real `colorful` process tests cover stdin and file input, malformed
+  UTF-8, operand rejection, exit statuses, `NO_COLOR`, and canonical IR output.
 
 ## Cases
 
@@ -156,13 +158,28 @@ Requirements:
   *Evidence:* `crates/colorful-cli/fixtures/invalid-utf8.bin`; `colorful-cli`
   `tests::invalid_utf8_file_is_rejected_across_every_command`. *Status:*
   implemented.
+- **COL-19a** — *Requirement:* COL-19. *Behavior:* a workspace integration test
+  starts the real `colorful` binary and exercises stdin, a committed file,
+  invalid UTF-8, multiple operands, successful and finding-bearing exit
+  statuses, `NO_COLOR`, and canonical IR output. *Oracle:* exact stdout,
+  relevant stderr category, process status, and canonical-JSON byte equality.
+  *Evidence type:* process-level integration test. *Evidence:*
+  `colorful-cli` integration tests
+  `binary_contract::stdin_file_no_color_and_canonical_ir_are_process_contracts`,
+  `binary_contract::invalid_input_operands_and_lint_findings_have_stable_process_failures`,
+  and `utf8_stdin::invalid_utf8_on_stdin_is_rejected_across_every_command`.
+  *Tracking:*
+  [#133](https://github.com/flyingrobots/colorful-language/issues/133).
+  *Status:* implemented.
 - **COL-13a** — *Requirement:* COL-13. *Behavior:* a workspace integration test
   starts the real `colorful-lsp` binary and exercises initialize, open, change,
   tokens, diagnostics, close, shutdown, and process failure. *Oracle:* exact
   JSON-RPC response/notification sequence, exit status, and final document
-  version. *Evidence type:* process-level integration test. *Tracking:*
+  version. *Evidence type:* process-level integration test. *Evidence:*
+  `colorful-lsp` integration test
+  `stdio_contract::real_server_completes_the_public_stdio_lifecycle`. *Tracking:*
   [#133](https://github.com/flyingrobots/colorful-language/issues/133).
-  *Status:* planned.
+  *Status:* implemented.
 - **COL-14a** — *Requirement:* COL-14. *Behavior:* clean installed VS Code/Open
   VSX and Zed packages activate for Plain Text and Markdown, report a missing
   server, render semantic tokens and diagnostics, apply an incremental edit,
@@ -210,8 +227,8 @@ Requirements:
 
 ## Known gaps
 
-- The end-to-end LSP handshake (`initialize` → `semanticTokens/full`) remains
-  manual until COL-13a and COL-14a land.
+- Packaged-editor activation around the proven server handshake remains manual
+  until COL-14a lands.
 - The title-case proper-noun guard is heuristic: a short capitalized line with no
   lowercase content word (for example `I am Groot`) can be read as a title and
   suppress a genuine proper noun. Accepted in `v0` as the conservative direction.
