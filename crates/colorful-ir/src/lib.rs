@@ -118,8 +118,8 @@ impl core::fmt::Display for ProjectionError {
             ),
             ProjectionError::MissingPassIdentity { role } => write!(
                 f,
-                "the {role} did not override `pass_identity()`; its provenance \
-                 would be indistinguishable from no identity at all"
+                "the {role} did not override `pass_identity()`; its derivation \
+                 identity would be indistinguishable from no identity at all"
             ),
             ProjectionError::DuplicatePassId { pass_id } => write!(
                 f,
@@ -302,7 +302,9 @@ fn build_structure(
 /// `parser_identity` and `annotator_identity` are the [`PassIdentity`] each
 /// producer reports via `pass_identity()` — pass them in rather than having
 /// this function assume any particular parser or annotator, so a caller using
-/// a different pair still gets honest provenance.
+/// a different pair still gets an honest derivation identity (a trace seed,
+/// not replayable provenance — see the `derivation` field's contract
+/// description).
 ///
 /// # Errors
 ///
