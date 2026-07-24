@@ -73,17 +73,27 @@ Verification for editor adapters and the `colorful-lsp` surface.
   generation, it cannot publish or replace the current diagnostics or semantic
   tokens. *Oracle:* a forced completion schedule publishes only the newest
   generation and exposes exact cancellation/stale counters. *Evidence type:*
-  deterministic async regression test. *Tracking:*
+  deterministic async regression test. *Evidence:* `colorful-lsp` binary test
+  `document_state::tests::older_computation_finishing_last_cannot_publish_or_replace_cache`
+  and paused-time test
+  `document_state::tests::rapid_edits_cancel_debounced_work_before_analysis`.
+  *Tracking:*
   [#121](https://github.com/flyingrobots/colorful-language/issues/121).
-  *Status:* planned.
+  *Status:* implemented.
 - **EDIT-12b** — *Requirement:* EDIT-12. *Behavior:* diagnostics and semantic
   tokens consume one generation-keyed cached analysis, and inputs above the
   documented 5 MiB limit return a stable overload diagnostic rather than
   entering analysis. *Oracle:* exact analysis invocation count, cache
   generation, boundary behavior, diagnostic code, and semantic-token result.
-  *Evidence type:* deterministic state and boundary tests. *Tracking:*
+  *Evidence type:* deterministic state and boundary tests. *Evidence:*
+  `colorful-lsp` tests
+  `tests::one_analysis_parses_and_classifies_once_for_both_lsp_surfaces`,
+  `document_state::tests::diagnostics_and_tokens_reuse_one_generation_analysis`,
+  and
+  `document_state::tests::oversized_documents_bypass_analysis_with_stable_outputs`.
+  *Tracking:*
   [#121](https://github.com/flyingrobots/colorful-language/issues/121).
-  *Status:* planned.
+  *Status:* implemented.
 - **EDIT-4a** — *Requirement:* EDIT-4. *Behavior:* source editor integrations
   compile on every PR; the VS Code `tsconfig.json` sets both `strict: true` and
   `skipLibCheck: false`, so incompatible dependency declarations cannot hide

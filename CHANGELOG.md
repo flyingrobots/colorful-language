@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Generation-safe cached LSP analysis.** Each open document now owns a rope,
+  client version, monotonic server generation, cached analysis, cooperative
+  cancellation handle, and per-document publication gate. Opens analyze
+  immediately; edits cancel pending work and debounce replacement analysis for
+  50 ms. Parsing and classification run from a rope snapshot on the blocking
+  pool, once per accepted generation, and the cached result supplies both
+  diagnostics and semantic tokens. A forced-completion regression makes an old
+  computation finish last and proves it cannot publish or replace the current
+  cache. Semantic-token responses identify their generation with `resultId`.
+  Documents through 5 MiB enter normal analysis; larger inputs bypass analysis,
+  return no semantic tokens, and publish the stable
+  `colorful/document-too-large` warning.
 - **A shared Rust/JavaScript validator-parity witness.** One declarative
   18-case mutation matrix now covers every public Rust `ValidationError`
   variant and its overlapping JavaScript wire-contract rejection. Both legs
@@ -50,18 +62,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `crates/colorful-cli/benches/colorize_bench.rs` and
   `crates/colorful-lsp/benches/semantic_tokens_bench.rs` (`criterion`,
   `cargo bench -p colorful-cli` / `-p colorful-lsp`), timing the CLI's
-  `colorize()` path and the LSP's `compute_semantic_tokens()` function
-  itself — the cost of one `semanticTokens/full` request, both reparsing
-  the whole document per `v0`'s incrementality model — over a 899-byte real
-  fixture and a 45 KB corpus. This is *not* the full `did_change` handler,
-  which calls `compute_diagnostics` instead (a separate reparse, not yet
-  benchmarked) — the two are different requests, not one combined
-  "per-edit" cost. `docs/topics/coloring/README.md` gets a new
+  `colorize()` path and the LSP's standalone `compute_semantic_tokens()`
+  projection helper over a 899-byte real fixture and a 45 KB corpus. This
+  is *not* the full production `analyze_document` and versioned scheduling
+  path, which also includes lint/diagnostic projection, debounce/queue delay,
+  cache coordination, and transport. `docs/topics/coloring/README.md` gets a new
   *Performance* section with the actual measured figures (2026-07-23,
   `rustc 1.96.0`, Apple M1 Pro), a stated 16 ms budget for documents up to
   ~50 KB, and explicit notes that the budget is not yet CI-enforced (a
-  single machine's first measurement isn't a stable baseline) and that
-  `compute_diagnostics` and memory are open benchmarking gaps, not implied
+  single machine's first measurement isn't a stable baseline) and that the
+  combined production path and memory are open benchmarking gaps, not implied
   by "cheap."
 - **Golden fixtures for the prose-linting rule pack.** Seven reviewed
   input/output fixtures under `crates/colorful-cli/fixtures/lint/` pin the
