@@ -149,7 +149,9 @@ the consumer boundary.
 - **Sentence structure** made visible
 - Unlisted content words stay clean (skeleton mode; no color overload)
 
-No cloud. No ML. Blazing fast and 100% local.
+No cloud. No ML. 100% local. Measured, release-mode CLI and LSP latency —
+hardware, corpus, toolchain, and date — lives in
+[`docs/topics/coloring/`](docs/topics/coloring/), not a marketing adjective.
 
 ---
 

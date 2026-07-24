@@ -28,3 +28,10 @@ ropey = { workspace = true }
 tower-lsp = { workspace = true }
 tokio = { workspace = true }
 dashmap = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "semantic_tokens_bench"
+harness = false

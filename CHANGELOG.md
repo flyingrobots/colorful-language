@@ -34,6 +34,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the contract was previously silently ignored at any level below the
   document root) — this affects the shipped graft reference consumer, not
   just the witness.
+- **Measured release-mode benchmarks replace unsubstantiated performance
+  claims.** README.md's "Blazing fast" and the coloring topic's "cheap for
+  prose" named no hardware, corpus, or number. Added
+  `crates/colorful-cli/benches/colorize_bench.rs` and
+  `crates/colorful-lsp/benches/semantic_tokens_bench.rs` (`criterion`,
+  `cargo bench -p colorful-cli` / `-p colorful-lsp`), timing the CLI's
+  `colorize()` path and the LSP's `compute_semantic_tokens()` function
+  itself — the cost of one `semanticTokens/full` request, both reparsing
+  the whole document per `v0`'s incrementality model — over a 899-byte real
+  fixture and a 45 KB corpus. This is *not* the full `did_change` handler,
+  which calls `compute_diagnostics` instead (a separate reparse, not yet
+  benchmarked) — the two are different requests, not one combined
+  "per-edit" cost. `docs/topics/coloring/README.md` gets a new
+  *Performance* section with the actual measured figures (2026-07-23,
+  `rustc 1.96.0`, Apple M1 Pro), a stated 16 ms budget for documents up to
+  ~50 KB, and explicit notes that the budget is not yet CI-enforced (a
+  single machine's first measurement isn't a stable baseline) and that
+  `compute_diagnostics` and memory are open benchmarking gaps, not implied
+  by "cheap."
 - **Golden fixtures for the prose-linting rule pack.** Seven reviewed
   input/output fixtures under `crates/colorful-cli/fixtures/lint/` pin the
   exact CLI report for each of the four lint rules, a false-positive
