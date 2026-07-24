@@ -60,6 +60,15 @@ jobs:
       - name: graft reference consumer coordinate test
         run: node consumers/graft-projection.test.mjs
 
+  generated-ir-drift:
+    name: Wesley-generated IR drift (pinned 0.1.1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: bash scripts/check-generated-ir-drift.sh
+
   editors:
     name: Editor integrations (compile)
     runs-on: ubuntu-latest
