@@ -122,7 +122,6 @@ Requirements:
   *Evidence:* `crates/colorful-cli/fixtures/editor-smoke-prose.txt`;
   `colorful-cli` `tests::diagnose_json_covers_editor_smoke_fixture`. *Status:*
   implemented.
-<<<<<<< HEAD
 - **COL-12a** — *Requirement:* COL-12. *Behavior:* `colorize()` and
   `compute_semantic_tokens()` are timed over a 899-byte real fixture and a
   45 KB corpus (the same fixture repeated 50×) in release profile.
