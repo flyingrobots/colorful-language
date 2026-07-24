@@ -6,29 +6,31 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-real_home_default="$HOME/.colorful-language"
 
 fail() {
   echo "smoke-test-install-local failed: $*" >&2
   exit 1
 }
 
-# snapshot_real_home: record whether the real default COLORFUL_HOME exists
-# and, if so, its bin/colorful mtime -- so we can prove afterward that
-# nothing in this test touched it, without deleting or overwriting
-# something that might be a real developer install.
-snapshot_real_home() {
-  if [[ -e "$real_home_default" ]]; then
-    echo "existed:$(stat -f '%m' "$real_home_default/bin/colorful" 2>/dev/null || stat -c '%Y' "$real_home_default/bin/colorful" 2>/dev/null || echo "no-binary")"
-  else
-    echo "absent"
-  fi
-}
-
-before="$(snapshot_real_home)"
-
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
+
+# Isolate HOME to mock-home to prevent touching the real developer installation.
+mock_home="$work/mock-home"
+mkdir -p "$mock_home"
+
+# Pre-create a canary default installation in the mock home.
+canary_dir="$mock_home/.colorful-language"
+mkdir -p "$canary_dir"
+echo "canary" > "$canary_dir/canary.txt"
+
+# Ensure rustup and cargo can find their toolchains using the absolute paths of the user's home before redirection.
+export RUSTUP_HOME="${RUSTUP_HOME:-$HOME/.rustup}"
+export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+
+# Export the isolated HOME
+export HOME="$mock_home"
+
 tmp_home="$work/colorful-home"
 
 echo "Installing into a temporary COLORFUL_HOME ($tmp_home)..."
@@ -40,18 +42,29 @@ version_output="$("$tmp_home/bin/colorful" --version)"
 [[ "$version_output" == colorful\ * ]] || fail "expected 'colorful --version' to report a version, got: $version_output"
 echo "OK: first install reports '$version_output'"
 
+# Make the installed binary observably stale to ensure the rerun replaces it.
+echo "sentinel" > "$tmp_home/bin/colorful"
+
 echo "Re-running install-local.sh against the same COLORFUL_HOME (idempotence)..."
 COLORFUL_HOME="$tmp_home" bash "$root/scripts/install-local.sh" >/dev/null
 
 [[ -x "$tmp_home/bin/colorful" ]] || fail "expected $tmp_home/bin/colorful to still exist after rerun"
 version_output_2="$("$tmp_home/bin/colorful" --version)"
 [[ "$version_output_2" == "$version_output" ]] ||
-  fail "expected the rerun to report the same version ('$version_output'), got: $version_output_2"
-echo "OK: rerun is idempotent, still reports '$version_output_2'"
+  fail "expected the rerun to replace the sentinel and report the same version ('$version_output'), got: $version_output_2"
+echo "OK: rerun is idempotent, replaced sentinel and still reports '$version_output_2'"
 
-after="$(snapshot_real_home)"
-[[ "$before" == "$after" ]] ||
-  fail "the real $real_home_default changed during this test (before: $before, after: $after)"
-echo "OK: the real $real_home_default was not touched"
+# Verify the mock home (the isolated default HOME) was never touched by the installer.
+if [[ ! -f "$canary_dir/canary.txt" ]]; then
+  fail "canary file was deleted!"
+fi
+if [[ "$(cat "$canary_dir/canary.txt")" != "canary" ]]; then
+  fail "canary content was modified!"
+fi
+other_files="$(find "$mock_home" -type f ! -name "canary.txt")"
+if [[ -n "$other_files" ]]; then
+  fail "the installer wrote files to the default HOME directory: $other_files"
+fi
+echo "OK: the default HOME directory was not touched"
 
 echo "smoke-test-install-local passed."
