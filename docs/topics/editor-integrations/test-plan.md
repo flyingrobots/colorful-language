@@ -18,6 +18,13 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-7** VS Code Plain Text highlighting should work from the source
   extension without user semantic-token setup beyond a resolvable
   `colorful-lsp` binary, and startup failures must be inspectable.
+- **EDIT-8** Packaged editor artifacts must pass a clean-install JSON-RPC and
+  activation smoke test for Plain Text and Markdown, including theme fallback.
+- **EDIT-9** Editor adapter and server version ownership must be explicit and
+  enforced by a deterministic compatibility-drift check.
+- **EDIT-10** Public editor releases must be signed, installable from real
+  registry URLs, reversible, visually demonstrable without color-only evidence,
+  and measured from installation to first highlight.
 
 ## Cases
 
@@ -77,19 +84,49 @@ Verification for editor adapters and the `colorful-lsp` surface.
   TypeScript compile and source review. *Evidence:* `editors/vscode/package.json`;
   `editors/vscode/src/extension.ts`; `editors/vscode/README.md`;
   `npm --prefix editors/vscode run compile`. *Status:* implemented.
+- **EDIT-8a** — *Requirement:* EDIT-8. *Behavior:* clean installed VS Code/Open
+  VSX and Zed packages activate for Plain Text and Markdown, expose a
+  server-not-found failure, exchange a deterministic initialize/open/change/
+  tokens/diagnostics/close/shutdown transcript, and render a readable fallback
+  when the active theme has no Colorful-specific rules. *Oracle:* exact
+  transcript and error-category equality plus headless activation and reviewed
+  text-equivalent visual output. *Evidence type:* packaged clean-install smoke
+  tests and scripted JSON-RPC fixture. *Tracking:*
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
+  *Status:* planned.
+- **EDIT-9a** — *Requirement:* EDIT-9. *Behavior:* the chosen synchronized or
+  independent adapter version policy declares compatible `colorful-lsp`
+  versions and detects unintended manifest/release-profile drift. *Oracle:*
+  compatibility matrix and manifest versions equal the reviewed policy; a
+  deliberate mismatch makes the drift check fail. *Evidence type:*
+  deterministic manifest-policy test. *Tracking:*
+  [#141](https://github.com/flyingrobots/colorful-language/issues/141).
+  *Status:* planned.
+- **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* signed VS Code/Open VSX and
+  Zed releases plus compatible platform server binaries publish at real URLs,
+  install on a clean machine, and roll back to the previous compatible set.
+  *Oracle:* registry/release URL resolution, integrity verification, activation,
+  semantic-token/diagnostic output, and rollback result equality.
+  *Evidence type:* signed release witness and clean-machine matrix. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
+- **EDIT-10b** — *Requirement:* EDIT-10. *Behavior:* publication evidence
+  includes a text-equivalent visual demo, a reviewed theme/fallback result, and
+  install-to-first-highlight timing without making the network-dependent timing
+  a correctness gate. *Oracle:* the demo exposes the expected roles in text and
+  pixels; the timing report names hardware, toolchain, package versions, and
+  start/stop events. *Evidence type:* reviewed visual artifact and observational
+  performance report. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
 
 ## Open verification gaps
 
-- Packaged VS Code/Open VSX and Zed clean-install tests, plus the deterministic
-  LSP transcript, are tracked by
-  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
-- Adapter/server semantic-version ownership and compatibility drift detection
-  are tracked by
-  [#141](https://github.com/flyingrobots/colorful-language/issues/141).
-- Signed publication, public registry URLs, platform server artifacts, rollback
-  evidence, a text-equivalent visual demo, and measured
-  install-to-first-highlight time are tracked by
-  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+- Packaged clean-install and transcript evidence remains open in EDIT-8a.
+- Adapter/server compatibility policy and drift evidence remains open in
+  EDIT-9a.
+- Signed publication, rollback, visual/theme evidence, and measured
+  install-to-first-highlight time remain open in EDIT-10a and EDIT-10b.
 - A shipped theme remains a planned artifact. Theme fallback belongs in #136;
   create a separate topic and fixtures only when Colorful owns an actual theme
   package, not as an empty documentation surface.

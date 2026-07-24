@@ -21,6 +21,10 @@ Requirements:
 - **POS-8** The shipped default annotator uses local sentence context to
   disambiguate a small ambiguous open-class set without changing parser, IR, or
   editor contracts.
+- **POS-9** Packaged editors must prove clean-install live POS visualization for
+  Plain Text and Markdown with explicit theme and fallback evidence.
+- **POS-10** Independent behavioral research must test live POS visualization
+  as a separate user proposition before the roadmap treats it as validated.
 
 ## Cases
 
@@ -89,6 +93,23 @@ Requirements:
   `colorful-lexicon`
   `tests::contextual_annotator_preserves_existing_precedence`. *Status:*
   implemented.
+- **POS-9a** — *Requirement:* POS-9. *Behavior:* clean installed VS Code/Open
+  VSX and Zed artifacts expose noun, verb, adjective, and adverb roles in Plain
+  Text and Markdown under a reviewed theme and documented fallback. *Oracle:*
+  exact semantic-token roles plus reviewed screenshot/text-equivalent equality
+  after clean activation. *Evidence type:* packaged editor smoke tests and
+  accessible visual evidence. *Tracking:*
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136) and
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
+- **POS-10a** — *Requirement:* POS-10. *Behavior:* the discovery study measures
+  task completion, repeat use, false-positive tolerance, install willingness,
+  and willingness to pay for live POS visualization independently from CI
+  linting and portable IR. *Oracle:* preregistered protocol, participant-group
+  quotas, captured observations, and an explicit continue/narrow/pause decision.
+  *Evidence type:* blinded research packet and study report. *Tracking:*
+  [#158](https://github.com/flyingrobots/colorful-language/issues/158).
+  *Status:* planned.
 
 ## Known gaps
 
@@ -97,10 +118,6 @@ Requirements:
   tagging.
 - Unlisted ordinary content words remain undifferentiated `Content` until a
   richer lexicon or broader contextual annotator covers them.
-- Packaged editor/theme evidence for the live visualization belongs to
-  [#136](https://github.com/flyingrobots/colorful-language/issues/136) and
-  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-- Independent behavioral validation of live POS visualization as a user
-  proposition belongs to
-  [#158](https://github.com/flyingrobots/colorful-language/issues/158); it is
-  not implied by deterministic classification fixtures alone.
+- Packaged editor/theme evidence remains open in POS-9a.
+- Independent behavioral validation remains open in POS-10a; deterministic
+  classification fixtures alone do not validate the user proposition.
