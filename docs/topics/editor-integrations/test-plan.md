@@ -8,7 +8,8 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-2** Semantic tokens use the shared vocabulary manifest and the LSP
   legend.
 - **EDIT-3** Lint findings are published as LSP diagnostics.
-- **EDIT-4** Source editor integrations compile in CI.
+- **EDIT-4** Source editor integrations compile in CI; the VS Code extension
+  keeps TypeScript strict mode and dependency declaration checking enabled.
 - **EDIT-5** Editor recipe docs stay honest about source installs,
   marketplace status, and theme caveats.
 - **EDIT-6** Zed Plain Text highlighting requires semantic tokens and a
@@ -46,8 +47,11 @@ Verification for editor adapters and the `colorful-lsp` surface.
   assertions. *Evidence:* `crates/colorful-lsp/src/main.rs`;
   `docs/topics/linting/test-plan.md`. *Status:* implemented.
 - **EDIT-4a** — *Requirement:* EDIT-4. *Behavior:* source editor integrations
-  compile on every PR. *Oracle:* CI editor job exits zero. *Evidence:*
-  `.github/workflows/ci.yml`. *Status:* implemented.
+  compile on every PR; the VS Code `tsconfig.json` sets both `strict: true` and
+  `skipLibCheck: false`, so incompatible dependency declarations cannot hide
+  behind a workspace-wide suppression. *Oracle:* CI editor job exits zero.
+  *Evidence:* `editors/vscode/tsconfig.json`; `npm --prefix editors/vscode run
+  compile`; `.github/workflows/ci.yml`. *Status:* implemented.
 - **EDIT-5a** — *Requirement:* EDIT-5. *Behavior:* recipe docs state that
   marketplace packages are not published and that custom open-class token types
   may need theme rules. *Oracle:* documentation review. *Evidence:*
