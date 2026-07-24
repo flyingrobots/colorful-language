@@ -1207,14 +1207,7 @@ mod integration {
         );
     }
 
-    /// The IR-3 structural-invariant oracle: byte ranges ordered, in-bounds,
-    /// non-overlapping, and on char boundaries; every `structure` node's
-    /// range contains its children; the source digest matches; a Rust JSON
-    /// round-trip is stable. `label` identifies which fixture failed, since
-    /// every corpus entry below shares this exact same assertion function
-    /// rather than a bespoke check per input shape.
-    fn assert_invariants_hold(label: &str, source: &str) {
-        let doc = analyze(source);
+    fn assert_document_invariants(label: &str, source: &str, doc: &syntax_v1::DocumentAnalysis) {
         let len = i32::try_from(source.len()).unwrap();
 
         // Source digest + length.
@@ -1259,13 +1252,43 @@ mod integration {
         }
 
         // Canonical JSON decodes back and re-encodes identically (Rust round-trip).
-        let a = canonical_json(&doc).unwrap();
+        let a = canonical_json(doc).unwrap();
         let decoded: syntax_v1::DocumentAnalysis = serde_json::from_str(&a).unwrap();
         assert_eq!(
             a,
             canonical_json(&decoded).unwrap(),
             "{label}: JSON round-trip"
         );
+    }
+
+    /// The IR-3 structural-invariant oracle: byte ranges ordered, in-bounds,
+    /// non-overlapping, and on char boundaries; every `structure` node's
+    /// range contains its children; the source digest matches; a Rust JSON
+    /// round-trip is stable. `label` identifies which fixture failed, since
+    /// every corpus entry below shares this exact same assertion function
+    /// rather than a bespoke check per input shape. Runs both the default
+    /// lexical annotator and the contextual annotator to ensure contextual
+    /// ambiguity invariants are exercised.
+    fn assert_invariants_hold(label: &str, source: &str) {
+        let doc_lexical = analyze(source);
+        assert_document_invariants(label, source, &doc_lexical);
+
+        use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
+        let parser = ProseParser::new();
+        let annotator = ContextualOpenClassAnnotator::<SeedOpenClassLexicon>::default();
+        let tree = parser.parse(source);
+        let tokens = annotator.annotate(source, &tree);
+        let doc_contextual = from_classification(
+            "test-contextual",
+            source,
+            &tree,
+            &tokens,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .expect("projection within i32 range");
+
+        assert_document_invariants(label, source, &doc_contextual);
     }
 
     #[test]
@@ -1300,7 +1323,7 @@ mod integration {
         },
         InvariantFixture {
             name: "punctuation only",
-            source: "... --- !!! ??? () [] {} \"quoted\" ,;:",
+            source: "... --- !!! ??? () [] {} \"\" ,;:",
         },
         InvariantFixture {
             name: "long tokens",
