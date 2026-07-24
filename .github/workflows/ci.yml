@@ -92,6 +92,15 @@ jobs:
           node-version: "22"
       - run: bash scripts/version-compat-matrix.sh
 
+  generated-ir-drift:
+    name: Wesley-generated IR drift (pinned 0.1.1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: bash scripts/check-generated-ir-drift.sh
+
   closure-contract:
     name: Issue-closure contract
     runs-on: ubuntu-latest

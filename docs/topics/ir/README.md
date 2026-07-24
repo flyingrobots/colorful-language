@@ -62,6 +62,13 @@ CLI version other than `0.1.1`). The generated types are a **wire boundary**:
 `colorful_ir::from_classification` is the one-way projection from the domain model
 into the DTO.
 
+CI does not trust that regeneration happened correctly against whichever
+developer checkout last ran it: `scripts/check-generated-ir-drift.sh` clones
+Wesley from an immutable pinned commit SHA (not a floating tag), generates
+into a temporary directory, and fails on any byte-for-byte drift against the
+committed output. This runs in CI (`generated-ir-drift`) and as part of
+`scripts/release-prep.sh`.
+
 `colorful-projection::build_document` is the single Rust producer front door:
 it parses, annotates, and calls `from_classification` with each producer's
 `PassIdentity` (`colorful_core::Parser::pass_identity` /

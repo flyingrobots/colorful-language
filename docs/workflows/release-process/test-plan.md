@@ -45,9 +45,10 @@ Verification for release preparation, tag automation, and release witnesses.
   whitespace` job. *Status:* implemented.
 - **REL-7a** — *Requirement:* REL-7. *Behavior:* release prep is a single
   executable gate that runs profile, Rust, package, IR with generated TypeScript
-  type-checking, downstream, editor, Markdown, workflow, and whitespace checks;
-  the Zed wasm build uses locked Cargo metadata. *Oracle:* script review and
-  local execution. *Evidence:* `scripts/release-prep.sh`. *Status:* implemented.
+  type-checking and Wesley-generated IR contract drift check, downstream, editor,
+  Markdown, workflow, and whitespace checks; the Zed wasm build uses locked
+  Cargo metadata. *Oracle:* script review and local execution. *Evidence:*
+  `scripts/release-prep.sh`. *Status:* implemented.
 - **REL-7b** — *Requirement:* REL-7. *Behavior:* final tag preflight requires
   clean aligned `main`, absent local/remote tag, matching workspace version,
   changelog entry, release packet, witness, and the full prep gate. *Oracle:*

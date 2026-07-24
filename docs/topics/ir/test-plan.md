@@ -5,7 +5,10 @@ Verification for the Stage 1 surface IR (`colorful.syntax/v1`). All cases are
 
 Requirements:
 
-- **IR-1** One GraphQL contract generates Rust and TS boundary types that agree.
+- **IR-1** One GraphQL contract generates Rust and TS boundary types that
+  agree, and the committed generated output matches what an immutable,
+  pinned Wesley checkout actually produces today (not just an ambient
+  developer checkout at the time someone last ran `scripts/gen-ir.sh`).
 - **IR-2** The IR serializes to a canonical JSON that round-trips byte-for-byte
   across the language boundary.
 - **IR-3** The IR honors invariants that SDL cannot express, across a
@@ -53,6 +56,16 @@ Requirements:
   `tsc` type-checks the generated TS (`witness/ir-consume.ts`). *Evidence:*
   `crates/colorful-ir/src/generated/`, `scripts/ir-witness.sh` (tsc step).
   *Status:* implemented.
+- **IR-1b** — *Requirement:* IR-1. *Behavior:* the committed
+  `crates/colorful-ir/{src/generated,ts}/` output is byte-identical to what
+  Wesley `0.1.1`, cloned from an immutable pinned commit SHA in
+  `flyingrobots/wesley` (not a floating tag/branch, and not an ambient
+  developer `COLORFUL_WESLEY_ROOT` checkout), generates from
+  `contracts/colorful/*.graphql` today; generation happens into a temporary
+  directory, never overwriting the checkout. *Oracle:* `cmp` byte equality
+  per generated file; non-zero exit and a unified diff on any drift.
+  *Evidence type:* executable script check. *Evidence:* `scripts/check-generated-ir-drift.sh`; CI job
+  `generated-ir-drift`; `scripts/release-prep.sh`. *Status:* implemented.
 - **IR-2a (the gate)** — *Requirement:* IR-2. *Behavior:* a `DocumentAnalysis`
   round-trips `Rust → JSON A → TS decode → JSON B → Rust decode → JSON C`.
   *Oracle:* `A == B == C` byte-for-byte. *Evidence:* `scripts/ir-witness.sh`
