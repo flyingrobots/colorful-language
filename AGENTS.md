@@ -142,14 +142,20 @@ implementation, honest current reference.
 - One logical change per commit. Use
   [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
+- For a slice with a meaningful behavior change, land the delivery loop steps
+  as three separate commits: a planned-case commit (adds the case to the test plan with status 'planned'),
+  a failing-evidence commit (adds the failing test/fixture/dependency), and a
+  passing-implementation commit (implements the code and flips the test plan
+  status to 'implemented'). Tiny-fix exceptions apply as described in
+  `CONTRIBUTING.md`.
 - **Issue closure happens on the slice PR, not on individual commits.** Put
   `Closes #NN` in the pull request description (see
   `.github/pull_request_template.md`), never in a commit trailer. A commit may
-  reference the issue for traceability (`Refs #NN`), but must not use a
-  closing keyword (`Closes`/`Fixes`/`Resolves`) — this repo merges via merge
-  commits, so a closing keyword on a non-final commit would close the issue
-  before the PR is done. A CI check enforces this on every pull request; see
-  `scripts/check-closure-contract.sh`.
+  reference the issue for traceability (`Refs #NN`) (e.g. in the footer: `Refs #NN`),
+  but must not use a closing keyword (`Closes`/`Fixes`/`Resolves`) — this repo merges
+  via merge commits, so a closing keyword on a non-final commit would close the
+  issue before the PR is done. A CI check enforces this on every pull request;
+  see `scripts/check-closure-contract.sh`.
 - A breaking change carries a `BREAKING CHANGE:` footer and warrants a version
   bump.
 - History is append-only: **no** force-push, rebase, squash, or amend on shared

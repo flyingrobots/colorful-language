@@ -128,6 +128,35 @@ For a meaningful behavior change, follow this sequence:
 Small fixes scale this down but keep the same shape: make the claim clear,
 identify or add evidence, implement, and keep the current reference honest.
 
+### Commit Shape: Planned, Failing, Passing
+
+Steps 2–4 above are meant to be visible in the branch history, not just in
+review discussion. For a slice with a real behavior change, land them as three
+separate, append-only commits, in this order:
+
+1. **Planned-case commit** — adds or updates the owning `test-plan.md` with
+   the new case: requirement ID, oracle, evidence type, status `planned`. No
+   production code changes.
+2. **Failing-evidence commit** — adds the smallest deterministic test that
+   fails against the current code, plus any minimal test-only support (fixtures,
+   test plans, or test-only dependencies) needed to execute it. Production
+   implementation must be excluded.
+3. **Passing-implementation commit** — implements the behavior, turns the test
+   green, and flips the test plan's case to `implemented` with the real test
+   name.
+
+**Tiny-fix exception.** A fix small enough that splitting it into three
+commits would produce commits with no independent meaning may land as a single
+commit. A fix is "indivisible" when either the failing-evidence commit would
+be an empty diff, or the planned-case commit would restate the existing test
+plan verbatim — a one-line typo fix, a broken link, or an off-by-one in an
+existing assertion are typical examples.
+
+This is structure, not a new correction policy: fix mistakes in any of the
+three commits with a new commit, same as always (see "Commits and Pull
+Requests" below) — never amend, rebase, or squash on shared branches to fold
+a fix backward into an earlier commit.
+
 ## How To Maintain The Documentation Corpus
 
 When you create or substantially change documentation:
