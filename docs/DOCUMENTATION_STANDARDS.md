@@ -447,9 +447,8 @@ implementation lands:
   `scripts/check-doc-citations.mjs` (CI job `docs`); this does not yet
   verify a cited *symbol* or *test name* inside an existing file, only that
   the cited path itself exists — a known gap;
-- stale generated reference — a pinned-Wesley drift check (CI job
-  `generated-ir-drift`) covers the generated IR contract; other generated
-  references have no drift check yet;
+- stale generated reference — generated references have no drift check yet
+  (a pinned-Wesley drift check is planned);
 - failed examples or tutorials declared executable;
 - undocumented public commands, options, settings, fields, statuses, or errors
   when coverage is required;

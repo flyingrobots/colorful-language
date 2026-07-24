@@ -12,6 +12,7 @@
 import { readFileSync, readdirSync, existsSync, mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { join, dirname, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 
 const IGNORED_DIR_NAMES = new Set([
@@ -25,9 +26,6 @@ const IGNORED_DIR_NAMES = new Set([
 ]);
 
 // Top-level directories (or dotfiles) this repo actually cites paths under.
-// An inline-code span with a leading segment outside this set is assumed to
-// be something else entirely (a crate name, a flag, a hash) and is not
-// treated as a citation.
 const KNOWN_ROOTS = new Set([
   "crates",
   "scripts",
@@ -44,6 +42,8 @@ const KNOWN_ROOTS = new Set([
   "CHANGELOG.md",
   "ROADMAP.md",
 ]);
+
+const ROOT_FILE_PREFIXES = ["cargo", "license", "readme", "roadmap", "changelog", "agents", "contributing", "gitignore"];
 
 function findMarkdownFiles(root) {
   const out = [];
@@ -74,15 +74,12 @@ function extractInlineCodeSpans(markdown) {
   return spans;
 }
 
-// Paths this corpus writes as schematic placeholders, not real citations:
-// `<topic>`/`<workflow>`/`<tag>` template segments, and the literal
-// `vX.Y.Z` version placeholder used throughout release docs.
+// Paths this corpus writes as schematic placeholders, not real citations
 function isPlaceholderPath(span) {
   return span.includes("<") || span.includes(">") || span.includes("vX.Y.Z");
 }
 
-// A `..` range between two real paths (e.g. `docs/goalposts/v0.1.0..v0.3.0`)
-// is not itself a filesystem path.
+// A `..` range between two real paths is not itself a filesystem path.
 function isRangeCitation(span) {
   return span.includes("..");
 }
@@ -90,25 +87,27 @@ function isRangeCitation(span) {
 function looksLikeCitedPath(span) {
   if (/\s/.test(span)) return false; // a shell command or prose fragment, not a bare path
   if (isPlaceholderPath(span) || isRangeCitation(span)) return false;
-  if (!span.includes("/") && !KNOWN_ROOTS.has(span)) return false;
-  const firstSegment = span.split("/")[0];
-  return KNOWN_ROOTS.has(firstSegment);
+  
+  if (span.includes("/")) {
+    const firstSegment = span.split("/")[0];
+    return KNOWN_ROOTS.has(firstSegment);
+  }
+  
+  const lower = span.toLowerCase();
+  if (KNOWN_ROOTS.has(span)) return true;
+  if (!span.includes(".")) return false;
+  for (const prefix of ROOT_FILE_PREFIXES) {
+    if (lower.startsWith(prefix)) return true;
+  }
+  return false;
 }
 
-// docs/audits/** and docs/goalposts/** are explicitly historical, point-in-
-// time snapshots (docs/README.md: "historical snapshots, not living
-// references"). A citation there -- an old branch name that happens to look
-// like a path, a line number from when the snapshot was taken -- is not
-// held to the same "must still resolve today" bar a living topic/workflow
-// reference is.
+// docs/audits/** and docs/goalposts/** are explicitly historical
 function isHistoricalSnapshot(repoRootRelativePath) {
   return repoRootRelativePath.startsWith("docs/audits/") || repoRootRelativePath.startsWith("docs/goalposts/");
 }
 
-// A simple, single-level `prefix{a,b,c}suffix` brace expansion -- the only
-// shape this corpus's docs actually use (e.g.
-// `crates/colorful-ir/{src/generated,ts}/`). Returns [span] unchanged if
-// there's no brace group.
+// A simple, single-level `prefix{a,b,c}suffix` brace expansion
 function expandBraces(span) {
   const match = /^(.*)\{([^{}]+)\}(.*)$/.exec(span);
   if (!match) return [span];
@@ -121,34 +120,47 @@ function wildcardToRegExp(pattern) {
   return new RegExp(`^${escaped}$`);
 }
 
+function globMatch(repoRoot, pattern) {
+  const segments = pattern.split("/");
+  
+  const matchSegment = (dir, index) => {
+    if (index === segments.length) {
+      return existsSync(dir);
+    }
+    
+    const segment = segments[index];
+    if (segment.includes("*")) {
+      if (!existsSync(dir)) return false;
+      const regex = wildcardToRegExp(segment);
+      try {
+        const entries = readdirSync(dir);
+        for (const entry of entries) {
+          if (regex.test(entry)) {
+            const nextDir = join(dir, entry);
+            if (matchSegment(nextDir, index + 1)) {
+              return true;
+            }
+          }
+        }
+      } catch {
+        return false;
+      }
+      return false;
+    } else {
+      return matchSegment(join(dir, segment), index + 1);
+    }
+  };
+  
+  return matchSegment(repoRoot, 0);
+}
+
 function pathExists(repoRoot, rawPath) {
   let cleaned = rawPath.replace(/^`|`$/g, "");
   cleaned = cleaned.replace(/[.,;:)]+$/, "");
-  // A trailing `:123` or `:123-130` line reference, e.g.
-  // `crates/colorful-cli/src/lib.rs:124-130` -- check the file, not a
-  // literal path ending in a colon and digits.
   cleaned = cleaned.replace(/:\d+(-\d+)?$/, "");
 
   if (cleaned.includes("*")) {
-    const segments = cleaned.split("/");
-    const wildcardIndex = segments.findIndex((segment) => segment.includes("*"));
-    if (wildcardIndex === -1) return existsSync(resolve(repoRoot, cleaned));
-
-    if (wildcardIndex === segments.length - 1) {
-      // The wildcard is the final segment: check the parent directory
-      // exists and at least one entry matches the pattern.
-      const dir = segments.slice(0, -1).join("/") || ".";
-      const resolvedDir = resolve(repoRoot, dir);
-      if (!existsSync(resolvedDir)) return false;
-      const regex = wildcardToRegExp(segments[wildcardIndex]);
-      return readdirSync(resolvedDir).some((entry) => regex.test(entry));
-    }
-
-    // The wildcard is a middle segment (e.g. `docs/goalposts/*/verification.md`):
-    // multi-segment glob matching isn't worth the complexity here, so just
-    // confirm the concrete prefix directory before the wildcard exists.
-    const prefix = segments.slice(0, wildcardIndex).join("/");
-    return existsSync(resolve(repoRoot, prefix));
+    return globMatch(repoRoot, cleaned);
   }
 
   return existsSync(resolve(repoRoot, cleaned));
@@ -161,13 +173,51 @@ function checkFile(repoRoot, mdPath) {
   if (isHistoricalSnapshot(label)) return failures;
 
   const markdown = readFileSync(mdPath, "utf8");
+  const lines = markdown.split("\n");
+  
+  const blocks = [];
+  let currentBlock = null;
+  
+  for (const line of lines) {
+    if (/^\s*[-*]\s+\*\*[^*]+\*\*/.test(line)) {
+      if (currentBlock) {
+        blocks.push(currentBlock);
+      }
+      currentBlock = {
+        isCase: true,
+        lines: [line],
+      };
+    } else {
+      if (currentBlock) {
+        currentBlock.lines.push(line);
+      } else {
+        blocks.push({
+          isCase: false,
+          lines: [line],
+        });
+      }
+    }
+  }
+  if (currentBlock) {
+    blocks.push(currentBlock);
+  }
+  
+  for (const block of blocks) {
+    const blockText = block.lines.join("\n");
+    if (block.isCase) {
+      const isPlannedOrBlocked = /\*Status:\*\s*(planned|blocked)/i.test(blockText) || /Status:\s*(planned|blocked)/i.test(blockText);
+      if (isPlannedOrBlocked) {
+        continue;
+      }
+    }
+    
+    for (const span of extractInlineCodeSpans(blockText)) {
+      if (!looksLikeCitedPath(span)) continue;
 
-  for (const span of extractInlineCodeSpans(markdown)) {
-    if (!looksLikeCitedPath(span)) continue;
-
-    for (const candidate of expandBraces(span)) {
-      if (!pathExists(repoRoot, candidate)) {
-        failures.push(`${label}: cited path does not exist: \`${candidate}\` (from \`${span}\`)`);
+      for (const candidate of expandBraces(span)) {
+        if (!pathExists(repoRoot, candidate)) {
+          failures.push(`${label}: cited path does not exist: \`${candidate}\` (from \`${span}\`)`);
+        }
       }
     }
   }
@@ -195,6 +245,9 @@ function runSelfTest() {
         "A broken citation: `crates/colorful-ir/src/does_not_exist.rs`.",
         "Not a path at all: `colorful-core`, `--version`, `cargo test -p colorful-ir`.",
         "",
+        "- **CASE-1** — *Evidence:* `crates/colorful-ir/src/planned_nonexistent.rs`. *Status:* planned.",
+        "- **CASE-2** — *Evidence:* `crates/colorful-ir/src/does_not_exist_in_impl.rs`. *Status:* implemented.",
+        "",
       ].join("\n"),
     );
 
@@ -208,6 +261,9 @@ function runSelfTest() {
     assert.ok(!messages.includes("colorful-core"), "a bare crate name (no slash, unknown root) must not be flagged");
     assert.ok(!messages.includes("--version"), "a CLI flag must not be flagged");
     assert.ok(!messages.includes("cargo test"), "a shell command must not be flagged");
+    
+    assert.ok(!messages.includes("planned_nonexistent.rs"), "a path in a planned case must not be flagged");
+    assert.ok(messages.includes("does_not_exist_in_impl.rs"), "a broken citation in an implemented case must be flagged");
 
     console.log("check-doc-citations: self-test passed");
   } finally {
@@ -221,7 +277,7 @@ function main() {
     return;
   }
 
-  const repoRoot = resolve(dirname(new URL(import.meta.url).pathname), "..");
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const files = findMarkdownFiles(repoRoot);
   const failures = files.flatMap((f) => checkFile(repoRoot, f));
 

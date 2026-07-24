@@ -10,8 +10,9 @@
 // Self-test: node scripts/check-internal-links.mjs --self-test
 
 import { readFileSync, readdirSync, statSync, mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
-import { join, dirname, relative, resolve } from "node:path";
+import { join, dirname, relative, resolve, isAbsolute } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 
 const IGNORED_DIR_NAMES = new Set([
@@ -41,15 +42,14 @@ function findMarkdownFiles(root) {
   return out;
 }
 
-// GitHub-style heading slug: lowercase, strip characters that aren't a
-// letter/number/space/hyphen, spaces to hyphens. Duplicate slugs get
-// -1, -2, ... suffixes for the 2nd, 3rd, ... occurrence.
+// Unicode-aware GitHub-compatible heading slug
 function slugify(heading) {
   return heading
     .trim()
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
+    .replace(/[^\p{L}\p{N}\p{M}\s-]/gu, "")
+    .replace(/[\s-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function headingSlugsIn(markdown) {
@@ -66,14 +66,31 @@ function headingSlugsIn(markdown) {
   return slugs;
 }
 
-const LINK_PATTERN = /\[([^\]]*)\]\(([^)]+)\)/g;
+function stripCodeRegions(markdown) {
+  // Strip fenced code blocks: ```...```
+  let cleaned = markdown.replace(/```[\s\S]*?```/g, "");
+  // Strip inline code spans: `...`
+  cleaned = cleaned.replace(/`[^`\n]+`/g, "");
+  return cleaned;
+}
 
 function extractLinks(markdown) {
   const links = [];
+  const cleaned = stripCodeRegions(markdown);
+
+  // Match inline links: [label](url)
+  const inlinePattern = /\[[^\]]*\]\(([^)]+)\)/g;
   let match;
-  while ((match = LINK_PATTERN.exec(markdown)) !== null) {
-    links.push(match[2].trim());
+  while ((match = inlinePattern.exec(cleaned)) !== null) {
+    links.push(match[1].trim());
   }
+
+  // Match reference link definitions: [label]: url
+  const refPattern = /^\[[^\]]+\]:\s*(\S+)/gm;
+  while ((match = refPattern.exec(cleaned)) !== null) {
+    links.push(match[1].trim());
+  }
+
   return links;
 }
 
@@ -81,8 +98,7 @@ function isExternal(target) {
   return /^([a-z][a-z0-9+.-]*:)/i.test(target) && !/^[a-z]:\\/i.test(target);
 }
 
-// checkFile: the one entry point both the real run and the self-test use --
-// no separate "test mode" logic to drift from what actually runs.
+// checkFile: the one entry point both the real run and the self-test use.
 function checkFile(repoRoot, mdPath) {
   const failures = [];
   const markdown = readFileSync(mdPath, "utf8");
@@ -104,6 +120,14 @@ function checkFile(repoRoot, mdPath) {
     }
 
     const resolved = resolve(fileDir, pathPart);
+    
+    // Check for link escaping the repository root
+    const rel = relative(repoRoot, resolved);
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+      failures.push(`${label}: link escaping repository root: "${pathPart}"`);
+      continue;
+    }
+
     let stats;
     try {
       stats = statSync(resolved);
@@ -117,9 +141,29 @@ function checkFile(repoRoot, mdPath) {
         failures.push(`${label}: anchor "#${anchor}" on a directory link "${pathPart}" is not checkable`);
         continue;
       }
-      const targetMarkdown = readFileSync(resolved, "utf8");
-      if (!headingSlugsIn(targetMarkdown).has(anchor)) {
-        failures.push(`${label}: dangling anchor "#${anchor}" in "${pathPart}"`);
+      
+      const isMarkdown = resolved.endsWith(".md");
+      if (isMarkdown) {
+        const targetMarkdown = readFileSync(resolved, "utf8");
+        if (!headingSlugsIn(targetMarkdown).has(anchor)) {
+          failures.push(`${label}: dangling anchor "#${anchor}" in "${pathPart}"`);
+        }
+      } else {
+        // Line number validation for source/non-Markdown files
+        const lineMatch = /^L(\d+)(?:-L(\d+))?$/.exec(anchor);
+        if (!lineMatch) {
+          failures.push(`${label}: invalid line anchor "#${anchor}" on non-Markdown file "${pathPart}"`);
+          continue;
+        }
+        
+        const fileContent = readFileSync(resolved, "utf8");
+        const totalLines = fileContent.split("\n").length;
+        const startLine = parseInt(lineMatch[1], 10);
+        const endLine = lineMatch[2] ? parseInt(lineMatch[2], 10) : startLine;
+        
+        if (startLine < 1 || startLine > totalLines || endLine < startLine || endLine > totalLines) {
+          failures.push(`${label}: line anchor "#${anchor}" out of bounds (file has ${totalLines} lines) for "${pathPart}"`);
+        }
       }
     }
   }
@@ -134,7 +178,12 @@ function runSelfTest() {
 
     writeFileSync(
       join(dir, "docs", "topics", "widgets", "README.md"),
-      "# Widgets\n\n## Usage\n\nSome content.\n",
+      "# Widgets\n\n## Usage\n\nSome content.\n\n## Über-topic\n\nUnicode heading.\n",
+    );
+
+    writeFileSync(
+      join(dir, "docs", "main.rs"),
+      "fn main() {\n  println!(\"Hello\");\n}\n",
     );
 
     writeFileSync(
@@ -144,31 +193,35 @@ function runSelfTest() {
         "",
         "[widgets](topics/widgets/README.md)",
         "[widgets usage](topics/widgets/README.md#usage)",
+        "[unicode anchor](topics/widgets/README.md#über-topic)",
         "[broken file](topics/does-not-exist.md)",
         "[broken anchor](topics/widgets/README.md#does-not-exist)",
         "[external](https://example.com/whatever)",
         "[same-file anchor](#spine)",
         "[broken same-file anchor](#nope)",
+        "[escaping root](../../../../etc/passwd)",
+        "[valid line](main.rs#L2)",
+        "[invalid line](main.rs#L10)",
+        "[invalid format](main.rs#foo)",
         "",
       ].join("\n"),
     );
 
     const failures = checkFile(dir, join(dir, "docs", "README.md"));
-    const messages = failures.join("\n");
 
-    assert.ok(!messages.includes("widgets/README.md)"), "a valid file link must not be flagged");
-    assert.ok(messages.includes('broken link to "topics/does-not-exist.md"'), "a broken file link must be flagged");
-    assert.ok(
-      messages.includes('dangling anchor "#does-not-exist"'),
-      "a broken anchor on an existing file must be flagged",
-    );
-    assert.ok(!messages.includes("#usage"), "a valid anchor must not be flagged");
-    assert.ok(!messages.includes("example.com"), "an external link must never be checked/flagged");
-    assert.ok(
-      messages.includes('dangling same-file anchor "#nope"'),
-      "a broken same-file anchor must be flagged",
-    );
-    assert.ok(!messages.includes('"#spine"'), "a valid same-file anchor must not be flagged");
+    // Verify specific failures are present:
+    assert.ok(failures.some(f => f.includes("broken link to \"topics/does-not-exist.md\"")), "broken file link must be flagged");
+    assert.ok(failures.some(f => f.includes("dangling anchor \"#does-not-exist\"")), "broken anchor must be flagged");
+    assert.ok(failures.some(f => f.includes("dangling same-file anchor \"#nope\"")), "broken same-file anchor must be flagged");
+    assert.ok(failures.some(f => f.includes("link escaping repository root")), "escaped link must be flagged");
+    assert.ok(failures.some(f => f.includes("line anchor \"#L10\" out of bounds")), "out-of-bounds line anchor must be flagged");
+    assert.ok(failures.some(f => f.includes("invalid line anchor \"#foo\"")), "invalid anchor format must be flagged");
+
+    // Verify valid links are NOT flagged:
+    assert.ok(!failures.some(f => f.includes("topics/widgets/README.md") && !f.includes("does-not-exist")), "valid widgets links must not be flagged");
+    assert.ok(!failures.some(f => f.includes("example.com")), "external links must not be flagged");
+    assert.ok(!failures.some(f => f.includes("#spine")), "valid same-file anchor must not be flagged");
+    assert.ok(!failures.some(f => f.includes("main.rs") && f.includes("L2") && !f.includes("L10")), "valid line anchor must not be flagged");
 
     console.log("check-internal-links: self-test passed");
   } finally {
@@ -182,7 +235,7 @@ function main() {
     return;
   }
 
-  const repoRoot = resolve(dirname(new URL(import.meta.url).pathname), "..");
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const files = findMarkdownFiles(repoRoot);
   const failures = files.flatMap((f) => checkFile(repoRoot, f));
 
