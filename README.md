@@ -1,4 +1,6 @@
-<div align="center"><h1>colorful-language</h1>
+<div align="center">
+  <img alt="Colorful_Language" src="https://github.com/user-attachments/assets/94c48976-9b6d-49fa-a634-7aab2d302592" />
+  <h1>colorful-language</h1>
 <h3><code>IDE-grade syntax highlighting for English prose.</code></h3></div>
 
 _Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotation marks glow as **strings** while the words inside keep their own roles, and the skeleton of every sentence becomes visible._
@@ -62,7 +64,20 @@ colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt \
   | python3 -m json.tool
 ```
 
-<div align="center"><img width="739" height="817" alt="Screenshot 2026-06-21 at 12 20 52" src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
+<div align="center"><img width="739" height="817" alt="A terminal running `cat README.md | colorful`: this file's own prose rendered with function words in bold magenta, proper nouns and acronyms in bold yellow, quotation marks in green, numbers in cyan, punctuation in dim gray, and unlisted content words left in the default color." src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
+
+The screenshot above pipes this README through `colorful` itself. The visible
+token-role mapping (see [`docs/topics/coloring/`](docs/topics/coloring/) for
+the exact contract):
+
+| What's highlighted | Example | Terminal color |
+| --- | --- | --- |
+| Closed-class function words | `and`, `for`, `the`, `is`, `with` | bold magenta |
+| Proper nouns and capitalized acronyms | `English`, `NLP`, `CLI`, `LSP` | bold yellow |
+| Quotation marks | `"`, `"` | green (enclosed words keep their own styling) |
+| Numbers | `0.1.0` | cyan |
+| Punctuation | `,`, `.`, `:` | dim gray |
+| Everything else (unlisted content words) | — | default terminal color |
 
 ---
 
@@ -263,6 +278,12 @@ The **prose linter** and the deterministic **open-class POS** path have landed
 on `main`; contributions that grow the rule pack, improve editor/theme
 packaging, or continue the deeper controlled-English roadmap are especially
 welcome right now.
+
+For the full documentation corpus — every topic's current behavior and test
+plan, design records, and release packets — start at the
+[documentation spine](docs/README.md). Contributor-facing repository
+operations, including the release process, are indexed in
+[`docs/workflows/`](docs/workflows/README.md).
 
 ---
 
