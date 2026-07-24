@@ -79,9 +79,30 @@ consumer all derive from this manifest.
 
 ## Guarantees
 
-- **Cross-language round-trip.** The IR survives `Rust → JSON → TypeScript → JSON
-  → Rust` byte-for-byte (`scripts/ir-witness.sh`, enforced in CI). Producer and
-  consumer can never disagree about the shape.
+- **Cross-language round-trip.** A *valid* document survives
+  `Rust → JSON → TypeScript → JSON → Rust` byte-for-byte (`scripts/ir-witness.sh`,
+  enforced in CI): the TS leg (`witness/ir-canonicalize.mjs`) and the Rust leg
+  (`examples/recanon.rs`) each independently validate the decoded document
+  against the contract and the real source bytes before re-emitting it, so
+  neither leg can launder a document into clean-looking canonical JSON without
+  first agreeing it's valid.
+- **Malformed artifacts are rejected, not laundered.** The TS leg runs
+  `validateWireContract` (unknown fields at every nesting level, missing
+  fields, wrongly typed fields, and the usual range/hash checks) before
+  canonicalizing. This is the graft reference consumer's admission gate
+  minus its token-wire-ordering check specifically — non-overlapping token
+  order is a graft-projection requirement (for its `makeByteToPoint`
+  monotonic cursor), not part of the wire contract, which
+  `colorful_ir::validate_document` deliberately leaves unchecked, so the
+  witness must not be stricter than the Rust leg it round-trips against.
+  Proven against three checked-in negative fixtures under `witness/negative/`
+  (an unknown field, a missing field, a wrong-typed field) that the witness
+  asserts are rejected **for their specific reason**, not merely a nonzero
+  exit, on every run. This is proven for the TS leg specifically; the Rust
+  leg's generated `DocumentAnalysis` deserializes via `serde`'s default
+  (unknown-field-tolerant) behavior, so an unknown field is not yet
+  independently proven rejected on the Rust side — a known gap, not a
+  claimed guarantee.
 - **Structural invariants** (asserted on a committed corpus spanning empty
   input, Unicode, CR/LF variants, punctuation-only input, long tokens,
   multiple paragraphs, and contextual ambiguity — every fixture checked by

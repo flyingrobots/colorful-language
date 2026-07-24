@@ -85,6 +85,31 @@ Requirements:
   through the generated DTO and re-encodes identically. *Oracle:* decode +
   re-encode equals the input. *Evidence:* the witness `recanon` leg; `colorful-ir`
   `tests::round_trips_in_rust`. *Status:* implemented.
+- **IR-4d** — *Requirement:* IR-4. *Behavior:* the witness TS leg
+  (`witness/ir-canonicalize.mjs`) runs `validateWireContract` — the graft
+  reference consumer's admission gate minus its graft-specific token-order
+  check — against the decoded document and the real source bytes before
+  re-emitting, so an unknown field at any nesting level, a missing field, or
+  a wrongly typed field is rejected (exit non-zero, for the specific
+  expected reason) rather than canonicalized. Deliberately does *not* enforce
+  non-overlapping token wire order: that is a graft-projection requirement,
+  not part of the wire contract, and `colorful_ir::validate_document` leaves
+  it unchecked. This is proven for the TS leg specifically — the Rust leg's
+  generated `DocumentAnalysis` deserializes via `serde`'s default
+  unknown-field-tolerant behavior, so unknown-field rejection is not yet
+  proven symmetric across both languages. *Oracle:* the TS leg exits
+  non-zero, with the expected message substring, for each of three
+  checked-in negative fixtures (unknown field, missing field, wrong type),
+  and exits zero for the valid fixture. *Evidence:*
+  `witness/negative/{unknown-field,missing-field,wrong-type}.json`;
+  `scripts/ir-witness.sh` (negative-fixtures step, asserting the expected
+  message per fixture); `consumers/graft-projection.mjs`'s
+  `rejectUnknownFields` calls at the document root, `source`, each token,
+  structure node, diagnostic, derivation step, and byte range;
+  `consumers/graft-projection.test.mjs`'s unknown-field assertions.
+  Verified the negative-fixtures step actually catches a regression: removed
+  the unknown-field check, confirmed `scripts/ir-witness.sh` failed exactly
+  on the `unknown-field` fixture, then restored it. *Status:* implemented.
 - **IR-5a** — *Requirement:* IR-5. *Behavior:* `from_classification` projects
   `colorful-core` types into the DTO; `colorful-core` does not depend on generated
   types. *Oracle:* `colorful-core` compiles standalone. *Evidence:*

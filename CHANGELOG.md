@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The IR witness's TypeScript leg now actually validates.**
+  `witness/ir-canonicalize.mjs` previously parsed and canonicalized a
+  `DocumentAnalysis` with zero structural validation. It now runs a new
+  `validateWireContract` gate (unknown/missing/wrongly-typed field checks at
+  every nesting level, plus the existing range/hash checks) against the
+  decoded document and the real source bytes before re-emitting, so a
+  malformed artifact is rejected instead of canonicalized. `validateWireContract`
+  is `consumers/graft-projection.mjs`'s admission gate minus
+  `validateGraftTokenOrder` — non-overlapping token wire order is a
+  graft-projection-specific requirement (for its `makeByteToPoint` monotonic
+  cursor), not part of the `colorful.syntax/v1` wire contract, which
+  `colorful_ir::validate_document` deliberately leaves unchecked; reusing the
+  graft-specific gate in the witness would make it reject a token layout the
+  Rust leg accepts. The existing `validateArtifact` (used by the real graft
+  consumer) is unchanged in behavior, now expressed as
+  `validateWireContract` + `validateGraftTokenOrder`. Three checked-in
+  negative fixtures under `witness/negative/` (an unknown top-level field, a
+  missing field, a wrong-typed field) prove the rejection — for the specific
+  expected reason, not just a nonzero exit — on every `scripts/ir-witness.sh`
+  run. `consumers/graft-projection.mjs` also gains an unknown-field check at
+  *every* nesting level (`source`, each token, structure node, diagnostic,
+  derivation step, and byte range) it didn't have before (a field outside
+  the contract was previously silently ignored at any level below the
+  document root) — this affects the shipped graft reference consumer, not
+  just the witness.
 - **Golden fixtures for the prose-linting rule pack.** Seven reviewed
   input/output fixtures under `crates/colorful-cli/fixtures/lint/` pin the
   exact CLI report for each of the four lint rules, a false-positive

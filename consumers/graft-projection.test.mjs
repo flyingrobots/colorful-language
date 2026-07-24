@@ -16,6 +16,7 @@ import {
   schemaHash,
   validateArtifact,
   validateVocabularyManifest,
+  validateWireContract,
   verifyContentHash,
   verifySchemaHash,
   verifyVocabularyHash,
@@ -418,6 +419,67 @@ assert.doesNotThrow(() => validateArtifact(source, ir));
 assert.equal(errorCode(() => validateArtifact(source, null)), "E_ARTIFACT_SHAPE");
 assert.equal(errorCode(() => validateArtifact(source, validIr({ tokens: "nope" }))), "E_ARTIFACT_SHAPE");
 assert.equal(
+  errorCode(() => validateArtifact(source, validIr({ unexpectedField: "surprise" }))),
+  "E_ARTIFACT_SHAPE",
+  "an unknown top-level field must be rejected, not silently ignored",
+);
+// Unknown fields nested below the document root must be rejected too, not
+// just at the top level -- every generated DTO shape gets the same check.
+assert.equal(
+  errorCode(() => validateArtifact(source, validIr({ source: { ...ir.source, extra: "surprise" } }))),
+  "E_ARTIFACT_SHAPE",
+  "an unknown field on source must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(source, validIr({ tokens: [{ ...ir.tokens[0], extra: "surprise" }, ir.tokens[1]] })),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an unknown field on a token must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({
+        tokens: [
+          { ...ir.tokens[0], byteRange: { ...ir.tokens[0].byteRange, extra: "surprise" } },
+          ir.tokens[1],
+        ],
+      }),
+    ),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an unknown field on a byteRange must be rejected (covers tokens/structure/diagnostics/derivation alike)",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({
+        diagnostics: [
+          {
+            byteRange: { startUtf8: 0, endUtf8: 1 },
+            severity: "INFO",
+            code: "x",
+            message: "y",
+            extra: "surprise",
+          },
+        ],
+      }),
+    ),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an unknown field on a diagnostic must be rejected",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(source, validIr({ derivation: [{ ...ir.derivation[0], extra: "surprise" }, ir.derivation[1]] })),
+  ),
+  "E_ARTIFACT_SHAPE",
+  "an unknown field on a derivation step must be rejected",
+);
+assert.equal(
   errorCode(() => validateArtifact(source, validIr({ source: { ...ir.source, utf8ByteLength: "13" } }))),
   "E_ARTIFACT_SHAPE",
   "a non-integer utf8ByteLength must be rejected before it's ever compared",
@@ -517,6 +579,18 @@ assert.equal(
   ),
   "E_TOKEN_ORDER",
   "an overlapping second token must be rejected",
+);
+
+// Wire-order enforcement is graft-projection-specific (for makeByteToPoint's
+// monotonic cursor), not part of the colorful.syntax/v1 wire contract --
+// colorful_ir::validate_document deliberately leaves inter-token layout
+// unchecked, so validateWireContract (what the IR round-trip witness uses)
+// must accept the same reordered-but-otherwise-valid document
+// validateArtifact rejects. If this ever throws, the witness has become
+// stricter than the Rust contract validator it round-trips against.
+assert.doesNotThrow(
+  () => validateWireContract(source, validIr({ tokens: [ir.tokens[1], ir.tokens[0]] })),
+  "validateWireContract must not enforce graft's token-order requirement",
 );
 
 // 7. Occurrence id uniqueness.

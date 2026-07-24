@@ -46,6 +46,37 @@ const FUNCTION_KINDS = new Set([
 ]);
 const OUTLINE_KINDS = new Set(["PARAGRAPH", "SENTENCE"]);
 const DIAGNOSTIC_SEVERITIES = new Set(["ERROR", "WARNING", "INFO"]);
+// The complete `colorful.syntax/v1` DocumentAnalysis field set (matches
+// crates/colorful-ir/ts/syntax_v1.ts's generated `DocumentAnalysis`
+// interface). A key outside this set is not a wire field at all -- an
+// artifact carrying one is malformed the same way a missing or wrongly
+// typed field is, so it is rejected here rather than silently ignored.
+const DOCUMENT_ANALYSIS_FIELDS = new Set([
+  "contractVersion",
+  "schemaHash",
+  "vocabularyHash",
+  "source",
+  "tokens",
+  "structure",
+  "diagnostics",
+  "derivation",
+]);
+// The complete field set for every *other* generated DTO
+// (crates/colorful-ir/ts/syntax_v1.ts), so an unknown field nested anywhere
+// in the document -- not just at the top level -- is rejected the same way.
+const BYTE_RANGE_FIELDS = new Set(["startUtf8", "endUtf8"]);
+const SOURCE_ARTIFACT_FIELDS = new Set(["unitId", "contentHash", "utf8ByteLength"]);
+const TOKEN_FIELDS = new Set([
+  "occurrenceId",
+  "byteRange",
+  "tokenKind",
+  "lexicalClass",
+  "functionKind",
+  "openClassKind",
+]);
+const OUTLINE_NODE_FIELDS = new Set(["nodeId", "kind", "byteRange", "depth", "childNodeIds"]);
+const DIAGNOSTIC_FIELDS = new Set(["byteRange", "severity", "code", "message"]);
+const DERIVATION_STEP_FIELDS = new Set(["passId", "ruleId", "sourceRanges", "compilerBuildHash"]);
 // Every GraphQL `Int` in colorful.syntax/v1 lowers to a signed 32-bit Rust
 // `i32`, not an arbitrary JS safe integer -- a value the generated Rust DTO
 // cannot represent is exactly the kind of artifact admission must reject.
@@ -109,6 +140,18 @@ function fail(code, message, context) {
 
 function isPlainObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// Reject a field outside `allowed` the same way a missing or wrongly typed
+// field is rejected: an artifact carrying one is malformed, not a forward-
+// compatible extension. Call sites pass the field set for whichever
+// generated DTO shape `object` is meant to be (ByteRange, SourceArtifact,
+// Token, OutlineNode, Diagnostic, or DerivationStep), so nested shape drift
+// is caught the same way top-level drift is, not just at the document root.
+function rejectUnknownFields(object, allowed, label) {
+  for (const key of Object.keys(object)) {
+    if (!allowed.has(key)) fail("E_ARTIFACT_SHAPE", `unknown field: ${label}.${key}`);
+  }
 }
 
 function isSafeInteger(value) {
@@ -405,6 +448,7 @@ function requireIntegerField(value, label) {
 
 function requireByteRangeShape(range, label) {
   if (!isPlainObject(range)) fail("E_ARTIFACT_SHAPE", `${label} must be an object`);
+  rejectUnknownFields(range, BYTE_RANGE_FIELDS, label);
   requireIntegerField(range.startUtf8, `${label}.startUtf8`);
   requireIntegerField(range.endUtf8, `${label}.endUtf8`);
   if (range.startUtf8 < 0) fail("E_ARTIFACT_SHAPE", `${label}.startUtf8 must not be negative`);
@@ -438,10 +482,16 @@ function requireEnumOrNullField(value, allowed, label) {
 // undefined" a few checks later.
 function validateShape(ir) {
   if (!isPlainObject(ir)) fail("E_ARTIFACT_SHAPE", "artifact must be an object");
+  for (const key of Object.keys(ir)) {
+    if (!DOCUMENT_ANALYSIS_FIELDS.has(key)) {
+      fail("E_ARTIFACT_SHAPE", `unknown top-level field: ${key}`);
+    }
+  }
   if (typeof ir.contractVersion !== "string") fail("E_ARTIFACT_SHAPE", "contractVersion must be a string");
   if (typeof ir.schemaHash !== "string") fail("E_ARTIFACT_SHAPE", "schemaHash must be a string");
   if (typeof ir.vocabularyHash !== "string") fail("E_ARTIFACT_SHAPE", "vocabularyHash must be a string");
   if (!isPlainObject(ir.source)) fail("E_ARTIFACT_SHAPE", "source must be an object");
+  rejectUnknownFields(ir.source, SOURCE_ARTIFACT_FIELDS, "source");
   if (typeof ir.source.unitId !== "string") fail("E_ARTIFACT_SHAPE", "source.unitId must be a string");
   if (typeof ir.source.contentHash !== "string") {
     fail("E_ARTIFACT_SHAPE", "source.contentHash must be a string");
@@ -455,6 +505,7 @@ function validateShape(ir) {
 
   for (const [index, token] of ir.tokens.entries()) {
     if (!isPlainObject(token)) fail("E_ARTIFACT_SHAPE", `tokens[${index}] must be an object`);
+    rejectUnknownFields(token, TOKEN_FIELDS, `tokens[${index}]`);
     requireIntegerField(token.occurrenceId, `tokens[${index}].occurrenceId`);
     requireByteRangeShape(token.byteRange, `tokens[${index}].byteRange`);
     requireEnumField(token.tokenKind, TOKEN_KINDS, `tokens[${index}].tokenKind`);
@@ -465,6 +516,7 @@ function validateShape(ir) {
 
   for (const [index, node] of ir.structure.entries()) {
     if (!isPlainObject(node)) fail("E_ARTIFACT_SHAPE", `structure[${index}] must be an object`);
+    rejectUnknownFields(node, OUTLINE_NODE_FIELDS, `structure[${index}]`);
     requireIntegerField(node.nodeId, `structure[${index}].nodeId`);
     requireByteRangeShape(node.byteRange, `structure[${index}].byteRange`);
     requireEnumField(node.kind, OUTLINE_KINDS, `structure[${index}].kind`);
@@ -479,6 +531,7 @@ function validateShape(ir) {
 
   for (const [index, diagnostic] of ir.diagnostics.entries()) {
     if (!isPlainObject(diagnostic)) fail("E_ARTIFACT_SHAPE", `diagnostics[${index}] must be an object`);
+    rejectUnknownFields(diagnostic, DIAGNOSTIC_FIELDS, `diagnostics[${index}]`);
     requireByteRangeShape(diagnostic.byteRange, `diagnostics[${index}].byteRange`);
     requireEnumField(diagnostic.severity, DIAGNOSTIC_SEVERITIES, `diagnostics[${index}].severity`);
     requireStringField(diagnostic.code, `diagnostics[${index}].code`);
@@ -487,6 +540,7 @@ function validateShape(ir) {
 
   for (const [index, step] of ir.derivation.entries()) {
     if (!isPlainObject(step)) fail("E_ARTIFACT_SHAPE", `derivation[${index}] must be an object`);
+    rejectUnknownFields(step, DERIVATION_STEP_FIELDS, `derivation[${index}]`);
     requireStringField(step.passId, `derivation[${index}].passId`);
     requireStringField(step.ruleId, `derivation[${index}].ruleId`);
     requireStringField(step.compilerBuildHash, `derivation[${index}].compilerBuildHash`);
@@ -565,16 +619,30 @@ function validateByteRangeBounds(range, buffer, label) {
   }
 }
 
-// 5+6. Token range/boundary validity, in wire order, plus non-overlap. Zero-
-// width tokens (startUtf8 === endUtf8) are allowed, matching
-// colorful_ir::validate_document's own `start <= end` (not `<`) check.
+// 5. Per-token range/boundary validity -- part of the colorful.syntax/v1
+// wire contract, mirroring colorful_ir::validate_document's own per-token
+// `check_range` exactly. Zero-width tokens (startUtf8 === endUtf8) are
+// allowed, matching validate_document's `start <= end` (not `<`) check.
+function validateTokenRangeBounds(buffer, ir) {
+  for (const [index, token] of ir.tokens.entries()) {
+    validateByteRangeBounds(token.byteRange, buffer, `tokens[${index}].byteRange`);
+  }
+}
+
+// 6. Non-overlapping wire order. This is a graft-projection-specific
+// requirement, *not* part of the colorful.syntax/v1 wire contract:
+// colorful_ir::validate_document deliberately leaves inter-token layout
+// (ordering, non-overlap, non-emptiness) unchecked, since it is a producer
+// guarantee rather than a wire invariant, and a future contextual re-tagger
+// may legitimately emit a different layout. Only graft's own
+// `makeByteToPoint` monotonic cursor actually needs this, so it is kept
+// separate from `validateWireContract` -- reusing it there would make the
+// witness reject a layout the Rust contract validator would accept.
 // Malformed order is rejected, never sorted into validity: sorting would
 // silently conceal whatever the producer actually emitted.
-function validateTokenOrderAndBoundaries(buffer, ir) {
+function validateGraftTokenOrder(ir) {
   let previousEnd = 0;
   for (const [index, token] of ir.tokens.entries()) {
-    const label = `tokens[${index}].byteRange`;
-    validateByteRangeBounds(token.byteRange, buffer, label);
     if (token.byteRange.startUtf8 < previousEnd) {
       fail(
         "E_TOKEN_ORDER",
@@ -696,11 +764,23 @@ function validateDiagnosticsAndDerivation(buffer, ir) {
 // The full admission gate. project() below runs this unconditionally; it is
 // also exported so a caller can validate without projecting.
 export function validateArtifact(buffer, ir) {
+  validateWireContract(buffer, ir);
+  validateGraftTokenOrder(ir);
+}
+
+// The colorful.syntax/v1 wire-contract admission gate: everything
+// validateArtifact checks *except* validateGraftTokenOrder, which is a
+// graft-projection-specific requirement (see its own comment), not part of
+// the wire contract. This is what the IR round-trip witness's TypeScript
+// leg uses -- reusing the full graft-specific validateArtifact there would
+// make the witness reject a token layout colorful_ir::validate_document
+// (and the Rust leg of the witness) would accept.
+export function validateWireContract(buffer, ir) {
   validateShape(ir);
   validateContractVersion(ir);
   validateByteLength(buffer, ir);
   validateSourceUtf8(buffer);
-  validateTokenOrderAndBoundaries(buffer, ir);
+  validateTokenRangeBounds(buffer, ir);
   validateOccurrenceIds(ir);
   validateTokenAxes(ir);
   validateStructure(buffer, ir);
