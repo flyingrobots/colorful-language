@@ -378,9 +378,19 @@ Requirements:
 - **IR-17a** — *Requirement:* IR-17. *Behavior:* real witness processes reject
   mismatched source, invalid JSON, wrong contract/schema/vocabulary hashes,
   illegal axes, fractional/out-of-range offsets, and missing fields without
-  writing canonical output. *Oracle:* exact nonzero status, stable error
-  category, and empty canonical output for each fixture. *Evidence type:*
-  process-level negative matrix. *Tracking:*
+  writing canonical output. A tenth case makes contract, schema, and
+  vocabulary identities wrong together to pin contract-version rejection as
+  the first failure. *Oracle:* both
+  `node witness/ir-canonicalize.mjs SOURCE < ARTIFACT` and
+  `target/debug/examples/recanon SOURCE < ARTIFACT` exit exactly `1`, emit the
+  matrix's boundary-specific stable code on stderr, and leave a zero-byte
+  stdout file for every case. *Evidence type:* process-level negative matrix.
+  *Evidence:* deterministic mutations `mismatched-source`, `invalid-json`,
+  `wrong-contract-version`, `wrong-schema-hash`, `wrong-vocabulary-hash`,
+  `illegal-axes`, `fractional-offset`, `out-of-range-offset`, `missing-field`,
+  and `identity-precedence` in `witness/process-negative.mjs`; alternate source
+  `witness/negative/mismatched-source.txt`; process runner and assertions in
+  `scripts/ir-witness.sh`. *Tracking:*
   [#148](https://github.com/flyingrobots/colorful-language/issues/148).
   *Status:* planned.
 - **IR-18a** — *Requirement:* IR-18. *Behavior:* adding a
