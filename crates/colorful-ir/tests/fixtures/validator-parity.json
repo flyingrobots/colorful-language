@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "unsupported contract version",
+      "replacements": [
+        {
+          "pointer": "/contractVersion",
+          "value": "colorful.syntax/v2"
+        }
+      ],
+      "rustError": "UnsupportedContractVersion",
+      "jsError": "E_CONTRACT_VERSION"
+    },
+    {
+      "name": "schema hash mismatch",
+      "replacements": [
+        {
+          "pointer": "/schemaHash",
+          "value": "sha256:wrong"
+        }
+      ],
+      "rustError": "SchemaHashMismatch",
+      "jsError": "E_SCHEMA_HASH"
+    },
+    {
+      "name": "vocabulary hash mismatch",
+      "replacements": [
+        {
+          "pointer": "/vocabularyHash",
+          "value": "sha256:wrong"
+        }
+      ],
+      "rustError": "VocabularyHashMismatch",
+      "jsError": "E_VOCABULARY_HASH"
+    },
+    {
+      "name": "content hash mismatch",
+      "replacements": [
+        {
+          "pointer": "/source/contentHash",
+          "value": "sha256:wrong"
+        }
+      ],
+      "rustError": "ContentHashMismatch",
+      "jsError": "E_CONTENT_HASH"
+    },
+    {
+      "name": "byte length mismatch",
+      "replacements": [
+        {
+          "pointer": "/source/utf8ByteLength",
+          "value": 23
+        }
+      ],
+      "rustError": "ByteLengthMismatch",
+      "jsError": "E_BYTE_LENGTH"
+    },
+    {
+      "name": "negative byte length",
+      "replacements": [
+        {
+          "pointer": "/source/utf8ByteLength",
+          "value": -1
+        }
+      ],
+      "rustError": "NegativeByteLength",
+      "jsError": "E_ARTIFACT_SHAPE"
+    },
+    {
+      "name": "source is not UTF-8",
+      "sourceHex": "ff",
+      "replacements": [
+        {
+          "pointer": "/source/utf8ByteLength",
+          "value": 1
+        }
+      ],
+      "rustError": "SourceNotUtf8",
+      "jsError": "E_SOURCE_UTF8"
+    },
+    {
+      "name": "negative byte offset",
+      "replacements": [
+        {
+          "pointer": "/tokens/0/byteRange/startUtf8",
+          "value": -1
+        }
+      ],
+      "rustError": "NegativeOffset",
+      "jsError": "E_ARTIFACT_SHAPE"
+    },
+    {
+      "name": "range start follows end",
+      "replacements": [
+        {
+          "pointer": "/tokens/1/byteRange/startUtf8",
+          "value": 6
+        }
+      ],
+      "rustError": "RangeOutOfOrder",
+      "jsError": "E_BYTE_RANGE_ORDER"
+    },
+    {
+      "name": "range exceeds source",
+      "replacements": [
+        {
+          "pointer": "/tokens/0/byteRange/endUtf8",
+          "value": 25
+        }
+      ],
+      "rustError": "RangeOutOfBounds",
+      "jsError": "E_BYTE_RANGE_BOUNDS"
+    },
+    {
+      "name": "range splits UTF-8 code point",
+      "replacements": [
+        {
+          "pointer": "/tokens/0/byteRange/endUtf8",
+          "value": 1
+        }
+      ],
+      "rustError": "RangeNotOnCharBoundary",
+      "jsError": "E_BYTE_RANGE_BOUNDARY"
+    },
+    {
+      "name": "illegal token axes",
+      "replacements": [
+        {
+          "pointer": "/tokens/0/lexicalClass",
+          "value": null
+        }
+      ],
+      "rustError": "IllegalTokenAxes",
+      "jsError": "E_TOKEN_AXES"
+    },
+    {
+      "name": "duplicate token occurrence id",
+      "replacements": [
+        {
+          "pointer": "/tokens/1/occurrenceId",
+          "value": 0
+        }
+      ],
+      "rustError": "DuplicateTokenId",
+      "jsError": "E_DUPLICATE_OCCURRENCE_ID"
+    },
+    {
+      "name": "duplicate structure node id",
+      "replacements": [
+        {
+          "pointer": "/structure/1/nodeId",
+          "value": 0
+        },
+        {
+          "pointer": "/structure/0/childNodeIds/0",
+          "value": 0
+        }
+      ],
+      "rustError": "DuplicateNodeId",
+      "jsError": "E_DUPLICATE_NODE_ID"
+    },
+    {
+      "name": "dangling structure child reference",
+      "replacements": [
+        {
+          "pointer": "/structure/0/childNodeIds/0",
+          "value": 999
+        }
+      ],
+      "rustError": "DanglingChildRef",
+      "jsError": "E_DANGLING_CHILD_REF"
+    },
+    {
+      "name": "missing derivation identity",
+      "replacements": [
+        {
+          "pointer": "/derivation/0/passId",
+          "value": ""
+        }
+      ],
+      "rustError": "MissingDerivationIdentity",
+      "jsError": "E_MISSING_DERIVATION_IDENTITY"
+    },
+    {
+      "name": "duplicate derivation pass id",
+      "replacements": [
+        {
+          "pointer": "/derivation/1/passId",
+          "value": "segment"
+        }
+      ],
+      "rustError": "DuplicateDerivationPassId",
+      "jsError": "E_DUPLICATE_DERIVATION_PASS_ID"
+    },
+    {
+      "name": "empty derivation",
+      "replacements": [
+        {
+          "pointer": "/derivation",
+          "value": []
+        }
+      ],
+      "rustError": "EmptyDerivation",
+      "jsError": "E_EMPTY_DERIVATION"
+    }
+  ]
+}

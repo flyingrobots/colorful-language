@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A shared Rust/JavaScript validator-parity witness.** One declarative
+  18-case mutation matrix now covers every public Rust `ValidationError`
+  variant and its overlapping JavaScript wire-contract rejection. Both legs
+  start from the same canonical Rust-produced Unicode document, apply the same
+  mutation and optional source-byte override, then assert the named Rust
+  variant / stable `GraftProjectionError.code`. The Rust test keeps an
+  exhaustive variant inventory and requires exact case-count equality, so
+  adding or dropping a validation reason cannot silently leave the
+  cross-language gate stale. Graft-only token wire ordering remains excluded
+  because it is intentionally stricter than the shared wire contract.
 - **The IR witness's TypeScript leg now actually validates.**
   `witness/ir-canonicalize.mjs` previously parsed and canonicalized a
   `DocumentAnalysis` with zero structural validation. It now runs a new

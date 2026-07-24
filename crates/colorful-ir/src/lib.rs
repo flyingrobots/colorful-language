@@ -1230,7 +1230,7 @@ mod integration {
     use colorful_core::{Annotator, LexicalAnnotator, Parser};
     use colorful_lexicon::ClosedClassLexicon;
     use colorful_parse::ProseParser;
-    use std::collections::HashMap;
+    use std::collections::{BTreeSet, HashMap};
 
     fn analyze(source: &str) -> syntax_v1::DocumentAnalysis {
         let parser = ProseParser::new();
@@ -1246,6 +1246,212 @@ mod integration {
             annotator.pass_identity(),
         )
         .expect("projection within i32 range")
+    }
+
+    macro_rules! validation_error_inventory {
+        ($($variant:ident),+ $(,)?) => {
+            const ALL_VALIDATION_ERROR_NAMES: &[&str] = &[$(stringify!($variant)),+];
+
+            fn validation_error_name(error: &ValidationError) -> &'static str {
+                match error {
+                    $(ValidationError::$variant { .. } => stringify!($variant)),+
+                }
+            }
+        };
+    }
+
+    // One deliberately exhaustive matcher is the inventory oracle for the
+    // shared Rust/JavaScript parity matrix. Adding a public ValidationError
+    // variant makes this matcher fail to compile until the inventory is
+    // updated; the test below then fails until the matrix gains exactly one
+    // corresponding mutation.
+    validation_error_inventory!(
+        UnsupportedContractVersion,
+        SchemaHashMismatch,
+        VocabularyHashMismatch,
+        ContentHashMismatch,
+        ByteLengthMismatch,
+        NegativeByteLength,
+        SourceNotUtf8,
+        NegativeOffset,
+        RangeOutOfOrder,
+        RangeOutOfBounds,
+        RangeNotOnCharBoundary,
+        IllegalTokenAxes,
+        DuplicateTokenId,
+        DuplicateNodeId,
+        DanglingChildRef,
+        MissingDerivationIdentity,
+        DuplicateDerivationPassId,
+        EmptyDerivation,
+    );
+
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct ValidatorParityMatrix {
+        schema_version: u32,
+        cases: Vec<ValidatorParityCase>,
+    }
+
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct ValidatorParityCase {
+        name: String,
+        replacements: Vec<ValidatorParityReplacement>,
+        source_hex: Option<String>,
+        rust_error: String,
+        js_error: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct ValidatorParityReplacement {
+        pointer: String,
+        value: serde_json::Value,
+    }
+
+    fn validator_parity_document(source: &str) -> syntax_v1::DocumentAnalysis {
+        use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
+
+        let parser = ProseParser::new();
+        let annotator = ContextualOpenClassAnnotator::<SeedOpenClassLexicon>::default();
+        let tree = parser.parse(source);
+        let tokens = annotator.annotate(source, &tree);
+        from_classification(
+            "crates/colorful-ir/tests/fixtures/validator-parity.txt",
+            source,
+            &tree,
+            &tokens,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .expect("validator parity fixture projects within the i32 wire range")
+    }
+
+    fn decode_hex(hex: &str) -> Result<Vec<u8>, String> {
+        if !hex.len().is_multiple_of(2) {
+            return Err("hex input must contain an even number of digits".to_owned());
+        }
+        hex.as_bytes()
+            .chunks_exact(2)
+            .map(|digits| {
+                let pair = std::str::from_utf8(digits)
+                    .map_err(|error| format!("hex input was not ASCII: {error}"))?;
+                u8::from_str_radix(pair, 16)
+                    .map_err(|error| format!("invalid hex byte {pair:?}: {error}"))
+            })
+            .collect()
+    }
+
+    #[test]
+    fn shared_validator_parity_matrix_covers_every_error_variant() {
+        const SOURCE: &str = include_str!("../tests/fixtures/validator-parity.txt");
+        const MATRIX: &str = include_str!("../tests/fixtures/validator-parity.json");
+
+        let matrix: ValidatorParityMatrix =
+            serde_json::from_str(MATRIX).expect("validator parity matrix must deserialize");
+        assert_eq!(
+            matrix.schema_version, 1,
+            "unsupported parity matrix version"
+        );
+
+        let inventory: BTreeSet<_> = ALL_VALIDATION_ERROR_NAMES.iter().copied().collect();
+        assert_eq!(
+            inventory.len(),
+            ALL_VALIDATION_ERROR_NAMES.len(),
+            "Rust ValidationError inventory contains a duplicate"
+        );
+        let matrix_errors: BTreeSet<_> = matrix
+            .cases
+            .iter()
+            .map(|test_case| test_case.rust_error.as_str())
+            .collect();
+        assert_eq!(
+            matrix_errors.len(),
+            matrix.cases.len(),
+            "each Rust ValidationError variant must have exactly one parity case"
+        );
+        assert_eq!(
+            matrix_errors, inventory,
+            "shared parity matrix must cover the complete Rust ValidationError inventory"
+        );
+
+        let case_names: BTreeSet<_> = matrix
+            .cases
+            .iter()
+            .map(|test_case| test_case.name.as_str())
+            .collect();
+        assert_eq!(
+            case_names.len(),
+            matrix.cases.len(),
+            "shared parity matrix contains a duplicate case name"
+        );
+
+        let locally_produced = validator_parity_document(SOURCE);
+        let base_document = match std::env::var_os("COLORFUL_VALIDATOR_PARITY_DOCUMENT") {
+            Some(path) => {
+                let encoded = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+                    panic!("failed to read parity producer document {path:?}: {error}")
+                });
+                assert_eq!(
+                    encoded,
+                    canonical_json(&locally_produced)
+                        .expect("locally produced parity document must canonicalize"),
+                    "scripted parity input must be the exact canonical producer document"
+                );
+                serde_json::from_str(&encoded)
+                    .expect("scripted canonical producer document must deserialize")
+            }
+            None => locally_produced,
+        };
+        validate_document(&base_document, Some(SOURCE.as_bytes()))
+            .expect("canonical producer document must pass before mutation");
+
+        for test_case in &matrix.cases {
+            assert!(
+                !test_case.replacements.is_empty(),
+                "{}: needs at least one replacement",
+                test_case.name
+            );
+            assert!(
+                !test_case.js_error.is_empty(),
+                "{}: needs a JavaScript error code",
+                test_case.name
+            );
+
+            let mut value =
+                serde_json::to_value(&base_document).expect("producer document must serialize");
+            for replacement in &test_case.replacements {
+                let target = value.pointer_mut(&replacement.pointer).unwrap_or_else(|| {
+                    panic!(
+                        "{}: replacement pointer does not exist: {}",
+                        test_case.name, replacement.pointer
+                    )
+                });
+                *target = replacement.value.clone();
+            }
+            let document: syntax_v1::DocumentAnalysis = serde_json::from_value(value)
+                .unwrap_or_else(|error| {
+                    panic!("{}: mutation must deserialize: {error}", test_case.name)
+                });
+            let source = test_case
+                .source_hex
+                .as_deref()
+                .map_or_else(|| Ok(SOURCE.as_bytes().to_vec()), decode_hex);
+            let source = source.unwrap_or_else(|error| panic!("{}: {error}", test_case.name));
+            let errors = match validate_document(&document, Some(&source)) {
+                Ok(()) => panic!("{}: Rust validator accepted the mutation", test_case.name),
+                Err(errors) => errors,
+            };
+            let actual: BTreeSet<_> = errors.0.iter().map(validation_error_name).collect();
+            assert!(
+                actual.contains(test_case.rust_error.as_str()),
+                "{}: expected Rust error {}, got {:?}",
+                test_case.name,
+                test_case.rust_error,
+                actual
+            );
+        }
     }
 
     #[test]
