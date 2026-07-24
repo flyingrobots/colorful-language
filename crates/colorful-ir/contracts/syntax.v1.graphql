@@ -91,7 +91,7 @@ type SourceArtifact {
   utf8ByteLength: Int!
 }
 
-"A single derivation step, for provenance and replay."
+"A single derivation trace-seed step: names an honest producer identity (passId/ruleId), not yet replayable provenance."
 type DerivationStep {
   passId: String!
   ruleId: String!

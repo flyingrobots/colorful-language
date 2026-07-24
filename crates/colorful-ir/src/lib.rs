@@ -46,10 +46,33 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
     format!("sha256:{hex}")
 }
 
+/// Strip GraphQL description strings from `sdl` before hashing, so a
+/// documentation-only description edit does not change `schemaHash` --
+/// only real shape (types, fields, enum values) does. This crate's
+/// contracts only ever use a single-line `"..."` description immediately
+/// preceding a type or enum, never a `"""..."""` block string or a
+/// field-level description, so a per-line check (a line that, once
+/// trimmed, is nothing but a quoted string) is sufficient; extend this if
+/// that ever changes.
+fn strip_graphql_descriptions(sdl: &str) -> String {
+    sdl.lines()
+        .filter(|line| {
+            let trimmed = line.trim();
+            !(trimmed.len() >= 2 && trimmed.starts_with('"') && trimmed.ends_with('"'))
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// The hash of the `colorful.syntax/v1` contract these types implement.
+///
+/// Normalized against description-only edits (see
+/// [`strip_graphql_descriptions`]): a `DerivationStep` description fix, for
+/// example, does not bump this hash. A real shape change -- a new field, a
+/// renamed type, a new enum value -- still does.
 #[must_use]
 pub fn syntax_schema_hash() -> String {
-    sha256_hex(SYNTAX_V1_SDL.as_bytes())
+    sha256_hex(strip_graphql_descriptions(SYNTAX_V1_SDL).as_bytes())
 }
 
 /// The hash of the `colorful.vocabulary/v1` **manifest** — the concrete
@@ -118,8 +141,8 @@ impl core::fmt::Display for ProjectionError {
             ),
             ProjectionError::MissingPassIdentity { role } => write!(
                 f,
-                "the {role} did not override `pass_identity()`; its provenance \
-                 would be indistinguishable from no identity at all"
+                "the {role} did not override `pass_identity()`; its derivation \
+                 identity would be indistinguishable from no identity at all"
             ),
             ProjectionError::DuplicatePassId { pass_id } => write!(
                 f,
@@ -302,7 +325,9 @@ fn build_structure(
 /// `parser_identity` and `annotator_identity` are the [`PassIdentity`] each
 /// producer reports via `pass_identity()` — pass them in rather than having
 /// this function assume any particular parser or annotator, so a caller using
-/// a different pair still gets honest provenance.
+/// a different pair still gets an honest derivation identity (a trace seed,
+/// not replayable provenance — see the `derivation` field's contract
+/// description).
 ///
 /// # Errors
 ///
@@ -1165,6 +1190,37 @@ mod tests {
     #[test]
     fn legacy_vocabulary_schema_hash_alias_matches_manifest_hash() {
         assert_eq!(vocabulary_schema_hash(), vocabulary_hash());
+    }
+
+    #[test]
+    fn strip_graphql_descriptions_removes_only_description_lines() {
+        let sdl = "\"A description.\"\ntype Foo {\n  bar: Int!\n}\n";
+        let stripped = strip_graphql_descriptions(sdl);
+        assert!(!stripped.contains("A description."));
+        assert!(stripped.contains("type Foo"));
+        assert!(stripped.contains("bar: Int!"));
+    }
+
+    #[test]
+    fn schema_hash_is_unchanged_by_a_description_only_edit() {
+        let a = "\"Old description.\"\ntype Foo {\n  bar: Int!\n}\n";
+        let b = "\"New, unrelated description.\"\ntype Foo {\n  bar: Int!\n}\n";
+        assert_eq!(
+            sha256_hex(strip_graphql_descriptions(a).as_bytes()),
+            sha256_hex(strip_graphql_descriptions(b).as_bytes()),
+            "a description-only edit must not change the normalized schema hash"
+        );
+    }
+
+    #[test]
+    fn schema_hash_changes_when_shape_changes() {
+        let a = "\"A description.\"\ntype Foo {\n  bar: Int!\n}\n";
+        let b = "\"A description.\"\ntype Foo {\n  bar: Int!\n  baz: String!\n}\n";
+        assert_ne!(
+            sha256_hex(strip_graphql_descriptions(a).as_bytes()),
+            sha256_hex(strip_graphql_descriptions(b).as_bytes()),
+            "a real field/type edit must still change the normalized schema hash"
+        );
     }
 }
 

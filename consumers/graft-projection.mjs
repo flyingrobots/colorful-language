@@ -118,8 +118,40 @@ function loadVocabulary() {
   };
 }
 
+// Strip GraphQL description strings before hashing, mirroring
+// colorful-ir's `strip_graphql_descriptions` exactly: a documentation-only
+// description edit must not change schemaHash on either side of the
+// language boundary, or a cosmetic fix on the Rust producer would make this
+// consumer see a false E_SCHEMA_HASH mismatch. This crate's contracts only
+// ever use a single-line `"..."` description immediately preceding a type
+// or enum, never a `"""..."""` block string or a field-level description,
+// so a per-line check (a line that, once trimmed, is nothing but a quoted
+// string) is sufficient; extend this if that ever changes.
+export function stripGraphqlDescriptions(sdl) {
+  // Split the same way Rust's `str::lines()` does: on \n, \r\n, or \r, with
+  // an optional final line ending that does NOT produce a trailing empty
+  // line (Rust: "a string ending with a final line ending returns the same
+  // lines as an otherwise identical string without one"). A naive
+  // `split("\n")` would leave a trailing "" for a file ending in a newline,
+  // which `.join("\n")` would then turn back into a trailing newline Rust's
+  // normalized string never has -- producing a different hash on each side
+  // of the language boundary for the exact same contract.
+  const lines = sdl.split(/\r\n|\n/);
+  if (lines.length > 0 && lines[lines.length - 1] === "" && /\r\n$|\n$/.test(sdl)) {
+    lines.pop();
+  }
+  return lines
+    .filter((line) => {
+      const trimmed = line.trim();
+      return !(trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"'));
+    })
+    .join("\n");
+}
+
 const VOCABULARY = loadVocabulary();
-const SYNTAX_SCHEMA_HASH = `sha256:${createHash("sha256").update(readFileSync(SYNTAX_SDL_URL)).digest("hex")}`;
+const SYNTAX_SCHEMA_HASH = `sha256:${createHash("sha256")
+  .update(stripGraphqlDescriptions(readFileSync(SYNTAX_SDL_URL, "utf8")))
+  .digest("hex")}`;
 
 // A validation failure, with a stable machine-readable `code` and structured
 // `context` alongside the human-readable message -- so a caller can branch on

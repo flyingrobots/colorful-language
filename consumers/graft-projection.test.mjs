@@ -14,6 +14,7 @@ import {
   makeByteToPoint,
   project,
   schemaHash,
+  stripGraphqlDescriptions,
   validateArtifact,
   validateVocabularyManifest,
   validateWireContract,
@@ -812,5 +813,46 @@ assert.throws(
   /schemaHash/,
   "schema drift must be rejected",
 );
+
+// stripGraphqlDescriptions mirrors colorful-ir's Rust `strip_graphql_descriptions`
+// exactly (see crates/colorful-ir/src/lib.rs), so schemaHash() -- computed
+// from this normalized SDL -- must equal syntax_schema_hash() on the Rust
+// side for the same contract, including trailing-newline handling.
+{
+  const withOldDescription = '"Old description."\ntype Foo {\n  bar: Int!\n}\n';
+  const withNewDescription = '"New, unrelated description."\ntype Foo {\n  bar: Int!\n}\n';
+  const withExtraField = '"Old description."\ntype Foo {\n  bar: Int!\n  baz: String!\n}\n';
+
+  const hashOf = (sdl) => createHash("sha256").update(stripGraphqlDescriptions(sdl)).digest("hex");
+
+  assert.equal(
+    hashOf(withOldDescription),
+    hashOf(withNewDescription),
+    "a description-only edit must not change the normalized hash",
+  );
+  assert.notEqual(
+    hashOf(withOldDescription),
+    hashOf(withExtraField),
+    "a real field/type edit must still change the normalized hash",
+  );
+
+  // Rust's `str::lines()` treats an optional trailing line ending as not
+  // producing an extra empty line; a naive `split("\n").join("\n")` would
+  // reintroduce a trailing newline the Rust side never has. Confirm both
+  // "ends with a newline" and "doesn't" normalize identically once that
+  // trailing newline itself is the only difference.
+  assert.equal(
+    stripGraphqlDescriptions("type Foo {\n  bar: Int!\n}\n"),
+    stripGraphqlDescriptions("type Foo {\n  bar: Int!\n}"),
+    "an optional trailing newline must not change the normalized SDL",
+  );
+
+  // Verify that a lone carriage return \r is NOT split (matching Rust str::lines() behavior).
+  assert.equal(
+    stripGraphqlDescriptions('"A description."\rtype Foo {\n  bar: Int!\n}'),
+    '"A description."\rtype Foo {\n  bar: Int!\n}',
+    "lone carriage returns must not be split or stripped",
+  );
+}
 
 console.log("graft-projection: all assertions passed");
