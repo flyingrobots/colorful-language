@@ -462,7 +462,9 @@ The following SHOULD normally be advisory:
 - overuse of bold;
 - table complexity;
 - external-link health;
-- screenshot age.
+- screenshot age;
+- pull request size (see `CONTRIBUTING.md`'s reviewable-slice guidance —
+  `scripts/pr-size-report.sh` reports it as an informational annotation only).
 
 These signals are useful for editors. They are poor universal merge gates.
 

@@ -157,6 +157,29 @@ three commits with a new commit, same as always (see "Commits and Pull
 Requests" below) — never amend, rebase, or squash on shared branches to fold
 a fix backward into an earlier commit.
 
+### Reviewable Slices
+
+"One logical change per commit" is a commit-level rule. At the pull request
+level, when a goalpost slice naturally spans more than one of these seams,
+prefer splitting it into independently reviewable pull requests along the
+seam boundaries rather than bundling everything into one review:
+
+- **transport** — wire/contract changes (`contracts/colorful/*.graphql`,
+  generated DTOs, other cross-boundary schemas);
+- **domain behavior** — `colorful-core` and port/adapter implementations;
+- **evidence** — tests, fixtures, witnesses;
+- **documentation** — topic/workflow `README.md` and `test-plan.md` updates.
+
+This is guidance, not a rule that overrides "one logical change per commit" —
+a slice that's naturally one seam stays one PR.
+
+`scripts/pr-size-report.sh` reports each pull request's diff size (excluding
+generated files and release packets — see the script for the exact list) as
+an **informational, non-blocking** signal, consistent with
+`docs/DOCUMENTATION_STANDARDS.md` §8's advisory-only list. It never fails CI
+and there is no hard line-count limit anywhere in this repository's tooling;
+it exists only to prompt the seam-split above when a PR grows large.
+
 ## How To Maintain The Documentation Corpus
 
 When you create or substantially change documentation:

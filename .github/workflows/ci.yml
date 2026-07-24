@@ -61,6 +61,23 @@ jobs:
       - name: graft reference consumer coordinate test
         run: node consumers/graft-projection.test.mjs
 
+  pr-size:
+    name: PR size (advisory)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Self-test the reporter
+        run: bash scripts/pr-size-report.sh --self-test
+      - name: Report PR size (informational only, never blocks merge)
+        run: |
+          bash scripts/pr-size-report.sh \
+            "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}"
+
   closure-contract:
     name: Issue-closure contract
     runs-on: ubuntu-latest
