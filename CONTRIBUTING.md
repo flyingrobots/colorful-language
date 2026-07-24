@@ -210,8 +210,16 @@ boundary:
 - The domain core (`colorful-core`) stays pure: types and port traits, no I/O.
 - Outside concerns (parsing, lexicon lookup, terminal output, the LSP) are
   adapters behind a port.
-- Classification (`Tagger`) and structure (`Parser`) are deliberately separate
-  ports. Keep them so — that separation is what makes future escalation cheap.
+
+`colorful-core` defines four ports, deliberately kept separate — that
+separation is what makes future escalation cheap. Each name below is a real
+`pub trait`, checked against this list by
+`crates/colorful-core/tests/contributing_architecture_symbols.rs`:
+
+- `Parser` — text to a structural tree (sentences, words, punctuation spans).
+- `Lexicon` — a single word, in isolation, to a `PosClass`.
+- `Annotator` — a parsed tree to a classified token stream, with context.
+- `Analyzer` — source, tree, and tokens to prose findings (the linter's port).
 
 If a change needs a new capability, prefer adding it as a port + adapter over
 threading a concrete dependency through the core.
