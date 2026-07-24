@@ -946,23 +946,47 @@ mod tests {
         }
     }
 
+    /// One representative word per [`FunctionKind`] variant, via an
+    /// exhaustive match with no catch-all arm: adding an eighth
+    /// `FunctionKind` variant without adding a case here is a compile
+    /// error, not a silently-uncovered kind.
+    fn representative_word(kind: FunctionKind) -> &'static str {
+        match kind {
+            FunctionKind::Article => "the",
+            FunctionKind::Preposition => "of",
+            FunctionKind::Conjunction => "and",
+            FunctionKind::Pronoun => "they",
+            FunctionKind::Auxiliary => "is",
+            FunctionKind::Determiner => "each",
+            FunctionKind::Negator => "not",
+        }
+    }
+
     #[test]
     fn classifies_each_function_kind() {
-        assert_eq!(classify("the"), PosClass::Function(FunctionKind::Article));
-        assert_eq!(
-            classify("of"),
-            PosClass::Function(FunctionKind::Preposition)
-        );
-        assert_eq!(
-            classify("and"),
-            PosClass::Function(FunctionKind::Conjunction)
-        );
-        assert_eq!(classify("they"), PosClass::Function(FunctionKind::Pronoun));
-        assert_eq!(classify("is"), PosClass::Function(FunctionKind::Auxiliary));
-        assert_eq!(
-            classify("each"),
-            PosClass::Function(FunctionKind::Determiner)
-        );
+        // Proves LEX-1: a representative word for each of the seven
+        // FunctionKind variants classifies to exactly that kind. This is
+        // distinct from LEX-7/negation_is_its_own_kind below, which proves
+        // two specific negator words (not just "one representative word per
+        // kind") classify as Negator.
+        const KINDS: &[FunctionKind] = &[
+            FunctionKind::Article,
+            FunctionKind::Preposition,
+            FunctionKind::Conjunction,
+            FunctionKind::Pronoun,
+            FunctionKind::Auxiliary,
+            FunctionKind::Determiner,
+            FunctionKind::Negator,
+        ];
+
+        for &kind in KINDS {
+            let word = representative_word(kind);
+            assert_eq!(
+                classify(word),
+                PosClass::Function(kind),
+                "expected {word:?} to classify as {kind:?}"
+            );
+        }
     }
 
     #[test]
