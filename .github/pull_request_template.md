@@ -9,6 +9,12 @@
 <!-- The deterministic, executable proof: test names, fixture paths, doctests.
      "Current truth" docs were updated only for behavior that now exists. -->
 
+<!-- Name which commits in this branch are the planned-case / failing-evidence
+     / passing-implementation trio (see CONTRIBUTING.md "Commit Shape: Planned,
+     Failing, Passing"), or say this is a tiny, indivisible fix and why. Either
+     way, commits are append-only: fixes land as new commits, never an amend,
+     rebase, or squash. -->
+
 ## Checklist
 
 - [ ] Living references (`README` / `docs/topics/<topic>/README.md`) describe
