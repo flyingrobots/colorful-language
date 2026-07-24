@@ -220,7 +220,17 @@ threading a concrete dependency through the core.
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
   `fix:`, `docs:`, `refactor:`, `test:`, `chore:`…).
-- Reference the slice issue a commit closes in its footer (`Closes #NN`).
+- **Issue closure happens on the slice PR, not on individual commits.** One
+  issue is one slice; a slice lands as one pull request. Put the closing
+  reference (`Closes #NN`) in the **pull request description** only — see
+  `.github/pull_request_template.md`. Commits within the branch may reference
+  the issue for traceability (`Refs #NN`), but must not carry a GitHub closing
+  keyword (`Closes`, `Fixes`, `Resolves`) in their own message. This repo
+  merges with merge commits, not squashes, so a closing keyword on an
+  intermediate commit would close the issue as soon as that commit lands on
+  `main` — potentially before the PR that reviewed it is even finished being
+  written. Tying closure to the PR body means the issue closes exactly once,
+  exactly when the reviewed slice merges.
 - A breaking change carries a `BREAKING CHANGE:` footer and should be called out
   for a version bump.
 - Keep history append-only: no force-pushes, rebases, squashes, or amends on
