@@ -946,22 +946,78 @@ mod tests {
         }
     }
 
+    /// One representative word per [`FunctionKind`] variant, via an
+    /// exhaustive match with no catch-all arm: adding an eighth
+    /// `FunctionKind` variant without adding a case here is a compile
+    /// error, not a silently-uncovered kind.
+    fn representative_word(kind: FunctionKind) -> &'static str {
+        match kind {
+            FunctionKind::Article => "the",
+            FunctionKind::Preposition => "of",
+            FunctionKind::Conjunction => "and",
+            FunctionKind::Pronoun => "they",
+            FunctionKind::Auxiliary => "is",
+            FunctionKind::Determiner => "each",
+            FunctionKind::Negator => "not",
+        }
+    }
+
     #[test]
     fn classifies_each_function_kind() {
-        assert_eq!(classify("the"), PosClass::Function(FunctionKind::Article));
+        // Proves LEX-1: a representative word for each of the seven
+        // FunctionKind variants classifies to exactly that kind. This is
+        // distinct from LEX-7/negation_is_its_own_kind below, which proves
+        // two specific negator words (not just "one representative word per
+        // kind") classify as Negator.
+        let test_kind = |kind: FunctionKind| {
+            let word = representative_word(kind);
+            assert_eq!(
+                classify(word),
+                PosClass::Function(kind),
+                "expected {word:?} to classify as {kind:?}"
+            );
+        };
+
+        let mut verified = std::collections::HashSet::new();
+        let mut run_and_record = |kind: FunctionKind| {
+            verified.insert(kind);
+            match kind {
+                FunctionKind::Article => test_kind(FunctionKind::Article),
+                FunctionKind::Preposition => test_kind(FunctionKind::Preposition),
+                FunctionKind::Conjunction => test_kind(FunctionKind::Conjunction),
+                FunctionKind::Pronoun => test_kind(FunctionKind::Pronoun),
+                FunctionKind::Auxiliary => test_kind(FunctionKind::Auxiliary),
+                FunctionKind::Determiner => test_kind(FunctionKind::Determiner),
+                FunctionKind::Negator => test_kind(FunctionKind::Negator),
+            }
+        };
+
+        run_and_record(FunctionKind::Article);
+        run_and_record(FunctionKind::Preposition);
+        run_and_record(FunctionKind::Conjunction);
+        run_and_record(FunctionKind::Pronoun);
+        run_and_record(FunctionKind::Auxiliary);
+        run_and_record(FunctionKind::Determiner);
+        run_and_record(FunctionKind::Negator);
+
+        // Ensure every variant in verified is checked against compile-time variants
+        for &kind in &verified {
+            match kind {
+                FunctionKind::Article => {}
+                FunctionKind::Preposition => {}
+                FunctionKind::Conjunction => {}
+                FunctionKind::Pronoun => {}
+                FunctionKind::Auxiliary => {}
+                FunctionKind::Determiner => {}
+                FunctionKind::Negator => {}
+            }
+        }
+
+        // Failure here guarantees omission of any newly added FunctionKind variants
         assert_eq!(
-            classify("of"),
-            PosClass::Function(FunctionKind::Preposition)
-        );
-        assert_eq!(
-            classify("and"),
-            PosClass::Function(FunctionKind::Conjunction)
-        );
-        assert_eq!(classify("they"), PosClass::Function(FunctionKind::Pronoun));
-        assert_eq!(classify("is"), PosClass::Function(FunctionKind::Auxiliary));
-        assert_eq!(
-            classify("each"),
-            PosClass::Function(FunctionKind::Determiner)
+            verified.len(),
+            7,
+            "not all FunctionKind variants were executed by the test"
         );
     }
 

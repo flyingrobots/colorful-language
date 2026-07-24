@@ -2,7 +2,8 @@
 
 Requirements:
 
-- **LEX-1** Each `FunctionKind` is recognized for representative words.
+- **LEX-1** Each of the seven `FunctionKind` variants is recognized for a
+  representative word.
 - **LEX-2** Lookup is case-insensitive.
 - **LEX-3** Numeric tokens are classified as `Number`; words with letters are not.
 - **LEX-4** Non-function, non-numeric words are `Content` (proper nouns are not
@@ -27,9 +28,17 @@ Requirements:
 All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
 (`crates/colorful-lexicon/src/lib.rs`).
 
-- **LEX-1a** — *Requirement:* LEX-1. *Behavior:* a representative word for each of
-  the six kinds classifies correctly. *Oracle:* equality of `PosClass`.
-  *Evidence:* `tests::classifies_each_function_kind`. *Status:* implemented.
+- **LEX-1a** — *Requirement:* LEX-1. *Behavior:* a representative word for
+  each of all seven `FunctionKind` variants — `Article`, `Preposition`,
+  `Conjunction`, `Pronoun`, `Auxiliary`, `Determiner`, `Negator` — classifies
+  to exactly that kind. Table-driven over an exhaustive `match` with no
+  catch-all arm, so an eighth variant added to `FunctionKind` without a
+  matching case here is a compile error, not a silently-uncovered kind. This
+  is distinct from LEX-7a below: LEX-1a proves one representative word per
+  kind (breadth across all seven kinds); LEX-7a proves two specific negator
+  words (depth on one kind's dedicated negation behavior). *Oracle:*
+  equality of `PosClass`, per table entry. *Evidence:*
+  `tests::classifies_each_function_kind`. *Status:* implemented.
 - **LEX-2a** — *Requirement:* LEX-2. *Behavior:* `The`/`AND` classify as their
   function kinds. *Oracle:* equality of `PosClass`. *Evidence:*
   `tests::lookup_is_case_insensitive`. *Status:* implemented.
@@ -51,7 +60,8 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
   contractions classify; curly apostrophe matches. *Oracle:* equality of
   `PosClass`. *Evidence:* `tests::contractions_are_classified`,
   `tests::curly_apostrophe_contractions_match`. *Status:* implemented.
-- **LEX-7a** — *Requirement:* LEX-7. *Behavior:* `not`/`never` are `Negator`.
+- **LEX-7a** — *Requirement:* LEX-7. *Behavior:* both `not` and `never`
+  (not just one representative negator, as LEX-1a covers) are `Negator`.
   *Oracle:* equality of `PosClass`. *Evidence:* `tests::negation_is_its_own_kind`.
   *Status:* implemented.
 - **LEX-8a** — *Requirement:* LEX-8. *Behavior:* `3.`, `.5`, `3..` are not

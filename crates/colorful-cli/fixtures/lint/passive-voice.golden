@@ -1,0 +1,2 @@
+passive-voice.txt:1:12: info [passive-voice]: passive-voice candidate 'was reviewed'
+passive-voice.txt:1:54: info [passive-voice]: passive-voice candidate 'was carefully cleaned'

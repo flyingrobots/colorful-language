@@ -400,8 +400,16 @@ The current workflow publishes these crates in dependency order:
 4. `colorful-ir`
 5. `colorful-lint`
 6. `colorful-projection`
-7. `colorful-cli`
-8. `colorful-lsp`
+7. `colorful-lsp`
+8. `colorful-cli`
+
+`colorful-lsp` publishes before `colorful-cli` even though it appears later
+alphabetically: `colorful-cli` carries a versioned
+`colorful-lsp = { path = ..., version = "..." }` dev-dependency (used only by
+its lint golden-fixture parity test), and cargo requires a versioned
+dependency — dev or not — to resolve from the registry at publish time.
+`colorful-lsp` has no dependency on `colorful-cli`, so this ordering
+introduces no cycle.
 
 It then builds one `x86_64-unknown-linux-gnu` archive containing `colorful`,
 `colorful-lsp`, `README.md`, `LICENSE`, `NOTICE`, and `CHANGELOG.md`, writes a
