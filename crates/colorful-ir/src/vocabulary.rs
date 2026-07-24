@@ -136,14 +136,26 @@ pub fn hash() -> String {
 
 /// The [`VisualRole`] for a token's axes, per the manifest. A `WORD` is
 /// disambiguated by its [`LexicalClass`] and, for content words, an optional
-/// [`OpenClassKind`]; every other [`TokenKind`] carries neither.
+/// [`OpenClassKind`]; every other [`TokenKind`] carries neither. Returns `None`
+/// when the supplied axes have no authored mapping. This fallible return type
+/// is part of the v0.4 public API: callers decide how an uncovered combination
+/// degrades instead of this boundary panicking on their behalf.
 #[must_use]
 pub fn visual_role(
     token_kind: &TokenKind,
     lexical_class: Option<&LexicalClass>,
     open_class_kind: Option<&OpenClassKind>,
 ) -> Option<VisualRole> {
-    manifest()
+    visual_role_in(manifest(), token_kind, lexical_class, open_class_kind)
+}
+
+fn visual_role_in(
+    manifest: &Manifest,
+    token_kind: &TokenKind,
+    lexical_class: Option<&LexicalClass>,
+    open_class_kind: Option<&OpenClassKind>,
+) -> Option<VisualRole> {
+    manifest
         .class_roles
         .iter()
         .find(|rule| {
@@ -155,7 +167,9 @@ pub fn visual_role(
 }
 
 /// The [`VisualRole`] for a `colorful-core` [`PosClass`], via the same token axes
-/// the IR projection uses — the bridge every surface calls.
+/// the IR projection uses — the bridge every surface calls. Every current
+/// `PosClass` maps to `Some`; `None` is the forward-compatible, fail-soft result
+/// if the closed domain and the authored vocabulary ever drift.
 #[must_use]
 pub fn visual_role_for(class: PosClass) -> Option<VisualRole> {
     let (token_kind, lexical_class, _function_kind, open_class_kind) = crate::token_axes(class);
@@ -166,10 +180,16 @@ pub fn visual_role_for(class: PosClass) -> Option<VisualRole> {
     )
 }
 
-/// The per-surface [`RoleProjection`] for a [`VisualRole`].
+/// The per-surface [`RoleProjection`] for a [`VisualRole`]. Every role generated
+/// by the current contract maps to `Some`; `None` lets a caller leave a future,
+/// uncovered role unstyled rather than crashing.
 #[must_use]
 pub fn projection(role: &VisualRole) -> Option<&'static RoleProjection> {
-    manifest()
+    projection_in(manifest(), role)
+}
+
+fn projection_in<'a>(manifest: &'a Manifest, role: &VisualRole) -> Option<&'a RoleProjection> {
+    manifest
         .role_projections
         .iter()
         .find(|p| &p.visual_role == role)

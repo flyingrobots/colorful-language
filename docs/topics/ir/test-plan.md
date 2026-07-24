@@ -291,18 +291,30 @@ Requirements:
   `visual_role` and `projection` return `None` for a key absent from a sparse
   table, while every current `PosClass` and generated `VisualRole` still maps
   to `Some`. *Oracle:* exact `Option` equality over sparse and complete
-  manifests. *Evidence type:* unit test. *Evidence:* planned
-  `colorful-ir` vocabulary lookup tests. *Status:* planned.
+  manifests. *Evidence type:* unit test. *Evidence:* `colorful-ir`
+  `vocabulary::tests::visual_role_lookup_returns_none_when_sparse_manifest_lacks_key`,
+  `projection_lookup_returns_none_when_sparse_manifest_lacks_key`,
+  `pos_classes_map_to_the_expected_roles`, and
+  `manifest_parses_and_every_role_has_a_projection`. *Status:* implemented.
 - **IR-13b** — *Requirement:* IR-13. *Behavior:* the v0.4.0 changelog names
   `visual_role`, `visual_role_for`, and `projection` changing from total return
   values to `Option` as a breaking API, and a semver comparison against
-  `v0.3.0` reports the incompatible signatures instead of allowing them to
-  masquerade as a patch-compatible change. *Oracle:* changelog review and
-  `cargo semver-checks` reports the expected public API incompatibilities.
-  *Evidence type:* documentation plus semver audit. *Evidence:* planned
-  `[Unreleased]` changelog entry and a recorded
-  `cargo semver-checks --package colorful-ir --baseline-rev v0.3.0` run.
-  *Status:* planned.
+  `v0.3.0` is run and interpreted alongside the direct signature diff instead
+  of allowing the change to masquerade as patch-compatible. *Oracle:* the
+  changelog explicitly calls the signatures breaking; the ordinary semver run
+  accepts the declared v0.3 → v0.4 major-line transition; a forced patch audit
+  fails; the direct diff names all three changed return types. *Evidence type:*
+  documentation plus semver audit. *Evidence:* `[Unreleased]` changelog entry;
+  public API docs in `crates/colorful-ir/src/vocabulary.rs`; recorded
+  `cargo-semver-checks 0.49.0` runs on 2026-07-23:
+  `cargo semver-checks --package colorful-ir --baseline-rev v0.3.0` exited zero
+  after identifying a major change (therefore running zero applicable checks),
+  while the same command with `--release-type patch` ran 223 checks and exited
+  100 with five categories of major API violation. The tool did not report
+  return-type changes, so `git diff v0.3.0..HEAD --
+  crates/colorful-ir/src/vocabulary.rs` remains the explicit oracle for these
+  three signatures rather than overstating the tool's coverage. *Status:*
+  implemented.
 
 ## Known gaps / risks
 
