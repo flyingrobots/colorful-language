@@ -8,7 +8,9 @@ Requirements:
 - **IR-1** One GraphQL contract generates Rust and TS boundary types that agree.
 - **IR-2** The IR serializes to a canonical JSON that round-trips byte-for-byte
   across the language boundary.
-- **IR-3** The IR honors invariants that SDL cannot express.
+- **IR-3** The IR honors invariants that SDL cannot express, across a
+  corpus spanning empty input, Unicode, CR/LF variants, punctuation-only
+  input, long tokens, multiple paragraphs, and contextual ambiguity.
 - **IR-4** A received `DocumentAnalysis` is validated against the contract — and,
   given the source, the real bytes — so a malformed artifact is rejected, not
   re-emitted.
@@ -57,9 +59,20 @@ Requirements:
   (CI job `ir-witness`). *Status:* implemented.
 - **IR-3a** — *Requirement:* IR-3. *Behavior/oracle:* byte ranges ordered, within
   `utf8ByteLength`, non-overlapping, on char boundaries; every `structure` node's
-  range contains its children; `source.contentHash` matches the bytes. *Evidence:*
-  `colorful-ir` `integration::document_analysis_holds_the_invariants`. *Status:*
-  implemented.
+  range contains its children; `source.contentHash` matches the bytes;
+  proven against one hand-written baseline fixture. *Evidence:*
+  `colorful-ir` `integration::document_analysis_holds_the_invariants`.
+  *Status:* implemented.
+- **IR-3b** — *Requirement:* IR-3. *Behavior:* the same invariant oracle as
+  IR-3a holds across a committed corpus of seven named fixtures — empty
+  input, Unicode, CR/LF variants, punctuation-only input, long tokens,
+  multiple paragraphs, and contextual ambiguity (a sentence exercising
+  `colorful-lexicon`'s ambiguous-word rules: `book`, `record`, `lead`,
+  `fast`) — reusing the exact same assertion function
+  (`assert_invariants_hold`) rather than a bespoke check per fixture.
+  *Oracle:* same as IR-3a, parameterized. *Evidence:* `colorful-ir`
+  `integration::invariant_corpus_holds_across_documented_edge_cases`.
+  *Status:* implemented.
 - **IR-4a** — *Requirement:* IR-4. *Behavior:* `validate_document` accepts a
   produced document (with and without source) and rejects each malformed
   mutation — wrong contract/schema/vocabulary hash, content-hash and byte-length
