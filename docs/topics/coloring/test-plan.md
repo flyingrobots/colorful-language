@@ -23,6 +23,9 @@ Requirements:
   disambiguation for the supported ambiguous set.
 - **COL-10** The CLI emits a machine-readable diagnostic report that explains
   each token's class and presentation projection.
+- **COL-11** File and stdin input must be valid UTF-8; a malformed file is
+  rejected with a clear error identically across every single-document
+  command, never silently lossy-converted.
 - **COL-12** Release-mode latency for the CLI's `colorize()` path and the
   LSP's `compute_semantic_tokens()` function is measured (not asserted)
   against a small and a medium fixture, with hardware, toolchain, and date
@@ -119,6 +122,7 @@ Requirements:
   *Evidence:* `crates/colorful-cli/fixtures/editor-smoke-prose.txt`;
   `colorful-cli` `tests::diagnose_json_covers_editor_smoke_fixture`. *Status:*
   implemented.
+<<<<<<< HEAD
 - **COL-12a** — *Requirement:* COL-12. *Behavior:* `colorize()` and
   `compute_semantic_tokens()` are timed over a 899-byte real fixture and a
   45 KB corpus (the same fixture repeated 50×) in release profile.
@@ -129,6 +133,14 @@ Requirements:
   `crates/colorful-lsp/benches/semantic_tokens_bench.rs`; `cargo bench -p
   colorful-cli`; `cargo bench -p colorful-lsp`. *Status:* implemented
   (measurement only — not yet a CI gate; see *Known gaps*).
+- **COL-11a** — *Requirement:* COL-11. *Behavior:* a file containing invalid
+  UTF-8 bytes is rejected by `colorful`, `ir`, `diagnose`, and `lint` alike,
+  each exiting with `io::ErrorKind::InvalidData` and the message
+  `stream did not contain valid UTF-8` -- never a silent lossy conversion.
+  *Oracle:* exact error kind and message equality across all four commands.
+  *Evidence:* `crates/colorful-cli/fixtures/invalid-utf8.bin`; `colorful-cli`
+  `tests::invalid_utf8_file_is_rejected_across_every_command`. *Status:*
+  implemented.
 
 ## Known gaps
 

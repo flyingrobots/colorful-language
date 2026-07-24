@@ -119,24 +119,74 @@ fn help_text() -> String {
     )
 }
 
+/// A single-document subcommand: `color` (the default), `ir`, `diagnose`, or
+/// `lint`. Each recognizes its own flags and has its own `--help` text;
+/// centralizing both here means a command's allowed flags live in exactly
+/// one place, not scattered across each `run_*` call site.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Command {
+    /// `colorful [--no-color] [FILE]` — the default subcommand.
+    Color,
+    /// `colorful ir [FILE]`.
+    Ir,
+    /// `colorful diagnose [--json] [FILE]`.
+    Diagnose,
+    /// `colorful lint [FILE]`.
+    Lint,
+}
+
+const IR_HELP: &str =
+    "colorful ir [FILE]\n\nEmit the colorful.syntax/v1 IR as canonical JSON (stdin if no FILE).\n";
+const DIAGNOSE_HELP: &str = "colorful diagnose [--json] [FILE]\n\n\
+     Emit a machine-readable diagnostic report for CLI/editor \
+     projection checks (stdin if no FILE). JSON is the only \
+     current output format.\n";
+const LINT_HELP: &str =
+    "colorful lint [FILE]\n\nReport prose problems (stdin if no FILE). Exits non-zero when any are found.\n";
+
+impl Command {
+    /// The flags this command recognizes (each starting with `-`, e.g.
+    /// `"--json"`). Every other command rejects them as unknown.
+    fn recognized_flags(self) -> &'static [&'static str] {
+        match self {
+            Command::Color => &["--no-color"],
+            Command::Ir | Command::Lint => &[],
+            Command::Diagnose => &["--json"],
+        }
+    }
+
+    /// This command's `--help` text, a pure rendering with no I/O — the
+    /// caller decides where it goes.
+    fn help_text(self) -> String {
+        match self {
+            Command::Color => help_text(),
+            Command::Ir => IR_HELP.to_string(),
+            Command::Diagnose => DIAGNOSE_HELP.to_string(),
+            Command::Lint => LINT_HELP.to_string(),
+        }
+    }
+}
+
 /// The outcome of parsing a subcommand's arguments: help was requested, or
 /// every argument was recognized.
+#[derive(Debug)]
 enum ParseOutcome {
     /// `-h`/`--help` was seen; the caller should print its own usage and stop.
     Help,
     /// Parsing completed; every subcommand runs the same way from here.
-    Run(ParsedArgs),
+    Run(InputArgs),
 }
 
-/// A subcommand's parsed arguments: at most one positional `FILE` (`None`
-/// means read stdin — either `FILE` was omitted or given as the explicit `-`
+/// A subcommand's parsed input: at most one positional `FILE` (`None` means
+/// read stdin — either `FILE` was omitted or given as the explicit `-`
 /// sentinel), plus the recognized flags that were passed.
-struct ParsedArgs {
+#[derive(Debug)]
+struct InputArgs {
     path: Option<String>,
     flags: BTreeSet<String>,
 }
 
-impl ParsedArgs {
+impl InputArgs {
     /// Whether `flag` (e.g. `"--json"`) was passed. Repeating a flag is
     /// idempotent — it either was passed or it wasn't.
     fn has_flag(&self, flag: &str) -> bool {
@@ -162,9 +212,10 @@ fn take_path(arg: String, path: &mut Option<String>, has_path: &mut bool) -> io:
     Ok(())
 }
 
-/// Parse a subcommand's `args` against the flags it recognizes (each starting
-/// with `-`, e.g. `&["--json"]`), shared by every subcommand so `-h`/`--help`,
-/// `--`, and the `-`-means-stdin sentinel behave identically everywhere.
+/// Parse `command`'s `args` against the flags it recognizes, shared by every
+/// single-document command so `-h`/`--help`, `--`, and the `-`-means-stdin
+/// sentinel behave identically everywhere — only which flags are recognized
+/// varies, via [`Command::recognized_flags`].
 ///
 /// Before `--`: `-h`/`--help` requests help; `-` or a recognized flag are
 /// handled; anything else starting with `-` is an unknown option; anything
@@ -174,14 +225,19 @@ fn take_path(arg: String, path: &mut Option<String>, has_path: &mut bool) -> io:
 /// literally as a path rather than rejected as unknown. At most one `FILE`
 /// operand is accepted, before or after `--`.
 ///
+/// This function only parses — it performs no I/O of its own. Rendering
+/// (help text) and process I/O (reading the file/stdin, writing output) are
+/// both the caller's job.
+///
 /// # Errors
 ///
 /// Returns an error if an unrecognized flag is seen, or more than one `FILE`
 /// operand is given.
-fn parse_args<I>(args: I, recognized_flags: &[&str]) -> io::Result<ParseOutcome>
+fn parse_input_args<I>(command: Command, args: I) -> io::Result<ParseOutcome>
 where
     I: IntoIterator<Item = String>,
 {
+    let recognized_flags = command.recognized_flags();
     let mut flags = BTreeSet::new();
     let mut path: Option<String> = None;
     let mut has_path = false;
@@ -208,7 +264,7 @@ where
         }
     }
 
-    Ok(ParseOutcome::Run(ParsedArgs { path, flags }))
+    Ok(ParseOutcome::Run(InputArgs { path, flags }))
 }
 
 /// Run the CLI over `args` (the program's arguments, excluding `argv[0]`).
@@ -269,9 +325,9 @@ fn run_color<I>(args: I) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
 {
-    let parsed = match parse_args(args, &["--no-color"])? {
+    let parsed = match parse_input_args(Command::Color, args)? {
         ParseOutcome::Help => {
-            print!("{}", help_text());
+            print!("{}", Command::Color.help_text());
             return Ok(());
         }
         ParseOutcome::Run(parsed) => parsed,
@@ -302,9 +358,9 @@ fn run_ir<I>(args: I) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
 {
-    let parsed = match parse_args(args, &[])? {
+    let parsed = match parse_input_args(Command::Ir, args)? {
         ParseOutcome::Help => {
-            print!("colorful ir [FILE]\n\nEmit the colorful.syntax/v1 IR as canonical JSON (stdin if no FILE).\n");
+            print!("{}", Command::Ir.help_text());
             return Ok(());
         }
         ParseOutcome::Run(parsed) => parsed,
@@ -342,14 +398,9 @@ fn run_diagnose<I>(args: I) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
 {
-    let parsed = match parse_args(args, &["--json"])? {
+    let parsed = match parse_input_args(Command::Diagnose, args)? {
         ParseOutcome::Help => {
-            print!(
-                "colorful diagnose [--json] [FILE]\n\n\
-                 Emit a machine-readable diagnostic report for CLI/editor \
-                 projection checks (stdin if no FILE). JSON is the only \
-                 current output format.\n"
-            );
+            print!("{}", Command::Diagnose.help_text());
             return Ok(());
         }
         ParseOutcome::Run(parsed) => parsed,
@@ -512,9 +563,9 @@ fn run_lint<I>(args: I) -> io::Result<ExitCode>
 where
     I: IntoIterator<Item = String>,
 {
-    let parsed = match parse_args(args, &[])? {
+    let parsed = match parse_input_args(Command::Lint, args)? {
         ParseOutcome::Help => {
-            print!("colorful lint [FILE]\n\nReport prose problems (stdin if no FILE). Exits non-zero when any are found.\n");
+            print!("{}", Command::Lint.help_text());
             return Ok(ExitCode::SUCCESS);
         }
         ParseOutcome::Run(parsed) => parsed,
@@ -576,19 +627,37 @@ pub fn lint_report(name: &str, source: &str, findings: &[Finding]) -> String {
 }
 
 /// The 1-based `(line, column)` of byte offset `byte` in `source`, counting
-/// columns in characters. Lines are split on `\n`.
-fn line_col(source: &str, byte: usize) -> (usize, usize) {
+/// columns in characters. Recognizes `\n`, `\r\n`, and a bare `\r` as line
+/// terminators — a `\r\n` pair counts as one line break, never two — matching
+/// `colorful-lsp`'s `LineIndex` exactly, so the CLI and the LSP never
+/// disagree about which line a position falls on.
+#[must_use]
+pub fn line_col(source: &str, byte: usize) -> (usize, usize) {
     let mut line = 1usize;
     let mut col = 1usize;
+    let mut prev_was_cr = false;
     for (i, ch) in source.char_indices() {
         if i >= byte {
             break;
         }
-        if ch == '\n' {
-            line += 1;
-            col = 1;
-        } else {
-            col += 1;
+        if prev_was_cr && ch == '\n' {
+            // The second half of a \r\n pair already broke the line; it
+            // isn't a character of the new line, so it doesn't advance col.
+            prev_was_cr = false;
+            continue;
+        }
+        prev_was_cr = false;
+        match ch {
+            '\n' => {
+                line += 1;
+                col = 1;
+            }
+            '\r' => {
+                line += 1;
+                col = 1;
+                prev_was_cr = true;
+            }
+            _ => col += 1,
         }
     }
     (line, col)
@@ -834,6 +903,25 @@ mod tests {
     }
 
     #[test]
+    fn invalid_utf8_file_is_rejected_across_every_command() {
+        // Every single-document command reads its file through
+        // std::fs::read_to_string, which is strict about UTF-8 -- a malformed
+        // file is rejected with a clear error, never silently lossy-converted
+        // into corrupted-but-readable text.
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/invalid-utf8.bin").to_string();
+
+        fn assert_invalid_utf8(err: &io::Error) {
+            assert_eq!(err.kind(), io::ErrorKind::InvalidData, "{err}");
+            assert_eq!(err.to_string(), "stream did not contain valid UTF-8");
+        }
+
+        assert_invalid_utf8(&run_color([path.clone()]).unwrap_err());
+        assert_invalid_utf8(&run_ir([path.clone()]).unwrap_err());
+        assert_invalid_utf8(&run_diagnose([path.clone()]).unwrap_err());
+        assert_invalid_utf8(&run_lint([path]).unwrap_err());
+    }
+
+    #[test]
     fn gaps_and_newlines_are_preserved_exactly() {
         // Stripping all ANSI escapes must reproduce the original source.
         let src = "Well,  \t\"quoted\"\n  text—here.";
@@ -861,7 +949,7 @@ mod tests {
     fn double_dash_then_bare_dash_still_means_stdin() {
         // `-` is a positional sentinel, not a flag: `colorful lint -- -` reads
         // stdin, it does not try to open a file literally named "-".
-        match parse_args(["--".to_string(), "-".to_string()], &[]).unwrap() {
+        match parse_input_args(Command::Lint, ["--".to_string(), "-".to_string()]).unwrap() {
             ParseOutcome::Run(parsed) => assert_eq!(parsed.path, None),
             ParseOutcome::Help => panic!("expected Run, got Help"),
         }
@@ -869,7 +957,12 @@ mod tests {
 
     #[test]
     fn repeating_a_recognized_flag_is_idempotent() {
-        match parse_args(["--json".to_string(), "--json".to_string()], &["--json"]).unwrap() {
+        match parse_input_args(
+            Command::Diagnose,
+            ["--json".to_string(), "--json".to_string()],
+        )
+        .unwrap()
+        {
             ParseOutcome::Run(parsed) => {
                 assert!(parsed.has_flag("--json"));
                 assert_eq!(parsed.flags.len(), 1);
@@ -890,6 +983,81 @@ mod tests {
             assert_eq!(err.to_string(), "expected at most one FILE argument");
             let err = run_ir(args).unwrap_err();
             assert_eq!(err.to_string(), "expected at most one FILE argument");
+        }
+    }
+
+    #[test]
+    fn input_args_matrix_has_identical_operand_semantics_across_commands() {
+        // Every single-document command must resolve FILE operands, the `-`
+        // stdin sentinel, the `--` option terminator, and "too many files"
+        // identically -- only which flags each recognizes may differ. This
+        // exercises that cross-product directly against parse_input_args,
+        // independent of any one command's flags or I/O.
+        const COMMANDS: [Command; 4] = [
+            Command::Color,
+            Command::Ir,
+            Command::Diagnose,
+            Command::Lint,
+        ];
+        const TERMINATOR_PREFIXES: [&[&str]; 2] = [&[], &["--"]];
+
+        fn run(command: Command, args: &[&str]) -> io::Result<ParseOutcome> {
+            parse_input_args(command, args.iter().map(|a| a.to_string()))
+        }
+
+        fn expect_path(outcome: io::Result<ParseOutcome>, want: Option<&str>, ctx: String) {
+            match outcome.unwrap_or_else(|e| panic!("{ctx}: unexpected error {e}")) {
+                ParseOutcome::Run(parsed) => {
+                    assert_eq!(parsed.path.as_deref(), want, "{ctx}");
+                }
+                ParseOutcome::Help => panic!("{ctx}: unexpected help"),
+            }
+        }
+
+        for command in COMMANDS {
+            // Zero files: stdin.
+            expect_path(run(command, &[]), None, format!("{command:?} zero files"));
+
+            for prefix in TERMINATOR_PREFIXES {
+                let ctx = |what: &str| format!("{command:?} {prefix:?} {what}");
+
+                // One literal file.
+                let mut args = prefix.to_vec();
+                args.push("file.txt");
+                expect_path(run(command, &args), Some("file.txt"), ctx("one file"));
+
+                // The bare `-` stdin sentinel.
+                let mut args = prefix.to_vec();
+                args.push("-");
+                expect_path(run(command, &args), None, ctx("dash sentinel"));
+
+                // Two file operands are rejected.
+                let mut args = prefix.to_vec();
+                args.extend(["first.txt", "second.txt"]);
+                let err = run(command, &args).unwrap_err();
+                assert_eq!(
+                    err.to_string(),
+                    "expected at most one FILE argument",
+                    "{}",
+                    ctx("two files")
+                );
+            }
+
+            // An unknown flag before `--` is rejected...
+            let err = run(command, &["--bogus-flag"]).unwrap_err();
+            assert_eq!(
+                err.kind(),
+                io::ErrorKind::InvalidInput,
+                "{command:?} unknown flag before --"
+            );
+
+            // ...but the identical flag-shaped argument after `--` is a
+            // literal path, not an unknown option.
+            expect_path(
+                run(command, &["--", "--bogus-flag"]),
+                Some("--bogus-flag"),
+                format!("{command:?} flag-shaped path after --"),
+            );
         }
     }
 
@@ -946,6 +1114,19 @@ mod tests {
         assert_eq!(line_col(src, 0), (1, 1));
         assert_eq!(line_col(src, 12), (2, 1));
         assert_eq!(line_col(src, 25), (3, 1));
+    }
+
+    #[test]
+    fn lint_line_col_treats_crlf_as_one_break_and_bare_cr_as_a_break() {
+        // \r\n is one break, not two.
+        let crlf = "First.\r\nThis is just wrong.";
+        assert_eq!(line_col(crlf, 8), (2, 1));
+
+        // A bare \r (classic Mac line endings, no \n anywhere) is still a
+        // break -- matching colorful_lsp::LineIndex, which treats it the
+        // same way, so the CLI and LSP never disagree about the line.
+        let bare_cr = "First.\rThis is just wrong.";
+        assert_eq!(line_col(bare_cr, 7), (2, 1));
     }
 
     #[test]

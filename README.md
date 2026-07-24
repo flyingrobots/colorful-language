@@ -1,7 +1,9 @@
-<div align="center"><h1>colorful-language</h1>
+<div align="center">
+  <img alt="Colorful_Language" src="https://github.com/user-attachments/assets/94c48976-9b6d-49fa-a634-7aab2d302592" />
+  <h1>colorful-language</h1>
 <h3><code>IDE-grade syntax highlighting for English prose.</code></h3></div>
 
-_Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotes glow as **strings**, and the skeleton of every sentence becomes visible._
+_Open a `.txt`, essay draft, novel chapter, or design doc and watch the grammar light up, just like your editor does for code. Function words become **keywords**, proper nouns pop as **types**, quotation marks glow as **strings** while the words inside keep their own roles, and the skeleton of every sentence becomes visible._
 
 ## Why?
 
@@ -11,9 +13,16 @@ text. That leaves the structure of a sentence — the little words that carry
 logic, emphasis, negation, scope, and rhythm — harder to see than it should be.
 
 Colorful makes English visible as a local, deterministic syntax surface. No
-cloud, no model, no hidden judgment. It shows the shape of prose the way a code
-highlighter shows the shape of a program. The same parse feeds CLI highlighting,
-lint warnings, LSP diagnostics, and the `colorful.syntax/v1` surface IR.
+cloud, no opaque model: every token's classification comes from an
+inspectable, local pipeline — a [lexicon](docs/topics/lexicon/) of
+closed-class words plus the deterministic
+[classification rules](docs/topics/coloring/) layered on top (a proper-noun
+heuristic, contextual disambiguation for a small ambiguous set) — and the
+separate [lint rules](docs/topics/linting/) that flag prose issues from that
+already-classified stream are equally local and inspectable. Nothing here is
+a black box. It shows the shape of prose the way a code highlighter shows the
+shape of a program. The same parse feeds CLI highlighting, lint warnings, LSP
+diagnostics, and the `colorful.syntax/v1` surface IR.
 
 That is the current contract. Future phases are tracked in the
 [roadmap](ROADMAP.md), not promised by this README.
@@ -42,7 +51,9 @@ colorful --help
 colorful --version
 ```
 
-It works on any text file and respects `NO_COLOR`.
+It works on any valid UTF-8 text file and respects `NO_COLOR`. A file with
+invalid UTF-8 bytes is rejected with a clear error, not silently mangled —
+see [`docs/topics/coloring/`](docs/topics/coloring/) for the exact contract.
 Use `colorful diagnose --json` when comparing terminal, Zed, jedit, or another
 editor against the classes Colorful actually produced.
 
@@ -53,7 +64,20 @@ colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt \
   | python3 -m json.tool
 ```
 
-<div align="center"><img width="739" height="817" alt="Screenshot 2026-06-21 at 12 20 52" src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
+<div align="center"><img width="739" height="817" alt="A terminal running `cat README.md | colorful`: this file's own prose rendered with function words in bold magenta, proper nouns and acronyms in bold yellow, quotation marks in green, numbers in cyan, punctuation in dim gray, and unlisted content words left in the default color." src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
+
+The screenshot above pipes this README through `colorful` itself. The visible
+token-role mapping (see [`docs/topics/coloring/`](docs/topics/coloring/) for
+the exact contract):
+
+| What's highlighted | Example | Terminal color |
+| --- | --- | --- |
+| Closed-class function words | `and`, `for`, `the`, `is`, `with` | bold magenta |
+| Proper nouns and capitalized acronyms | `English`, `NLP`, `CLI`, `LSP` | bold yellow |
+| Quotation marks | `"`, `"` | green (enclosed words keep their own styling) |
+| Numbers | `0.1.0` | cyan |
+| Punctuation | `,`, `.`, `:` | dim gray |
+| Everything else (unlisted content words) | — | default terminal color |
 
 ---
 
@@ -120,7 +144,8 @@ the consumer boundary.
   `fast` disambiguate from local sentence context
 - **Proper nouns** (mid-sentence capitalized words) → highlighted
 - **Numbers** → highlighted
-- **Quotes** → highlighted as strings
+- **Quotation marks** → highlighted as strings; the words they enclose keep
+  their own roles
 - **Sentence structure** made visible
 - Unlisted content words stay clean (skeleton mode; no color overload)
 
@@ -174,13 +199,25 @@ It's deterministic, auditable, and built to grow.
 
 ## Architecture (for the curious)
 
-Built as a **Rust hexagon** (ports & adapters):
+Built as a **Rust hexagon** (ports & adapters). `colorful-core` defines four
+pure, I/O-free ports:
 
-- Pure core with three clean seams: `Parser` → `Lexicon` → `Annotator`
-- Easy to extend (prose linter, better disambiguation, etc.)
-- CLI + LSP adapters reuse the same logic
+- `Parser` — text to a structural tree (sentences, words, punctuation spans).
+- `Lexicon` — a single word, in isolation, to a part-of-speech class.
+- `Annotator` — a parsed tree to a classified token stream, with context.
+- `Analyzer` — source, tree, and tokens to prose findings (the linter's port).
 
-See [`docs/design/`](docs/design/) for the thinking.
+The CLI and LSP are adapters: both reuse the same `Parser`/`Lexicon`/
+`Annotator`/`Analyzer` implementations directly — they do not consume the
+serialized `colorful.syntax/v1` IR. Building that IR (for graft, jedit, or any
+external consumer) is a separate concern, `colorful-projection`'s job, layered
+on top of the same ports rather than replacing them.
+
+See [`docs/design/`](docs/design/) for the original ports-and-adapters
+decision record, [`docs/topics/linting/`](docs/topics/linting/) for the
+`Analyzer` port and its rule pack, and
+[`docs/topics/ir/architecture.md`](docs/topics/ir/architecture.md) for the IR
+producer/consumer boundary.
 
 ---
 
@@ -238,6 +275,12 @@ The **prose linter** and the deterministic **open-class POS** path have landed
 on `main`; contributions that grow the rule pack, improve editor/theme
 packaging, or continue the deeper controlled-English roadmap are especially
 welcome right now.
+
+For the full documentation corpus — every topic's current behavior and test
+plan, design records, and release packets — start at the
+[documentation spine](docs/README.md). Contributor-facing repository
+operations, including the release process, are indexed in
+[`docs/workflows/`](docs/workflows/README.md).
 
 ---
 
