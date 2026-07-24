@@ -23,6 +23,9 @@ use tower_lsp::lsp_types::{
 };
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
+#[cfg(test)]
+mod document_state;
+
 /// The language server: a document store plus the parser and annotator adapters.
 struct Backend {
     client: Client,
