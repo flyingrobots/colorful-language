@@ -134,10 +134,10 @@ IR is cheaper and safer than CLI text or LSP tokens.
 **User job:** editing stays responsive inside a declared document envelope, and
 CLI/LSP findings agree without hiding ambiguity.
 
-- **LSP freshness and capacity:** versioned per-document state, cancellation,
-  caching, debouncing, and limits
-  [#121](https://github.com/flyingrobots/colorful-language/issues/121), plus the
-  release-mode SLO and overload harness
+- **LSP freshness and capacity:** deliver versioned per-document state,
+  cancellation, caching, debouncing, and limits
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121), then
+  establish the release-mode SLO and overload envelope
   [#122](https://github.com/flyingrobots/colorful-language/issues/122).
 - **Measured cost:** cross-stage parsing, annotation, lint, IR, semantic-token,
   incremental-edit, and Graft benchmarks

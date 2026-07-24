@@ -1,9 +1,9 @@
 //! Pure building blocks for the prose language server.
 //!
 //! The server itself (the `colorful-lsp` binary) is thin glue over these
-//! functions: turn a document into LSP semantic tokens
-//! ([`compute_semantic_tokens`]), apply an incremental edit to a [`Rope`] mirror
-//! ([`apply_change`]), and describe the token legend ([`legend_token_types`]).
+//! functions: turn a document into one shared [`DocumentAnalysis`], apply an
+//! incremental edit to a [`Rope`] mirror ([`apply_change`]), and describe the
+//! token legend ([`legend_token_types`]).
 //!
 //! Keeping this logic here — free of async and transport — is what makes the
 //! UTF-16 position arithmetic and the delta encoding unit-testable.
@@ -14,7 +14,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use colorful_core::{Analyzer, Annotator, Parser, PosClass, Severity};
+use colorful_core::{Analyzer, Annotator, Finding, Parser, PosClass, Severity, Token};
 use ropey::Rope;
 use tower_lsp::lsp_types::{
     Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range, SemanticToken,
@@ -147,6 +147,65 @@ fn utf16_len(s: &str) -> u32 {
     s.chars().map(|c| c.len_utf16() as u32).sum()
 }
 
+/// The transport-ready products derived from one parse and classification.
+///
+/// A document generation owns one value of this type. The server publishes its
+/// diagnostics and answers semantic-token requests from the same cached value,
+/// so the two surfaces cannot observe different classifications for one
+/// generation.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DocumentAnalysis {
+    semantic_tokens: Vec<SemanticToken>,
+    diagnostics: Vec<Diagnostic>,
+}
+
+impl DocumentAnalysis {
+    /// Assemble one analysis from its semantic-token and diagnostic products.
+    #[must_use]
+    pub fn new(semantic_tokens: Vec<SemanticToken>, diagnostics: Vec<Diagnostic>) -> Self {
+        Self {
+            semantic_tokens,
+            diagnostics,
+        }
+    }
+
+    /// The delta-encoded semantic tokens for this document generation.
+    #[must_use]
+    pub fn semantic_tokens(&self) -> &[SemanticToken] {
+        &self.semantic_tokens
+    }
+
+    /// The diagnostics for this document generation.
+    #[must_use]
+    pub fn diagnostics(&self) -> &[Diagnostic] {
+        &self.diagnostics
+    }
+}
+
+/// Parse and classify `text` once, then derive both LSP output surfaces.
+///
+/// The returned value is suitable for generation-keyed caching by the server.
+/// Neither diagnostics nor semantic tokens reparses or reclassifies the source.
+#[must_use]
+pub fn analyze_document<P, A, An>(
+    text: &str,
+    parser: &P,
+    annotator: &A,
+    analyzer: &An,
+) -> DocumentAnalysis
+where
+    P: Parser,
+    A: Annotator,
+    An: Analyzer,
+{
+    let tree = parser.parse(text);
+    let tokens = annotator.annotate(text, &tree);
+    let semantic_tokens = semantic_tokens_from(text, &tokens);
+    let findings = analyzer.analyze(text, &tree, &tokens);
+    let diagnostics = diagnostics_from(text, findings);
+    DocumentAnalysis::new(semantic_tokens, diagnostics)
+}
+
 /// Compute the delta-encoded LSP semantic tokens for `text`.
 ///
 /// Words are classified through `parser` and `annotator`; deterministic
@@ -161,6 +220,10 @@ where
 {
     let tree = parser.parse(text);
     let tokens = annotator.annotate(text, &tree);
+    semantic_tokens_from(text, &tokens)
+}
+
+fn semantic_tokens_from(text: &str, tokens: &[Token]) -> Vec<SemanticToken> {
     let index = LineIndex::new(text);
 
     let mut data = Vec::new();
@@ -214,6 +277,10 @@ where
     let tree = parser.parse(text);
     let tokens = annotator.annotate(text, &tree);
     let findings = analyzer.analyze(text, &tree, &tokens);
+    diagnostics_from(text, findings)
+}
+
+fn diagnostics_from(text: &str, findings: Vec<Finding>) -> Vec<Diagnostic> {
     let index = LineIndex::new(text);
 
     findings
@@ -270,9 +337,74 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use colorful_core::{Finding, Token, Tree};
     use colorful_lexicon::ContextualOpenClassAnnotator;
+    use colorful_lint::ProseLinter;
     use colorful_parse::ProseParser;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use tower_lsp::lsp_types::Position;
+
+    struct CountingParser<'a> {
+        calls: &'a AtomicUsize,
+    }
+
+    impl Parser for CountingParser<'_> {
+        fn parse(&self, text: &str) -> Tree {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            ProseParser::new().parse(text)
+        }
+    }
+
+    struct CountingAnnotator<'a> {
+        calls: &'a AtomicUsize,
+    }
+
+    impl Annotator for CountingAnnotator<'_> {
+        fn annotate(&self, source: &str, tree: &Tree) -> Vec<Token> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            ContextualOpenClassAnnotator::default().annotate(source, tree)
+        }
+    }
+
+    struct CountingAnalyzer<'a> {
+        calls: &'a AtomicUsize,
+    }
+
+    impl Analyzer for CountingAnalyzer<'_> {
+        fn analyze(&self, source: &str, tree: &Tree, tokens: &[Token]) -> Vec<Finding> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            ProseLinter::new().analyze(source, tree, tokens)
+        }
+    }
+
+    #[test]
+    fn one_analysis_parses_and_classifies_once_for_both_lsp_surfaces() {
+        let parser_calls = AtomicUsize::new(0);
+        let annotator_calls = AtomicUsize::new(0);
+        let analyzer_calls = AtomicUsize::new(0);
+
+        let analysis = analyze_document(
+            "The cat is very calm.",
+            &CountingParser {
+                calls: &parser_calls,
+            },
+            &CountingAnnotator {
+                calls: &annotator_calls,
+            },
+            &CountingAnalyzer {
+                calls: &analyzer_calls,
+            },
+        );
+
+        assert!(!analysis.semantic_tokens().is_empty());
+        assert_eq!(
+            analysis.diagnostics()[0].code,
+            Some(NumberOrString::String("weak-word".to_string()))
+        );
+        assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(annotator_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(analyzer_calls.load(Ordering::SeqCst), 1);
+    }
 
     #[test]
     fn token_type_name_for_none_role_is_none() {

@@ -5,50 +5,65 @@
 //! and answers `textDocument/semanticTokens/full` by classifying the text. All
 //! the real logic lives in the `colorful_lsp` library; this file is transport.
 
+use std::sync::Arc;
+use std::time::Duration;
+
 use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
-use colorful_lsp::{
-    apply_change, compute_diagnostics, compute_semantic_tokens, legend_token_types,
-};
+use colorful_lsp::{analyze_document, legend_token_types};
 use colorful_parse::ProseParser;
-use dashmap::DashMap;
-use ropey::Rope;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::{
     DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
     InitializeParams, InitializeResult, InitializedParams, MessageType, SemanticTokens,
     SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams,
     SemanticTokensResult, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
-    TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    TextDocumentSyncCapability, TextDocumentSyncKind,
 };
 use tower_lsp::{Client, LanguageServer, LspService, Server};
+
+mod document_state;
+
+use document_state::{
+    AnalysisComputer, AnalysisPublisher, CompletedAnalysis, DocumentStore, MAX_DOCUMENT_BYTES,
+};
 
 /// The language server: a document store plus the parser and annotator adapters.
 struct Backend {
     client: Client,
-    documents: DashMap<Url, Rope>,
+    documents: DocumentStore,
 }
 
 impl Backend {
     fn new(client: Client) -> Self {
+        let compute: AnalysisComputer = Arc::new(|text, _generation| {
+            analyze_document(
+                &text,
+                &ProseParser::new(),
+                &default_annotator(),
+                &ProseLinter::new(),
+            )
+        });
         Self {
             client,
-            documents: DashMap::new(),
+            documents: DocumentStore::new(compute, Duration::from_millis(50), MAX_DOCUMENT_BYTES),
         }
     }
 
-    /// Lint `text` and publish the diagnostics for `uri`. Called after every
-    /// open and change so an editor's "Problems" view tracks the document.
-    async fn publish_diagnostics(&self, uri: Url, text: &str, version: Option<i32>) {
-        let diagnostics = compute_diagnostics(
-            text,
-            &ProseParser::new(),
-            &default_annotator(),
-            &ProseLinter::new(),
-        );
-        self.client
-            .publish_diagnostics(uri, diagnostics, version)
-            .await;
+    fn analysis_publisher(&self) -> AnalysisPublisher {
+        let client = self.client.clone();
+        Arc::new(move |completed: CompletedAnalysis| {
+            let client = client.clone();
+            Box::pin(async move {
+                client
+                    .publish_diagnostics(
+                        completed.uri().clone(),
+                        completed.diagnostics().to_vec(),
+                        Some(completed.version()),
+                    )
+                    .await;
+            })
+        })
     }
 }
 
@@ -95,31 +110,26 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let doc = params.text_document;
         self.documents
-            .insert(doc.uri.clone(), Rope::from_str(&doc.text));
-        self.publish_diagnostics(doc.uri, &doc.text, Some(doc.version))
+            .open(doc.uri, &doc.text, doc.version, self.analysis_publisher())
             .await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let uri = params.text_document.uri;
         let version = params.text_document.version;
-        // Apply the edits, then drop the document lock before awaiting the
-        // publish so the async call never holds the DashMap guard.
-        let text = {
-            let Some(mut rope) = self.documents.get_mut(&uri) else {
-                return;
-            };
-            for change in params.content_changes {
-                apply_change(rope.value_mut(), change.range, &change.text);
-            }
-            rope.to_string()
-        };
-        self.publish_diagnostics(uri, &text, Some(version)).await;
+        self.documents
+            .change(
+                &uri,
+                version,
+                params.content_changes,
+                self.analysis_publisher(),
+            )
+            .await;
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let uri = params.text_document.uri;
-        self.documents.remove(&uri);
+        self.documents.close(&uri).await;
         // Clear the document's diagnostics when it closes.
         self.client.publish_diagnostics(uri, vec![], None).await;
     }
@@ -128,14 +138,16 @@ impl LanguageServer for Backend {
         &self,
         params: SemanticTokensParams,
     ) -> Result<Option<SemanticTokensResult>> {
-        let Some(rope) = self.documents.get(&params.text_document.uri) else {
+        let Some(snapshot) = self
+            .documents
+            .semantic_tokens(&params.text_document.uri)
+            .await
+        else {
             return Ok(None);
         };
-        let text = rope.to_string();
-        let data = compute_semantic_tokens(&text, &ProseParser::new(), &default_annotator());
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
-            result_id: None,
-            data,
+            result_id: Some(snapshot.generation().to_string()),
+            data: snapshot.into_data(),
         })))
     }
 }

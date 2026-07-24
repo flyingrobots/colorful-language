@@ -213,6 +213,7 @@ fn real_server_completes_the_public_stdio_lifecycle() {
     let first_data = first_tokens["result"]["data"]
         .as_array()
         .expect("semantic-token data");
+    assert_eq!(first_tokens["result"]["resultId"], "1");
     assert!(!first_data.is_empty());
     assert_eq!(first_data.len() % 5, 0);
 
@@ -245,6 +246,7 @@ fn real_server_completes_the_public_stdio_lifecycle() {
     let changed_tokens = server.receive("changed semantic-token response", |message| {
         message["id"] == 3
     });
+    assert_eq!(changed_tokens["result"]["resultId"], "2");
     assert!(changed_tokens["result"]["data"]
         .as_array()
         .is_some_and(|data| !data.is_empty()));

@@ -38,7 +38,8 @@ Requirements:
 - **COL-14** Packaged editor evidence covers activation, incremental edits,
   diagnostics, semantic tokens, shutdown, and theme fallback.
 - **COL-15** Versioned document state prevents stale analysis from publishing
-  after a newer edit and exposes deterministic cancellation/backpressure
+  after a newer edit, reuses one cached parse/classification for diagnostics and
+  semantic tokens, and exposes deterministic cancellation and document-limit
   evidence.
 - **COL-16** A release-mode overload harness measures the supported document
   envelope, including queue delay, peak RSS, stale-result count, and time to the
@@ -194,9 +195,34 @@ Requirements:
   generation may publish diagnostics or tokens. *Oracle:* publication log
   contains only the latest generation; cancellation and stale-result counters
   match the forced schedule. *Evidence type:* deterministic async regression
-  test. *Tracking:*
+  test. *Evidence:* `colorful-lsp` binary test
+  `document_state::tests::older_computation_finishing_last_cannot_publish_or_replace_cache`
+  and paused-time test
+  `document_state::tests::rapid_edits_cancel_debounced_work_before_analysis`.
+  *Tracking:*
   [#121](https://github.com/flyingrobots/colorful-language/issues/121).
-  *Status:* planned.
+  *Status:* implemented.
+- **COL-15b** — *Requirement:* COL-15. *Behavior:* each accepted document
+  generation is parsed and classified once, then the cached result supplies
+  both its published diagnostics and its semantic-token response. *Oracle:* an
+  instrumented analysis adapter records one invocation for the generation while
+  both surfaces return the expected generation-keyed result. *Evidence type:*
+  deterministic async regression test. *Evidence:* `colorful-lsp` tests
+  `tests::one_analysis_parses_and_classifies_once_for_both_lsp_surfaces` and
+  `document_state::tests::diagnostics_and_tokens_reuse_one_generation_analysis`.
+  *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* implemented.
+- **COL-15c** — *Requirement:* COL-15. *Behavior:* documents through 5 MiB enter
+  normal analysis, while a larger document bypasses the analyzer and yields
+  empty semantic tokens plus one stable `colorful/document-too-large`
+  diagnostic. *Oracle:* exact boundary, analyzer invocation count, diagnostic
+  code, and empty-token equality. *Evidence type:* deterministic boundary test.
+  *Evidence:* `colorful-lsp` binary test
+  `document_state::tests::oversized_documents_bypass_analysis_with_stable_outputs`.
+  *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* implemented.
 - **COL-16a** — *Requirement:* COL-16. *Behavior:* four concurrent semantic and
   diagnostic requests plus rapid versioned edits run against 1, 5, and 10 MB
   documents in release mode under an explicit supported-envelope SLO. *Oracle:*

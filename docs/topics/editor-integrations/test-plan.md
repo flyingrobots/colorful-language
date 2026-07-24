@@ -27,6 +27,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
   and measured from installation to first highlight.
 - **EDIT-11** The real `colorful-lsp` binary must expose a deterministic stdio
   JSON-RPC lifecycle independently of any editor adapter.
+- **EDIT-12** The shared LSP server must publish only the newest document
+  generation, reuse that generation's cached analysis for diagnostics and
+  semantic tokens, and fail predictably beyond its documented size limit.
 
 ## Cases
 
@@ -64,6 +67,32 @@ Verification for editor adapters and the `colorful-lsp` surface.
   *Evidence:* `crates/colorful-lsp/tests/stdio_contract.rs`
   `real_server_completes_the_public_stdio_lifecycle`. *Tracking:*
   [#133](https://github.com/flyingrobots/colorful-language/issues/133).
+  *Status:* implemented.
+- **EDIT-12a** — *Requirement:* EDIT-12. *Behavior:* rapid incremental edits
+  cancel pending work; if already-running old work finishes after the current
+  generation, it cannot publish or replace the current diagnostics or semantic
+  tokens. *Oracle:* a forced completion schedule publishes only the newest
+  generation and exposes exact cancellation/stale counters. *Evidence type:*
+  deterministic async regression test. *Evidence:* `colorful-lsp` binary test
+  `document_state::tests::older_computation_finishing_last_cannot_publish_or_replace_cache`
+  and paused-time test
+  `document_state::tests::rapid_edits_cancel_debounced_work_before_analysis`.
+  *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* implemented.
+- **EDIT-12b** — *Requirement:* EDIT-12. *Behavior:* diagnostics and semantic
+  tokens consume one generation-keyed cached analysis, and inputs above the
+  documented 5 MiB limit return a stable overload diagnostic rather than
+  entering analysis. *Oracle:* exact analysis invocation count, cache
+  generation, boundary behavior, diagnostic code, and semantic-token result.
+  *Evidence type:* deterministic state and boundary tests. *Evidence:*
+  `colorful-lsp` tests
+  `tests::one_analysis_parses_and_classifies_once_for_both_lsp_surfaces`,
+  `document_state::tests::diagnostics_and_tokens_reuse_one_generation_analysis`,
+  and
+  `document_state::tests::oversized_documents_bypass_analysis_with_stable_outputs`.
+  *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
   *Status:* implemented.
 - **EDIT-4a** — *Requirement:* EDIT-4. *Behavior:* source editor integrations
   compile on every PR; the VS Code `tsconfig.json` sets both `strict: true` and

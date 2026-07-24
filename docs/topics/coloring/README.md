@@ -92,9 +92,27 @@ The default CLI/LSP use `ContextualOpenClassAnnotator`, so open-class rows appea
 for the small seed table and the supported contextual patterns. Unknown content
 remains `Content` and is still unstyled.
 
-Incrementality is `v0`-simple: each request reparses the whole document. See
-*Performance* below for what that costs in practice. A shipped editor theme
-remains future work.
+Each open document has a rope mirror, client version, monotonic server
+generation, cancellation handle, and cached analysis. Opening a document starts
+analysis immediately. Incremental edits update the rope, cancel pending work,
+advance the generation, and debounce replacement analysis for 50 ms. The server
+clones a rope snapshot while it holds the document entry, then converts and
+analyzes that snapshot on the blocking pool after releasing the map guard.
+
+Analysis remains whole-document, but it runs once per accepted generation:
+parsing and classification produce one cached value that supplies both
+diagnostics and semantic tokens. A semantic-token request waits for that
+generation's cache and returns the generation as its `resultId`; it does not
+start a second parse. A per-document publication gate and generation/cancellation
+check prevent late old work from replacing the cache or publishing diagnostics.
+
+Normal analysis accepts documents through 5 MiB (5,242,880 bytes). A larger
+document bypasses parsing and classification, returns no semantic tokens, and
+publishes one warning with code `colorful/document-too-large`. The supported
+latency and memory envelope inside that boundary is not yet established; that
+measurement and any incremental-region work remain tracked by
+[#122](https://github.com/flyingrobots/colorful-language/issues/122). A shipped
+editor theme also remains future work.
 
 ## Performance
 
@@ -106,16 +124,12 @@ Measured, not asserted: `cargo bench -p colorful-cli` and
 over two fixtures: the committed 899-byte `editor-smoke-prose.txt` sample,
 and a 45 KB corpus built by repeating it 50×.
 
-`compute_semantic_tokens()` is what answers one `textDocument/
-semanticTokens/full` request — it is **not** the full `didChange` handler.
-`did_change` (`crates/colorful-lsp/src/main.rs`) applies the edit to the
-rope and calls `compute_diagnostics`, a separate reparse this benchmark does
-not measure; `compute_semantic_tokens()` only runs when the editor
-separately issues a semantic-tokens request, which is a second reparse of
-the same `v0`-simple, whole-document kind. Both are real per-request costs
-an editor pays around an edit, but they are two different requests, not one
-combined "per-edit" number — `compute_diagnostics` has no benchmark yet,
-recorded as an open gap below.
+`compute_semantic_tokens()` is a transport-free standalone helper; the
+production server now calls `analyze_document()` after an open or debounced
+edit and caches both output surfaces from that one parse/classification.
+Therefore this benchmark measures only the semantic-token projection helper,
+not the full `didChange` path, debounce/queue delay, lint analysis, diagnostic
+projection, cache coordination, or JSON-RPC transport.
 
 **2026-07-23, `rustc 1.96.0`, Apple M1 Pro, 16 GB RAM, macOS (Darwin 25.3.0),
 release profile (`cargo bench`), median of 100 samples:**
@@ -136,11 +150,9 @@ update this table when the hot path changes meaningfully.
 
 **Known gaps:**
 
-- `compute_diagnostics` — what `did_change` actually calls — has no
-  benchmark yet. Only `compute_semantic_tokens` (a separate request) is
-  measured above. The versioned document-state and stale-result work is tracked
-  by [#121](https://github.com/flyingrobots/colorful-language/issues/121);
-  the release-mode SLO and overload harness are tracked by
+- The combined production `analyze_document` and versioned scheduling path has
+  no benchmark yet. Only the standalone `compute_semantic_tokens` helper is
+  measured above. The release-mode SLO and overload harness are tracked by
   [#122](https://github.com/flyingrobots/colorful-language/issues/122).
 - Memory is not yet benchmarked — no allocation or peak-RSS profiling
   exists today. Treat both as open gaps, not an implied "cheap" claim. Broader
