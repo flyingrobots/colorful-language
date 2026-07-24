@@ -73,7 +73,7 @@ P0 boundary and LSP tracks may advance while repository guardrails land.
 **Reader job:** a maintainer can reproduce the build, trust the merge gate, and
 observe public-contract regressions before they ship.
 
-- **Public-contract evidence:** real CLI/LSP binary tests
+- **Public-contract evidence:** real CLI/LSP binary process tests
   [#133](https://github.com/flyingrobots/colorful-language/issues/133),
   conservative coverage floors
   [#137](https://github.com/flyingrobots/colorful-language/issues/137), and

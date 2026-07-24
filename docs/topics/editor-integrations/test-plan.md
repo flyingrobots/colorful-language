@@ -61,8 +61,10 @@ Verification for editor adapters and the `colorful-lsp` surface.
   shutdown, and exit messages over stdio. *Oracle:* JSON-RPC IDs, capabilities,
   diagnostic document versions, semantic-token data, empty close diagnostics,
   and final process status. *Evidence type:* process-level integration test.
-  *Tracking:* [#133](https://github.com/flyingrobots/colorful-language/issues/133).
-  *Status:* planned.
+  *Evidence:* `crates/colorful-lsp/tests/stdio_contract.rs`
+  `real_server_completes_the_public_stdio_lifecycle`. *Tracking:*
+  [#133](https://github.com/flyingrobots/colorful-language/issues/133).
+  *Status:* implemented.
 - **EDIT-4a** — *Requirement:* EDIT-4. *Behavior:* source editor integrations
   compile on every PR; the VS Code `tsconfig.json` sets both `strict: true` and
   `skipLibCheck: false`, so incompatible dependency declarations cannot hide
@@ -132,7 +134,6 @@ Verification for editor adapters and the `colorful-lsp` surface.
 
 ## Open verification gaps
 
-- The editor-independent real-server transcript remains open in EDIT-11a.
 - Packaged clean-install and transcript evidence remains open in EDIT-8a.
 - Adapter/server compatibility policy and drift evidence remains open in
   EDIT-9a.
