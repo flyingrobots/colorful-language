@@ -27,8 +27,9 @@ Requirements:
   each fixture's checked-in expected file and fails the build on any drift.
 - **LINT-10** For the same input, the CLI's findings and the LSP's diagnostics
   never disagree: same rule codes in the same order, same severities, same
-  messages, and equivalent positions (UTF-8 columns vs. UTF-16 columns, cross-
-  checked on ASCII-only fixtures where the two coincide).
+  messages, and equivalent positions after reconciling the CLI's
+  Unicode-scalar columns with the LSP's UTF-16 columns across ASCII, astral and
+  combining Unicode, and LF/CRLF/bare-CR line endings.
 
 ## Cases
 
@@ -135,3 +136,13 @@ All cases are implemented.
   `tests::cli_and_lsp_agree_on_every_fixture_finding` (in
   `crates/colorful-cli/tests/lint_golden_fixtures.rs`). *Status:*
   implemented.
+- **LINT-10b** — *Requirement:* LINT-10. *Behavior:* one source places
+  findings after an astral scalar and a combining mark on lines separated by
+  LF, CRLF, and bare CR; CLI and LSP agree on each finding's complete byte span
+  and human line, while an independent oracle converts the span endpoints to
+  the surface-specific scalar and UTF-16 columns. *Oracle:* rule/message/span
+  equality, 1-based CLI line equality, 0-based LSP line equality, and exact
+  start/end column equality in each surface's encoding. *Evidence type:*
+  integration test. *Evidence:* planned `colorful-cli`
+  `tests::cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings`.
+  *Status:* planned.
