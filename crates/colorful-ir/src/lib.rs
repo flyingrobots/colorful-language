@@ -1207,26 +1207,37 @@ mod integration {
         );
     }
 
-    #[test]
-    fn document_analysis_holds_the_invariants() {
-        let source = "The cat sat on the mat. Paris is nice.\n\nDogs run fast.";
+    /// The IR-3 structural-invariant oracle: byte ranges ordered, in-bounds,
+    /// non-overlapping, and on char boundaries; every `structure` node's
+    /// range contains its children; the source digest matches; a Rust JSON
+    /// round-trip is stable. `label` identifies which fixture failed, since
+    /// every corpus entry below shares this exact same assertion function
+    /// rather than a bespoke check per input shape.
+    fn assert_invariants_hold(label: &str, source: &str) {
         let doc = analyze(source);
         let len = i32::try_from(source.len()).unwrap();
 
         // Source digest + length.
-        assert_eq!(doc.source.content_hash, sha256_hex(source.as_bytes()));
-        assert_eq!(doc.source.utf8_byte_length, len);
-        assert_eq!(doc.contract_version, CONTRACT_VERSION);
+        assert_eq!(
+            doc.source.content_hash,
+            sha256_hex(source.as_bytes()),
+            "{label}: content hash"
+        );
+        assert_eq!(doc.source.utf8_byte_length, len, "{label}: byte length");
+        assert_eq!(
+            doc.contract_version, CONTRACT_VERSION,
+            "{label}: contract version"
+        );
 
         // Tokens: ordered, in-bounds, non-overlapping, on char boundaries
         // (slicing would panic otherwise), non-empty.
         let mut prev_end = 0;
         for token in &doc.tokens {
             let (start, end) = (token.byte_range.start_utf8, token.byte_range.end_utf8);
-            assert!(start <= end && end <= len, "out of bounds");
-            assert!(start >= prev_end, "overlapping tokens");
+            assert!(start <= end && end <= len, "{label}: out of bounds");
+            assert!(start >= prev_end, "{label}: overlapping tokens");
             let text = &source[start as usize..end as usize];
-            assert!(!text.is_empty());
+            assert!(!text.is_empty(), "{label}: empty token span");
             prev_end = end;
         }
 
@@ -1236,15 +1247,80 @@ mod integration {
         for node in &doc.structure {
             for child_id in &node.child_node_ids {
                 let child = by_id[child_id];
-                assert!(node.byte_range.start_utf8 <= child.byte_range.start_utf8);
-                assert!(child.byte_range.end_utf8 <= node.byte_range.end_utf8);
+                assert!(
+                    node.byte_range.start_utf8 <= child.byte_range.start_utf8,
+                    "{label}: child starts before parent"
+                );
+                assert!(
+                    child.byte_range.end_utf8 <= node.byte_range.end_utf8,
+                    "{label}: child ends after parent"
+                );
             }
         }
 
         // Canonical JSON decodes back and re-encodes identically (Rust round-trip).
         let a = canonical_json(&doc).unwrap();
         let decoded: syntax_v1::DocumentAnalysis = serde_json::from_str(&a).unwrap();
-        assert_eq!(a, canonical_json(&decoded).unwrap());
+        assert_eq!(
+            a,
+            canonical_json(&decoded).unwrap(),
+            "{label}: JSON round-trip"
+        );
+    }
+
+    #[test]
+    fn document_analysis_holds_the_invariants() {
+        assert_invariants_hold(
+            "hand-written baseline fixture",
+            "The cat sat on the mat. Paris is nice.\n\nDogs run fast.",
+        );
+    }
+
+    /// A named fixture in the IR-3 structural-invariant corpus
+    /// (`docs/topics/ir/test-plan.md` IR-3/IR-3b): every entry runs through
+    /// the identical [`assert_invariants_hold`] oracle used above, rather
+    /// than a bespoke assertion per input shape.
+    struct InvariantFixture {
+        name: &'static str,
+        source: &'static str,
+    }
+
+    const INVARIANT_CORPUS: &[InvariantFixture] = &[
+        InvariantFixture {
+            name: "empty input",
+            source: "",
+        },
+        InvariantFixture {
+            name: "unicode",
+            source: "Café résumé naïve 日本語 test. Ångström glows 😀 brightly.",
+        },
+        InvariantFixture {
+            name: "crlf variants",
+            source: "First line.\r\nSecond line.\rThird line.\n\r\nNew paragraph starts.",
+        },
+        InvariantFixture {
+            name: "punctuation only",
+            source: "... --- !!! ??? () [] {} \"quoted\" ,;:",
+        },
+        InvariantFixture {
+            name: "long tokens",
+            source: "Supercalifragilisticexpialidocious antidisestablishmentarianism pneumonoultramicroscopicsilicovolcanoconiosis.",
+        },
+        InvariantFixture {
+            name: "multiple paragraphs",
+            source: "First paragraph, first sentence. First paragraph, second sentence.\n\nSecond paragraph starts here. It has two sentences.\n\nThird paragraph is short.",
+        },
+        InvariantFixture {
+            name: "contextual ambiguity",
+            source: "The book I book rooms. The fast river connects fast. They record a record. The lead pipe leads.",
+        },
+    ];
+
+    #[test]
+    fn invariant_corpus_holds_across_documented_edge_cases() {
+        for fixture in INVARIANT_CORPUS {
+            assert_invariants_hold(fixture.name, fixture.source);
+        }
     }
 
     // ---- paragraph boundaries ----
