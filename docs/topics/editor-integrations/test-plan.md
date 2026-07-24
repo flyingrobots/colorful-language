@@ -25,6 +25,8 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-10** Public editor releases must be signed, installable from real
   registry URLs, reversible, visually demonstrable without color-only evidence,
   and measured from installation to first highlight.
+- **EDIT-11** The real `colorful-lsp` binary must expose a deterministic stdio
+  JSON-RPC lifecycle independently of any editor adapter.
 
 ## Cases
 
@@ -53,6 +55,14 @@ Verification for editor adapters and the `colorful-lsp` surface.
   diagnostics with ranges, severity, source, and rule code. *Oracle:* Rust
   assertions. *Evidence:* `crates/colorful-lsp/src/main.rs`;
   `docs/topics/linting/test-plan.md`. *Status:* implemented.
+- **EDIT-11a** — *Requirement:* EDIT-11. *Behavior:* a workspace integration
+  test starts the real `colorful-lsp` process and exchanges initialize,
+  initialized, open, diagnostics, incremental change, semantic tokens, close,
+  shutdown, and exit messages over stdio. *Oracle:* JSON-RPC IDs, capabilities,
+  diagnostic document versions, semantic-token data, empty close diagnostics,
+  and final process status. *Evidence type:* process-level integration test.
+  *Tracking:* [#133](https://github.com/flyingrobots/colorful-language/issues/133).
+  *Status:* planned.
 - **EDIT-4a** — *Requirement:* EDIT-4. *Behavior:* source editor integrations
   compile on every PR; the VS Code `tsconfig.json` sets both `strict: true` and
   `skipLibCheck: false`, so incompatible dependency declarations cannot hide
@@ -122,6 +132,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
 
 ## Open verification gaps
 
+- The editor-independent real-server transcript remains open in EDIT-11a.
 - Packaged clean-install and transcript evidence remains open in EDIT-8a.
 - Adapter/server compatibility policy and drift evidence remains open in
   EDIT-9a.

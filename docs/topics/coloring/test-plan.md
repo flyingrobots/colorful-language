@@ -49,6 +49,8 @@ Requirements:
 - **COL-18** Bounded deterministic fuzz/property evidence covers arbitrary
   Unicode, malformed public structures, range legality, source round-trip, and
   CLI/LSP coordinate parity.
+- **COL-19** Real `colorful` process tests cover stdin and file input, malformed
+  UTF-8, operand rejection, exit statuses, `NO_COLOR`, and canonical IR output.
 
 ## Cases
 
@@ -156,6 +158,14 @@ Requirements:
   *Evidence:* `crates/colorful-cli/fixtures/invalid-utf8.bin`; `colorful-cli`
   `tests::invalid_utf8_file_is_rejected_across_every_command`. *Status:*
   implemented.
+- **COL-19a** — *Requirement:* COL-19. *Behavior:* a workspace integration test
+  starts the real `colorful` binary and exercises stdin, a committed file,
+  invalid UTF-8, multiple operands, successful and finding-bearing exit
+  statuses, `NO_COLOR`, and canonical IR output. *Oracle:* exact stdout,
+  relevant stderr category, process status, and canonical-JSON byte equality.
+  *Evidence type:* process-level integration test. *Tracking:*
+  [#133](https://github.com/flyingrobots/colorful-language/issues/133).
+  *Status:* planned.
 - **COL-13a** — *Requirement:* COL-13. *Behavior:* a workspace integration test
   starts the real `colorful-lsp` binary and exercises initialize, open, change,
   tokens, diagnostics, close, shutdown, and process failure. *Oracle:* exact
@@ -210,6 +220,7 @@ Requirements:
 
 ## Known gaps
 
+- The complete real-CLI process contract remains open in COL-19a.
 - The end-to-end LSP handshake (`initialize` → `semanticTokens/full`) remains
   manual until COL-13a and COL-14a land.
 - The title-case proper-noun guard is heuristic: a short capitalized line with no
