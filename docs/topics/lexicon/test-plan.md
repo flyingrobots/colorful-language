@@ -103,3 +103,6 @@ All cases are implemented. Evidence lives in `colorful-lexicon` unit tests
 - No regression fixture yet asserting the full word list; the size floor and
   per-kind samples are the current guard. The duplicate-key check is enforced at
   compile time by `phf`.
+- Numeric-recognition parity with the parser, including repeated and
+  leading/trailing separators, is tracked by
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143).

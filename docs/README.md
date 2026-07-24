@@ -19,6 +19,19 @@ proven by deterministic executable evidence.
 | `audits/` | Point-in-time engineering assessments (historical snapshots, not living references). |
 | `goalposts/vX.Y.Z/` | Release packets and verification witnesses (delivery evidence). |
 | [`RELEASING.md`](RELEASING.md) | The release lifecycle, profile adapter, gates, publication, verification, and retrospective runbook. |
+| [`../ROADMAP.md`](../ROADMAP.md) | Preserved moonshot phases, current product-maturity tracks, issue ownership, execution order, and evidence gates. |
+
+## Planning and maturity
+
+The [roadmap](../ROADMAP.md) is the planning index. Its depth and reach phases
+preserve the long-term destination; its M0–M4 maturity tracks give every open
+non-epic issue one primary execution home.
+
+Topic `README.md` files below remain current truth only. Planned behavior belongs
+in the topic's `test-plan.md`, the owning issue, and the roadmap until executable
+evidence lands. A topic test plan should link the canonical issue for each open
+gap, then add stable requirement and case IDs before implementation begins. Do
+not copy the complete backlog into every topic.
 
 ## Self-consistency checks
 

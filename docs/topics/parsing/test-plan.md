@@ -74,3 +74,9 @@ All cases are implemented. Evidence lives in `colorful-parse` unit tests
 
 - No fixtures yet for deeply nested punctuation or clause boundaries; deferred
   until structure deepens beyond `v0`.
+- Parser/lexicon parity for decimals, grouping, Unicode numerics, and malformed
+  separator placement is tracked by
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
+- Bounded deterministic fuzz/property coverage for arbitrary valid Unicode,
+  range legality, and source round-trip is tracked by
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).

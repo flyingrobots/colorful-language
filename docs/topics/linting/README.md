@@ -2,13 +2,13 @@
 
 Linting is the path from a classified document to a list of prose *findings*:
 weak words, run-on sentences, length outliers, and passive-voice candidates. It
-reuses the same parse and classification the colorizer uses, then runs a pack of
-shallow, deterministic rules over the result. Findings surface two ways — as
-exit-coded CLI warnings and as live LSP diagnostics.
+runs over the same parser, tree, token, and classification model as the
+colorizer, then applies a pack of shallow, deterministic rules. Findings surface
+two ways — as exit-coded CLI warnings and as live LSP diagnostics.
 
 ## The `Analyzer` port (`colorful_core`)
 
-`colorful-core` gains a fourth port alongside `Parser`, `Lexicon`, and
+`colorful-core` defines a fourth port alongside `Parser`, `Lexicon`, and
 `Annotator`:
 
 ```rust
@@ -78,6 +78,10 @@ model as the semantic-token path, so positions agree across both features.
 
 The pure `compute_diagnostics(text, parser, annotator, analyzer)` does the work;
 the binary is thin transport over it, which is what keeps the position
-arithmetic unit-testable.
+arithmetic unit-testable. The current server reparses for diagnostics separately
+from semantic-token requests; it does not yet cache one shared analysis snapshot
+across both paths. See the
+[coloring limitations](../coloring/README.md#performance) and the
+[linting test plan](test-plan.md) for the tracked maturity work.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

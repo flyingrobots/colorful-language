@@ -344,3 +344,24 @@ Requirements:
   artifact hashes are deferred.
 - Canonical JSON rules (key order, number formatting) must be specified and
   enforced on both sides for IR-2a to be meaningful.
+- Ordered, non-empty, non-overlapping token ranges; unique token/node IDs;
+  paragraph/sentence depth pairs; acyclic single-parent structure; and parent
+  containment are tracked as strict validator invariants by
+  [#126](https://github.com/flyingrobots/colorful-language/issues/126).
+- Validated public adapter spans/trees and projection-boundary rejection are
+  tracked by [#142](https://github.com/flyingrobots/colorful-language/issues/142)
+  and [#144](https://github.com/flyingrobots/colorful-language/issues/144).
+  Add path-addressed planned cases here before either implementation begins.
+- Generated Rust/JavaScript vocabulary validators and drift enforcement are
+  tracked by [#145](https://github.com/flyingrobots/colorful-language/issues/145);
+  process-level negative witness legs are tracked by
+  [#148](https://github.com/flyingrobots/colorful-language/issues/148).
+- Validator-definition duplication, complexity enforcement, and mutation-test
+  evidence remain separately triaged in
+  [#80](https://github.com/flyingrobots/colorful-language/issues/80),
+  [#81](https://github.com/flyingrobots/colorful-language/issues/81), and
+  [#82](https://github.com/flyingrobots/colorful-language/issues/82).
+- The independent two-version consumer and retain/simplify decision are tracked
+  by [#156](https://github.com/flyingrobots/colorful-language/issues/156) and
+  governed by the
+  [product-evidence gate](architecture.md#product-evidence-gate).

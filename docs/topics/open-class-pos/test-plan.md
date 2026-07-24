@@ -97,3 +97,10 @@ Requirements:
   tagging.
 - Unlisted ordinary content words remain undifferentiated `Content` until a
   richer lexicon or broader contextual annotator covers them.
+- Packaged editor/theme evidence for the live visualization belongs to
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136) and
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+- Independent behavioral validation of live POS visualization as a user
+  proposition belongs to
+  [#158](https://github.com/flyingrobots/colorful-language/issues/158); it is
+  not implied by deterministic classification fixtures alone.

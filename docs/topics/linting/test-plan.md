@@ -147,3 +147,19 @@ All cases are implemented.
   integration test. *Evidence:* `colorful-cli`
   `tests::cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings`.
   *Status:* implemented.
+
+## Open verification gaps
+
+- Passive-voice adjective/participle false positives and the reviewed lexical
+  evidence needed to change that rule are tracked by
+  [#138](https://github.com/flyingrobots/colorful-language/issues/138).
+- Whether quotation suppresses weak-word findings, including balanced and
+  unbalanced straight/curly quote fixtures, is tracked by
+  [#139](https://github.com/flyingrobots/colorful-language/issues/139).
+- An optional external `Analyzer` adapter, deterministic normalization, failure
+  behavior, and CLI/LSP parity are tracked by
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+- Product-level precision/recall comparisons belong to the held-out,
+  human-oracled corpus in
+  [#155](https://github.com/flyingrobots/colorful-language/issues/155), not to
+  the built-in rule fixtures alone.

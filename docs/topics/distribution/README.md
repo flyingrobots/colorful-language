@@ -61,10 +61,14 @@ ordinary crates.io packages.
 
 There is no Homebrew formula or tap yet. That belongs to a separate packaging
 slice because it needs release assets, install docs, and smoke tests for a
-different distribution channel.
+different distribution channel; the canonical tracker is
+[#37](https://github.com/flyingrobots/colorful-language/issues/37).
 
-There are no native macOS or Windows binary archives yet. Multi-platform release
-assets belong to the same packaging lane as Homebrew because they need artifact
-contracts and install smoke tests.
+There are no native macOS or Windows binary archives yet. Signed editor
+artifacts, the reviewed server platform matrix, public registry URLs, and
+clean-install/rollback evidence are tracked by
+[#154](https://github.com/flyingrobots/colorful-language/issues/154). Homebrew
+remains the separate operator-install slice in #37, while both lanes may reuse
+the same release assets and checksum evidence.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

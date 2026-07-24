@@ -80,6 +80,16 @@ Verification for editor adapters and the `colorful-lsp` surface.
 
 ## Open verification gaps
 
-- Marketplace package install smoke tests belong with the future marketplace
-  publishing slice.
-- A shipped theme package needs its own topic and fixtures once Colorful owns one.
+- Packaged VS Code/Open VSX and Zed clean-install tests, plus the deterministic
+  LSP transcript, are tracked by
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
+- Adapter/server semantic-version ownership and compatibility drift detection
+  are tracked by
+  [#141](https://github.com/flyingrobots/colorful-language/issues/141).
+- Signed publication, public registry URLs, platform server artifacts, rollback
+  evidence, a text-equivalent visual demo, and measured
+  install-to-first-highlight time are tracked by
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+- A shipped theme remains a planned artifact. Theme fallback belongs in #136;
+  create a separate topic and fixtures only when Colorful owns an actual theme
+  package, not as an empty documentation surface.

@@ -50,6 +50,8 @@ Verification for install paths and published artifacts.
 
 - crates.io install smoke tests are not part of PR CI because they depend on
   already-published versions.
-- A Homebrew formula needs its own issue, release asset contract, and smoke test.
-- Native macOS and Windows binary archives need their own artifact contract and
-  install smoke tests.
+- The Homebrew formula, release asset contract, and smoke test are tracked by
+  [#37](https://github.com/flyingrobots/colorful-language/issues/37).
+- Signed editor releases and the native server artifact matrix, including
+  clean-machine install and rollback evidence, are tracked by
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).

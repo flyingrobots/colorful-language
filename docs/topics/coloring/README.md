@@ -138,8 +138,13 @@ update this table when the hot path changes meaningfully.
 
 - `compute_diagnostics` — what `did_change` actually calls — has no
   benchmark yet. Only `compute_semantic_tokens` (a separate request) is
-  measured above.
+  measured above. The versioned document-state and stale-result work is tracked
+  by [#121](https://github.com/flyingrobots/colorful-language/issues/121);
+  the release-mode SLO and overload harness are tracked by
+  [#122](https://github.com/flyingrobots/colorful-language/issues/122).
 - Memory is not yet benchmarked — no allocation or peak-RSS profiling
-  exists today. Treat both as open gaps, not an implied "cheap" claim.
+  exists today. Treat both as open gaps, not an implied "cheap" claim. Broader
+  cross-stage throughput and allocation coverage is tracked by
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

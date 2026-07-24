@@ -129,3 +129,15 @@ workspace.
   the runtime host.
 - Graft package API compatibility checks belong in the Graft repository; this
   repository keeps only the reference consumer witness.
+- Strict graph/token invariants and projection-boundary rejection are tracked by
+  [#126](https://github.com/flyingrobots/colorful-language/issues/126) and
+  [#144](https://github.com/flyingrobots/colorful-language/issues/144). Keep
+  the Rust and JavaScript error scopes explicit when one consumer is
+  intentionally stricter.
+- One generated role/key authority for Rust and JavaScript is tracked by
+  [#145](https://github.com/flyingrobots/colorful-language/issues/145); expanded
+  process-level refusal evidence is tracked by
+  [#148](https://github.com/flyingrobots/colorful-language/issues/148).
+- An independent consumer, two-version migration, and integration-cost
+  comparison against CLI text and LSP tokens are tracked by
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).

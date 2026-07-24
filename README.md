@@ -21,8 +21,10 @@ heuristic, contextual disambiguation for a small ambiguous set) — and the
 separate [lint rules](docs/topics/linting/) that flag prose issues from that
 already-classified stream are equally local and inspectable. Nothing here is
 a black box. It shows the shape of prose the way a code highlighter shows the
-shape of a program. The same parse feeds CLI highlighting, lint warnings, LSP
-diagnostics, and the `colorful.syntax/v1` surface IR.
+shape of a program. The same parser, tree, classification model, and analyzer
+ports underlie CLI highlighting, lint warnings, and LSP diagnostics.
+`colorful-projection` turns that shared analysis into the separate
+`colorful.syntax/v1` wire contract for external consumers.
 
 That is the current contract. Future phases are tracked in the
 [roadmap](ROADMAP.md), not promised by this README.
@@ -228,13 +230,16 @@ producer/consumer boundary.
 
 ## Project Status
 
-**Current source version — `v0.3.0`.** This source tree contains deterministic
+**Latest published release — `v0.3.0`. Current `main` workspace version —
+`0.4.0` (unreleased).** The current source tree contains deterministic
 open-class noun/verb/adjective/adverb roles through the CLI, IR, LSP, and editor
-adapters. See the Releases page for the latest published version.
+adapters, plus the breaking hardening work recorded under **Unreleased** in the
+changelog.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
 page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full
-[ROADMAP.md](ROADMAP.md) for what's next.
+[ROADMAP.md](ROADMAP.md) for the preserved moonshot phases and the product
+maturity runway that orders current work.
 
 ---
 
@@ -276,10 +281,12 @@ boundaries and packaging evidence.
 
 This project has high documentation and testing standards. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-The **prose linter** and the deterministic **open-class POS** path have landed
-on `main`; contributions that grow the rule pack, improve editor/theme
-packaging, or continue the deeper controlled-English roadmap are especially
-welcome right now.
+The **prose linter** and deterministic **open-class POS** path have landed on
+`main`. The active contribution priorities are boundary integrity, LSP
+freshness and capacity, executable public-contract evidence, and editor
+distribution. The deeper controlled-English, provenance, Edict, and Ouroboros
+phases remain in the roadmap; new surface area there follows the roadmap's
+evidence gate rather than outrunning the current product.
 
 For the full documentation corpus — every topic's current behavior and test
 plan, design records, and release packets — start at the

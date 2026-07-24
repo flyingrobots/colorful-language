@@ -144,7 +144,10 @@ Requirements:
 ## Known gaps
 
 - The end-to-end LSP handshake (`initialize` → `semanticTokens/full`) is verified
-  manually; an automated integration harness is a future addition.
+  manually. Real binary coverage is tracked by
+  [#133](https://github.com/flyingrobots/colorful-language/issues/133), and the
+  packaged-editor transcript/smoke harness is tracked by
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
 - The title-case proper-noun guard is heuristic: a short capitalized line with no
   lowercase content word (for example `I am Groot`) can be read as a title and
   suppress a genuine proper noun. Accepted in `v0` as the conservative direction.
@@ -154,4 +157,12 @@ Requirements:
   today would fail on infrastructure variance, not real regressions. Wire it
   into CI once a run of stable baselines exists. `compute_diagnostics` (what
   `did_change` actually calls) has no benchmark yet, and neither does memory/
-  allocation.
+  allocation. The supported-envelope benchmark is
+  [#122](https://github.com/flyingrobots/colorful-language/issues/122), the
+  document-state implementation is
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121), and the
+  broader benchmark policy is
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+- Parser, projection, validation, and coordinate invariants do not yet have a
+  bounded deterministic fuzz/property corpus in CI; that evidence is tracked by
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
