@@ -57,6 +57,15 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: bash scripts/package-witness.sh
 
+  install-local-smoke:
+    name: install-local.sh smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: bash scripts/smoke-test-install-local.sh
+
   ir-witness:
     name: IR cross-language round-trip witness
     runs-on: ubuntu-latest
