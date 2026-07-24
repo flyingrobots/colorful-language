@@ -6,7 +6,8 @@
 #   TS    ──canonicalize──▶ canonical JSON B
 #   Rust  ──decode+canon──▶ canonical JSON C
 #
-# Pass iff A == B == C, and the generated TS contract type compiles.
+# Pass iff A == B == C, the generated TS contract type compiles, and every
+# process-level negative case fails with its stable category and no output.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -80,6 +81,102 @@ for fixture in witness/negative/*.json; do
     exit 1
   fi
   echo "  ✅ $name rejected for the expected reason: $actual"
+done
+
+echo "Process refusal matrix: both boundary executables must fail closed..."
+process_cases=(
+  mismatched-source
+  invalid-json
+  wrong-contract-version
+  wrong-schema-hash
+  wrong-vocabulary-hash
+  illegal-axes
+  fractional-offset
+  out-of-range-offset
+  missing-field
+  identity-precedence
+)
+declare -A ts_rejection_code=(
+  [mismatched-source]="E_CONTENT_HASH"
+  [invalid-json]="E_JSON_DECODE"
+  [wrong-contract-version]="E_CONTRACT_VERSION"
+  [wrong-schema-hash]="E_SCHEMA_HASH"
+  [wrong-vocabulary-hash]="E_VOCABULARY_HASH"
+  [illegal-axes]="E_TOKEN_AXES"
+  [fractional-offset]="E_ARTIFACT_SHAPE"
+  [out-of-range-offset]="E_BYTE_RANGE_BOUNDS"
+  [missing-field]="E_ARTIFACT_SHAPE"
+  [identity-precedence]="E_CONTRACT_VERSION"
+)
+declare -A rust_rejection_code=(
+  [mismatched-source]="ContentHashMismatch"
+  [invalid-json]="E_JSON_DECODE"
+  [wrong-contract-version]="UnsupportedContractVersion"
+  [wrong-schema-hash]="SchemaHashMismatch"
+  [wrong-vocabulary-hash]="VocabularyHashMismatch"
+  [illegal-axes]="IllegalTokenAxes"
+  [fractional-offset]="E_JSON_DECODE"
+  [out-of-range-offset]="RangeOutOfBounds"
+  [missing-field]="E_JSON_DECODE"
+  [identity-precedence]="UnsupportedContractVersion"
+)
+
+assert_process_rejection() {
+  local boundary="$1"
+  local case_name="$2"
+  local expected_code="$3"
+  local artifact="$4"
+  shift 4
+
+  local stdout="$work/process-$boundary-$case_name.out"
+  local stderr="$work/process-$boundary-$case_name.err"
+  local expected_prefix
+  local actual_first_line
+  case "$boundary" in
+    ts) expected_prefix="ir-canonicalize: $expected_code:" ;;
+    rust) expected_prefix="recanon: $expected_code:" ;;
+    *)
+      echo "  ❌ unknown process boundary: $boundary" >&2
+      exit 1
+      ;;
+  esac
+  local status
+  set +e
+  "$@" < "$artifact" > "$stdout" 2> "$stderr"
+  status=$?
+  set -e
+
+  if [[ "$status" -ne 1 ]]; then
+    echo "  ❌ $boundary/$case_name: expected status 1, got $status" >&2
+    sed 's/^/     stderr: /' "$stderr" >&2
+    exit 1
+  fi
+  if [[ -s "$stdout" ]]; then
+    echo "  ❌ $boundary/$case_name: rejection wrote canonical output" >&2
+    exit 1
+  fi
+  actual_first_line="$(head -n 1 "$stderr")"
+  if [[ "$actual_first_line" != "$expected_prefix"* ]]; then
+    echo "  ❌ $boundary/$case_name: expected prefix $expected_prefix" >&2
+    sed 's/^/     stderr: /' "$stderr" >&2
+    exit 1
+  fi
+  echo "  ✅ $boundary/$case_name rejected with $expected_code and empty stdout"
+}
+
+for case_name in "${process_cases[@]}"; do
+  artifact="$work/process-$case_name.json"
+  node witness/process-negative.mjs "$case_name" "$work/a.json" > "$artifact"
+  source="witness/fixture.txt"
+  if [[ "$case_name" == "mismatched-source" ]]; then
+    source="witness/negative/mismatched-source.txt"
+  fi
+  assert_process_rejection \
+    ts "$case_name" "${ts_rejection_code[$case_name]}" "$artifact" \
+    node witness/ir-canonicalize.mjs "$source"
+  assert_process_rejection \
+    rust "$case_name" "${rust_rejection_code[$case_name]}" "$artifact" \
+    ./target/debug/examples/recanon "$source"
 done
 
 echo "Cross-language validator parity: one mutation matrix, two independent validators..."

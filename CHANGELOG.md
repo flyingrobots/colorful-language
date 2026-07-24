@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Process-level IR refusal evidence.** `scripts/ir-witness.sh` now drives the
+  real Node canonicalizer and Rust `recanon` executable through ten
+  deterministic malformed-artifact cases: mismatched source, invalid JSON,
+  wrong contract/schema/vocabulary identities, illegal axes, fractional and
+  out-of-range offsets, a missing field, and a multi-identity precedence case.
+  All 20 legs must exit exactly `1`, report the boundary's stable error code,
+  and leave canonical stdout empty; the positive byte-identical round trip
+  remains part of the same gate. `ValidationError::code` exposes the stable Rust
+  validation category, while both processes now turn JSON/DTO decode failures
+  into `E_JSON_DECODE` instead of allowing a panic or raw stack trace to define
+  the contract.
 - **Generation-safe cached LSP analysis.** Each open document now owns a rope,
   client version, monotonic server generation, cached analysis, cooperative
   cancellation handle, and per-document publication gate. Opens analyze

@@ -17,7 +17,10 @@
 //
 //   node ir-canonicalize.mjs SOURCE < document.json
 import { readFileSync } from "node:fs";
-import { validateWireContract } from "../consumers/graft-projection.mjs";
+import {
+  GraftProjectionError,
+  validateWireContract,
+} from "../consumers/graft-projection.mjs";
 
 function canonicalize(value) {
   if (Array.isArray(value)) {
@@ -40,13 +43,20 @@ if (!sourcePath) {
 }
 
 const input = readFileSync(0, "utf8");
-const document = JSON.parse(input);
+let document;
+try {
+  document = JSON.parse(input);
+} catch (error) {
+  console.error(`ir-canonicalize: E_JSON_DECODE: ${error.message}`);
+  process.exit(1);
+}
 const buffer = readFileSync(sourcePath);
 
 try {
   validateWireContract(buffer, document);
 } catch (err) {
-  console.error(`ir-canonicalize: ${err.message}`);
+  const code = err instanceof GraftProjectionError ? err.code : "E_VALIDATION";
+  console.error(`ir-canonicalize: ${code}: ${err.message}`);
   process.exit(1);
 }
 

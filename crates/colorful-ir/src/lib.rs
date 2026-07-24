@@ -506,17 +506,22 @@ macro_rules! define_validation_errors {
                 }
             }
 
-            #[cfg(test)]
-            const VARIANT_NAMES: &'static [&'static str] = &[
-                $(stringify!($variant),)+
-            ];
-
-            #[cfg(test)]
-            fn variant_name(&self) -> &'static str {
+            /// The stable process-facing category for this validation failure.
+            ///
+            /// Codes are the Rust variant names so logs and witness processes
+            /// can assert a rejection reason without parsing
+            /// [`core::fmt::Display`] prose.
+            #[must_use]
+            pub fn code(&self) -> &'static str {
                 match self {
                     $(Self::$variant { .. } => stringify!($variant),)+
                 }
             }
+
+            #[cfg(test)]
+            const VARIANT_NAMES: &'static [&'static str] = &[
+                $(stringify!($variant),)+
+            ];
         }
 
         impl core::fmt::Display for $name {
@@ -1435,7 +1440,7 @@ mod integration {
                 Ok(()) => panic!("{}: Rust validator accepted the mutation", test_case.name),
                 Err(errors) => errors,
             };
-            let actual: BTreeSet<_> = errors.0.iter().map(ValidationError::variant_name).collect();
+            let actual: BTreeSet<_> = errors.0.iter().map(ValidationError::code).collect();
             assert!(
                 actual.contains(test_case.rust_error.as_str()),
                 "{}: expected Rust error {}, got {:?}",
