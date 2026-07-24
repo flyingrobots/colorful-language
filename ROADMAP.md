@@ -49,10 +49,11 @@ without changing that meaning.
 ## Product maturity runway
 
 The moonshot remains the destination. The maturity runway turns the current
-prototype into a product sturdy enough to carry it. These tracks organize every
-open non-epic issue as of 2026-07-24. Each issue has one primary home below;
-links in later dependency and architecture tables are cross-references, not
-duplicate ownership.
+prototype into a product sturdy enough to carry it. These tracks organize the
+34 non-epic issues open at intake on 2026-07-24. Each issue has one primary home
+below; GitHub remains authoritative for live issue state. Links in later
+dependency and architecture tables are cross-references, not duplicate
+ownership.
 
 Track order expresses evidence dependencies, not a ban on parallel work. The
 P0 boundary and LSP tracks may advance while repository guardrails land.
@@ -193,8 +194,9 @@ than architectural momentum.
 - Run the 15-user discovery study across live POS visualization, deterministic
   CI linting, and portable IR as separate propositions
   [#158](https://github.com/flyingrobots/colorful-language/issues/158).
-- Keep architecture accountable to a current user job and executable consumer,
-  and preserve the explicit freeze/resume decision
+- **Roadmap accountability (completed by this pass):** map architecture to
+  current user jobs and executable consumers, and preserve the explicit
+  freeze/resume decision
   [#159](https://github.com/flyingrobots/colorful-language/issues/159).
 
 **Exit signal:** observed behavior supports one primary user/job, or roadmap
