@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   contents: read
@@ -76,6 +77,25 @@ jobs:
           bash scripts/pr-size-report.sh \
             "origin/${{ github.event.pull_request.base.ref }}" \
             "${{ github.event.pull_request.head.sha }}"
+
+  closure-contract:
+    name: Issue-closure contract
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Self-test the checker
+        run: bash scripts/check-closure-contract.sh --self-test
+      - name: Enforce PR closure contract
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bash scripts/check-closure-contract.sh \
+            --pr "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}"
 
   editors:
     name: Editor integrations (compile)

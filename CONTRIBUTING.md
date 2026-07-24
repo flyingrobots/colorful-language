@@ -233,8 +233,16 @@ boundary:
 - The domain core (`colorful-core`) stays pure: types and port traits, no I/O.
 - Outside concerns (parsing, lexicon lookup, terminal output, the LSP) are
   adapters behind a port.
-- Classification (`Tagger`) and structure (`Parser`) are deliberately separate
-  ports. Keep them so — that separation is what makes future escalation cheap.
+
+`colorful-core` defines four ports, deliberately kept separate — that
+separation is what makes future escalation cheap. Each name below is a real
+`pub trait`, checked against this list by
+`crates/colorful-core/tests/contributing_architecture_symbols.rs`:
+
+- `Parser` — text to a structural tree (sentences, words, punctuation spans).
+- `Lexicon` — a single word, in isolation, to a `PosClass`.
+- `Annotator` — a parsed tree to a classified token stream, with context.
+- `Analyzer` — source, tree, and tokens to prose findings (the linter's port).
 
 If a change needs a new capability, prefer adding it as a port + adapter over
 threading a concrete dependency through the core.
@@ -243,7 +251,17 @@ threading a concrete dependency through the core.
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
   `fix:`, `docs:`, `refactor:`, `test:`, `chore:`…).
-- Reference the slice issue a commit closes in its footer (`Closes #NN`).
+- **Issue closure happens on the slice PR, not on individual commits.** One
+  issue is one slice; a slice lands as one pull request. Put the closing
+  reference (`Closes #NN`) in the **pull request description** only — see
+  `.github/pull_request_template.md`. Commits within the branch may reference
+  the issue for traceability (`Refs #NN`), but must not carry a GitHub closing
+  keyword (`Closes`, `Fixes`, `Resolves`) in their own message. This repo
+  merges with merge commits, not squashes, so a closing keyword on an
+  intermediate commit would close the issue as soon as that commit lands on
+  `main` — potentially before the PR that reviewed it is even finished being
+  written. Tying closure to the PR body means the issue closes exactly once,
+  exactly when the reviewed slice merges.
 - A breaking change carries a `BREAKING CHANGE:` footer and should be called out
   for a version bump.
 - Keep history append-only: no force-pushes, rebases, squashes, or amends on

@@ -1,0 +1,7 @@
+# crlf-line-endings.txt deliberately contains literal \r\n bytes (it exists
+# to prove line/column tracking survives CRLF input) -- git's default
+# whitespace rules flag the \r before \n as "trailing whitespace", which is
+# the fixture's actual point, not an accident. Suppress that check for this
+# path only; it must never be normalized to LF by `git diff --check`,
+# `.gitattributes` autocrlf handling, or any other whitespace/EOL rewrite.
+crates/colorful-cli/fixtures/lint/crlf-line-endings.txt -whitespace -text
