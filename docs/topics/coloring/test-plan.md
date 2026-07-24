@@ -38,7 +38,8 @@ Requirements:
 - **COL-14** Packaged editor evidence covers activation, incremental edits,
   diagnostics, semantic tokens, shutdown, and theme fallback.
 - **COL-15** Versioned document state prevents stale analysis from publishing
-  after a newer edit and exposes deterministic cancellation/backpressure
+  after a newer edit, reuses one cached parse/classification for diagnostics and
+  semantic tokens, and exposes deterministic cancellation and document-limit
   evidence.
 - **COL-16** A release-mode overload harness measures the supported document
   envelope, including queue delay, peak RSS, stale-result count, and time to the
@@ -195,6 +196,22 @@ Requirements:
   contains only the latest generation; cancellation and stale-result counters
   match the forced schedule. *Evidence type:* deterministic async regression
   test. *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* planned.
+- **COL-15b** — *Requirement:* COL-15. *Behavior:* each accepted document
+  generation is parsed and classified once, then the cached result supplies
+  both its published diagnostics and its semantic-token response. *Oracle:* an
+  instrumented analysis adapter records one invocation for the generation while
+  both surfaces return the expected generation-keyed result. *Evidence type:*
+  deterministic async regression test. *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* planned.
+- **COL-15c** — *Requirement:* COL-15. *Behavior:* documents through 5 MiB enter
+  normal analysis, while a larger document bypasses the analyzer and yields
+  empty semantic tokens plus one stable `colorful/document-too-large`
+  diagnostic. *Oracle:* exact boundary, analyzer invocation count, diagnostic
+  code, and empty-token equality. *Evidence type:* deterministic boundary test.
+  *Tracking:*
   [#121](https://github.com/flyingrobots/colorful-language/issues/121).
   *Status:* planned.
 - **COL-16a** — *Requirement:* COL-16. *Behavior:* four concurrent semantic and

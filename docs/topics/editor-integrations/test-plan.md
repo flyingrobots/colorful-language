@@ -27,6 +27,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
   and measured from installation to first highlight.
 - **EDIT-11** The real `colorful-lsp` binary must expose a deterministic stdio
   JSON-RPC lifecycle independently of any editor adapter.
+- **EDIT-12** The shared LSP server must publish only the newest document
+  generation, reuse that generation's cached analysis for diagnostics and
+  semantic tokens, and fail predictably beyond its documented size limit.
 
 ## Cases
 
@@ -65,6 +68,22 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `real_server_completes_the_public_stdio_lifecycle`. *Tracking:*
   [#133](https://github.com/flyingrobots/colorful-language/issues/133).
   *Status:* implemented.
+- **EDIT-12a** — *Requirement:* EDIT-12. *Behavior:* rapid incremental edits
+  cancel pending work; if already-running old work finishes after the current
+  generation, it cannot publish or replace the current diagnostics or semantic
+  tokens. *Oracle:* a forced completion schedule publishes only the newest
+  generation and exposes exact cancellation/stale counters. *Evidence type:*
+  deterministic async regression test. *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* planned.
+- **EDIT-12b** — *Requirement:* EDIT-12. *Behavior:* diagnostics and semantic
+  tokens consume one generation-keyed cached analysis, and inputs above the
+  documented 5 MiB limit return a stable overload diagnostic rather than
+  entering analysis. *Oracle:* exact analysis invocation count, cache
+  generation, boundary behavior, diagnostic code, and semantic-token result.
+  *Evidence type:* deterministic state and boundary tests. *Tracking:*
+  [#121](https://github.com/flyingrobots/colorful-language/issues/121).
+  *Status:* planned.
 - **EDIT-4a** — *Requirement:* EDIT-4. *Behavior:* source editor integrations
   compile on every PR; the VS Code `tsconfig.json` sets both `strict: true` and
   `skipLibCheck: false`, so incompatible dependency declarations cannot hide
