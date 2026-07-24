@@ -11,11 +11,16 @@ Requirements:
 - **PAR-5** An adjacent trailing closer is absorbed into the sentence; a spaced
   opening quote starts the next sentence.
 - **PAR-6** Common Unicode spaces separate tokens and are skipped.
+- **PAR-7** Numeric token formation agrees with the lexicon for valid and
+  malformed separator placement across ASCII and Unicode numerics.
+- **PAR-8** A bounded deterministic fuzz/property corpus covers arbitrary valid
+  Unicode, range legality, and source round-trip without profile-dependent
+  stack assumptions.
 
 ## Cases
 
-All cases are implemented. Evidence lives in `colorful-parse` unit tests
-(`crates/colorful-parse/src/lib.rs`).
+Implemented and planned cases are listed below. Implemented parser evidence
+lives in `crates/colorful-parse/src/lib.rs`.
 
 - **PAR-1a** — *Requirement:* PAR-1. *Behavior:* `"The cat sat."` yields three
   words and a terminator with exact spans. *Oracle:* structural equality of the
@@ -69,14 +74,26 @@ All cases are implemented. Evidence lives in `colorful-parse` unit tests
 - **PAR-6a** — *Requirement:* PAR-6. *Behavior:* a thin space (U+2009) separates
   two words and is skipped. *Oracle:* structural equality. *Evidence:*
   `tests::unicode_spaces_are_skipped`. *Status:* implemented.
+- **PAR-7a** — *Requirement:* PAR-7. *Behavior:* one shared table covers
+  integers, decimals, grouping, Unicode numerics, repeated separators, and
+  leading/trailing separators through parser tokenization and lexicon lookup.
+  *Oracle:* exact parser spans and lexicon class equality; malformed forms are
+  rejected by both surfaces. *Evidence type:* cross-crate table-driven parity
+  test. *Tracking:*
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
+  *Status:* planned.
+- **PAR-8a** — *Requirement:* PAR-8. *Behavior:* a bounded seeded corpus drives
+  arbitrary valid Unicode and known parser regressions through parsing and
+  source reconstruction in normal CI. *Oracle:* no panic; every accepted span
+  is non-empty, ordered, in bounds, and on a character boundary; concatenated
+  spans/gaps reproduce the source. *Evidence type:* property test, fuzz target,
+  and deterministic regression corpus. *Tracking:*
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+  *Status:* planned.
 
 ## Known gaps
 
 - No fixtures yet for deeply nested punctuation or clause boundaries; deferred
   until structure deepens beyond `v0`.
-- Parser/lexicon parity for decimals, grouping, Unicode numerics, and malformed
-  separator placement is tracked by
-  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
-- Bounded deterministic fuzz/property coverage for arbitrary valid Unicode,
-  range legality, and source round-trip is tracked by
-  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+- Parser/lexicon numeric parity remains open in PAR-7a.
+- Bounded deterministic fuzz/property evidence remains open in PAR-8a.
