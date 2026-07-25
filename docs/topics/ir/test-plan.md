@@ -387,12 +387,19 @@ Requirements:
   [#142](https://github.com/flyingrobots/colorful-language/issues/142).
   *Status:* implemented.
 - **IR-15b** — *Requirement:* IR-15. *Behavior:* public IR projection consumes
-  the validated aggregate or performs equivalent validation, maps invalid
-  producer input into typed path-addressed `ProjectionError` cases, and
-  requires every successful projection to pass `validate_document` against its
-  source. *Oracle:* exact error variant/path and precedence per adversarial
-  input, plus `validate_document(document, Some(source)) == Ok(())` for every
-  success. *Evidence type:* public projection integration tests. *Tracking:*
+  the validated aggregate when one is available and preserves the raw
+  `from_classification` entry point as a validating compatibility wrapper.
+  Invalid producer input maps the existing `ClassificationError` into a typed
+  `ProjectionError` instead of creating a parallel range-error model, and
+  every projected document passes `validate_document` against its source
+  before success is returned. *Oracle:* one minimal public-constructor
+  mutation for reversed, out-of-bounds, non-character-boundary, unsorted,
+  overlapping, and tree/token mismatch input returns the exact nested error
+  variant/path; multi-defect input pins classification-before-identity
+  precedence; aggregate-native and compatibility paths emit byte-identical
+  valid output; and a successful corpus assertion proves
+  `validate_document(document, Some(source)) == Ok(())`. *Evidence type:*
+  public projection integration tests and producer-front-door tests. *Tracking:*
   [#144](https://github.com/flyingrobots/colorful-language/issues/144).
   *Status:* planned.
 - **IR-16a** — *Requirement:* IR-16. *Behavior:* one schema artifact generates
