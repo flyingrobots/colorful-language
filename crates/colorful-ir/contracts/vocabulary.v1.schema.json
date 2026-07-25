@@ -136,11 +136,7 @@
     },
     "classRole": {
       "type": "object",
-      "allOf": [
-        {
-          "$ref": "#/$defs/classRoleKey"
-        }
-      ],
+      "$ref": "#/$defs/classRoleKey",
       "additionalProperties": false,
       "required": [
         "tokenKind",

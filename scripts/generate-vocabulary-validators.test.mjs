@@ -23,10 +23,15 @@ const extension = JSON.parse(readFileSync(extensionPath, "utf8"));
 const parity = JSON.parse(readFileSync(parityPath, "utf8"));
 const rendered = renderVocabularyValidators(authority);
 
-assert.deepEqual(
-  authority.$defs.classRole.allOf,
-  [{ $ref: "#/$defs/classRoleKey" }],
+assert.equal(
+  authority.$defs.classRole.$ref,
+  "#/$defs/classRoleKey",
   "classRole must apply the legal axis-key matrix during standard schema validation",
+);
+assert.equal(
+  Object.hasOwn(authority.$defs.classRole, "allOf"),
+  false,
+  "classRole must use a direct draft-2020-12 $ref",
 );
 
 function schemaAcceptsClassRoleKey(schema, rule) {
