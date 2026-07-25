@@ -110,13 +110,11 @@ v0.3 must handle the `Option` result.
   first agreeing it's valid.
 - **Malformed artifacts are rejected, not laundered.** The TS leg runs
   `validateWireContract` (unknown fields at every nesting level, missing
-  fields, wrongly typed fields, and the usual range/hash checks) before
-  canonicalizing. This is the graft reference consumer's admission gate
-  minus its token-wire-ordering check specifically — non-overlapping token
-  order is a graft-projection requirement (for its `makeByteToPoint`
-  monotonic cursor), not part of the wire contract, which
-  `colorful_ir::validate_document` deliberately leaves unchecked, so the
-  witness must not be stricter than the Rust leg it round-trips against.
+  fields, wrongly typed fields, token layout, outline graph integrity, and the
+  usual range/hash checks) before canonicalizing. This is the same shared wire
+  admission gate used by the Graft reference consumer, so the TypeScript
+  witness and Rust validator reject the same token-order and structure-graph
+  corruptions.
   Proven against three checked-in negative fixtures under `witness/negative/`
   (an unknown field, a missing field, a wrong-typed field) that the witness
   asserts are rejected **for their specific reason**, not merely a nonzero
@@ -155,15 +153,20 @@ v0.3 must handle the `Option` result.
   `escape_debug()` first, so a malformed artifact cannot forge extra log
   lines or terminal escape sequences in a consumer that prints the error
   text — the `recanon` witness leg being the concrete case that does.
-- **Cross-language validator parity.** One shared 18-case declarative mutation
+- **Strict token and outline invariants.** Received token ranges must be
+  non-empty, ordered by start offset, and non-overlapping in addition to each
+  range being ordered, in bounds, and on UTF-8 character boundaries.
+  Paragraph nodes have depth 0, sentence nodes have depth 1, child references
+  form an acyclic graph with at most one parent per child, and every parent
+  range contains each child's range. Graph traversal is iterative so hostile
+  depth cannot overflow the process stack.
+- **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust
   `ValidationError` variant and stable JavaScript `GraftProjectionError.code`.
   Rust's exhaustive variant matcher makes a newly added public validation
   error a compile-time inventory change; case-count equality then requires a
-  corresponding shared mutation. Graft's additional token wire-ordering check
-  remains outside this matrix because it is deliberately stricter than the
-  shared wire contract. `scripts/ir-witness.sh` runs both legs.
+  corresponding shared mutation. `scripts/ir-witness.sh` runs both legs.
 
 ## Known limitations (Stage 1)
 

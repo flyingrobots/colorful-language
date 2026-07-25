@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Strict received-IR token and outline validation.** Rust
+  `validate_document` and the JavaScript `validateWireContract` gate now reject
+  empty, unsorted, or overlapping token ranges and outline graphs with invalid
+  paragraph/sentence depths, cycles, multiple parents, or child ranges outside
+  their parents. Rust reports path-addressed `ValidationError` variants in
+  deterministic token/edge order; JavaScript reports stable matching
+  `GraftProjectionError.code` values. Both iterative graph traversals keep
+  malicious graph depth off the process stack.
 - **Process-level IR refusal evidence.** `scripts/ir-witness.sh` now drives the
   real Node canonicalizer and Rust `recanon` executable through ten
   deterministic malformed-artifact cases: mismatched source, invalid JSON,
@@ -33,31 +41,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   return no semantic tokens, and publish the stable
   `colorful/document-too-large` warning.
 - **A shared Rust/JavaScript validator-parity witness.** One declarative
-  18-case mutation matrix now covers every public Rust `ValidationError`
+  25-case mutation matrix now covers every public Rust `ValidationError`
   variant and its overlapping JavaScript wire-contract rejection. Both legs
   start from the same canonical Rust-produced Unicode document, apply the same
   mutation and optional source-byte override, then assert the named Rust
   variant / stable `GraftProjectionError.code`. The Rust test keeps an
   exhaustive variant inventory and requires exact case-count equality, so
   adding or dropping a validation reason cannot silently leave the
-  cross-language gate stale. Graft-only token wire ordering remains excluded
-  because it is intentionally stricter than the shared wire contract.
+  cross-language gate stale. Token ordering and outline graph integrity are
+  shared wire invariants in both validators.
 - **The IR witness's TypeScript leg now actually validates.**
   `witness/ir-canonicalize.mjs` previously parsed and canonicalized a
   `DocumentAnalysis` with zero structural validation. It now runs a new
   `validateWireContract` gate (unknown/missing/wrongly-typed field checks at
   every nesting level, plus the existing range/hash checks) against the
   decoded document and the real source bytes before re-emitting, so a
-  malformed artifact is rejected instead of canonicalized. `validateWireContract`
-  is `consumers/graft-projection.mjs`'s admission gate minus
-  `validateGraftTokenOrder` — non-overlapping token wire order is a
-  graft-projection-specific requirement (for its `makeByteToPoint` monotonic
-  cursor), not part of the `colorful.syntax/v1` wire contract, which
-  `colorful_ir::validate_document` deliberately leaves unchecked; reusing the
-  graft-specific gate in the witness would make it reject a token layout the
-  Rust leg accepts. The existing `validateArtifact` (used by the real graft
-  consumer) is unchanged in behavior, now expressed as
-  `validateWireContract` + `validateGraftTokenOrder`. Three checked-in
+  malformed artifact is rejected instead of canonicalized.
+  `validateWireContract` and the product-facing `validateArtifact` now enforce
+  the same shared wire invariants. Three checked-in
   negative fixtures under `witness/negative/` (an unknown top-level field, a
   missing field, a wrong-typed field) prove the rejection — for the specific
   expected reason, not just a nonzero exit — on every `scripts/ir-witness.sh`
@@ -139,9 +140,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`consumers/graft-projection.mjs`) gains `validateArtifact(buffer, ir)`, an
   ordered admission gate `project()` now runs unconditionally: top-level
   shape, `contractVersion`, declared byte length, source UTF-8 validity, per-
-  token byte-range order/bounds/char-boundary, token wire-order non-overlap,
-  `occurrenceId` uniqueness, token axis legality, structure-graph duplicate-
-  node/dangling-child checks, then `schemaHash`/`vocabularyHash`/`contentHash`
+  token byte-range order/bounds/char-boundary/non-emptiness and wire-order
+  non-overlap, `occurrenceId` uniqueness, token axis legality, structure-graph
+  depth/id/reference/ownership/containment/acyclicity checks, then
+  `schemaHash`/`vocabularyHash`/`contentHash`
   — cheapest first, hashes last, malformed input rejected under a stable
   `GraftProjectionError.code` rather than repaired, clamped, or sorted into
   validity. `schemaHash` is newly verified, independently recomputed from this

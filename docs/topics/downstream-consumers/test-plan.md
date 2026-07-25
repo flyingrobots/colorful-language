@@ -20,8 +20,9 @@ workspace.
   projecting it — rejecting malformed input rather than repairing or clamping
   it — via one ordered `validateArtifact` admission gate: cheap structural
   checks first, expensive hashes last.
-- **CONSUMER-7** Shared received-artifact invariants remain explicit across Rust
-  and JavaScript while Graft-specific admission rules stay separately named.
+- **CONSUMER-7** Shared received-artifact invariants remain explicit and
+  executable across Rust and JavaScript; any future consumer-specific
+  admission rule stays separately named.
 - **CONSUMER-8** Rust and JavaScript role/key validators are generated from one
   vocabulary authority and fail CI on regeneration drift.
 - **CONSUMER-9** Process-level witness failures reject malformed artifacts under
@@ -85,12 +86,11 @@ workspace.
 - **CONSUMER-6b** — *Requirement:* CONSUMER-6. *Behavior:* token byte ranges
   are validated for order (`E_BYTE_RANGE_ORDER`), bounds
   (`E_BYTE_RANGE_BOUNDS`), and UTF-8 char-boundary alignment
-  (`E_BYTE_RANGE_BOUNDARY`); zero-width tokens are allowed, matching
-  `colorful_ir::validate_document`'s own `start <= end` check; out-of-order or
-  overlapping tokens (`E_TOKEN_ORDER`) are rejected, never sorted into
-  validity. *Oracle:* JavaScript assertions on `err.code`. *Evidence type:*
-  unit test. *Evidence:* `consumers/graft-projection.test.mjs`. *Status:*
-  implemented.
+  (`E_BYTE_RANGE_BOUNDARY`); empty (`E_TOKEN_EMPTY`), unsorted
+  (`E_TOKEN_UNSORTED`), or overlapping (`E_TOKEN_OVERLAP`) token ranges are
+  rejected, never sorted into validity. *Oracle:* JavaScript assertions on
+  `err.code`. *Evidence type:* unit test. *Evidence:*
+  `consumers/graft-projection.test.mjs`. *Status:* implemented.
 - **CONSUMER-6c** — *Requirement:* CONSUMER-6. *Behavior:* duplicate
   `occurrenceId`s (`E_DUPLICATE_OCCURRENCE_ID`) and illegal token axis
   combinations (`E_TOKEN_AXES`, mirroring `colorful_ir`'s
@@ -99,11 +99,12 @@ workspace.
   `consumers/graft-projection.test.mjs`. *Status:* implemented.
 - **CONSUMER-6d** — *Requirement:* CONSUMER-6. *Behavior:* the structure graph
   is checked for duplicate node ids (`E_DUPLICATE_NODE_ID`) and dangling child
-  references (`E_DANGLING_CHILD_REF`) — the same scope as
-  `colorful_ir::validate_document`, no more: range containment and cycles are
-  deliberately not checked, on either side. *Oracle:* JavaScript assertions
-  on `err.code`. *Evidence type:* unit test. *Evidence:*
-  `consumers/graft-projection.test.mjs`. *Status:* implemented.
+  references (`E_DANGLING_CHILD_REF`), invalid paragraph/sentence depth
+  (`E_OUTLINE_DEPTH`), cycles (`E_STRUCTURE_CYCLE`), multiple parents
+  (`E_MULTIPLE_STRUCTURE_PARENTS`), and children outside their parent range
+  (`E_CHILD_RANGE`) — the same scope as `colorful_ir::validate_document`.
+  *Oracle:* JavaScript assertions on `err.code`. *Evidence type:* unit test.
+  *Evidence:* `consumers/graft-projection.test.mjs`. *Status:* implemented.
 - **CONSUMER-6e** — *Requirement:* CONSUMER-6. *Behavior:* `schemaHash` is
   independently recomputed from the consumer's own
   `contracts/colorful/syntax.v1.graphql` copy (byte-identical to
@@ -133,16 +134,16 @@ workspace.
   *Evidence:* `consumers/graft-projection.test.mjs`. *Status:* implemented.
 - **CONSUMER-7a** — *Requirement:* CONSUMER-7. *Behavior:* when
   `validate_document` adopts inter-token and structure-graph invariants,
-  `validateWireContract` adopts the shared received-artifact scope while
-  `validateGraftTokenOrder` remains explicitly Graft-specific. The existing
-  JavaScript token-order check is not presented as evidence that the unfinished
-  Rust validator already rejects every new invariant. *Oracle:* one shared
-  mutation matrix names the expected Rust variant and JavaScript error code for
-  each shared invariant, with Graft-only cases separately inventoried.
+  `validateWireContract` adopts the same received-artifact scope. *Oracle:* one
+  shared mutation matrix names the expected Rust variant and JavaScript error
+  code for each shared invariant.
   *Evidence type:* cross-language mutation fixtures and executable parity tests.
+  *Evidence:* `crates/colorful-ir/tests/fixtures/validator-parity.json`;
+  `integration::shared_validator_parity_matrix_covers_every_error_variant`;
+  `witness/validator-parity.mjs`; `scripts/ir-witness.sh`.
   *Tracking:*
   [#126](https://github.com/flyingrobots/colorful-language/issues/126).
-  *Status:* planned.
+  *Status:* implemented.
 - **CONSUMER-8a** — *Requirement:* CONSUMER-8. *Behavior:* one schema artifact
   generates Rust and JavaScript role/key validators, and either stale consumer
   fails regeneration CI. *Oracle:* generated files are byte-identical to fresh

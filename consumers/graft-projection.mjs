@@ -454,20 +454,10 @@ export function verifyContentHash(buffer, ir) {
 // artifact passes through before project() interprets it. Checks run cheapest
 // first, expensive hashes last, so a malformed artifact fails fast: (1) shape,
 // (2) contract version, (3) byte length, (4) source UTF-8 validity, (5) token
-// range/scalar shape and char-boundary, (6) token order and non-overlap, (7)
-// occurrence id uniqueness, (8) token axis legality, (9) structure graph
-// (duplicate node ids, dangling child refs), (10) schemaHash, vocabularyHash,
-// contentHash.
-//
-// Token order (6) is a graft-projection-specific requirement, not a general
-// colorful.syntax/v1 wire invariant: colorful_ir::validate_document
-// deliberately does not enforce inter-token ordering on a received artifact,
-// since a future producer could legitimately emit a different layout. This
-// consumer commits to a stricter contract than the wire guarantees, because
-// makeByteToPoint's monotonic cursor (see the performance notes below) relies
-// on it -- and a consumer is always free to accept less than the wire
-// contract allows, as long as it rejects rather than silently repairs
-// whatever it won't accept.
+// range/scalar shape, char-boundary, non-emptiness, order, and non-overlap, (6)
+// occurrence id uniqueness, (7) token axis legality, (8) structure graph
+// (kind-depth pairs, ids, references, ownership, containment, acyclicity), (9)
+// schemaHash, vocabularyHash, contentHash.
 function requireIntegerField(value, label) {
   if (!isSafeInteger(value)) fail("E_ARTIFACT_SHAPE", `${label} must be a safe integer`);
   if (value < WIRE_INT_MIN || value > WIRE_INT_MAX) {
@@ -651,42 +641,41 @@ function validateByteRangeBounds(range, buffer, label) {
   }
 }
 
-// 5. Per-token range/boundary validity -- part of the colorful.syntax/v1
-// wire contract, mirroring colorful_ir::validate_document's own per-token
-// `check_range` exactly. Zero-width tokens (startUtf8 === endUtf8) are
-// allowed, matching validate_document's `start <= end` (not `<`) check.
+// 5. Token range and layout validity, mirroring colorful_ir's deterministic
+// token-index order. A token is non-empty, starts no earlier than its
+// predecessor, and does not overlap it.
 function validateTokenRangeBounds(buffer, ir) {
+  let previousStart;
+  let previousEnd;
   for (const [index, token] of ir.tokens.entries()) {
     validateByteRangeBounds(token.byteRange, buffer, `tokens[${index}].byteRange`);
-  }
-}
-
-// 6. Non-overlapping wire order. This is a graft-projection-specific
-// requirement, *not* part of the colorful.syntax/v1 wire contract:
-// colorful_ir::validate_document deliberately leaves inter-token layout
-// (ordering, non-overlap, non-emptiness) unchecked, since it is a producer
-// guarantee rather than a wire invariant, and a future contextual re-tagger
-// may legitimately emit a different layout. Only graft's own
-// `makeByteToPoint` monotonic cursor actually needs this, so it is kept
-// separate from `validateWireContract` -- reusing it there would make the
-// witness reject a layout the Rust contract validator would accept.
-// Malformed order is rejected, never sorted into validity: sorting would
-// silently conceal whatever the producer actually emitted.
-function validateGraftTokenOrder(ir) {
-  let previousEnd = 0;
-  for (const [index, token] of ir.tokens.entries()) {
-    if (token.byteRange.startUtf8 < previousEnd) {
+    const { startUtf8, endUtf8 } = token.byteRange;
+    if (startUtf8 === endUtf8) {
+      fail("E_TOKEN_EMPTY", `tokens[${index}].byteRange must not be empty.`, {
+        index,
+        occurrenceId: token.occurrenceId,
+      });
+    }
+    if (previousStart !== undefined && startUtf8 < previousStart) {
       fail(
-        "E_TOKEN_ORDER",
-        `tokens[${index}] starts at ${token.byteRange.startUtf8}, before the previous token ends at ${previousEnd}.`,
-        { index, startUtf8: token.byteRange.startUtf8, previousEnd },
+        "E_TOKEN_UNSORTED",
+        `tokens[${index}] starts at ${startUtf8}, before tokens[${index - 1}] starts at ${previousStart}.`,
+        { index, startUtf8, previousIndex: index - 1, previousStart },
       );
     }
-    previousEnd = token.byteRange.endUtf8;
+    if (previousEnd !== undefined && startUtf8 < previousEnd) {
+      fail(
+        "E_TOKEN_OVERLAP",
+        `tokens[${index}] starts at ${startUtf8}, before tokens[${index - 1}] ends at ${previousEnd}.`,
+        { index, startUtf8, previousIndex: index - 1, previousEnd },
+      );
+    }
+    previousStart = startUtf8;
+    previousEnd = endUtf8;
   }
 }
 
-// 7. Occurrence id uniqueness.
+// 6. Occurrence id uniqueness.
 function validateOccurrenceIds(ir) {
   const seen = new Set();
   for (const [index, token] of ir.tokens.entries()) {
@@ -727,7 +716,7 @@ function tokenAxesViolation(token) {
   return null;
 }
 
-// 8. Token axis legality.
+// 7. Token axis legality.
 function validateTokenAxes(ir) {
   for (const [index, token] of ir.tokens.entries()) {
     const violation = tokenAxesViolation(token);
@@ -737,25 +726,97 @@ function validateTokenAxes(ir) {
   }
 }
 
-// 9. Structure graph: each node's own range validity, duplicate node ids, and
-// dangling child references -- exactly what colorful_ir::validate_document
-// checks on the wire contract, no more (it does not check for cycles or
-// self-parenting, and neither does this).
+// 8. Structure graph: range validity, kind-depth pairs, unique ids, resolvable
+// edges, single-parent ownership, parent containment, and acyclicity.
 function validateStructure(buffer, ir) {
-  const nodeIds = new Set(ir.structure.map((node) => node.nodeId));
+  const nodeIndices = new Map();
   const seen = new Set();
-  for (const node of ir.structure) {
-    validateByteRangeBounds(node.byteRange, buffer, `structure node ${node.nodeId}`);
+  for (const [index, node] of ir.structure.entries()) {
+    validateByteRangeBounds(node.byteRange, buffer, `structure[${index}].byteRange`);
     if (seen.has(node.nodeId)) {
-      fail("E_DUPLICATE_NODE_ID", `structure has two nodes with id ${node.nodeId}.`, { nodeId: node.nodeId });
+      fail("E_DUPLICATE_NODE_ID", `structure[${index}] reuses nodeId ${node.nodeId}.`, {
+        index,
+        nodeId: node.nodeId,
+      });
     }
     seen.add(node.nodeId);
-    for (const child of node.childNodeIds) {
-      if (!nodeIds.has(child)) {
-        fail("E_DANGLING_CHILD_REF", `structure node ${node.nodeId} references missing child ${child}.`, {
+    if (!nodeIndices.has(node.nodeId)) nodeIndices.set(node.nodeId, index);
+    const expectedDepth = node.kind === "PARAGRAPH" ? 0 : 1;
+    if (node.depth !== expectedDepth) {
+      fail("E_OUTLINE_DEPTH", `structure[${index}].depth is ${node.depth}; ${node.kind} requires ${expectedDepth}.`, {
+        index,
+        depth: node.depth,
+        expectedDepth,
+      });
+    }
+  }
+
+  const parents = new Map();
+  for (const [index, node] of ir.structure.entries()) {
+    for (const [childIndex, child] of node.childNodeIds.entries()) {
+      const childNodeIndex = nodeIndices.get(child);
+      if (childNodeIndex === undefined) {
+        fail("E_DANGLING_CHILD_REF", `structure[${index}].childNodeIds[${childIndex}] references missing child ${child}.`, {
+          index,
           nodeId: node.nodeId,
+          childIndex,
           child,
         });
+      }
+      const firstParent = parents.get(child);
+      if (firstParent !== undefined && firstParent !== node.nodeId) {
+        fail(
+          "E_MULTIPLE_STRUCTURE_PARENTS",
+          `structure[${index}].childNodeIds[${childIndex}] gives child ${child} a second parent.`,
+          { index, childIndex, child, firstParent, secondParent: node.nodeId },
+        );
+      }
+      if (firstParent === undefined) parents.set(child, node.nodeId);
+
+      const childNode = ir.structure[childNodeIndex];
+      if (
+        childNode.byteRange.startUtf8 < node.byteRange.startUtf8 ||
+        childNode.byteRange.endUtf8 > node.byteRange.endUtf8
+      ) {
+        fail(
+          "E_CHILD_RANGE",
+          `structure[${index}].childNodeIds[${childIndex}] names child ${child} outside parent ${node.nodeId}.`,
+          { index, childIndex, parent: node.nodeId, child },
+        );
+      }
+    }
+  }
+
+  // Iterative DFS keeps malicious graph depth off the JavaScript call stack.
+  // Root and child iteration stay in wire order for deterministic failures.
+  const colors = new Uint8Array(ir.structure.length);
+  for (let root = 0; root < ir.structure.length; root += 1) {
+    if (colors[root] !== 0) continue;
+    colors[root] = 1;
+    const stack = [{ nodeIndex: root, edgeIndex: 0 }];
+    while (stack.length > 0) {
+      const frame = stack.at(-1);
+      const node = ir.structure[frame.nodeIndex];
+      if (frame.edgeIndex === node.childNodeIds.length) {
+        colors[frame.nodeIndex] = 2;
+        stack.pop();
+        continue;
+      }
+      const edgeIndex = frame.edgeIndex;
+      frame.edgeIndex += 1;
+      const child = node.childNodeIds[edgeIndex];
+      const childNodeIndex = nodeIndices.get(child);
+      if (childNodeIndex === undefined) continue;
+      if (colors[childNodeIndex] === 1) {
+        fail(
+          "E_STRUCTURE_CYCLE",
+          `structure[${frame.nodeIndex}].childNodeIds[${edgeIndex}] closes a cycle from ${node.nodeId} to ${child}.`,
+          { index: frame.nodeIndex, edgeIndex, parent: node.nodeId, child },
+        );
+      }
+      if (colors[childNodeIndex] === 0) {
+        colors[childNodeIndex] = 1;
+        stack.push({ nodeIndex: childNodeIndex, edgeIndex: 0 });
       }
     }
   }
@@ -797,16 +858,11 @@ function validateDiagnosticsAndDerivation(buffer, ir) {
 // also exported so a caller can validate without projecting.
 export function validateArtifact(buffer, ir) {
   validateWireContract(buffer, ir);
-  validateGraftTokenOrder(ir);
 }
 
-// The colorful.syntax/v1 wire-contract admission gate: everything
-// validateArtifact checks *except* validateGraftTokenOrder, which is a
-// graft-projection-specific requirement (see its own comment), not part of
-// the wire contract. This is what the IR round-trip witness's TypeScript
-// leg uses -- reusing the full graft-specific validateArtifact there would
-// make the witness reject a token layout colorful_ir::validate_document
-// (and the Rust leg of the witness) would accept.
+// The colorful.syntax/v1 wire-contract admission gate. validateArtifact is an
+// intentionally equivalent product-facing name; the witness calls this name
+// directly to make the shared Rust/JavaScript boundary explicit.
 export function validateWireContract(buffer, ir) {
   validateShape(ir);
   validateContractVersion(ir);
