@@ -351,10 +351,18 @@ Requirements:
   current per-range, boundary, identifier, and dangling-reference checks to
   reject empty, unsorted, and overlapping token ranges; invalid
   paragraph/sentence kind-depth pairs; cycles; multiple parents; and parent
-  range violations. *Oracle:* one minimal received-artifact mutation per
-  invariant produces the exact path-addressed variant in deterministic stage
-  order, while all produced fixtures remain valid. *Evidence type:* pure helper
-  unit tests and public `validate_document` mutation tests. *Tracking:*
+  range violations. *Oracle:* one minimal received-artifact mutation per new
+  invariant produces, respectively, `EmptyTokenRange`,
+  `UnsortedTokenRange`, `OverlappingTokenRange`, `InvalidOutlineDepth`,
+  `StructureCycle`, `MultipleStructureParents`, or
+  `ChildRangeOutsideParent`, with the exact offending token/range/depth/edge
+  path in deterministic token-index then structure-edge order. Existing
+  code-point-boundary and duplicate token/node-id mutations remain green; all
+  produced fixtures validate. The shared JavaScript wire validator rejects the
+  same seven mutations with stable `GraftProjectionError.code` values, keeping
+  the exhaustive parity inventory complete. *Evidence type:* public
+  `validate_document` mutation tests, Graft consumer tests, and shared
+  Rust/JavaScript mutation matrix. *Tracking:*
   [#126](https://github.com/flyingrobots/colorful-language/issues/126).
   *Status:* planned.
 - **IR-15a** — *Requirement:* IR-15. *Behavior:* public custom
