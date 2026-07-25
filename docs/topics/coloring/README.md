@@ -24,6 +24,14 @@ source order and assigns each leaf a `PosClass`:
 
 This is the single source of truth both front ends consume.
 
+Before either front end interprets spans, it constructs
+`colorful_core::ValidatedClassification`. This pure boundary verifies the
+public tree shape; reversed, out-of-bounds, and mid-code-point spans; sibling
+and token ordering/non-overlap; child containment; and one-to-one tree-leaf /
+token correspondence. It returns the first deterministic, path-addressed
+`ClassificationError` instead of letting malformed custom adapter output reach
+string slicing or position arithmetic.
+
 ## Terminal output (`colorful` CLI)
 
 File and stdin input must be valid UTF-8. Every single-document command
@@ -42,6 +50,11 @@ dim; unlisted content words use the default foreground. Whitespace and gaps are
 emitted verbatim, so stripping the escapes reproduces the input exactly.
 `--no-color` and the `NO_COLOR` environment variable disable color and pass the
 text through unchanged.
+
+The binary uses the fallible `try_colorize()` entry point and reports an invalid
+built-in classification as input-data failure. The compatibility `colorize()`
+function keeps its existing total signature and fails closed to unchanged text
+if that internal invariant ever regresses.
 
 `colorful diagnose --json <file>` emits a compact machine-readable report for
 troubleshooting CLI and editor output. The report uses the same production parser
@@ -105,6 +118,9 @@ diagnostics and semantic tokens. A semantic-token request waits for that
 generation's cache and returns the generation as its `resultId`; it does not
 start a second parse. A per-document publication gate and generation/cancellation
 check prevent late old work from replacing the cache or publishing diagnostics.
+If parser/annotator validation fails, the server emits no semantic tokens and
+publishes one error diagnostic with code
+`colorful/invalid-classification`; it never publishes a valid-looking prefix.
 
 Normal analysis accepts documents through 5 MiB (5,242,880 bytes). A larger
 document bypasses parsing and classification, returns no semantic tokens, and

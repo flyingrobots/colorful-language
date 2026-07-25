@@ -63,6 +63,16 @@ CLI version other than `0.1.1`). The generated types are a **wire boundary**:
 `colorful_ir::from_classification` is the one-way projection from the domain model
 into the DTO.
 
+`colorful-core` also exposes a source-bound `ValidatedClassification` aggregate
+for producer adapters. It rejects malformed public tree/token output with
+typed, path-addressed `ClassificationError`s before the CLI or LSP interprets
+spans. The aggregate is pure and keeps valid tree/tokens behind read-only
+accessors. Requiring raw `colorful_ir::from_classification` callers to consume
+that proof, and mapping its failures into `ProjectionError`, is still tracked
+by [#144](https://github.com/flyingrobots/colorful-language/issues/144); the
+current producer-validation boundary must not be mistaken for that projection
+postcondition.
+
 CI does not trust that regeneration happened correctly against whichever
 developer checkout last ran it: `scripts/check-generated-ir-drift.sh` clones
 Wesley from an immutable pinned commit SHA (not a floating tag), generates
@@ -180,6 +190,9 @@ v0.3 must handle the `Option` result.
   input/output ids, a real `compilerBuildHash`, and artifact hashes are not
   implemented. Expanding that surface is evidence-gated rather than assumed.
 - GraphQL `Int` lowers to `i32`, bounding documents to ~2 GB.
+- Raw `from_classification` input is not yet required to carry the core
+  `ValidatedClassification` proof; [#144](https://github.com/flyingrobots/colorful-language/issues/144)
+  owns that projection-boundary hardening.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior and the
 [architecture decision rule](architecture.md#product-evidence-gate) for

@@ -36,11 +36,17 @@ fn bench_semantic_tokens(c: &mut Criterion) {
     let mut group = c.benchmark_group("semantic_tokens (one semanticTokens/full request)");
 
     group.bench_function("small (899 B, real prose)", |b| {
-        b.iter(|| colorful_lsp::compute_semantic_tokens(black_box(&small), &parser, &annotator));
+        b.iter(|| {
+            colorful_lsp::compute_semantic_tokens(black_box(&small), &parser, &annotator)
+                .expect("built-in adapters produce a valid classification")
+        });
     });
 
     group.bench_function("medium (45 KB, repeated prose)", |b| {
-        b.iter(|| colorful_lsp::compute_semantic_tokens(black_box(&medium), &parser, &annotator));
+        b.iter(|| {
+            colorful_lsp::compute_semantic_tokens(black_box(&medium), &parser, &annotator)
+                .expect("built-in adapters produce a valid classification")
+        });
     });
 
     group.finish();

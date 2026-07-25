@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Validated parser/annotator output boundary.** `colorful-core` now exposes a
+  source-bound `ValidatedClassification` aggregate plus typed, path-addressed
+  `ClassificationError`s. Construction rejects illegal tree shape; reversed,
+  out-of-bounds, mid-code-point, unsorted, or overlapping spans; child
+  containment failures; and tree/token correspondence drift in deterministic
+  tree, token, then correspondence order. The CLI validates before ANSI
+  rendering or lint analysis, with a new fallible `try_colorize()` API while
+  the existing total `colorize()` fails closed to unchanged source. LSP
+  analysis helpers now return the typed error; the server converts it into no
+  semantic tokens and one stable `colorful/invalid-classification` diagnostic.
+  Requiring raw IR projection to consume the aggregate remains the separate
+  follow-up tracked by #144.
 - **Strict received-IR token and outline validation.** Rust
   `validate_document` and the JavaScript `validateWireContract` gate now reject
   empty, unsorted, or overlapping token ranges and outline graphs with invalid

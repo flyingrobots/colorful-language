@@ -14,7 +14,10 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use colorful_core::{Analyzer, Annotator, Finding, Parser, PosClass, Severity, Token};
+use colorful_core::{
+    Analyzer, Annotator, ClassificationError, Finding, Parser, PosClass, Severity, Token,
+    ValidatedClassification,
+};
 use ropey::Rope;
 use tower_lsp::lsp_types::{
     Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range, SemanticToken,
@@ -169,6 +172,27 @@ impl DocumentAnalysis {
         }
     }
 
+    /// Degrade an invalid adapter classification into one stable diagnostic.
+    ///
+    /// No semantic tokens are emitted because even a valid-looking prefix
+    /// cannot be trusted once the adapter's aggregate fails validation.
+    #[must_use]
+    pub fn invalid_classification(error: &ClassificationError) -> Self {
+        Self::new(
+            vec![],
+            vec![Diagnostic {
+                range: Range::new(Position::new(0, 0), Position::new(0, 0)),
+                severity: Some(DiagnosticSeverity::ERROR),
+                code: Some(NumberOrString::String(
+                    "colorful/invalid-classification".to_string(),
+                )),
+                source: Some("colorful".to_string()),
+                message: error.to_string(),
+                ..Diagnostic::default()
+            }],
+        )
+    }
+
     /// The delta-encoded semantic tokens for this document generation.
     #[must_use]
     pub fn semantic_tokens(&self) -> &[SemanticToken] {
@@ -186,24 +210,27 @@ impl DocumentAnalysis {
 ///
 /// The returned value is suitable for generation-keyed caching by the server.
 /// Neither diagnostics nor semantic tokens reparses or reclassifies the source.
-#[must_use]
+///
+/// # Errors
+///
+/// Returns a typed [`ClassificationError`] if the parser or annotator emits
+/// malformed public tree/token data.
 pub fn analyze_document<P, A, An>(
     text: &str,
     parser: &P,
     annotator: &A,
     analyzer: &An,
-) -> DocumentAnalysis
+) -> Result<DocumentAnalysis, ClassificationError>
 where
     P: Parser,
     A: Annotator,
     An: Analyzer,
 {
-    let tree = parser.parse(text);
-    let tokens = annotator.annotate(text, &tree);
-    let semantic_tokens = semantic_tokens_from(text, &tokens);
-    let findings = analyzer.analyze(text, &tree, &tokens);
+    let classification = ValidatedClassification::from_ports(text, parser, annotator)?;
+    let semantic_tokens = semantic_tokens_from(text, classification.tokens());
+    let findings = analyzer.analyze(text, classification.tree(), classification.tokens());
     let diagnostics = diagnostics_from(text, findings);
-    DocumentAnalysis::new(semantic_tokens, diagnostics)
+    Ok(DocumentAnalysis::new(semantic_tokens, diagnostics))
 }
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
@@ -212,15 +239,22 @@ where
 /// open-class roles emit semantic tokens, while undifferentiated content words
 /// and punctuation are left unstyled (skeleton mode). Token types index into
 /// [`legend_token_types`].
-#[must_use]
-pub fn compute_semantic_tokens<P, A>(text: &str, parser: &P, annotator: &A) -> Vec<SemanticToken>
+///
+/// # Errors
+///
+/// Returns a typed [`ClassificationError`] if the parser or annotator emits
+/// malformed public tree/token data.
+pub fn compute_semantic_tokens<P, A>(
+    text: &str,
+    parser: &P,
+    annotator: &A,
+) -> Result<Vec<SemanticToken>, ClassificationError>
 where
     P: Parser,
     A: Annotator,
 {
-    let tree = parser.parse(text);
-    let tokens = annotator.annotate(text, &tree);
-    semantic_tokens_from(text, &tokens)
+    let classification = ValidatedClassification::from_ports(text, parser, annotator)?;
+    Ok(semantic_tokens_from(text, classification.tokens()))
 }
 
 fn semantic_tokens_from(text: &str, tokens: &[Token]) -> Vec<SemanticToken> {
@@ -262,22 +296,25 @@ fn semantic_tokens_from(text: &str, tokens: &[Token]) -> Vec<SemanticToken> {
 /// tag, and a severity (warnings as [`DiagnosticSeverity::WARNING`], advisory
 /// findings as [`DiagnosticSeverity::INFORMATION`]). Kept transport-free so the
 /// position arithmetic is unit-testable.
-#[must_use]
+///
+/// # Errors
+///
+/// Returns a typed [`ClassificationError`] if the parser or annotator emits
+/// malformed public tree/token data.
 pub fn compute_diagnostics<P, A, An>(
     text: &str,
     parser: &P,
     annotator: &A,
     analyzer: &An,
-) -> Vec<Diagnostic>
+) -> Result<Vec<Diagnostic>, ClassificationError>
 where
     P: Parser,
     A: Annotator,
     An: Analyzer,
 {
-    let tree = parser.parse(text);
-    let tokens = annotator.annotate(text, &tree);
-    let findings = analyzer.analyze(text, &tree, &tokens);
-    diagnostics_from(text, findings)
+    let classification = ValidatedClassification::from_ports(text, parser, annotator)?;
+    let findings = analyzer.analyze(text, classification.tree(), classification.tokens());
+    Ok(diagnostics_from(text, findings))
 }
 
 fn diagnostics_from(text: &str, findings: Vec<Finding>) -> Vec<Diagnostic> {
@@ -337,7 +374,7 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use colorful_core::{Finding, Token, Tree};
+    use colorful_core::{ClassificationError, Finding, PosClass, Span, Token, Tree};
     use colorful_lexicon::ContextualOpenClassAnnotator;
     use colorful_lint::ProseLinter;
     use colorful_parse::ProseParser;
@@ -394,7 +431,8 @@ mod tests {
             &CountingAnalyzer {
                 calls: &analyzer_calls,
             },
-        );
+        )
+        .expect("built-in adapters produce a valid classification");
 
         assert!(!analysis.semantic_tokens().is_empty());
         assert_eq!(
@@ -404,6 +442,54 @@ mod tests {
         assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
         assert_eq!(annotator_calls.load(Ordering::SeqCst), 1);
         assert_eq!(analyzer_calls.load(Ordering::SeqCst), 1);
+    }
+
+    struct OverlappingAnnotator;
+
+    impl Annotator for OverlappingAnnotator {
+        fn annotate(&self, _source: &str, _tree: &Tree) -> Vec<Token> {
+            vec![
+                Token {
+                    span: Span::new(0, 3),
+                    class: PosClass::Content,
+                },
+                Token {
+                    span: Span::new(2, 7),
+                    class: PosClass::Content,
+                },
+            ]
+        }
+    }
+
+    #[test]
+    fn analyze_document_propagates_a_custom_annotators_typed_span_error() {
+        let error = analyze_document(
+            "cat runs",
+            &ProseParser::new(),
+            &OverlappingAnnotator,
+            &ProseLinter::new(),
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            &error,
+            ClassificationError::OverlappingSpan {
+                path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tokens[1].span.start"
+        ));
+
+        let analysis = DocumentAnalysis::invalid_classification(&error);
+        assert!(analysis.semantic_tokens().is_empty());
+        assert_eq!(analysis.diagnostics().len(), 1);
+        assert_eq!(
+            analysis.diagnostics()[0].code,
+            Some(NumberOrString::String(
+                "colorful/invalid-classification".to_string()
+            ))
+        );
+        assert_eq!(analysis.diagnostics()[0].message, error.to_string());
     }
 
     #[test]
@@ -431,6 +517,7 @@ mod tests {
             &ProseParser::new(),
             &ContextualOpenClassAnnotator::default(),
         )
+        .expect("built-in adapters produce a valid classification")
     }
 
     fn diagnostics(text: &str) -> Vec<Diagnostic> {
@@ -440,6 +527,7 @@ mod tests {
             &ContextualOpenClassAnnotator::default(),
             &colorful_lint::ProseLinter::new(),
         )
+        .expect("built-in adapters produce a valid classification")
     }
 
     #[test]
