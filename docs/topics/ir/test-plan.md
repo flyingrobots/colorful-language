@@ -417,10 +417,18 @@ Requirements:
   [#144](https://github.com/flyingrobots/colorful-language/issues/144).
   *Status:* implemented.
 - **IR-16a** — *Requirement:* IR-16. *Behavior:* one schema artifact generates
-  Rust and JavaScript role/key validators, and either stale consumer fails
-  regeneration CI. *Oracle:* fresh generation is byte-identical and both
-  validators accept/reject the same key matrix. *Evidence type:* generator,
-  drift check, and cross-language fixtures. *Tracking:*
+  the Rust and JavaScript role/key validators. The checked-in generator reads
+  `contracts/colorful/vocabulary.v1.schema.json`, emits both language
+  boundaries deterministically, and never treats either generated file as an
+  authority. CI and release preparation generate into a temporary directory
+  and compare both outputs byte-for-byte, so either stale consumer fails the
+  gate. A schema-mutation fixture adds one legal role and key and proves that
+  both outputs change together; the Rust and JavaScript manifest validators
+  accept and reject the same generated key matrix. *Oracle:* fresh generation
+  is byte-identical to both committed outputs; changing the authority changes
+  both outputs; shared manifest fixtures have identical accept/reject results
+  at both language boundaries. *Evidence type:* schema, generator, drift check,
+  and cross-language fixtures. *Tracking:*
   [#145](https://github.com/flyingrobots/colorful-language/issues/145).
   *Status:* planned.
 - **IR-17a** — *Requirement:* IR-17. *Behavior:* real witness processes reject
