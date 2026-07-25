@@ -52,6 +52,8 @@ Requirements:
   CLI/LSP coordinate parity.
 - **COL-19** Real `colorful` process tests cover stdin and file input, malformed
   UTF-8, operand rejection, exit statuses, `NO_COLOR`, and canonical IR output.
+- **COL-20** Output from public `Parser` and `Annotator` ports crosses one pure,
+  typed validation boundary before an LSP or IR adapter interprets its spans.
 
 ## Cases
 
@@ -249,6 +251,21 @@ Requirements:
   *Evidence type:* property tests, fuzz targets, and a deterministic CI corpus.
   *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+  *Status:* planned.
+- **COL-20a** — *Requirement:* COL-20. *Behavior:* the pure core constructs a
+  `ValidatedClassification` only when the tree has the documented shape; every
+  tree and token span is ordered, in bounds, on a UTF-8 character boundary,
+  and ordered without overlap among siblings; child ranges stay inside their
+  sentence; and classified token spans correspond one-for-one with tree leaves.
+  Validation runs in deterministic tree, token, then correspondence order and
+  returns the first typed `ClassificationError` with an exact structural path.
+  The LSP analysis entry points consume this aggregate and propagate the same
+  typed error without producing partial diagnostics or semantic tokens.
+  *Oracle:* one custom-port mutation per invariant returns the exact error
+  variant and path; valid built-in ports retain their current output.
+  *Evidence type:* core aggregate unit tests and LSP custom-port contract tests.
+  *Tracking:*
+  [#142](https://github.com/flyingrobots/colorful-language/issues/142).
   *Status:* planned.
 
 ## Known gaps

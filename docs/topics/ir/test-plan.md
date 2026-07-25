@@ -365,15 +365,25 @@ Requirements:
   `consumers/graft-projection.test.mjs`; `scripts/ir-witness.sh`. *Tracking:*
   [#126](https://github.com/flyingrobots/colorful-language/issues/126).
   *Status:* implemented.
-- **IR-15a** — *Requirement:* IR-15. *Behavior:* public custom
-  parser/annotator ports cannot project reversed, out-of-bounds,
-  non-character-boundary, overlapping, unsorted, or tree-mismatched spans; every
-  successful projection validates against the source. *Oracle:* exact typed
-  `ProjectionError` path and precedence per adversarial input, plus
-  `validate_document(document, Some(source)) == Ok(())` for every success.
-  *Evidence type:* custom-port contract tests and projection integration tests.
-  *Tracking:*
-  [#142](https://github.com/flyingrobots/colorful-language/issues/142) and
+- **IR-15a** — *Requirement:* IR-15. *Behavior:* one pure
+  `ValidatedClassification` aggregate rejects malformed output from public
+  custom parser/annotator ports before an adapter interprets it: unexpected
+  tree shape; reversed, out-of-bounds, or non-character-boundary spans;
+  unsorted or overlapping siblings/tokens; children outside their sentence;
+  and tree/token count or span mismatch. *Oracle:* deterministic tree, token,
+  then correspondence precedence plus the exact typed `ClassificationError`
+  path for one minimal custom-port mutation per invariant; built-in producer
+  output remains valid. *Evidence type:* core aggregate and LSP custom-port
+  contract tests. *Tracking:*
+  [#142](https://github.com/flyingrobots/colorful-language/issues/142).
+  *Status:* planned.
+- **IR-15b** — *Requirement:* IR-15. *Behavior:* public IR projection consumes
+  the validated aggregate or performs equivalent validation, maps invalid
+  producer input into typed path-addressed `ProjectionError` cases, and
+  requires every successful projection to pass `validate_document` against its
+  source. *Oracle:* exact error variant/path and precedence per adversarial
+  input, plus `validate_document(document, Some(source)) == Ok(())` for every
+  success. *Evidence type:* public projection integration tests. *Tracking:*
   [#144](https://github.com/flyingrobots/colorful-language/issues/144).
   *Status:* planned.
 - **IR-16a** — *Requirement:* IR-16. *Behavior:* one schema artifact generates
