@@ -135,6 +135,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use colorful_core::{ClassificationError, PassIdentity};
     use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
     use colorful_parse::ProseParser;
 
@@ -218,6 +219,39 @@ mod tests {
         let annotator = ContextualOpenClassAnnotator::<SeedOpenClassLexicon>::default();
         let err = build_document("test", SOURCE, &parser, &annotator).unwrap_err();
         assert_eq!(err, ProjectionError::MissingPassIdentity { role: "parser" });
+    }
+
+    struct OverlappingAnnotator;
+
+    impl Annotator for OverlappingAnnotator {
+        fn annotate(&self, source: &str, tree: &Tree) -> Vec<CoreToken> {
+            let mut tokens = ContextualOpenClassAnnotator::<SeedOpenClassLexicon>::default()
+                .annotate(source, tree);
+            tokens[1].span.start = tokens[0].span.end - 1;
+            tokens
+        }
+
+        fn pass_identity(&self) -> PassIdentity {
+            PassIdentity {
+                pass_id: "classify",
+                rule_id: "overlapping-test-annotator",
+            }
+        }
+    }
+
+    #[test]
+    fn propagates_a_custom_annotators_typed_classification_error() {
+        let error =
+            build_document("test", SOURCE, &ProseParser::new(), &OverlappingAnnotator).unwrap_err();
+
+        assert!(matches!(
+            error,
+            ProjectionError::InvalidClassification(ClassificationError::OverlappingSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            }) if path.to_string() == "tokens[1].span.start"
+        ));
     }
 
     #[test]

@@ -1451,7 +1451,9 @@ mod tests {
 #[cfg(test)]
 mod integration {
     use super::*;
-    use colorful_core::{Annotator, LexicalAnnotator, Parser};
+    use colorful_core::{
+        Annotator, ClassificationError, LexicalAnnotator, Parser, ValidatedClassification,
+    };
     use colorful_lexicon::ClosedClassLexicon;
     use colorful_parse::ProseParser;
     use std::collections::{BTreeSet, HashMap};
@@ -1792,6 +1794,255 @@ mod integration {
         for fixture in INVARIANT_CORPUS {
             assert_invariants_hold(fixture.name, fixture.source);
         }
+    }
+
+    // ---- producer projection boundary ----
+
+    fn projection_parts(source: &str) -> (Tree, Vec<CoreToken>, PassIdentity, PassIdentity) {
+        let parser = ProseParser::new();
+        let annotator = LexicalAnnotator::new(ClosedClassLexicon::new());
+        let tree = parser.parse(source);
+        let tokens = annotator.annotate(source, &tree);
+        (
+            tree,
+            tokens,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+    }
+
+    fn malformed_projection_error(
+        source: &str,
+        tree: &Tree,
+        tokens: &[CoreToken],
+    ) -> ProjectionError {
+        let (_, _, parser_identity, annotator_identity) = projection_parts(source);
+        from_classification(
+            "malformed",
+            source,
+            tree,
+            tokens,
+            parser_identity,
+            annotator_identity,
+        )
+        .unwrap_err()
+    }
+
+    #[test]
+    fn projection_rejects_a_reversed_span_with_the_core_error_path() {
+        let source = "cat runs.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        tokens[0].span = Span { start: 3, end: 0 };
+
+        assert!(matches!(
+            malformed_projection_error(source, &tree, &tokens),
+            ProjectionError::InvalidClassification(ClassificationError::ReversedSpan {
+                ref path,
+                start: 3,
+                end: 0,
+            }) if path.to_string() == "tokens[0].span"
+        ));
+    }
+
+    #[test]
+    fn projection_rejects_an_out_of_bounds_span_with_the_core_error_path() {
+        let source = "cat runs.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        let last = tokens.len() - 1;
+        tokens[last].span.end = source.len() + 1;
+
+        assert!(matches!(
+            malformed_projection_error(source, &tree, &tokens),
+            ProjectionError::InvalidClassification(
+                ClassificationError::SpanOutOfBounds {
+                    ref path,
+                    end,
+                    length,
+                }
+            ) if path.to_string() == format!("tokens[{last}].span.end")
+                && end == source.len() + 1
+                && length == source.len()
+        ));
+    }
+
+    #[test]
+    fn projection_rejects_a_mid_code_point_span_with_the_core_error_path() {
+        let source = "é.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        tokens[0].span.start = 1;
+
+        assert!(matches!(
+            malformed_projection_error(source, &tree, &tokens),
+            ProjectionError::InvalidClassification(
+                ClassificationError::SpanNotOnCharBoundary {
+                    ref path,
+                    offset: 1,
+                }
+            ) if path.to_string() == "tokens[0].span.start"
+        ));
+    }
+
+    #[test]
+    fn projection_rejects_unsorted_tokens_with_the_core_error_path() {
+        let source = "cat runs.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        tokens.swap(0, 1);
+
+        assert!(matches!(
+            malformed_projection_error(source, &tree, &tokens),
+            ProjectionError::InvalidClassification(ClassificationError::UnsortedSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            }) if path.to_string() == "tokens[1].span.start"
+        ));
+    }
+
+    #[test]
+    fn projection_rejects_overlapping_tokens_with_the_core_error_path() {
+        let source = "cat runs.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        tokens[1].span.start = 2;
+
+        assert!(matches!(
+            malformed_projection_error(source, &tree, &tokens),
+            ProjectionError::InvalidClassification(ClassificationError::OverlappingSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            }) if path.to_string() == "tokens[1].span.start"
+        ));
+    }
+
+    #[test]
+    fn projection_rejects_a_tree_token_count_mismatch_with_the_core_error_path() {
+        let source = "cat runs.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        tokens.pop();
+
+        assert!(matches!(
+            malformed_projection_error(source, &tree, &tokens),
+            ProjectionError::InvalidClassification(
+                ClassificationError::TreeTokenCountMismatch {
+                    ref path,
+                    tree_leaves: 3,
+                    tokens: 2,
+                }
+            ) if path.to_string() == "tokens"
+        ));
+    }
+
+    #[test]
+    fn projection_rejects_a_tree_token_span_mismatch_with_both_paths() {
+        let source = "cat runs.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        tokens[0].span.end = 2;
+
+        assert!(matches!(
+            malformed_projection_error(source, &tree, &tokens),
+            ProjectionError::InvalidClassification(
+                ClassificationError::TreeTokenSpanMismatch {
+                    ref path,
+                    ref tree_path,
+                    ..
+                }
+            ) if path.to_string() == "tokens[0].span"
+                && tree_path.to_string() == "tree.root.sentences[0].parts[0].span"
+        ));
+    }
+
+    #[test]
+    fn projection_checks_classification_before_producer_identity() {
+        let source = "cat runs.";
+        let (tree, mut tokens, _, _) = projection_parts(source);
+        tokens[0].span = Span { start: 3, end: 0 };
+
+        let error = from_classification(
+            "precedence",
+            source,
+            &tree,
+            &tokens,
+            PassIdentity::default(),
+            PassIdentity::default(),
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            error,
+            ProjectionError::InvalidClassification(ClassificationError::ReversedSpan { .. })
+        ));
+    }
+
+    #[test]
+    fn aggregate_native_and_compatibility_projection_are_byte_identical() {
+        let source = "The cat runs.";
+        let parser = ProseParser::new();
+        let annotator = LexicalAnnotator::new(ClosedClassLexicon::new());
+        let classification = ValidatedClassification::from_ports(source, &parser, &annotator)
+            .expect("built-in producers are valid");
+
+        let compatibility = from_classification(
+            "parity",
+            source,
+            classification.tree(),
+            classification.tokens(),
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .expect("compatibility projection succeeds");
+        let aggregate = from_validated_classification(
+            "parity",
+            &classification,
+            parser.pass_identity(),
+            annotator.pass_identity(),
+        )
+        .expect("aggregate projection succeeds");
+
+        assert_eq!(
+            canonical_json(&compatibility).unwrap(),
+            canonical_json(&aggregate).unwrap()
+        );
+        validate_document(&aggregate, Some(source.as_bytes()))
+            .expect("every successful projection validates against its source");
+    }
+
+    #[test]
+    fn aggregate_projection_rejects_a_document_that_fails_its_postcondition() {
+        let tree = Tree::document(vec![Node::Sentence {
+            span: Span::new(0, 0),
+            parts: vec![Node::Word {
+                span: Span::new(0, 0),
+            }],
+        }]);
+        let tokens = vec![CoreToken {
+            span: Span::new(0, 0),
+            class: PosClass::Content,
+        }];
+        let classification = ValidatedClassification::new("", tree, tokens)
+            .expect("core permits an empty but internally consistent leaf");
+        let error = from_validated_classification(
+            "postcondition",
+            &classification,
+            PassIdentity {
+                pass_id: "segment",
+                rule_id: "test-parser",
+            },
+            PassIdentity {
+                pass_id: "classify",
+                rule_id: "test-annotator",
+            },
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            error,
+            ProjectionError::InvalidProjectedDocument(ref errors)
+                if has(errors, |error| matches!(
+                    error,
+                    ValidationError::EmptyTokenRange { path, .. }
+                        if path.to_string() == "tokens[0].byteRange"
+                ))
+        ));
     }
 
     // ---- paragraph boundaries ----
