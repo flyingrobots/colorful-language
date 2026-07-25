@@ -243,7 +243,10 @@ mod tests {
         ))
         .expect("shared vocabulary validator parity fixture parses");
 
-        assert!(!fixture.cases.is_empty(), "parity fixture must not be empty");
+        assert!(
+            !fixture.cases.is_empty(),
+            "parity fixture must not be empty"
+        );
         for case in fixture.cases {
             let _validated_role_name = visual_role_name(&case.visual_role);
             let actual = class_role_key(
