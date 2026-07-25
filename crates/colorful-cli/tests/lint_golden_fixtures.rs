@@ -68,7 +68,8 @@ fn cli_and_lsp_agree_on_every_fixture_finding() {
         let cli_findings = ProseLinter::new().analyze(&source, &tree, &tokens);
 
         let lsp_diagnostics =
-            colorful_lsp::compute_diagnostics(&source, &parser, &annotator, &ProseLinter::new());
+            colorful_lsp::compute_diagnostics(&source, &parser, &annotator, &ProseLinter::new())
+                .expect("built-in adapters produce a valid classification");
 
         assert_eq!(
             cli_findings.len(),
@@ -188,7 +189,8 @@ fn cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings() {
     let tokens = annotator.annotate(source, &tree);
     let cli_findings = ProseLinter::new().analyze(source, &tree, &tokens);
     let lsp_diagnostics =
-        colorful_lsp::compute_diagnostics(source, &parser, &annotator, &ProseLinter::new());
+        colorful_lsp::compute_diagnostics(source, &parser, &annotator, &ProseLinter::new())
+            .expect("built-in adapters produce a valid classification");
 
     assert_eq!(cli_findings.len(), 4, "one weak-word finding per line");
     assert_eq!(lsp_diagnostics.len(), cli_findings.len());

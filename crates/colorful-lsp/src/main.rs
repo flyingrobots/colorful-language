@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
-use colorful_lsp::{analyze_document, legend_token_types};
+use colorful_lsp::{analyze_document, legend_token_types, DocumentAnalysis};
 use colorful_parse::ProseParser;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::{
@@ -43,6 +43,7 @@ impl Backend {
                 &default_annotator(),
                 &ProseLinter::new(),
             )
+            .unwrap_or_else(|error| DocumentAnalysis::invalid_classification(&error))
         });
         Self {
             client,

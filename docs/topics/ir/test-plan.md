@@ -374,9 +374,18 @@ Requirements:
   then correspondence precedence plus the exact typed `ClassificationError`
   path for one minimal custom-port mutation per invariant; built-in producer
   output remains valid. *Evidence type:* core aggregate and LSP custom-port
-  contract tests. *Tracking:*
+  contract tests. *Evidence:* `colorful-core`
+  `tests::validated_classification_{preserves_valid_built_in_shape,
+  rejects_an_unexpected_root_kind,rejects_a_reversed_tree_span,
+  rejects_an_out_of_bounds_tree_span,rejects_an_unsorted_tree_sibling,
+  rejects_an_overlapping_tree_sibling,rejects_a_child_outside_its_sentence,
+  rejects_a_mid_code_point_token_span,rejects_an_unsorted_token,
+  rejects_an_overlapping_token,rejects_a_tree_token_count_mismatch,
+  rejects_a_tree_token_span_mismatch}`; `colorful-lsp`
+  `tests::analyze_document_propagates_a_custom_annotators_typed_span_error`.
+  *Tracking:*
   [#142](https://github.com/flyingrobots/colorful-language/issues/142).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-15b** — *Requirement:* IR-15. *Behavior:* public IR projection consumes
   the validated aggregate or performs equivalent validation, maps invalid
   producer input into typed path-addressed `ProjectionError` cases, and
@@ -459,14 +468,11 @@ Requirements:
   and `ruleId` now name a real, validated producer identity (IR-8), but
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
-- Canonical JSON rules (key order, number formatting) must be specified and
-  enforced on both sides for IR-2a to be meaningful.
-- `validate_document` does not yet enforce the received-artifact token-layout
-  and graph invariants in IR-14a. IR-3a/IR-3b prove those properties only for
-  producer output; IR-4a proves the narrower current receiver checks.
-- Public adapter/projection rejection remains open in IR-15a.
-- Generated vocabulary validation and process-level refusal evidence remain
-  open in IR-16a and IR-17a.
+- The core producer boundary now rejects malformed public adapter output under
+  IR-15a, but raw `colorful_ir::from_classification` callers are not yet
+  required to supply that aggregate. Typed projection adoption and a
+  success-path `validate_document` postcondition remain open in IR-15b.
+- Generated vocabulary validation remains open in IR-16a.
 - Complexity-policy and mutation evidence remains open in IR-18b and IR-18c.
 - The independent two-version consumer and
   [product-evidence decision](architecture.md#product-evidence-gate) remains

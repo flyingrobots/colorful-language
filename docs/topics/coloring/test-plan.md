@@ -264,9 +264,20 @@ Requirements:
   *Oracle:* one custom-port mutation per invariant returns the exact error
   variant and path; valid built-in ports retain their current output.
   *Evidence type:* core aggregate unit tests and LSP custom-port contract tests.
+  *Evidence:* `colorful-core`
+  `tests::validated_classification_{preserves_valid_built_in_shape,
+  rejects_an_unexpected_root_kind,rejects_a_reversed_tree_span,
+  rejects_an_out_of_bounds_tree_span,rejects_an_unsorted_tree_sibling,
+  rejects_an_overlapping_tree_sibling,rejects_a_child_outside_its_sentence,
+  rejects_a_mid_code_point_token_span,rejects_an_unsorted_token,
+  rejects_an_overlapping_token,rejects_a_tree_token_count_mismatch,
+  rejects_a_tree_token_span_mismatch}`; `colorful-lsp`
+  `tests::analyze_document_propagates_a_custom_annotators_typed_span_error`;
+  `colorful-cli` `tests::passthrough_when_color_disabled` and
+  `tests::golden_colored_output`.
   *Tracking:*
   [#142](https://github.com/flyingrobots/colorful-language/issues/142).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps
 

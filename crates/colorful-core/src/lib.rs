@@ -292,6 +292,483 @@ pub trait Annotator {
     }
 }
 
+/// One segment of a [`ClassificationPath`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ClassificationPathSegment {
+    /// A named field.
+    Field(&'static str),
+    /// An array index.
+    Index(usize),
+}
+
+/// A structural path into parser/annotator output.
+///
+/// Paths use the public core model's field names, for example
+/// `tree.root.sentences[0].parts[1].span.start` or `tokens[2].span`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ClassificationPath(Vec<ClassificationPathSegment>);
+
+impl ClassificationPath {
+    fn root(field: &'static str) -> Self {
+        Self(vec![ClassificationPathSegment::Field(field)])
+    }
+
+    fn field(mut self, field: &'static str) -> Self {
+        self.0.push(ClassificationPathSegment::Field(field));
+        self
+    }
+
+    fn index(mut self, index: usize) -> Self {
+        self.0.push(ClassificationPathSegment::Index(index));
+        self
+    }
+
+    /// The path's field and index segments in traversal order.
+    #[must_use]
+    pub fn segments(&self) -> &[ClassificationPathSegment] {
+        &self.0
+    }
+}
+
+impl core::fmt::Display for ClassificationPath {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        for (index, segment) in self.0.iter().enumerate() {
+            match segment {
+                ClassificationPathSegment::Field(field) => {
+                    if index > 0 {
+                        write!(f, ".")?;
+                    }
+                    write!(f, "{field}")?;
+                }
+                ClassificationPathSegment::Index(index) => write!(f, "[{index}]")?,
+            }
+        }
+        Ok(())
+    }
+}
+
+/// One typed reason parser/annotator output failed validation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ClassificationError {
+    /// A public tree position contains a node kind that is illegal there.
+    UnexpectedNodeKind {
+        /// The offending tree position.
+        path: ClassificationPath,
+        /// The node kind required at this position.
+        expected: &'static str,
+        /// The node kind the parser produced.
+        found: &'static str,
+    },
+    /// A span starts after it ends.
+    ReversedSpan {
+        /// The offending `.span`.
+        path: ClassificationPath,
+        /// The span's start offset.
+        start: usize,
+        /// The span's end offset.
+        end: usize,
+    },
+    /// A span extends beyond the source.
+    SpanOutOfBounds {
+        /// The offending `.span.end`.
+        path: ClassificationPath,
+        /// The span's end offset.
+        end: usize,
+        /// The source length.
+        length: usize,
+    },
+    /// A span edge splits a UTF-8 code point.
+    SpanNotOnCharBoundary {
+        /// The offending `.span.start` or `.span.end`.
+        path: ClassificationPath,
+        /// The invalid byte offset.
+        offset: usize,
+    },
+    /// A sibling or token starts before its predecessor starts.
+    UnsortedSpan {
+        /// The offending `.span.start`.
+        path: ClassificationPath,
+        /// The preceding item index in the same list.
+        previous_index: usize,
+        /// The preceding span's start.
+        previous_start: usize,
+        /// The offending span's start.
+        start: usize,
+    },
+    /// A sibling or token starts before its predecessor ends.
+    OverlappingSpan {
+        /// The offending `.span.start`.
+        path: ClassificationPath,
+        /// The preceding item index in the same list.
+        previous_index: usize,
+        /// The preceding span's end.
+        previous_end: usize,
+        /// The offending span's start.
+        start: usize,
+    },
+    /// A sentence part extends outside its sentence.
+    ChildSpanOutsideParent {
+        /// The offending child `.span`.
+        path: ClassificationPath,
+        /// The sentence span.
+        parent: Span,
+        /// The child span.
+        child: Span,
+    },
+    /// The annotator emitted a different number of tokens than tree leaves.
+    TreeTokenCountMismatch {
+        /// Always `tokens`.
+        path: ClassificationPath,
+        /// The number of word/punctuation leaves in the tree.
+        tree_leaves: usize,
+        /// The number of classified tokens.
+        tokens: usize,
+    },
+    /// A classified token does not cover the corresponding tree leaf.
+    TreeTokenSpanMismatch {
+        /// The offending `tokens[i].span`.
+        path: ClassificationPath,
+        /// The corresponding tree leaf's `.span` path.
+        tree_path: ClassificationPath,
+        /// The tree leaf span.
+        tree_span: Span,
+        /// The classified token span.
+        token_span: Span,
+    },
+}
+
+impl ClassificationError {
+    /// The exact public-model path where validation failed.
+    #[must_use]
+    pub fn path(&self) -> &ClassificationPath {
+        match self {
+            Self::UnexpectedNodeKind { path, .. }
+            | Self::ReversedSpan { path, .. }
+            | Self::SpanOutOfBounds { path, .. }
+            | Self::SpanNotOnCharBoundary { path, .. }
+            | Self::UnsortedSpan { path, .. }
+            | Self::OverlappingSpan { path, .. }
+            | Self::ChildSpanOutsideParent { path, .. }
+            | Self::TreeTokenCountMismatch { path, .. }
+            | Self::TreeTokenSpanMismatch { path, .. } => path,
+        }
+    }
+}
+
+impl core::fmt::Display for ClassificationError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::UnexpectedNodeKind {
+                path,
+                expected,
+                found,
+            } => write!(f, "at {path}: expected {expected}, found {found}"),
+            Self::ReversedSpan { path, start, end } => {
+                write!(f, "at {path}: start {start} exceeds end {end}")
+            }
+            Self::SpanOutOfBounds { path, end, length } => {
+                write!(f, "at {path}: {end} exceeds source length {length}")
+            }
+            Self::SpanNotOnCharBoundary { path, offset } => {
+                write!(f, "at {path}: {offset} is not a UTF-8 character boundary")
+            }
+            Self::UnsortedSpan {
+                path,
+                previous_index,
+                previous_start,
+                start,
+            } => write!(
+                f,
+                "at {path}: start {start} precedes item {previous_index} start {previous_start}"
+            ),
+            Self::OverlappingSpan {
+                path,
+                previous_index,
+                previous_end,
+                start,
+            } => write!(
+                f,
+                "at {path}: start {start} overlaps item {previous_index} ending at {previous_end}"
+            ),
+            Self::ChildSpanOutsideParent {
+                path,
+                parent,
+                child,
+            } => write!(
+                f,
+                "at {path}: child {}..{} falls outside parent {}..{}",
+                child.start, child.end, parent.start, parent.end
+            ),
+            Self::TreeTokenCountMismatch {
+                path,
+                tree_leaves,
+                tokens,
+            } => write!(
+                f,
+                "at {path}: tree has {tree_leaves} leaves but annotator emitted {tokens} tokens"
+            ),
+            Self::TreeTokenSpanMismatch {
+                path,
+                tree_path,
+                tree_span,
+                token_span,
+            } => write!(
+                f,
+                "at {path}: token {}..{} does not match {tree_path} {}..{}",
+                token_span.start, token_span.end, tree_span.start, tree_span.end
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ClassificationError {}
+
+/// Parser and annotator output proven safe to interpret against one source.
+///
+/// Construction validates the public tree first, then the token stream, then
+/// one-to-one tree-leaf/token correspondence. Fields are private so a
+/// successful value cannot be mutated back into an invalid state.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidatedClassification<'source> {
+    source: &'source str,
+    tree: Tree,
+    tokens: Vec<Token>,
+}
+
+impl<'source> ValidatedClassification<'source> {
+    /// Validate already-produced public tree and token values.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first [`ClassificationError`] in deterministic tree, token,
+    /// then correspondence order.
+    pub fn new(
+        source: &'source str,
+        tree: Tree,
+        tokens: Vec<Token>,
+    ) -> Result<Self, ClassificationError> {
+        validate_classification(source, &tree, &tokens)?;
+        Ok(Self {
+            source,
+            tree,
+            tokens,
+        })
+    }
+
+    /// Run public parser and annotator ports, then validate their output.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first [`ClassificationError`] produced by their combined
+    /// output.
+    pub fn from_ports<P, A>(
+        source: &'source str,
+        parser: &P,
+        annotator: &A,
+    ) -> Result<Self, ClassificationError>
+    where
+        P: Parser + ?Sized,
+        A: Annotator + ?Sized,
+    {
+        let tree = parser.parse(source);
+        let tokens = annotator.annotate(source, &tree);
+        Self::new(source, tree, tokens)
+    }
+
+    /// The exact source this classification was validated against.
+    #[must_use]
+    pub fn source(&self) -> &'source str {
+        self.source
+    }
+
+    /// The validated parse tree.
+    #[must_use]
+    pub fn tree(&self) -> &Tree {
+        &self.tree
+    }
+
+    /// The validated classified tokens, in tree-leaf order.
+    #[must_use]
+    pub fn tokens(&self) -> &[Token] {
+        &self.tokens
+    }
+
+    /// Consume the aggregate into its validated tree and token values.
+    #[must_use]
+    pub fn into_parts(self) -> (Tree, Vec<Token>) {
+        (self.tree, self.tokens)
+    }
+}
+
+fn node_kind(node: &Node) -> &'static str {
+    match node {
+        Node::Document(_) => "Document",
+        Node::Sentence { .. } => "Sentence",
+        Node::Word { .. } => "Word",
+        Node::Punct { .. } => "Punct",
+    }
+}
+
+fn node_span(node: &Node) -> Option<Span> {
+    match node {
+        Node::Sentence { span, .. } | Node::Word { span } | Node::Punct { span } => Some(*span),
+        Node::Document(_) => None,
+    }
+}
+
+fn validate_span(
+    source: &str,
+    path: &ClassificationPath,
+    span: Span,
+) -> Result<(), ClassificationError> {
+    if span.start > span.end {
+        return Err(ClassificationError::ReversedSpan {
+            path: path.clone(),
+            start: span.start,
+            end: span.end,
+        });
+    }
+    if span.end > source.len() {
+        return Err(ClassificationError::SpanOutOfBounds {
+            path: path.clone().field("end"),
+            end: span.end,
+            length: source.len(),
+        });
+    }
+    if !source.is_char_boundary(span.start) {
+        return Err(ClassificationError::SpanNotOnCharBoundary {
+            path: path.clone().field("start"),
+            offset: span.start,
+        });
+    }
+    if !source.is_char_boundary(span.end) {
+        return Err(ClassificationError::SpanNotOnCharBoundary {
+            path: path.clone().field("end"),
+            offset: span.end,
+        });
+    }
+    Ok(())
+}
+
+fn validate_layout(
+    path: &ClassificationPath,
+    index: usize,
+    previous: Span,
+    current: Span,
+) -> Result<(), ClassificationError> {
+    if current.start < previous.start {
+        return Err(ClassificationError::UnsortedSpan {
+            path: path.clone().field("start"),
+            previous_index: index - 1,
+            previous_start: previous.start,
+            start: current.start,
+        });
+    }
+    if current.start < previous.end {
+        return Err(ClassificationError::OverlappingSpan {
+            path: path.clone().field("start"),
+            previous_index: index - 1,
+            previous_end: previous.end,
+            start: current.start,
+        });
+    }
+    Ok(())
+}
+
+fn validate_classification(
+    source: &str,
+    tree: &Tree,
+    tokens: &[Token],
+) -> Result<(), ClassificationError> {
+    let root_path = ClassificationPath::root("tree").field("root");
+    let Node::Document(sentences) = &tree.root else {
+        return Err(ClassificationError::UnexpectedNodeKind {
+            path: root_path,
+            expected: "Document",
+            found: node_kind(&tree.root),
+        });
+    };
+
+    let mut leaves = Vec::new();
+    let mut previous_sentence = None;
+    for (sentence_index, sentence) in sentences.iter().enumerate() {
+        let sentence_path = root_path.clone().field("sentences").index(sentence_index);
+        let Node::Sentence { span, parts } = sentence else {
+            return Err(ClassificationError::UnexpectedNodeKind {
+                path: sentence_path,
+                expected: "Sentence",
+                found: node_kind(sentence),
+            });
+        };
+        let span_path = sentence_path.clone().field("span");
+        validate_span(source, &span_path, *span)?;
+        if let Some(previous) = previous_sentence {
+            validate_layout(&span_path, sentence_index, previous, *span)?;
+        }
+        previous_sentence = Some(*span);
+
+        let mut previous_part = None;
+        for (part_index, part) in parts.iter().enumerate() {
+            let part_path = sentence_path.clone().field("parts").index(part_index);
+            if !matches!(part, Node::Word { .. } | Node::Punct { .. }) {
+                return Err(ClassificationError::UnexpectedNodeKind {
+                    path: part_path,
+                    expected: "Word or Punct",
+                    found: node_kind(part),
+                });
+            }
+            let part_span = node_span(part).expect("Word and Punct nodes carry spans");
+            let part_span_path = part_path.field("span");
+            validate_span(source, &part_span_path, part_span)?;
+            if let Some(previous) = previous_part {
+                validate_layout(&part_span_path, part_index, previous, part_span)?;
+            }
+            previous_part = Some(part_span);
+            if part_span.start < span.start || part_span.end > span.end {
+                return Err(ClassificationError::ChildSpanOutsideParent {
+                    path: part_span_path,
+                    parent: *span,
+                    child: part_span,
+                });
+            }
+            leaves.push((part_span_path, part_span));
+        }
+    }
+
+    let mut previous_token = None;
+    for (token_index, token) in tokens.iter().enumerate() {
+        let token_path = ClassificationPath::root("tokens")
+            .index(token_index)
+            .field("span");
+        validate_span(source, &token_path, token.span)?;
+        if let Some(previous) = previous_token {
+            validate_layout(&token_path, token_index, previous, token.span)?;
+        }
+        previous_token = Some(token.span);
+    }
+
+    if leaves.len() != tokens.len() {
+        return Err(ClassificationError::TreeTokenCountMismatch {
+            path: ClassificationPath::root("tokens"),
+            tree_leaves: leaves.len(),
+            tokens: tokens.len(),
+        });
+    }
+    for (index, ((tree_path, tree_span), token)) in leaves.iter().zip(tokens).enumerate() {
+        if *tree_span != token.span {
+            return Err(ClassificationError::TreeTokenSpanMismatch {
+                path: ClassificationPath::root("tokens")
+                    .index(index)
+                    .field("span"),
+                tree_path: tree_path.clone(),
+                tree_span: *tree_span,
+                token_span: token.span,
+            });
+        }
+    }
+    Ok(())
+}
+
 /// Port: inspect a classified document and report prose [`Finding`]s.
 ///
 /// An `Analyzer` sees the `source`, its parsed [`Tree`], and the classified
@@ -529,12 +1006,29 @@ mod tests {
         (source, tree, tokens)
     }
 
+    struct FixedParser(Tree);
+
+    impl Parser for FixedParser {
+        fn parse(&self, _text: &str) -> Tree {
+            self.0.clone()
+        }
+    }
+
+    struct FixedAnnotator(Vec<Token>);
+
+    impl Annotator for FixedAnnotator {
+        fn annotate(&self, _source: &str, _tree: &Tree) -> Vec<Token> {
+            self.0.clone()
+        }
+    }
+
     fn classification_error(
         source: &'static str,
         tree: Tree,
         tokens: Vec<Token>,
     ) -> ClassificationError {
-        ValidatedClassification::new(source, tree, tokens).unwrap_err()
+        ValidatedClassification::from_ports(source, &FixedParser(tree), &FixedAnnotator(tokens))
+            .unwrap_err()
     }
 
     #[test]

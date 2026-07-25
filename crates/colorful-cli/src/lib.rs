@@ -12,7 +12,9 @@ use std::collections::BTreeSet;
 use std::io::{self, Read, Write};
 use std::process::ExitCode;
 
-use colorful_core::{Analyzer, Annotator, Finding, Parser, PosClass, Severity};
+use colorful_core::{
+    Analyzer, ClassificationError, Finding, PosClass, Severity, ValidatedClassification,
+};
 use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
 use colorful_parse::ProseParser;
@@ -46,14 +48,33 @@ fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassLexicon> {
 ///
 /// When `color` is `false`, `source` is returned unchanged (a faithful
 /// passthrough), so piping through the tool never alters the text.
+///
+/// The built-in parser and annotator are validated before their spans are
+/// sliced. If that invariant ever regresses, this compatibility wrapper fails
+/// closed to the unchanged source; use [`try_colorize`] to receive the typed
+/// error.
 #[must_use]
 pub fn colorize(source: &str, color: bool) -> String {
+    try_colorize(source, color).unwrap_or_else(|_| source.to_string())
+}
+
+/// Render `source` with ANSI color after validating built-in adapter output.
+///
+/// When `color` is `false`, parsing is skipped and `source` is returned
+/// unchanged.
+///
+/// # Errors
+///
+/// Returns a typed, path-addressed [`ClassificationError`] if the built-in
+/// parser or annotator emits malformed spans or inconsistent tree/token data.
+pub fn try_colorize(source: &str, color: bool) -> Result<String, ClassificationError> {
     if !color {
-        return source.to_string();
+        return Ok(source.to_string());
     }
 
-    let tree = ProseParser::new().parse(source);
-    let tokens = default_annotator().annotate(source, &tree);
+    let classification =
+        ValidatedClassification::from_ports(source, &ProseParser::new(), &default_annotator())?;
+    let tokens = classification.tokens();
 
     let mut out = String::with_capacity(source.len() + tokens.len() * 8);
     let mut prev = 0;
@@ -77,7 +98,7 @@ pub fn colorize(source: &str, color: bool) -> String {
     if prev < source.len() {
         out.push_str(source.get(prev..).unwrap_or(""));
     }
-    out
+    Ok(out)
 }
 
 /// Decide whether to emit color, honoring `--no-color` and the `NO_COLOR`
@@ -346,7 +367,8 @@ where
         }
     };
     let mut stdout = io::stdout().lock();
-    stdout.write_all(colorize(&input, color).as_bytes())?;
+    let output = try_colorize(&input, color).map_err(classification_io_error)?;
+    stdout.write_all(output.as_bytes())?;
     stdout.flush()
 }
 
@@ -598,11 +620,17 @@ where
 /// code. Factored out of [`run_lint`] so the format and the exit decision are
 /// testable without touching the filesystem.
 fn lint_to_writer<W: Write>(name: &str, source: &str, out: &mut W) -> io::Result<bool> {
-    let tree = ProseParser::new().parse(source);
-    let tokens = default_annotator().annotate(source, &tree);
-    let findings = ProseLinter::new().analyze(source, &tree, &tokens);
+    let classification =
+        ValidatedClassification::from_ports(source, &ProseParser::new(), &default_annotator())
+            .map_err(classification_io_error)?;
+    let findings =
+        ProseLinter::new().analyze(source, classification.tree(), classification.tokens());
     out.write_all(lint_report(name, source, &findings).as_bytes())?;
     Ok(!findings.is_empty())
+}
+
+fn classification_io_error(error: ClassificationError) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, error)
 }
 
 /// Render `findings` as compiler-style diagnostic lines:
