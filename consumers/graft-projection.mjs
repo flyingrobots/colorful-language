@@ -19,6 +19,15 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
+import {
+  classRoleKey,
+  EXPECTED_CLASS_KEYS,
+  LEXICAL_CLASSES,
+  OPEN_CLASS_KINDS,
+  TOKEN_KINDS,
+  VISUAL_ROLES,
+} from "./generated/vocabulary-validator-v1.mjs";
+
 // The colorful.vocabulary/v1 manifest is the single source of presentation
 // intent, shared with the CLI and the LSP. We load it once (and remember its
 // hash) instead of hardcoding a className table that could drift from the
@@ -32,9 +41,6 @@ const MANIFEST_VERSION = "colorful.vocabulary/v1";
 // `schemaHash` instead of trusting an artifact's self-reported value.
 const SYNTAX_SDL_URL = new URL("../contracts/colorful/syntax.v1.graphql", import.meta.url);
 const CONTRACT_VERSION = "colorful.syntax/v1";
-const TOKEN_KINDS = new Set(["WORD", "NUMBER", "PUNCTUATION", "QUOTE"]);
-const LEXICAL_CLASSES = new Set(["FUNCTION", "CONTENT", "PROPER_NOUN_CANDIDATE"]);
-const OPEN_CLASS_KINDS = new Set(["NOUN", "VERB", "ADJECTIVE", "ADVERB"]);
 const FUNCTION_KINDS = new Set([
   "ARTICLE",
   "PREPOSITION",
@@ -82,31 +88,6 @@ const DERIVATION_STEP_FIELDS = new Set(["passId", "ruleId", "sourceRanges", "com
 // cannot represent is exactly the kind of artifact admission must reject.
 const WIRE_INT_MIN = -2147483648;
 const WIRE_INT_MAX = 2147483647;
-const VISUAL_ROLES = new Set([
-  "STRUCTURAL_KEYWORD",
-  "TYPE_LIKE",
-  "LITERAL",
-  "QUOTED",
-  "MUTED",
-  "UNSTYLED",
-  "NOUN",
-  "VERB",
-  "ADJECTIVE",
-  "ADVERB",
-]);
-const EXPECTED_CLASS_KEYS = new Set([
-  "WORD/FUNCTION/<none>",
-  "WORD/CONTENT/<none>",
-  "WORD/CONTENT/NOUN",
-  "WORD/CONTENT/VERB",
-  "WORD/CONTENT/ADJECTIVE",
-  "WORD/CONTENT/ADVERB",
-  "WORD/PROPER_NOUN_CANDIDATE/<none>",
-  "NUMBER/<none>/<none>",
-  "PUNCTUATION/<none>/<none>",
-  "QUOTE/<none>/<none>",
-]);
-
 function loadVocabulary() {
   const bytes = readFileSync(MANIFEST_URL); // raw bytes, so the hash matches the producer
   const manifest = JSON.parse(bytes.toString("utf8"));
@@ -201,35 +182,6 @@ function requireKeys(object, keys, label) {
   for (const key of keys) {
     if (!Object.hasOwn(object, key)) throw new Error(`${label} is missing ${key}`);
   }
-}
-
-function classRoleKey(rule) {
-  if (!TOKEN_KINDS.has(rule.tokenKind)) {
-    throw new Error(`unknown tokenKind ${rule.tokenKind}`);
-  }
-  if (rule.lexicalClass !== null && !LEXICAL_CLASSES.has(rule.lexicalClass)) {
-    throw new Error(`unknown lexicalClass ${rule.lexicalClass}`);
-  }
-  if (rule.openClassKind !== null && !OPEN_CLASS_KINDS.has(rule.openClassKind)) {
-    throw new Error(`unknown openClassKind ${rule.openClassKind}`);
-  }
-  if (!VISUAL_ROLES.has(rule.visualRole)) {
-    throw new Error(`unknown visualRole ${rule.visualRole}`);
-  }
-  if (rule.tokenKind === "WORD") {
-    if (rule.lexicalClass === null) throw new Error("WORD class role must declare lexicalClass");
-    if (rule.lexicalClass !== "CONTENT" && rule.openClassKind !== null) {
-      throw new Error(`WORD/${rule.lexicalClass} class role must not declare openClassKind`);
-    }
-    return `${rule.tokenKind}/${rule.lexicalClass}/${rule.openClassKind ?? "<none>"}`;
-  }
-  if (rule.lexicalClass !== null) {
-    throw new Error(`${rule.tokenKind} class role must not declare lexicalClass`);
-  }
-  if (rule.openClassKind !== null) {
-    throw new Error(`${rule.tokenKind} class role must not declare openClassKind`);
-  }
-  return `${rule.tokenKind}/<none>/<none>`;
 }
 
 function requireStringOrNull(value, label) {

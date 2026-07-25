@@ -19,6 +19,9 @@ use std::sync::OnceLock;
 use colorful_core::PosClass;
 use serde::Deserialize;
 
+use crate::generated::vocabulary_validator_v1::{
+    class_role_key, visual_role_name, EXPECTED_CLASS_ROLE_KEYS, VISUAL_ROLE_NAMES,
+};
 use crate::sha256_hex;
 use crate::syntax_v1::{LexicalClass, OpenClassKind, TokenKind};
 use crate::vocabulary_v1::VisualRole;
@@ -88,7 +91,7 @@ fn validate_manifest(manifest: &Manifest) -> Result<(), String> {
     let expected_roles = all_role_names();
     let mut projection_roles = BTreeSet::new();
     for projection in &manifest.role_projections {
-        let role = role_name(&projection.visual_role);
+        let role = visual_role_name(&projection.visual_role);
         if !projection_roles.insert(role) {
             return Err(format!("duplicate projection for VisualRole `{role}`"));
         }
@@ -103,10 +106,10 @@ fn validate_manifest(manifest: &Manifest) -> Result<(), String> {
     let expected_classes = expected_class_role_keys();
     let mut class_roles = BTreeSet::new();
     for rule in &manifest.class_roles {
-        if !projection_roles.contains(role_name(&rule.visual_role)) {
+        if !projection_roles.contains(visual_role_name(&rule.visual_role)) {
             return Err(format!(
                 "class role references VisualRole `{}` without a projection",
-                role_name(&rule.visual_role)
+                visual_role_name(&rule.visual_role)
             ));
         }
         let key = class_role_key(
@@ -199,113 +202,15 @@ pub fn lsp_legend() -> Vec<&'static str> {
     legend
 }
 
-fn token_kind_name(kind: &TokenKind) -> &'static str {
-    match kind {
-        TokenKind::Word => "WORD",
-        TokenKind::Number => "NUMBER",
-        TokenKind::Punctuation => "PUNCTUATION",
-        TokenKind::Quote => "QUOTE",
-    }
-}
-
-fn lexical_class_name(class: &LexicalClass) -> &'static str {
-    match class {
-        LexicalClass::Function => "FUNCTION",
-        LexicalClass::Content => "CONTENT",
-        LexicalClass::ProperNounCandidate => "PROPER_NOUN_CANDIDATE",
-    }
-}
-
-fn open_class_kind_name(kind: &OpenClassKind) -> &'static str {
-    match kind {
-        OpenClassKind::Noun => "NOUN",
-        OpenClassKind::Verb => "VERB",
-        OpenClassKind::Adjective => "ADJECTIVE",
-        OpenClassKind::Adverb => "ADVERB",
-    }
-}
-
-fn role_name(role: &VisualRole) -> &'static str {
-    match role {
-        VisualRole::StructuralKeyword => "STRUCTURAL_KEYWORD",
-        VisualRole::TypeLike => "TYPE_LIKE",
-        VisualRole::Literal => "LITERAL",
-        VisualRole::Quoted => "QUOTED",
-        VisualRole::Muted => "MUTED",
-        VisualRole::Unstyled => "UNSTYLED",
-        VisualRole::Noun => "NOUN",
-        VisualRole::Verb => "VERB",
-        VisualRole::Adjective => "ADJECTIVE",
-        VisualRole::Adverb => "ADVERB",
-    }
-}
-
 fn all_role_names() -> BTreeSet<&'static str> {
-    [
-        "STRUCTURAL_KEYWORD",
-        "TYPE_LIKE",
-        "LITERAL",
-        "QUOTED",
-        "MUTED",
-        "UNSTYLED",
-        "NOUN",
-        "VERB",
-        "ADJECTIVE",
-        "ADVERB",
-    ]
-    .into_iter()
-    .collect()
+    VISUAL_ROLE_NAMES.iter().copied().collect()
 }
 
 fn expected_class_role_keys() -> BTreeSet<String> {
-    [
-        "WORD/FUNCTION/<none>",
-        "WORD/CONTENT/<none>",
-        "WORD/CONTENT/NOUN",
-        "WORD/CONTENT/VERB",
-        "WORD/CONTENT/ADJECTIVE",
-        "WORD/CONTENT/ADVERB",
-        "WORD/PROPER_NOUN_CANDIDATE/<none>",
-        "NUMBER/<none>/<none>",
-        "PUNCTUATION/<none>/<none>",
-        "QUOTE/<none>/<none>",
-    ]
-    .into_iter()
-    .map(str::to_owned)
-    .collect()
-}
-
-fn class_role_key(
-    token_kind: &TokenKind,
-    lexical_class: Option<&LexicalClass>,
-    open_class_kind: Option<&OpenClassKind>,
-) -> Result<String, String> {
-    match (token_kind, lexical_class, open_class_kind) {
-        (TokenKind::Word, Some(LexicalClass::Content), open_class) => Ok(format!(
-            "WORD/CONTENT/{}",
-            open_class.map(open_class_kind_name).unwrap_or("<none>")
-        )),
-        (TokenKind::Word, Some(class), None) => {
-            Ok(format!("WORD/{}/<none>", lexical_class_name(class)))
-        }
-        (TokenKind::Word, Some(class), Some(open_class)) => Err(format!(
-            "WORD/{} class role must not declare openClassKind `{}`",
-            lexical_class_name(class),
-            open_class_kind_name(open_class)
-        )),
-        (TokenKind::Word, None, _) => Err("WORD class role must declare lexicalClass".to_string()),
-        (_, Some(class), _) => Err(format!(
-            "{} class role must not declare lexicalClass `{}`",
-            token_kind_name(token_kind),
-            lexical_class_name(class)
-        )),
-        (_, None, Some(open_class)) => Err(format!(
-            "{} class role must not declare openClassKind `{}`",
-            token_kind_name(token_kind),
-            open_class_kind_name(open_class)
-        )),
-        (_, None, None) => Ok(format!("{}/<none>/<none>", token_kind_name(token_kind))),
-    }
+    EXPECTED_CLASS_ROLE_KEYS
+        .iter()
+        .map(|key| (*key).to_owned())
+        .collect()
 }
 
 #[cfg(test)]

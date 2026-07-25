@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Schema-generated vocabulary validators.**
+  `contracts/colorful/vocabulary.v1.schema.json` is now the single authority
+  for legal vocabulary role names and token-axis keys. A deterministic,
+  dependency-free Node generator emits the Rust manifest boundary and the
+  JavaScript Graft boundary; neither consumer carries a hand-maintained role or
+  key matrix. CI and release preparation regenerate into a temporary directory
+  and compare every output byte-for-byte. A schema-extension fixture proves a
+  new role or key changes both consumers together, preventing one-sided drift.
 - **Validated parser/annotator output boundary.** `colorful-core` now exposes a
   source-bound `ValidatedClassification` aggregate plus typed, path-addressed
   `ClassificationError`s. Construction rejects illegal tree shape; reversed,

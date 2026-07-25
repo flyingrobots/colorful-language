@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colorful.flyingrobots.dev/contracts/colorful/vocabulary.v1.schema.json",
+  "title": "colorful.vocabulary/v1 manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "classRoles", "roleProjections"],
+  "properties": {
+    "version": {
+      "const": "colorful.vocabulary/v1"
+    },
+    "classRoles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/classRole"
+      }
+    },
+    "roleProjections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/roleProjection"
+      }
+    }
+  },
+  "$defs": {
+    "tokenKind": {
+      "type": "string",
+      "enum": ["WORD", "NUMBER", "PUNCTUATION", "QUOTE"]
+    },
+    "lexicalClass": {
+      "type": "string",
+      "enum": ["FUNCTION", "CONTENT", "PROPER_NOUN_CANDIDATE"]
+    },
+    "openClassKind": {
+      "type": "string",
+      "enum": ["NOUN", "VERB", "ADJECTIVE", "ADVERB"]
+    },
+    "visualRole": {
+      "type": "string",
+      "enum": [
+        "STRUCTURAL_KEYWORD",
+        "TYPE_LIKE",
+        "LITERAL",
+        "QUOTED",
+        "MUTED",
+        "UNSTYLED",
+        "NOUN",
+        "VERB",
+        "ADJECTIVE",
+        "ADVERB"
+      ]
+    },
+    "classRoleKey": {
+      "oneOf": [
+        {
+          "const": {
+            "tokenKind": "WORD",
+            "lexicalClass": "FUNCTION",
+            "openClassKind": null
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "WORD",
+            "lexicalClass": "CONTENT",
+            "openClassKind": null
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "WORD",
+            "lexicalClass": "CONTENT",
+            "openClassKind": "NOUN"
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "WORD",
+            "lexicalClass": "CONTENT",
+            "openClassKind": "VERB"
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "WORD",
+            "lexicalClass": "CONTENT",
+            "openClassKind": "ADJECTIVE"
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "WORD",
+            "lexicalClass": "CONTENT",
+            "openClassKind": "ADVERB"
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "WORD",
+            "lexicalClass": "PROPER_NOUN_CANDIDATE",
+            "openClassKind": null
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "NUMBER",
+            "lexicalClass": null,
+            "openClassKind": null
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "PUNCTUATION",
+            "lexicalClass": null,
+            "openClassKind": null
+          }
+        },
+        {
+          "const": {
+            "tokenKind": "QUOTE",
+            "lexicalClass": null,
+            "openClassKind": null
+          }
+        }
+      ]
+    },
+    "classRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tokenKind",
+        "lexicalClass",
+        "openClassKind",
+        "visualRole"
+      ],
+      "properties": {
+        "tokenKind": {
+          "$ref": "#/$defs/tokenKind"
+        },
+        "lexicalClass": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/lexicalClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "openClassKind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/openClassKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "visualRole": {
+          "$ref": "#/$defs/visualRole"
+        }
+      }
+    },
+    "roleProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visualRole", "ansi", "lspTokenType", "graftClass"],
+      "properties": {
+        "visualRole": {
+          "$ref": "#/$defs/visualRole"
+        },
+        "ansi": {
+          "type": ["string", "null"]
+        },
+        "lspTokenType": {
+          "type": ["string", "null"]
+        },
+        "graftClass": {
+          "type": ["string", "null"]
+        }
+      }
+    }
+  }
+}

@@ -113,13 +113,17 @@ jobs:
       - run: bash scripts/version-compat-matrix.sh
 
   generated-ir-drift:
-    name: Wesley-generated IR drift (pinned 0.1.1)
+    name: Generated IR and vocabulary drift
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
       - run: bash scripts/check-generated-ir-drift.sh
+      - run: bash scripts/check-generated-vocabulary-drift.sh
 
   closure-contract:
     name: Issue-closure contract

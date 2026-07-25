@@ -31,6 +31,7 @@ export PATH="$root/editors/vscode/node_modules/.bin:$PATH"
 command -v tsc >/dev/null 2>&1 || fail "typescript compiler is required"
 bash scripts/ir-witness.sh
 bash scripts/check-generated-ir-drift.sh
+bash scripts/check-generated-vocabulary-drift.sh
 node consumers/graft-projection.test.mjs
 npm --prefix editors/vscode run compile
 cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked

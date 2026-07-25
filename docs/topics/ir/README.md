@@ -53,14 +53,20 @@ IR.
 
 ## How it is built
 
-The contracts (`contracts/colorful/*.graphql`) and vocabulary manifest
-(`contracts/colorful/vocabulary.v1.json`) are the source of truth. Wesley (pinned
-`0.1.1`) generates the boundary DTOs — Rust (serde) and TypeScript — into the
-`colorful-ir` crate (`crates/colorful-ir/{src/generated,ts}/`). Regenerate with
-`scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`; the script rejects any Wesley
-CLI version other than `0.1.1`). The generated types are a **wire boundary**:
-`colorful-core` stays free of them, and `colorful_ir` owns the one-way
-projection from the domain model into the DTO.
+The GraphQL contracts (`contracts/colorful/*.graphql`), vocabulary manifest
+(`contracts/colorful/vocabulary.v1.json`), and vocabulary validator schema
+(`contracts/colorful/vocabulary.v1.schema.json`) are the source of truth.
+Wesley (pinned `0.1.1`) generates the boundary DTOs — Rust (serde) and
+TypeScript — into the `colorful-ir` crate
+(`crates/colorful-ir/{src/generated,ts}/`). The checked-in Node generator emits
+the Rust and JavaScript vocabulary role/key validators from the validator
+schema. Regenerate all boundaries with `scripts/gen-ir.sh` (needs
+`COLORFUL_WESLEY_ROOT`; the script rejects any Wesley CLI version other than
+`0.1.1`), or regenerate only the vocabulary validators with
+`node scripts/generate-vocabulary-validators.mjs`. Generated files are
+**boundary code**: never edit them by hand. `colorful-core` stays free of
+generated types, and `colorful_ir` owns the one-way projection from the domain
+model into the DTO.
 
 `colorful-core` exposes a source-bound `ValidatedClassification` aggregate for
 producer adapters. It rejects malformed public tree/token output with typed,
@@ -76,7 +82,11 @@ CI does not trust that regeneration happened correctly against whichever
 developer checkout last ran it: `scripts/check-generated-ir-drift.sh` clones
 Wesley from an immutable pinned commit SHA (not a floating tag), generates
 into a temporary directory, and fails on any byte-for-byte drift against the
-committed output. This runs in CI (`generated-ir-drift`) and as part of
+committed output. `scripts/check-generated-vocabulary-drift.sh` independently
+generates both role/key validators into a temporary directory and compares
+them byte-for-byte with the committed Rust and JavaScript boundaries. Its
+schema-extension regression proves that adding a role or key changes both
+outputs together. Both checks run in CI (`generated-ir-drift`) and as part of
 `scripts/release-prep.sh`.
 
 `colorful-projection::build_document` is the single Rust producer front door:
@@ -106,8 +116,11 @@ Presentation is authored once in `contracts/colorful/vocabulary.v1.json`: token
 axes (`tokenKind`, `lexicalClass`, optional `openClassKind`) map to
 `VisualRole`, then each role projects to ANSI, LSP token type, and graft class.
 `vocabularyHash` is the hash of that manifest, so changing a color or role
-mapping changes the contract identity. The CLI, LSP, and graft reference
-consumer all derive from this manifest. The public Rust lookups
+mapping changes the contract identity. Legal role names and token-axis keys are
+authored separately in `contracts/colorful/vocabulary.v1.schema.json`; generated
+Rust and JavaScript validators make both language boundaries enforce that one
+matrix. The CLI, LSP, and graft reference consumer all derive from the manifest
+and generated validators. The public Rust lookups
 `visual_role`, `visual_role_for`, and `projection` return `Option`: every
 current `PosClass` and generated `VisualRole` maps to `Some` because manifest
 validation requires complete coverage, while caller-supplied token axes without
