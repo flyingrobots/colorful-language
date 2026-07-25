@@ -290,9 +290,12 @@ Requirements:
   CI-enforced: one machine's first measurement is not a stable baseline, and
   benchmark timing on shared CI runners is noisy enough that a hard gate
   today would fail on infrastructure variance, not real regressions. Wire it
-  into CI once a run of stable baselines exists. `compute_diagnostics` (what
-  `did_change` actually calls) has no benchmark yet, and neither does memory/
-  allocation. COL-15a through COL-17a own the document-state,
-  supported-envelope, and broader benchmark evidence.
+  into CI once a run of stable baselines exists. The guarded canonical IR path
+  used by `colorful ir` and `colorful diagnose --json` is outside COL-12's two
+  measured functions; its projection plus fail-closed `validate_document`
+  postcondition remains unmeasured. `compute_diagnostics` (what `did_change`
+  actually calls) has no benchmark yet, and neither does memory/allocation.
+  COL-15a through COL-17a own the document-state, supported-envelope, and
+  broader benchmark evidence.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.
