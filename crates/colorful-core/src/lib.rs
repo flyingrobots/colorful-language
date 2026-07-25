@@ -675,7 +675,17 @@ fn validate_layout(
     Ok(())
 }
 
-fn validate_classification(
+/// Validate borrowed parser and annotator output against one source.
+///
+/// This is the compatibility boundary for synchronous consumers that already
+/// borrow a public [`Tree`] and token slice. Prefer
+/// [`ValidatedClassification`] when the proof must travel with the values.
+///
+/// # Errors
+///
+/// Returns the first [`ClassificationError`] in deterministic tree, token,
+/// then correspondence order.
+pub fn validate_classification(
     source: &str,
     tree: &Tree,
     tokens: &[Token],
