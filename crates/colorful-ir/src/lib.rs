@@ -1900,7 +1900,8 @@ mod integration {
         tree: &Tree,
         tokens: &[CoreToken],
     ) -> ProjectionError {
-        let (_, _, parser_identity, annotator_identity) = projection_parts(source);
+        let parser_identity = ProseParser::new().pass_identity();
+        let annotator_identity = LexicalAnnotator::new(ClosedClassLexicon::new()).pass_identity();
         from_classification(
             "malformed",
             source,
