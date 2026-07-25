@@ -101,7 +101,7 @@ projected IR. Both projection entry points reject a parser or annotator that
 never overrode `pass_identity()` (an invalid-by-construction empty identity) or
 two producers claiming the same derivation stage.
 
-Projection has a mandatory receiver-side postcondition:
+Projection has a mandatory producer-side postcondition:
 `validate_document(document, Some(source.as_bytes()))` must pass before either
 entry point returns success. A core-valid classification that would still
 violate a wire invariant returns

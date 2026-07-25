@@ -166,6 +166,13 @@ update this table when the hot path changes meaningfully.
 
 **Known gaps:**
 
+- The guarded canonical IR path used by `colorful ir` and
+  `colorful diagnose --json` is not one of the two benchmarked functions.
+  That path builds `DocumentAnalysis`, then runs the fail-closed
+  `validate_document` producer postcondition before returning. No 16 ms claim
+  is made for that additional projection/validation work; COL-17a and
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135) own its
+  release-mode measurement.
 - The combined production `analyze_document` and versioned scheduling path has
   no benchmark yet. Only the standalone `compute_semantic_tokens` helper is
   measured above. The release-mode SLO and overload harness are tracked by
