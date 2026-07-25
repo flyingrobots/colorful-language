@@ -13,7 +13,10 @@ pub mod vocabulary;
 
 pub use generated::{syntax_v1, vocabulary_v1};
 
-use colorful_core::{Node, PassIdentity, PosClass, Span, Token as CoreToken, Tree};
+use colorful_core::{
+    validate_classification, ClassificationError, Node, PassIdentity, PosClass, Span,
+    Token as CoreToken, Tree, ValidatedClassification,
+};
 use std::fmt::Write as _;
 
 /// The contract identity this crate produces.
@@ -109,6 +112,8 @@ fn build_hash() -> String {
 /// negative — "bounded to ~2 GB" is only true if oversized input is refused.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProjectionError {
+    /// Public parser/annotator output failed the core validation boundary.
+    InvalidClassification(ClassificationError),
     /// A byte offset, length, or id did not fit the IR's `i32` wire range.
     Overflow {
         /// What was being converted (e.g. `"source length"`, `"token index"`).
@@ -129,11 +134,19 @@ pub enum ProjectionError {
         /// The pass id both roles claimed.
         pass_id: &'static str,
     },
+    /// Projection produced a document that failed its own wire validator.
+    ///
+    /// This is an internal-contract failure, not a malformed received
+    /// artifact: successful projection never returns such a document.
+    InvalidProjectedDocument(ValidationErrors),
 }
 
 impl core::fmt::Display for ProjectionError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
+            ProjectionError::InvalidClassification(error) => {
+                write!(f, "invalid parser/annotator classification: {error}")
+            }
             ProjectionError::Overflow { what, value } => write!(
                 f,
                 "{what} ({value}) exceeds the colorful.syntax/v1 i32 range; \
@@ -149,11 +162,30 @@ impl core::fmt::Display for ProjectionError {
                 "the parser and annotator both claimed pass id `{pass_id}`; \
                  each derivation step must be uniquely identifiable"
             ),
+            ProjectionError::InvalidProjectedDocument(errors) => {
+                write!(f, "projected document violated its contract: {errors}")
+            }
         }
     }
 }
 
-impl std::error::Error for ProjectionError {}
+impl std::error::Error for ProjectionError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::InvalidClassification(error) => Some(error),
+            Self::InvalidProjectedDocument(errors) => Some(errors),
+            Self::Overflow { .. }
+            | Self::MissingPassIdentity { .. }
+            | Self::DuplicatePassId { .. } => None,
+        }
+    }
+}
+
+impl From<ClassificationError> for ProjectionError {
+    fn from(error: ClassificationError) -> Self {
+        Self::InvalidClassification(error)
+    }
+}
 
 /// Narrow a `usize` offset, length, or id to the IR's `i32`, or fail loudly.
 fn to_i32(what: &'static str, value: usize) -> Result<i32, ProjectionError> {
@@ -331,6 +363,8 @@ fn build_structure(
 ///
 /// # Errors
 ///
+/// Returns [`ProjectionError::InvalidClassification`] if the borrowed public
+/// tree/token values do not form a valid classification of `source`.
 /// Returns [`ProjectionError::Overflow`] if a byte offset, the source length, a
 /// token index, or an outline id exceeds the IR's `i32` wire range (~2 GB).
 /// Returns [`ProjectionError::MissingPassIdentity`] if either identity is the
@@ -338,6 +372,53 @@ fn build_structure(
 /// `pass_identity()`), and [`ProjectionError::DuplicatePassId`] if both
 /// identities claim the same pass id.
 pub fn from_classification(
+    unit_id: &str,
+    source: &str,
+    tree: &Tree,
+    tokens: &[CoreToken],
+    parser_identity: PassIdentity,
+    annotator_identity: PassIdentity,
+) -> Result<syntax_v1::DocumentAnalysis, ProjectionError> {
+    validate_classification(source, tree, tokens)?;
+    project_classification(
+        unit_id,
+        source,
+        tree,
+        tokens,
+        parser_identity,
+        annotator_identity,
+    )
+}
+
+/// Project a source-bound [`ValidatedClassification`] into the IR.
+///
+/// This aggregate-native entry point avoids repeating validation when a
+/// producer already crossed the core boundary. The compatibility
+/// [`from_classification`] wrapper validates borrowed raw values, then enters
+/// the same private projection path.
+///
+/// # Errors
+///
+/// Returns [`ProjectionError`] if producer identities are missing or
+/// duplicated, an IR integer would overflow, or the projected document fails
+/// its mandatory [`validate_document`] postcondition.
+pub fn from_validated_classification(
+    unit_id: &str,
+    classification: &ValidatedClassification<'_>,
+    parser_identity: PassIdentity,
+    annotator_identity: PassIdentity,
+) -> Result<syntax_v1::DocumentAnalysis, ProjectionError> {
+    project_classification(
+        unit_id,
+        classification.source(),
+        classification.tree(),
+        classification.tokens(),
+        parser_identity,
+        annotator_identity,
+    )
+}
+
+fn project_classification(
     unit_id: &str,
     source: &str,
     tree: &Tree,
@@ -385,7 +466,7 @@ pub fn from_classification(
         compiler_build_hash: build_hash(),
     };
 
-    Ok(syntax_v1::DocumentAnalysis {
+    let document = syntax_v1::DocumentAnalysis {
         contract_version: CONTRACT_VERSION.to_string(),
         schema_hash: syntax_schema_hash(),
         vocabulary_hash: vocabulary_hash(),
@@ -398,7 +479,10 @@ pub fn from_classification(
         structure: build_structure(source, tree)?,
         diagnostics: Vec::new(),
         derivation: vec![step(parser_identity), step(annotator_identity)],
-    })
+    };
+    validate_document(&document, Some(source.as_bytes()))
+        .map_err(ProjectionError::InvalidProjectedDocument)?;
+    Ok(document)
 }
 
 /// One segment of a [`Path`]: a named field, or an index into a list.

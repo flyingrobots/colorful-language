@@ -399,9 +399,23 @@ Requirements:
   precedence; aggregate-native and compatibility paths emit byte-identical
   valid output; and a successful corpus assertion proves
   `validate_document(document, Some(source)) == Ok(())`. *Evidence type:*
-  public projection integration tests and producer-front-door tests. *Tracking:*
+  public projection integration tests and producer-front-door tests.
+  *Evidence:* `colorful-ir`
+  `integration::{projection_rejects_a_reversed_span_with_the_core_error_path,
+  projection_rejects_an_out_of_bounds_span_with_the_core_error_path,
+  projection_rejects_a_mid_code_point_span_with_the_core_error_path,
+  projection_rejects_unsorted_tokens_with_the_core_error_path,
+  projection_rejects_overlapping_tokens_with_the_core_error_path,
+  projection_rejects_a_tree_token_count_mismatch_with_the_core_error_path,
+  projection_rejects_a_tree_token_span_mismatch_with_both_paths,
+  projection_checks_classification_before_producer_identity,
+  aggregate_native_and_compatibility_projection_are_byte_identical,
+  aggregate_projection_rejects_a_document_that_fails_its_postcondition}`;
+  `colorful-projection`
+  `tests::propagates_a_custom_annotators_typed_classification_error`.
+  *Tracking:*
   [#144](https://github.com/flyingrobots/colorful-language/issues/144).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-16a** — *Requirement:* IR-16. *Behavior:* one schema artifact generates
   Rust and JavaScript role/key validators, and either stale consumer fails
   regeneration CI. *Oracle:* fresh generation is byte-identical and both
@@ -475,10 +489,6 @@ Requirements:
   and `ruleId` now name a real, validated producer identity (IR-8), but
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
-- The core producer boundary now rejects malformed public adapter output under
-  IR-15a, but raw `colorful_ir::from_classification` callers are not yet
-  required to supply that aggregate. Typed projection adoption and a
-  success-path `validate_document` postcondition remain open in IR-15b.
 - Generated vocabulary validation remains open in IR-16a.
 - Complexity-policy and mutation evidence remains open in IR-18b and IR-18c.
 - The independent two-version consumer and

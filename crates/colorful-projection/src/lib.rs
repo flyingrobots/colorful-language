@@ -6,10 +6,8 @@
 //! `colorful.syntax/v1` IR stops hand-rolling the "parse -> annotate -> project
 //! into IR" pipeline by hand. `colorful-cli`'s `analyze_ir`/`diagnose_json`
 //! route through it today. `colorful-lsp` does not: its semantic-token and
-//! diagnostic paths only ever needed the parsed [`Tree`] and classified
-//! [`CoreToken`]s, never the projected IR, so it still calls `parser.parse`
-//! and `annotator.annotate` directly — there is nothing here for it to stop
-//! hand-rolling. It is a Rust-only front door in any case: **only Rust
+//! diagnostic paths only ever needed the validated core classification, never
+//! the projected IR. It is a Rust-only front door in any case: **only Rust
 //! producer surfaces route through it**. An external consumer such as the JS
 //! graft projection never calls this crate — it receives a serialized
 //! [`colorful_ir::syntax_v1::DocumentAnalysis`] artifact and validates that
@@ -48,14 +46,13 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{Annotator, Parser, Token as CoreToken, Tree};
+use colorful_core::{Annotator, Parser, Token as CoreToken, Tree, ValidatedClassification};
 use colorful_ir::syntax_v1::DocumentAnalysis;
 
 /// An error building an [`AnalyzedDocument`]. A transparent alias for
-/// [`colorful_ir::ProjectionError`]: parsing and annotation are infallible
-/// today, so IR construction is the only failure mode this crate has, and
-/// `colorful-ir` — not this crate — owns the reasons a classification cannot
-/// be projected.
+/// [`colorful_ir::ProjectionError`]: `colorful-ir` owns both invalid
+/// classification and projection-contract failure reasons, so this adapter
+/// does not define a parallel error model.
 pub use colorful_ir::ProjectionError;
 
 /// The bundle [`build_document`] returns: the parse tree and classified
@@ -80,9 +77,10 @@ pub struct AnalyzedDocument {
 ///
 /// This is the one route a Rust producer surface has from source text to the
 /// canonical `colorful.syntax/v1` analysis: `parser.parse`, then
-/// `annotator.annotate`, then [`colorful_ir::from_classification`] with each
-/// producer's own [`colorful_core::PassIdentity`] (via `pass_identity()`) —
-/// never a hand-rolled copy of this sequence.
+/// `annotator.annotate`, core validation, then
+/// [`colorful_ir::from_validated_classification`] with each producer's own
+/// [`colorful_core::PassIdentity`] (via `pass_identity()`) — never a
+/// hand-rolled copy of this sequence.
 ///
 /// `parser` and `annotator` are borrowed, not consumed: both are typically
 /// stateless, reusable services (a compiled lexicon, a stateless segmenter),
@@ -90,10 +88,12 @@ pub struct AnalyzedDocument {
 ///
 /// # Errors
 ///
-/// Returns [`ProjectionError`] if `source` or its token count exceeds the
-/// IR's `i32` wire range, or if either `parser` or `annotator` did not
-/// override `pass_identity()` (an invalid-by-construction empty identity) or
-/// both claim the same pass id. See [`colorful_ir::from_classification`].
+/// Returns [`ProjectionError`] if the parser/annotator output fails core
+/// validation, `source` or its token count exceeds the IR's `i32` wire range,
+/// either producer did not override `pass_identity()` (an
+/// invalid-by-construction empty identity), both claim the same pass id, or
+/// projection violates its wire-contract postcondition. See
+/// [`colorful_ir::from_validated_classification`].
 pub fn build_document<P, A>(
     unit_id: &str,
     source: &str,
@@ -104,25 +104,23 @@ where
     P: Parser + ?Sized,
     A: Annotator + ?Sized,
 {
-    let tree = parser.parse(source);
-    let tokens = annotator.annotate(source, &tree);
-    let document = colorful_ir::from_classification(
+    let classification = ValidatedClassification::from_ports(source, parser, annotator)
+        .map_err(ProjectionError::InvalidClassification)?;
+    let document = colorful_ir::from_validated_classification(
         unit_id,
-        source,
-        &tree,
-        &tokens,
+        &classification,
         parser.pass_identity(),
         annotator.pass_identity(),
     )?;
+    let (tree, tokens) = classification.into_parts();
 
-    // IR tokens correspond 1:1 by index to core tokens — from_classification's
+    // IR tokens correspond 1:1 by index to core tokens — validated projection's
     // own contract (see the `ir_tokens_correspond_1to1_to_core_tokens` test
-    // below). This is cheap enough to leave on in release builds' debug
-    // assertions and catches future drift right at the source.
+    // below). This catches future drift right at the source.
     debug_assert_eq!(
         tokens.len(),
         document.tokens.len(),
-        "colorful_ir::from_classification must emit exactly one IR token per core token"
+        "validated IR projection must emit exactly one IR token per core token"
     );
 
     Ok(AnalyzedDocument {

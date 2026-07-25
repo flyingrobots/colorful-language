@@ -59,19 +59,18 @@ The contracts (`contracts/colorful/*.graphql`) and vocabulary manifest
 `colorful-ir` crate (`crates/colorful-ir/{src/generated,ts}/`). Regenerate with
 `scripts/gen-ir.sh` (needs `COLORFUL_WESLEY_ROOT`; the script rejects any Wesley
 CLI version other than `0.1.1`). The generated types are a **wire boundary**:
-`colorful-core` stays free of them, and
-`colorful_ir::from_classification` is the one-way projection from the domain model
-into the DTO.
+`colorful-core` stays free of them, and `colorful_ir` owns the one-way
+projection from the domain model into the DTO.
 
-`colorful-core` also exposes a source-bound `ValidatedClassification` aggregate
-for producer adapters. It rejects malformed public tree/token output with
-typed, path-addressed `ClassificationError`s before the CLI or LSP interprets
-spans. The aggregate is pure and keeps valid tree/tokens behind read-only
-accessors. Requiring raw `colorful_ir::from_classification` callers to consume
-that proof, and mapping its failures into `ProjectionError`, is still tracked
-by [#144](https://github.com/flyingrobots/colorful-language/issues/144); the
-current producer-validation boundary must not be mistaken for that projection
-postcondition.
+`colorful-core` exposes a source-bound `ValidatedClassification` aggregate for
+producer adapters. It rejects malformed public tree/token output with typed,
+path-addressed `ClassificationError`s and keeps valid values behind read-only
+accessors. `colorful_ir::from_validated_classification` consumes that proof
+without revalidating it. The `from_classification` entry point remains
+signature-compatible for callers with borrowed raw values, but validates them
+before entering the same private projection path. Its
+`ProjectionError::InvalidClassification` wraps the core error rather than
+duplicating a second range-error model.
 
 CI does not trust that regeneration happened correctly against whichever
 developer checkout last ran it: `scripts/check-generated-ir-drift.sh` clones
@@ -81,17 +80,24 @@ committed output. This runs in CI (`generated-ir-drift`) and as part of
 `scripts/release-prep.sh`.
 
 `colorful-projection::build_document` is the single Rust producer front door:
-it parses, annotates, and calls `from_classification` with each producer's
-`PassIdentity` (`colorful_core::Parser::pass_identity` /
-`Annotator::pass_identity`), returning an `AnalyzedDocument` — the parsed
-`Tree` and classified tokens alongside the projected `DocumentAnalysis`.
+it constructs `ValidatedClassification`, then calls
+`from_validated_classification` with each producer's `PassIdentity`
+(`colorful_core::Parser::pass_identity` /
+`Annotator::pass_identity`), returning an `AnalyzedDocument` — the parsed `Tree`
+and classified tokens alongside the projected `DocumentAnalysis`.
 `colorful-cli`'s `analyze_ir`/`diagnose_json` call it directly; `colorful-lsp`
 does not, since its semantic-token and diagnostic paths never needed the
-projected IR. `from_classification` — and `build_document` in turn — rejects a
-parser or annotator that never overrode `pass_identity()` (an
-invalid-by-construction empty identity) or two producers claiming the same
-derivation stage; `validate_document` rejects the same on a received
-artifact, including an empty `derivation` list.
+projected IR. Both projection entry points reject a parser or annotator that
+never overrode `pass_identity()` (an invalid-by-construction empty identity) or
+two producers claiming the same derivation stage.
+
+Projection has a mandatory receiver-side postcondition:
+`validate_document(document, Some(source.as_bytes()))` must pass before either
+entry point returns success. A core-valid classification that would still
+violate a wire invariant returns
+`ProjectionError::InvalidProjectedDocument`; no invalid canonical artifact is
+returned. `validate_document` independently enforces the same contract on
+received artifacts, including an empty `derivation` list.
 
 `colorful_ir::canonical_json` is the shared canonical serializer (compact, sorted
 keys); the TypeScript side uses the identical algorithm.
@@ -190,9 +196,6 @@ v0.3 must handle the `Option` result.
   input/output ids, a real `compilerBuildHash`, and artifact hashes are not
   implemented. Expanding that surface is evidence-gated rather than assumed.
 - GraphQL `Int` lowers to `i32`, bounding documents to ~2 GB.
-- Raw `from_classification` input is not yet required to carry the core
-  `ValidatedClassification` proof; [#144](https://github.com/flyingrobots/colorful-language/issues/144)
-  owns that projection-boundary hardening.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior and the
 [architecture decision rule](architecture.md#product-evidence-gate) for

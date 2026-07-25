@@ -19,8 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the existing total `colorize()` fails closed to unchanged source. LSP
   analysis helpers now return the typed error; the server converts it into no
   semantic tokens and one stable `colorful/invalid-classification` diagnostic.
-  Requiring raw IR projection to consume the aggregate remains the separate
-  follow-up tracked by #144.
+  IR projection consumes this boundary as described below.
+- **Fail-closed classification projection.** `colorful-ir` adds an
+  aggregate-native `from_validated_classification` entry point while preserving
+  raw `from_classification` as a signature-compatible validating wrapper.
+  `ProjectionError::InvalidClassification` reuses the core's typed structural
+  error and exact path; reversed, out-of-bounds, mid-code-point, unsorted,
+  overlapping, and tree/token-mismatched public input cannot reach projection.
+  Both paths share deterministic classification-before-identity precedence and
+  byte-identical valid output. Before returning success, projection now runs
+  `validate_document` against the real source and returns
+  `InvalidProjectedDocument` if its own output violates the wire contract.
+  `colorful-projection::build_document` constructs and projects the validated
+  aggregate directly, so CLI IR/diagnostic output crosses the boundary once.
+  The two new public `ProjectionError` variants are an intentional exhaustive-
+  match API addition in the queued v0.4.0 line.
 - **Strict received-IR token and outline validation.** Rust
   `validate_document` and the JavaScript `validateWireContract` gate now reject
   empty, unsorted, or overlapping token ranges and outline graphs with invalid
