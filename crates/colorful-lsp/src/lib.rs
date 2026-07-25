@@ -337,7 +337,7 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use colorful_core::{Finding, Token, Tree};
+    use colorful_core::{ClassificationError, Finding, Node, PosClass, Span, Token, Tree};
     use colorful_lexicon::ContextualOpenClassAnnotator;
     use colorful_lint::ProseLinter;
     use colorful_parse::ProseParser;
@@ -394,7 +394,8 @@ mod tests {
             &CountingAnalyzer {
                 calls: &analyzer_calls,
             },
-        );
+        )
+        .expect("built-in adapters produce a valid classification");
 
         assert!(!analysis.semantic_tokens().is_empty());
         assert_eq!(
@@ -404,6 +405,43 @@ mod tests {
         assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
         assert_eq!(annotator_calls.load(Ordering::SeqCst), 1);
         assert_eq!(analyzer_calls.load(Ordering::SeqCst), 1);
+    }
+
+    struct OverlappingAnnotator;
+
+    impl Annotator for OverlappingAnnotator {
+        fn annotate(&self, _source: &str, _tree: &Tree) -> Vec<Token> {
+            vec![
+                Token {
+                    span: Span::new(0, 3),
+                    class: PosClass::Content,
+                },
+                Token {
+                    span: Span::new(2, 7),
+                    class: PosClass::Content,
+                },
+            ]
+        }
+    }
+
+    #[test]
+    fn analyze_document_propagates_a_custom_annotators_typed_span_error() {
+        let error = analyze_document(
+            "cat runs",
+            &ProseParser::new(),
+            &OverlappingAnnotator,
+            &ProseLinter::new(),
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            error,
+            ClassificationError::OverlappingSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tokens[1].span.start"
+        ));
     }
 
     #[test]

@@ -506,6 +506,272 @@ mod tests {
         }
     }
 
+    fn valid_classification() -> (&'static str, Tree, Vec<Token>) {
+        let source = "cat runs.";
+        let tree = Tree::document(vec![sentence(
+            (0, source.len()),
+            vec![word(0, 3), word(4, 8), punct(8, 9)],
+        )]);
+        let tokens = vec![
+            Token {
+                span: Span::new(0, 3),
+                class: PosClass::Content,
+            },
+            Token {
+                span: Span::new(4, 8),
+                class: PosClass::Content,
+            },
+            Token {
+                span: Span::new(8, 9),
+                class: PosClass::Punctuation,
+            },
+        ];
+        (source, tree, tokens)
+    }
+
+    fn classification_error(
+        source: &'static str,
+        tree: Tree,
+        tokens: Vec<Token>,
+    ) -> ClassificationError {
+        ValidatedClassification::new(source, tree, tokens).unwrap_err()
+    }
+
+    #[test]
+    fn validated_classification_preserves_valid_built_in_shape() {
+        let (source, tree, tokens) = valid_classification();
+        let validated = ValidatedClassification::new(source, tree.clone(), tokens.clone()).unwrap();
+
+        assert_eq!(validated.source(), source);
+        assert_eq!(validated.tree(), &tree);
+        assert_eq!(validated.tokens(), tokens);
+        assert_eq!(validated.into_parts(), (tree, tokens));
+    }
+
+    #[test]
+    fn validated_classification_rejects_an_unexpected_root_kind() {
+        let (source, _, tokens) = valid_classification();
+        let tree = Tree { root: word(0, 3) };
+        let error = classification_error(source, tree, tokens);
+
+        assert!(matches!(
+            error,
+            ClassificationError::UnexpectedNodeKind { ref path, .. }
+                if path.to_string() == "tree.root"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_a_reversed_tree_span() {
+        let (source, mut tree, tokens) = valid_classification();
+        let Node::Document(sentences) = &mut tree.root else {
+            unreachable!()
+        };
+        let Node::Sentence { parts, .. } = &mut sentences[0] else {
+            unreachable!()
+        };
+        let Node::Word { span } = &mut parts[0] else {
+            unreachable!()
+        };
+        *span = Span { start: 3, end: 0 };
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::ReversedSpan {
+                ref path,
+                start: 3,
+                end: 0,
+            } if path.to_string() == "tree.root.sentences[0].parts[0].span"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_an_out_of_bounds_tree_span() {
+        let (source, mut tree, tokens) = valid_classification();
+        let Node::Document(sentences) = &mut tree.root else {
+            unreachable!()
+        };
+        let Node::Sentence { parts, .. } = &mut sentences[0] else {
+            unreachable!()
+        };
+        let Node::Punct { span } = &mut parts[2] else {
+            unreachable!()
+        };
+        span.end = source.len() + 1;
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::SpanOutOfBounds {
+                ref path,
+                end,
+                length,
+            } if path.to_string() == "tree.root.sentences[0].parts[2].span.end"
+                && end == source.len() + 1
+                && length == source.len()
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_an_unsorted_tree_sibling() {
+        let (source, mut tree, tokens) = valid_classification();
+        let Node::Document(sentences) = &mut tree.root else {
+            unreachable!()
+        };
+        let Node::Sentence { parts, .. } = &mut sentences[0] else {
+            unreachable!()
+        };
+        parts.swap(0, 1);
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::UnsortedSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tree.root.sentences[0].parts[1].span.start"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_an_overlapping_tree_sibling() {
+        let (source, mut tree, tokens) = valid_classification();
+        let Node::Document(sentences) = &mut tree.root else {
+            unreachable!()
+        };
+        let Node::Sentence { parts, .. } = &mut sentences[0] else {
+            unreachable!()
+        };
+        let Node::Word { span } = &mut parts[1] else {
+            unreachable!()
+        };
+        span.start = 2;
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::OverlappingSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tree.root.sentences[0].parts[1].span.start"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_a_child_outside_its_sentence() {
+        let (source, mut tree, tokens) = valid_classification();
+        let Node::Document(sentences) = &mut tree.root else {
+            unreachable!()
+        };
+        let Node::Sentence { span, .. } = &mut sentences[0] else {
+            unreachable!()
+        };
+        span.end -= 1;
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::ChildSpanOutsideParent { ref path, .. }
+                if path.to_string() == "tree.root.sentences[0].parts[2].span"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_a_mid_code_point_token_span() {
+        let source = "é ok";
+        let tree = Tree::document(vec![sentence(
+            (0, source.len()),
+            vec![word(0, 2), word(3, 5)],
+        )]);
+        let tokens = vec![
+            Token {
+                span: Span { start: 1, end: 2 },
+                class: PosClass::Content,
+            },
+            Token {
+                span: Span::new(3, 5),
+                class: PosClass::Content,
+            },
+        ];
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::SpanNotOnCharBoundary {
+                ref path,
+                offset: 1,
+            } if path.to_string() == "tokens[0].span.start"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_an_unsorted_token() {
+        let (source, tree, mut tokens) = valid_classification();
+        tokens.swap(0, 1);
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::UnsortedSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tokens[1].span.start"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_an_overlapping_token() {
+        let (source, tree, mut tokens) = valid_classification();
+        tokens[1].span.start = 2;
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::OverlappingSpan {
+                ref path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tokens[1].span.start"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_a_tree_token_count_mismatch() {
+        let (source, tree, mut tokens) = valid_classification();
+        tokens.pop();
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::TreeTokenCountMismatch {
+                ref path,
+                tree_leaves: 3,
+                tokens: 2,
+            } if path.to_string() == "tokens"
+        ));
+    }
+
+    #[test]
+    fn validated_classification_rejects_a_tree_token_span_mismatch() {
+        let (source, tree, mut tokens) = valid_classification();
+        tokens[0].span.start = 1;
+
+        let error = classification_error(source, tree, tokens);
+        assert!(matches!(
+            error,
+            ClassificationError::TreeTokenSpanMismatch {
+                ref path,
+                tree_span: Span { start: 0, end: 3 },
+                token_span: Span { start: 1, end: 3 },
+                ..
+            } if path.to_string() == "tokens[0].span"
+        ));
+    }
+
     #[test]
     fn span_slice_is_in_bounds_and_oob_safe() {
         let s = "hello";
