@@ -397,10 +397,11 @@ Requirements:
   overlapping, and tree/token mismatch input returns the exact nested error
   variant/path; multi-defect input pins classification-before-identity
   precedence; aggregate-native and compatibility paths emit byte-identical
-  valid output; and a successful corpus assertion proves
-  `validate_document(document, Some(source)) == Ok(())`. *Evidence type:*
-  public projection integration tests and producer-front-door tests.
-  *Evidence:* `colorful-ir`
+  valid output; and a core-valid but wire-invalid aggregate returns
+  `InvalidProjectedDocument` with the exact receiver-validator error, proving
+  that projection cannot bypass its postcondition. *Evidence type:* public
+  projection integration tests and producer-front-door tests. *Evidence:*
+  `colorful-ir`
   `integration::{projection_rejects_a_reversed_span_with_the_core_error_path,
   projection_rejects_an_out_of_bounds_span_with_the_core_error_path,
   projection_rejects_a_mid_code_point_span_with_the_core_error_path,

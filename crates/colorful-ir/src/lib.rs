@@ -2086,8 +2086,6 @@ mod integration {
             canonical_json(&compatibility).unwrap(),
             canonical_json(&aggregate).unwrap()
         );
-        validate_document(&aggregate, Some(source.as_bytes()))
-            .expect("every successful projection validates against its source");
     }
 
     #[test]
