@@ -665,6 +665,47 @@ define_validation_errors! {
         } => |f| {
             write!(f, "at {path}: {offset} is not a UTF-8 character boundary")
         },
+        /// A token range contains no source bytes.
+        EmptyTokenRange {
+            /// The offending `tokens[i].byteRange`.
+            path: Path,
+            /// The token's occurrence id.
+            occurrence_id: i32,
+        } => |f| {
+            write!(f, "at {path}: token {occurrence_id} has an empty range")
+        },
+        /// A token starts before the preceding token starts.
+        UnsortedTokenRange {
+            /// The offending `tokens[i].byteRange.startUtf8`.
+            path: Path,
+            /// The preceding token's array index.
+            previous_index: usize,
+            /// The preceding token's start offset.
+            previous_start: i32,
+            /// The offending token's start offset.
+            start: i32,
+        } => |f| {
+            write!(
+                f,
+                "at {path}: start {start} precedes tokens[{previous_index}] start {previous_start}"
+            )
+        },
+        /// A token starts before the preceding token ends.
+        OverlappingTokenRange {
+            /// The offending `tokens[i].byteRange.startUtf8`.
+            path: Path,
+            /// The preceding token's array index.
+            previous_index: usize,
+            /// The preceding token's end offset.
+            previous_end: i32,
+            /// The offending token's start offset.
+            start: i32,
+        } => |f| {
+            write!(
+                f,
+                "at {path}: start {start} overlaps tokens[{previous_index}] ending at {previous_end}"
+            )
+        },
         /// A token's `tokenKind` / `lexicalClass` / `functionKind` /
         /// `openClassKind` axes are an illegal combination under the
         /// `colorful.syntax/v1` contract.
@@ -705,6 +746,56 @@ define_validation_errors! {
             child: i32,
         } => |f| {
             write!(f, "at {path}: references missing child {child}")
+        },
+        /// An outline kind carries a depth other than the one defined by the
+        /// wire contract.
+        InvalidOutlineDepth {
+            /// The offending `structure[i].depth`.
+            path: Path,
+            /// The depth the document declared.
+            depth: i32,
+            /// The depth required for the node's kind.
+            expected: i32,
+        } => |f| {
+            write!(f, "at {path}: depth {depth}, expected {expected} for this outline kind")
+        },
+        /// A `childNodeIds` edge closes a cycle in the structure graph.
+        StructureCycle {
+            /// The offending `structure[i].childNodeIds[j]`.
+            path: Path,
+            /// The parent node id.
+            parent: i32,
+            /// The child node id that reaches an active ancestor.
+            child: i32,
+        } => |f| {
+            write!(f, "at {path}: edge {parent} -> {child} closes a structure cycle")
+        },
+        /// A structure node is referenced by more than one parent.
+        MultipleStructureParents {
+            /// The second offending `structure[i].childNodeIds[j]`.
+            path: Path,
+            /// The shared child node id.
+            child: i32,
+            /// The first parent node id encountered in wire order.
+            first_parent: i32,
+            /// The second parent node id.
+            second_parent: i32,
+        } => |f| {
+            write!(
+                f,
+                "at {path}: child {child} already belongs to parent {first_parent}, not {second_parent}"
+            )
+        },
+        /// A child's range extends outside its parent's range.
+        ChildRangeOutsideParent {
+            /// The offending `structure[i].childNodeIds[j]`.
+            path: Path,
+            /// The parent node id.
+            parent: i32,
+            /// The child node id.
+            child: i32,
+        } => |f| {
+            write!(f, "at {path}: child {child} falls outside parent {parent}")
         },
         /// A derivation step's `passId` or `ruleId` is empty — the invalid-by-
         /// construction placeholder a producer reports when it never overrode
@@ -780,17 +871,11 @@ impl std::error::Error for ValidationErrors {}
 /// boundary may lie. Every check runs; all failures are returned together.
 ///
 /// With `source = None`, structural and self-consistent-hash checks run (schema,
-/// vocabulary, contract version, range order/bounds against the declared length,
-/// token-axis legality, id uniqueness, child references). With `source =
+/// vocabulary, contract version, ordered non-empty token layout, range
+/// order/bounds against the declared length, token-axis legality, id uniqueness,
+/// and outline depth/ownership/containment/acyclicity). With `source =
 /// Some(bytes)`, the content hash, byte length, and UTF-8 character boundaries
 /// are checked against the real bytes as well.
-///
-/// **Out of scope:** *inter-token* layout — source ordering, non-overlap, and
-/// non-emptiness of token ranges — is a producer guarantee (pinned by
-/// `from_classification`'s own tests), not a property of the wire contract, so it
-/// is deliberately not enforced on a received artifact. A future contextual
-/// re-tagger may legitimately emit a different layout. Per-token range validity
-/// (order, bounds, boundaries) *is* checked.
 ///
 /// # Errors
 ///
@@ -966,13 +1051,9 @@ fn check_range(
     errors
 }
 
-/// Validate each token's byte range (order, bounds, char-boundary) and
-/// `occurrenceId` uniqueness.
-///
-/// Inter-token layout — ordering, non-overlap, non-emptiness — is
-/// intentionally *not* checked here: it is a producer guarantee (pinned by
-/// `from_classification`'s own tests), not a wire invariant. A future
-/// contextual re-tagger may legitimately emit a different layout.
+/// Validate token byte ranges (order, bounds, character boundaries,
+/// non-emptiness, wire ordering, and non-overlap) and `occurrenceId`
+/// uniqueness.
 fn validate_token_ranges(
     document: &syntax_v1::DocumentAnalysis,
     ctx: &SourceContext,
@@ -986,6 +1067,35 @@ fn validate_token_ranges(
             &token.byte_range,
             ctx,
         ));
+        if token.byte_range.start_utf8 == token.byte_range.end_utf8 {
+            errors.push(ValidationError::EmptyTokenRange {
+                path: path.clone().field("byteRange"),
+                occurrence_id: token.occurrence_id,
+            });
+        }
+        if let Some((previous_index, previous)) = i.checked_sub(1).and_then(|previous_index| {
+            document
+                .tokens
+                .get(previous_index)
+                .map(|previous| (previous_index, previous))
+        }) {
+            let start_path = path.clone().field("byteRange").field("startUtf8");
+            if token.byte_range.start_utf8 < previous.byte_range.start_utf8 {
+                errors.push(ValidationError::UnsortedTokenRange {
+                    path: start_path,
+                    previous_index,
+                    previous_start: previous.byte_range.start_utf8,
+                    start: token.byte_range.start_utf8,
+                });
+            } else if token.byte_range.start_utf8 < previous.byte_range.end_utf8 {
+                errors.push(ValidationError::OverlappingTokenRange {
+                    path: start_path,
+                    previous_index,
+                    previous_end: previous.byte_range.end_utf8,
+                    start: token.byte_range.start_utf8,
+                });
+            }
+        }
         if !seen_ids.insert(token.occurrence_id) {
             errors.push(ValidationError::DuplicateTokenId {
                 path,
@@ -1012,20 +1122,15 @@ fn validate_token_axes(document: &syntax_v1::DocumentAnalysis) -> Vec<Validation
     errors
 }
 
-/// Validate the outline's structure graph: each node's byte range, `nodeId`
-/// uniqueness, and `childNodeIds` references.
-///
-/// Range containment (a parent's range containing each child's) and cycles
-/// are deliberately not checked — a producer guarantee, not a wire invariant,
-/// mirrored exactly by the JS graft consumer's own admission gate.
+/// Validate the complete outline graph in wire order.
 fn validate_structure_graph(
     document: &syntax_v1::DocumentAnalysis,
     ctx: &SourceContext,
 ) -> Vec<ValidationError> {
     let mut errors = Vec::new();
-    let node_ids: std::collections::HashSet<i32> =
-        document.structure.iter().map(|n| n.node_id).collect();
     let mut seen_ids = std::collections::HashSet::new();
+    let mut node_indices = std::collections::HashMap::new();
+
     for (i, node) in document.structure.iter().enumerate() {
         let path = Path::root().field("structure").index(i);
         errors.extend(check_range(
@@ -1039,15 +1144,99 @@ fn validate_structure_graph(
                 node_id: node.node_id,
             });
         }
+        node_indices.entry(node.node_id).or_insert(i);
+        let expected = match node.kind {
+            syntax_v1::OutlineKind::Paragraph => 0,
+            syntax_v1::OutlineKind::Sentence => 1,
+        };
+        if node.depth != expected {
+            errors.push(ValidationError::InvalidOutlineDepth {
+                path: path.field("depth"),
+                depth: node.depth,
+                expected,
+            });
+        }
+    }
+
+    let mut parents = std::collections::HashMap::new();
+    for (i, node) in document.structure.iter().enumerate() {
+        let path = Path::root().field("structure").index(i);
         for (j, child) in node.child_node_ids.iter().enumerate() {
-            if !node_ids.contains(child) {
+            let edge_path = path.clone().field("childNodeIds").index(j);
+            let Some(&child_index) = node_indices.get(child) else {
                 errors.push(ValidationError::DanglingChildRef {
-                    path: path.clone().field("childNodeIds").index(j),
+                    path: edge_path,
+                    child: *child,
+                });
+                continue;
+            };
+
+            if let Some(&first_parent) = parents.get(child) {
+                if first_parent != node.node_id {
+                    errors.push(ValidationError::MultipleStructureParents {
+                        path: edge_path.clone(),
+                        child: *child,
+                        first_parent,
+                        second_parent: node.node_id,
+                    });
+                }
+            } else {
+                parents.insert(*child, node.node_id);
+            }
+
+            let child_range = &document.structure[child_index].byte_range;
+            if child_range.start_utf8 < node.byte_range.start_utf8
+                || child_range.end_utf8 > node.byte_range.end_utf8
+            {
+                errors.push(ValidationError::ChildRangeOutsideParent {
+                    path: edge_path,
+                    parent: node.node_id,
                     child: *child,
                 });
             }
         }
     }
+
+    // Iterative depth-first search avoids making hostile graph depth consume
+    // the process stack. Root and edge iteration preserve wire order.
+    let mut colors = vec![0_u8; document.structure.len()];
+    for root in 0..document.structure.len() {
+        if colors[root] != 0 {
+            continue;
+        }
+        colors[root] = 1;
+        let mut stack = vec![(root, 0_usize)];
+        while let Some(&(node_index, edge_index)) = stack.last() {
+            let node = &document.structure[node_index];
+            if edge_index == node.child_node_ids.len() {
+                colors[node_index] = 2;
+                stack.pop();
+                continue;
+            }
+            stack.last_mut().expect("DFS stack is non-empty").1 += 1;
+            let child = node.child_node_ids[edge_index];
+            let Some(&child_index) = node_indices.get(&child) else {
+                continue;
+            };
+            match colors[child_index] {
+                0 => {
+                    colors[child_index] = 1;
+                    stack.push((child_index, 0));
+                }
+                1 => errors.push(ValidationError::StructureCycle {
+                    path: Path::root()
+                        .field("structure")
+                        .index(node_index)
+                        .field("childNodeIds")
+                        .index(edge_index),
+                    parent: node.node_id,
+                    child,
+                }),
+                _ => {}
+            }
+        }
+    }
+
     errors
 }
 

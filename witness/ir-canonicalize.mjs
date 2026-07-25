@@ -7,13 +7,8 @@
 // malformed artifact into clean-looking JSON, exactly like the Rust leg's
 // `recanon` example.
 //
-// Uses `validateWireContract`, not the graft reference consumer's full
-// `validateArtifact`: the latter also enforces non-overlapping token wire
-// order, a graft-projection-specific requirement that
-// `colorful_ir::validate_document` deliberately does not check (inter-token
-// layout is a producer guarantee, not part of the wire contract). Reusing
-// the graft-specific gate here would make this witness reject a token
-// layout the Rust leg would accept.
+// Uses `validateWireContract`, the same shared admission gate behind the Graft
+// reference consumer's product-facing `validateArtifact` entry point.
 //
 //   node ir-canonicalize.mjs SOURCE < document.json
 import { readFileSync } from "node:fs";

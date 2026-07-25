@@ -23,17 +23,15 @@ into validity:
 2. `contractVersion` matches `colorful.syntax/v1`;
 3. the declared `source.utf8ByteLength` matches the real byte length;
 4. the source bytes are valid UTF-8;
-5. each token's byte range is in order, in bounds, and on a UTF-8 character
-   boundary (zero-width tokens are allowed);
-6. tokens are in non-overlapping wire order — a graft-projection-specific
-   requirement stricter than the general `colorful.syntax/v1` wire contract,
-   which the monotonic cursor in `makeByteToPoint` relies on;
+5. each token's byte range is in order, in bounds, non-empty, and on a UTF-8
+   character boundary;
+6. tokens are ordered by start offset and do not overlap;
 7. `occurrenceId`s are unique;
 8. token axis combinations are legal (mirroring `colorful_ir`'s own
    `token_axes_violation`);
-9. the outline's structure graph has no duplicate node ids and no dangling
-   child references (the same scope `colorful_ir::validate_document` checks,
-   no more);
+9. the outline's paragraph/sentence depths are valid; node ids are unique;
+   child references resolve, have one parent, stay inside the parent range,
+   and form an acyclic graph;
 10. `diagnostics` and `derivation` are shape- and range-valid; `derivation` is
     non-empty, each step's `passId` and `ruleId` are non-empty, and `passId`
     (not `ruleId`) is unique across steps — mirroring

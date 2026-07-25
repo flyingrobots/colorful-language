@@ -124,15 +124,10 @@ Requirements:
   `tests::round_trips_in_rust`. *Status:* implemented.
 - **IR-4d** — *Requirement:* IR-4. *Behavior:* the witness TS leg
   (`witness/ir-canonicalize.mjs`) runs `validateWireContract` — the graft
-  reference consumer's admission gate minus its graft-specific token-order
-  check — against the decoded document and the real source bytes before
-  re-emitting, so an unknown field at any nesting level, a missing field, or
-  a wrongly typed field is rejected (exit non-zero, for the specific
-  expected reason) rather than canonicalized. It deliberately does *not*
-  currently enforce non-overlapping token wire order: that is a
-  graft-projection requirement today, and `colorful_ir::validate_document`
-  leaves it unchecked. IR-14a is the planned decision to make ordered,
-  non-empty, non-overlapping token layout a shared received-artifact invariant.
+  reference consumer's shared admission gate — against the decoded document
+  and the real source bytes before re-emitting, so an unknown field at any
+  nesting level, a missing field, a wrongly typed field, invalid token layout,
+  or malformed outline graph is rejected rather than canonicalized.
   This is proven for the TS leg specifically — the Rust leg's
   generated `DocumentAnalysis` deserializes via `serde`'s default
   unknown-field-tolerant behavior, so unknown-field rejection is not yet
@@ -154,9 +149,8 @@ Requirements:
   JavaScript `validateWireContract` rejection: both validators start from the
   same canonical producer document, apply the same mutation and optional
   source-byte override, and reject with the matrix's named Rust variant /
-  stable JavaScript error code. Graft-only token wire ordering remains outside
-  the matrix because it is deliberately stricter than the wire contract.
-  *Oracle:* exact case-count equality with the public Rust variant inventory;
+  stable JavaScript error code, including token layout and outline graph
+  invariants. *Oracle:* exact case-count equality with the public Rust variant inventory;
   the expected Rust variant is present; JavaScript throws the expected
   `GraftProjectionError.code`; no matrix case is silently skipped. *Evidence
   type:* shared fixture matrix plus Rust/JavaScript executable witnesses.
@@ -362,9 +356,15 @@ Requirements:
   same seven mutations with stable `GraftProjectionError.code` values, keeping
   the exhaustive parity inventory complete. *Evidence type:* public
   `validate_document` mutation tests, Graft consumer tests, and shared
-  Rust/JavaScript mutation matrix. *Tracking:*
+  Rust/JavaScript mutation matrix. *Evidence:*
+  `integration::{rejects_an_empty_token_range,rejects_an_unsorted_token_range,
+  rejects_overlapping_token_ranges,rejects_an_invalid_outline_kind_depth_pair,
+  rejects_a_structure_cycle,rejects_a_child_with_multiple_parents,
+  rejects_a_child_outside_its_parent_range}`;
+  `crates/colorful-ir/tests/fixtures/validator-parity.json`;
+  `consumers/graft-projection.test.mjs`; `scripts/ir-witness.sh`. *Tracking:*
   [#126](https://github.com/flyingrobots/colorful-language/issues/126).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-15a** — *Requirement:* IR-15. *Behavior:* public custom
   parser/annotator ports cannot project reversed, out-of-bounds,
   non-character-boundary, overlapping, unsorted, or tree-mismatched spans; every
