@@ -1,0 +1,8 @@
+{
+  "visualRole": "EMPHASIS",
+  "classRoleKey": {
+    "tokenKind": "WORD",
+    "lexicalClass": "FUNCTION",
+    "openClassKind": "NOUN"
+  }
+}
