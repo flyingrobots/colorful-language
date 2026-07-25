@@ -425,18 +425,21 @@ Requirements:
   and compare both outputs byte-for-byte, so either stale consumer fails the
   gate. A schema-mutation fixture adds one legal role and key and proves that
   both outputs change together; the Rust and JavaScript manifest validators
-  accept and reject the same generated key matrix. *Oracle:* fresh generation
-  is byte-identical to both committed outputs; changing the authority changes
-  both outputs; shared manifest fixtures have identical accept/reject results
-  at both language boundaries. *Evidence type:* schema, generator, drift check,
-  and cross-language fixtures. *Evidence:*
+  consume one shared class-role case matrix covering every legal key plus
+  illegal axis combinations. *Oracle:* fresh generation is byte-identical to
+  both committed outputs; changing the authority changes both outputs; every
+  shared case has the same accept/reject result at both generated language
+  boundaries. *Evidence type:* schema, generator, drift check, and
+  cross-language fixtures. *Evidence:*
   `contracts/colorful/vocabulary.v1.schema.json`,
   `scripts/generate-vocabulary-validators.mjs`,
   `scripts/generate-vocabulary-validators.test.mjs`,
   `scripts/check-generated-vocabulary-drift.sh`,
   `crates/colorful-ir/src/generated/vocabulary_validator_v1.rs`,
-  `consumers/generated/vocabulary-validator-v1.mjs`, and
-  `crates/colorful-ir/tests/fixtures/vocabulary-schema-extension.json`;
+  `consumers/generated/vocabulary-validator-v1.mjs`,
+  `crates/colorful-ir/tests/fixtures/vocabulary-schema-extension.json`,
+  `crates/colorful-ir/tests/fixtures/vocabulary-validator-parity.json`, and
+  `vocabulary::tests::shared_class_role_cases_match_generated_rust_validator`;
   CI job `generated-ir-drift`; `scripts/release-prep.sh`. *Tracking:*
   [#145](https://github.com/flyingrobots/colorful-language/issues/145).
   *Status:* implemented.

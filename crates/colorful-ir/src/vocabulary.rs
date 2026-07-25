@@ -217,6 +217,49 @@ fn expected_class_role_keys() -> BTreeSet<String> {
 mod tests {
     use super::*;
 
+    #[derive(Debug, serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    #[serde(rename_all = "camelCase")]
+    struct ValidatorParityFixture {
+        cases: Vec<ValidatorParityCase>,
+    }
+
+    #[derive(Debug, serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    #[serde(rename_all = "camelCase")]
+    struct ValidatorParityCase {
+        name: String,
+        token_kind: TokenKind,
+        lexical_class: Option<LexicalClass>,
+        open_class_kind: Option<OpenClassKind>,
+        visual_role: VisualRole,
+        accepted: bool,
+    }
+
+    #[test]
+    fn shared_class_role_cases_match_generated_rust_validator() {
+        let fixture: ValidatorParityFixture = serde_json::from_str(include_str!(
+            "../tests/fixtures/vocabulary-validator-parity.json"
+        ))
+        .expect("shared vocabulary validator parity fixture parses");
+
+        assert!(!fixture.cases.is_empty(), "parity fixture must not be empty");
+        for case in fixture.cases {
+            let _validated_role_name = visual_role_name(&case.visual_role);
+            let actual = class_role_key(
+                &case.token_kind,
+                case.lexical_class.as_ref(),
+                case.open_class_kind.as_ref(),
+            )
+            .is_ok();
+            assert_eq!(
+                actual, case.accepted,
+                "generated Rust validator parity case {}",
+                case.name
+            );
+        }
+    }
+
     #[test]
     fn manifest_parses_and_every_role_has_a_projection() {
         let m = manifest();

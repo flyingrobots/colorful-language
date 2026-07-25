@@ -3,11 +3,16 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { renderVocabularyValidators } from "./generate-vocabulary-validators.mjs";
+import {
+  classRoleKey as javascriptClassRoleKey,
+} from "../consumers/generated/vocabulary-validator-v1.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const authorityPath = `${root}/contracts/colorful/vocabulary.v1.schema.json`;
 const extensionPath =
   `${root}/crates/colorful-ir/tests/fixtures/vocabulary-schema-extension.json`;
+const parityPath =
+  `${root}/crates/colorful-ir/tests/fixtures/vocabulary-validator-parity.json`;
 const rustPath =
   `${root}/crates/colorful-ir/src/generated/vocabulary_validator_v1.rs`;
 const javascriptPath =
@@ -15,6 +20,7 @@ const javascriptPath =
 
 const authority = JSON.parse(readFileSync(authorityPath, "utf8"));
 const extension = JSON.parse(readFileSync(extensionPath, "utf8"));
+const parity = JSON.parse(readFileSync(parityPath, "utf8"));
 const rendered = renderVocabularyValidators(authority);
 
 assert.deepEqual(
@@ -50,6 +56,20 @@ assert.equal(
   false,
   "the schema key matrix must reject a NUMBER role with lexicalClass",
 );
+
+for (const { name, accepted, ...rule } of parity.cases) {
+  let actual = true;
+  try {
+    javascriptClassRoleKey(rule);
+  } catch {
+    actual = false;
+  }
+  assert.equal(
+    actual,
+    accepted,
+    `generated JavaScript validator parity case ${name}`,
+  );
+}
 
 assert.equal(
   rendered.rust,
