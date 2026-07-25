@@ -1868,6 +1868,58 @@ mod integration {
     }
 
     #[test]
+    fn rejects_an_empty_token_range() {
+        let mut doc = analyze(VALID_SOURCE);
+        doc.tokens[0].byte_range.end_utf8 = doc.tokens[0].byte_range.start_utf8;
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::EmptyTokenRange {
+                path,
+                occurrence_id: 0,
+            } if path.to_string() == "tokens[0].byteRange"
+        ));
+    }
+
+    #[test]
+    fn rejects_an_unsorted_token_range() {
+        let mut doc = analyze(VALID_SOURCE);
+        let first = doc.tokens[0].byte_range.clone();
+        doc.tokens[0].byte_range = doc.tokens[1].byte_range.clone();
+        doc.tokens[1].byte_range = first;
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::UnsortedTokenRange {
+                path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tokens[1].byteRange.startUtf8"
+        ));
+    }
+
+    #[test]
+    fn rejects_overlapping_token_ranges() {
+        let mut doc = analyze(VALID_SOURCE);
+        doc.tokens[1].byte_range.start_utf8 = doc.tokens[0].byte_range.end_utf8 - 1;
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::OverlappingTokenRange {
+                path,
+                previous_index: 0,
+                ..
+            } if path.to_string() == "tokens[1].byteRange.startUtf8"
+        ));
+    }
+
+    #[test]
     fn rejects_illegal_token_axes() {
         use syntax_v1::{LexicalClass, OpenClassKind, TokenKind};
         // A WORD without a lexicalClass.
@@ -2028,6 +2080,126 @@ mod integration {
             )),
             "{errors:?}"
         );
+    }
+
+    #[test]
+    fn rejects_an_invalid_outline_kind_depth_pair() {
+        let mut doc = analyze(VALID_SOURCE);
+        let paragraph_index = doc
+            .structure
+            .iter()
+            .position(|node| node.kind == syntax_v1::OutlineKind::Paragraph)
+            .expect("fixture needs a paragraph");
+        doc.structure[paragraph_index].depth = 1;
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::InvalidOutlineDepth {
+                path,
+                depth: 1,
+                expected: 0,
+            } if path.to_string() == format!("structure[{paragraph_index}].depth")
+        ));
+    }
+
+    #[test]
+    fn rejects_a_structure_cycle() {
+        let mut doc = analyze(VALID_SOURCE);
+        let paragraph_index = doc
+            .structure
+            .iter()
+            .position(|node| node.kind == syntax_v1::OutlineKind::Paragraph)
+            .expect("fixture needs a paragraph");
+        let paragraph_id = doc.structure[paragraph_index].node_id;
+        doc.structure[paragraph_index].child_node_ids = vec![paragraph_id];
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::StructureCycle {
+                path,
+                parent,
+                child,
+            } if path.to_string()
+                == format!("structure[{paragraph_index}].childNodeIds[0]")
+                && *parent == paragraph_id
+                && *child == paragraph_id
+        ));
+    }
+
+    #[test]
+    fn rejects_a_child_with_multiple_parents() {
+        let mut doc = analyze(VALID_SOURCE);
+        let paragraph_indices: Vec<_> = doc
+            .structure
+            .iter()
+            .enumerate()
+            .filter_map(|(index, node)| {
+                (node.kind == syntax_v1::OutlineKind::Paragraph).then_some(index)
+            })
+            .collect();
+        assert_eq!(paragraph_indices.len(), 2, "fixture needs two paragraphs");
+        let first_parent = paragraph_indices[0];
+        let second_parent = paragraph_indices[1];
+        let shared_child = doc.structure[first_parent].child_node_ids[0];
+        let edge_index = doc.structure[second_parent].child_node_ids.len();
+        doc.structure[second_parent].byte_range = syntax_v1::ByteRange {
+            start_utf8: 0,
+            end_utf8: VALID_SOURCE.len() as i32,
+        };
+        doc.structure[second_parent]
+            .child_node_ids
+            .push(shared_child);
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::MultipleStructureParents { path, child, .. }
+                if path.to_string()
+                    == format!("structure[{second_parent}].childNodeIds[{edge_index}]")
+                    && *child == shared_child
+        ));
+    }
+
+    #[test]
+    fn rejects_a_child_outside_its_parent_range() {
+        let mut doc = analyze(VALID_SOURCE);
+        let paragraph_index = doc
+            .structure
+            .iter()
+            .enumerate()
+            .filter_map(|(index, node)| {
+                (node.kind == syntax_v1::OutlineKind::Paragraph).then_some(index)
+            })
+            .next_back()
+            .expect("fixture needs a paragraph");
+        let child_id = doc.structure[paragraph_index].child_node_ids[0];
+        let child_end = doc
+            .structure
+            .iter()
+            .find(|node| node.node_id == child_id)
+            .expect("paragraph child must exist")
+            .byte_range
+            .end_utf8;
+        doc.structure[paragraph_index].byte_range.end_utf8 = child_end - 1;
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::ChildRangeOutsideParent {
+                path,
+                parent,
+                child,
+            } if path.to_string()
+                == format!("structure[{paragraph_index}].childNodeIds[0]")
+                && *parent == doc.structure[paragraph_index].node_id
+                && *child == child_id
+        ));
     }
 
     #[test]

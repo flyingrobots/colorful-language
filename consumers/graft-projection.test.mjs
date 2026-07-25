@@ -551,13 +551,15 @@ assert.equal(
   "E_BYTE_RANGE_BOUNDARY",
 );
 
-// Zero-width tokens are allowed, matching colorful_ir::validate_document's own
-// `start <= end` (not `<`) check.
-assert.doesNotThrow(() =>
-  validateArtifact(
-    source,
-    validIr({ tokens: [{ ...ir.tokens[0], byteRange: { startUtf8: 5, endUtf8: 5 } }, ir.tokens[1]] }),
+// Token ranges are non-empty.
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ tokens: [{ ...ir.tokens[0], byteRange: { startUtf8: 5, endUtf8: 5 } }, ir.tokens[1]] }),
+    ),
   ),
+  "E_TOKEN_EMPTY",
 );
 
 // 6. Token order: out-of-order or overlapping tokens are rejected, never
@@ -566,7 +568,7 @@ assert.equal(
   errorCode(() =>
     validateArtifact(source, validIr({ tokens: [ir.tokens[1], ir.tokens[0]] })),
   ),
-  "E_TOKEN_ORDER",
+  "E_TOKEN_UNSORTED",
   "wire order must be honored, not re-sorted",
 );
 assert.equal(
@@ -578,20 +580,14 @@ assert.equal(
       }),
     ),
   ),
-  "E_TOKEN_ORDER",
+  "E_TOKEN_OVERLAP",
   "an overlapping second token must be rejected",
 );
 
-// Wire-order enforcement is graft-projection-specific (for makeByteToPoint's
-// monotonic cursor), not part of the colorful.syntax/v1 wire contract --
-// colorful_ir::validate_document deliberately leaves inter-token layout
-// unchecked, so validateWireContract (what the IR round-trip witness uses)
-// must accept the same reordered-but-otherwise-valid document
-// validateArtifact rejects. If this ever throws, the witness has become
-// stricter than the Rust contract validator it round-trips against.
-assert.doesNotThrow(
-  () => validateWireContract(source, validIr({ tokens: [ir.tokens[1], ir.tokens[0]] })),
-  "validateWireContract must not enforce graft's token-order requirement",
+// The shared wire validator enforces the same ordering invariant.
+assert.equal(
+  errorCode(() => validateWireContract(source, validIr({ tokens: [ir.tokens[1], ir.tokens[0]] }))),
+  "E_TOKEN_UNSORTED",
 );
 
 // 7. Occurrence id uniqueness.
@@ -627,9 +623,8 @@ assert.equal(
   "a NUMBER carrying an openClassKind must be rejected",
 );
 
-// 9. Structure graph: duplicate node ids and dangling child references are
-// rejected; range containment and cycles are deliberately not checked here,
-// mirroring colorful_ir::validate_document's own scope exactly.
+// 9. Structure graph: ids, references, kind-depth pairs, acyclicity,
+// single-parent ownership, and parent containment are shared wire invariants.
 const paragraph = { nodeId: 0, kind: "PARAGRAPH", byteRange: { startUtf8: 0, endUtf8: 5 }, depth: 0, childNodeIds: [1] };
 const sentence = { nodeId: 1, kind: "SENTENCE", byteRange: { startUtf8: 0, endUtf8: 5 }, depth: 1, childNodeIds: [] };
 assert.doesNotThrow(() => validateArtifact(source, validIr({ structure: [paragraph, sentence] })));
@@ -647,6 +642,50 @@ assert.equal(
     ),
   ),
   "E_DANGLING_CHILD_REF",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(source, validIr({ structure: [{ ...paragraph, depth: 1 }, sentence] })),
+  ),
+  "E_OUTLINE_DEPTH",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({ structure: [{ ...paragraph, childNodeIds: [0] }, sentence] }),
+    ),
+  ),
+  "E_STRUCTURE_CYCLE",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({
+        structure: [
+          { ...paragraph, childNodeIds: [1, 2] },
+          { ...sentence, childNodeIds: [2] },
+          { ...sentence, nodeId: 2 },
+        ],
+      }),
+    ),
+  ),
+  "E_MULTIPLE_STRUCTURE_PARENTS",
+);
+assert.equal(
+  errorCode(() =>
+    validateArtifact(
+      source,
+      validIr({
+        structure: [
+          { ...paragraph, byteRange: { startUtf8: 0, endUtf8: 4 } },
+          sentence,
+        ],
+      }),
+    ),
+  ),
+  "E_CHILD_RANGE",
 );
 
 // Enum fields are checked against the actual wire schema, not just "is a

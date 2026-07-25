@@ -124,6 +124,51 @@
       "jsError": "E_BYTE_RANGE_BOUNDARY"
     },
     {
+      "name": "empty token range",
+      "replacements": [
+        {
+          "pointer": "/tokens/0/byteRange/endUtf8",
+          "value": 0
+        }
+      ],
+      "rustError": "EmptyTokenRange",
+      "jsError": "E_TOKEN_EMPTY"
+    },
+    {
+      "name": "unsorted token range",
+      "replacements": [
+        {
+          "pointer": "/tokens/0/byteRange/startUtf8",
+          "value": 3
+        },
+        {
+          "pointer": "/tokens/0/byteRange/endUtf8",
+          "value": 5
+        },
+        {
+          "pointer": "/tokens/1/byteRange/startUtf8",
+          "value": 0
+        },
+        {
+          "pointer": "/tokens/1/byteRange/endUtf8",
+          "value": 2
+        }
+      ],
+      "rustError": "UnsortedTokenRange",
+      "jsError": "E_TOKEN_UNSORTED"
+    },
+    {
+      "name": "overlapping token range",
+      "replacements": [
+        {
+          "pointer": "/tokens/1/byteRange/startUtf8",
+          "value": 0
+        }
+      ],
+      "rustError": "OverlappingTokenRange",
+      "jsError": "E_TOKEN_OVERLAP"
+    },
+    {
       "name": "illegal token axes",
       "replacements": [
         {
@@ -170,6 +215,54 @@
       ],
       "rustError": "DanglingChildRef",
       "jsError": "E_DANGLING_CHILD_REF"
+    },
+    {
+      "name": "invalid outline kind-depth pair",
+      "replacements": [
+        {
+          "pointer": "/structure/0/depth",
+          "value": 1
+        }
+      ],
+      "rustError": "InvalidOutlineDepth",
+      "jsError": "E_OUTLINE_DEPTH"
+    },
+    {
+      "name": "structure cycle",
+      "replacements": [
+        {
+          "pointer": "/structure/0/childNodeIds",
+          "value": [0]
+        }
+      ],
+      "rustError": "StructureCycle",
+      "jsError": "E_STRUCTURE_CYCLE"
+    },
+    {
+      "name": "multiple structure parents",
+      "replacements": [
+        {
+          "pointer": "/structure/1/byteRange/endUtf8",
+          "value": 23
+        },
+        {
+          "pointer": "/structure/1/childNodeIds",
+          "value": [2]
+        }
+      ],
+      "rustError": "MultipleStructureParents",
+      "jsError": "E_MULTIPLE_STRUCTURE_PARENTS"
+    },
+    {
+      "name": "child range outside parent",
+      "replacements": [
+        {
+          "pointer": "/structure/0/byteRange/endUtf8",
+          "value": 8
+        }
+      ],
+      "rustError": "ChildRangeOutsideParent",
+      "jsError": "E_CHILD_RANGE"
     },
     {
       "name": "missing derivation identity",
