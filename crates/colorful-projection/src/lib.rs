@@ -225,6 +225,8 @@ mod tests {
         fn annotate(&self, source: &str, tree: &Tree) -> Vec<CoreToken> {
             let mut tokens = ContextualOpenClassAnnotator::<SeedOpenClassLexicon>::default()
                 .annotate(source, tree);
+            // This also breaks tree/token correspondence; token layout runs
+            // before leaf correspondence, so OverlappingSpan wins deterministically.
             tokens[1].span.start = tokens[0].span.end - 1;
             tokens
         }
