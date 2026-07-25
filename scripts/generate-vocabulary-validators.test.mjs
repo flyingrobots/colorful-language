@@ -17,6 +17,40 @@ const authority = JSON.parse(readFileSync(authorityPath, "utf8"));
 const extension = JSON.parse(readFileSync(extensionPath, "utf8"));
 const rendered = renderVocabularyValidators(authority);
 
+assert.deepEqual(
+  authority.$defs.classRole.allOf,
+  [{ $ref: "#/$defs/classRoleKey" }],
+  "classRole must apply the legal axis-key matrix during standard schema validation",
+);
+
+function schemaAcceptsClassRoleKey(schema, rule) {
+  const matches = schema.$defs.classRoleKey.oneOf.filter((candidate) =>
+    Object.entries(candidate.properties).every(
+      ([field, constraint]) => rule[field] === constraint.const,
+    ),
+  );
+  return matches.length === 1;
+}
+
+assert.equal(
+  schemaAcceptsClassRoleKey(authority, {
+    tokenKind: "NUMBER",
+    lexicalClass: null,
+    openClassKind: null,
+  }),
+  true,
+  "the schema key matrix must accept a legal NUMBER role",
+);
+assert.equal(
+  schemaAcceptsClassRoleKey(authority, {
+    tokenKind: "NUMBER",
+    lexicalClass: "CONTENT",
+    openClassKind: null,
+  }),
+  false,
+  "the schema key matrix must reject a NUMBER role with lexicalClass",
+);
+
 assert.equal(
   rendered.rust,
   readFileSync(rustPath, "utf8"),
@@ -30,7 +64,15 @@ assert.equal(
 
 const extendedAuthority = structuredClone(authority);
 extendedAuthority.$defs.visualRole.enum.push(extension.visualRole);
-extendedAuthority.$defs.classRoleKey.oneOf.push({ const: extension.classRoleKey });
+extendedAuthority.$defs.classRoleKey.oneOf.push({
+  properties: Object.fromEntries(
+    Object.entries(extension.classRoleKey).map(([field, value]) => [
+      field,
+      { const: value },
+    ]),
+  ),
+  required: ["tokenKind", "lexicalClass", "openClassKind"],
+});
 const extended = renderVocabularyValidators(extendedAuthority);
 const key = [
   extension.classRoleKey.tokenKind,

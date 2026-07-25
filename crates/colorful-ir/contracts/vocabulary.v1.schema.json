@@ -53,79 +53,94 @@
     "classRoleKey": {
       "oneOf": [
         {
-          "const": {
-            "tokenKind": "WORD",
-            "lexicalClass": "FUNCTION",
-            "openClassKind": null
-          }
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "FUNCTION" },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "WORD",
-            "lexicalClass": "CONTENT",
-            "openClassKind": null
-          }
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "WORD",
-            "lexicalClass": "CONTENT",
-            "openClassKind": "NOUN"
-          }
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "NOUN" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "WORD",
-            "lexicalClass": "CONTENT",
-            "openClassKind": "VERB"
-          }
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "VERB" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "WORD",
-            "lexicalClass": "CONTENT",
-            "openClassKind": "ADJECTIVE"
-          }
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "ADJECTIVE" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "WORD",
-            "lexicalClass": "CONTENT",
-            "openClassKind": "ADVERB"
-          }
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "ADVERB" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "WORD",
-            "lexicalClass": "PROPER_NOUN_CANDIDATE",
-            "openClassKind": null
-          }
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "PROPER_NOUN_CANDIDATE" },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "NUMBER",
-            "lexicalClass": null,
-            "openClassKind": null
-          }
+          "properties": {
+            "tokenKind": { "const": "NUMBER" },
+            "lexicalClass": { "const": null },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "PUNCTUATION",
-            "lexicalClass": null,
-            "openClassKind": null
-          }
+          "properties": {
+            "tokenKind": { "const": "PUNCTUATION" },
+            "lexicalClass": { "const": null },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         },
         {
-          "const": {
-            "tokenKind": "QUOTE",
-            "lexicalClass": null,
-            "openClassKind": null
-          }
+          "properties": {
+            "tokenKind": { "const": "QUOTE" },
+            "lexicalClass": { "const": null },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
         }
       ]
     },
     "classRole": {
       "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/classRoleKey"
+        }
+      ],
       "additionalProperties": false,
       "required": [
         "tokenKind",

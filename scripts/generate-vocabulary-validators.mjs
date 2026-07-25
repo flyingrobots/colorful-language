@@ -50,15 +50,48 @@ function classRoleKeys(schema, enums) {
   }
   const keys = [];
   const seen = new Set();
+  const expectedFields = ["lexicalClass", "openClassKind", "tokenKind"];
   for (const [index, entry] of definition.oneOf.entries()) {
-    const value = object(object(entry, `classRoleKey.oneOf[${index}]`).const, "const");
-    const fields = Object.keys(value).sort();
-    const expectedFields = ["lexicalClass", "openClassKind", "tokenKind"];
+    const candidate = object(entry, `classRoleKey.oneOf[${index}]`);
+    const properties = object(
+      candidate.properties,
+      `classRoleKey.oneOf[${index}].properties`,
+    );
+    const fields = Object.keys(properties).sort();
     if (
       fields.length !== expectedFields.length ||
       fields.some((field, fieldIndex) => field !== expectedFields[fieldIndex])
     ) {
-      fail(`classRoleKey.oneOf[${index}].const must contain exactly ${expectedFields.join(", ")}`);
+      fail(
+        `classRoleKey.oneOf[${index}].properties must contain exactly ${expectedFields.join(", ")}`,
+      );
+    }
+    if (
+      !Array.isArray(candidate.required) ||
+      candidate.required.length !== expectedFields.length ||
+      [...candidate.required]
+        .sort()
+        .some((field, fieldIndex) => field !== expectedFields[fieldIndex])
+    ) {
+      fail(
+        `classRoleKey.oneOf[${index}].required must contain exactly ${expectedFields.join(", ")}`,
+      );
+    }
+    const value = {};
+    for (const field of expectedFields) {
+      const constraint = object(
+        properties[field],
+        `classRoleKey.oneOf[${index}].properties.${field}`,
+      );
+      if (
+        !Object.hasOwn(constraint, "const") ||
+        Object.keys(constraint).length !== 1
+      ) {
+        fail(
+          `classRoleKey.oneOf[${index}].properties.${field} must contain only const`,
+        );
+      }
+      value[field] = constraint.const;
     }
     if (!enums.tokenKinds.includes(value.tokenKind)) {
       fail(`classRoleKey.oneOf[${index}] has unknown tokenKind ${value.tokenKind}`);
