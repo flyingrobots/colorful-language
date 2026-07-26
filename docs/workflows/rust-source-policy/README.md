@@ -5,8 +5,7 @@ unsafe code and where to verify that boundary.
 
 ## Current behavior
 
-Every first-party production target reported by Cargo for the main workspace
-and standalone Zed workspace declares:
+Every first-party production target reported by Cargo declares:
 
 ```rust
 #![forbid(unsafe_code)]
@@ -18,11 +17,18 @@ The normal Rust CI job runs:
 bash scripts/check-rust-source-policy.sh
 ```
 
-The checker obtains target roots from `cargo metadata`; it does not maintain a
-parallel crate-name list. It inventories the production target kinds `bin`,
-`cdylib`, `dylib`, `lib`, `proc-macro`, `rlib`, and `staticlib` in the main
-workspace and `editors/zed/Cargo.toml`. Development-only benchmark, example,
-and test targets are outside this production-root contract.
+The checker recursively discovers `Cargo.toml` files, asks `cargo metadata`
+which workspace owns each manifest, deduplicates those workspaces, and obtains
+their target roots from Cargo. It does not maintain parallel workspace or
+crate-name lists. It inventories the production target kinds `bin`, `cdylib`,
+`dylib`, `lib`, `proc-macro`, `rlib`, and `staticlib`. Development-only
+benchmark, example, and test targets are outside this production-root contract.
+
+Discovery prunes only directory components named `.git`, `node_modules`,
+`target`, or `vendor`. These are repository metadata, installed JavaScript
+dependencies, Cargo output, and vendored dependencies rather than first-party
+source. A new workspace anywhere else in the repository enters the policy
+automatically.
 
 Only a declaration in the crate preamble satisfies the check. The same text in
 a child module, comment, or string literal does not protect the crate and does

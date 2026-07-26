@@ -59,5 +59,5 @@ Canonical issues:
   passes and reports three roots; manifests under each pruned directory remain
   excluded; and the same workspace reached through multiple member manifests
   is inventoried once. *Evidence type:* deterministic shell fixture.
-  *Evidence:* planned changes to `scripts/check-rust-source-policy.sh` and
-  `scripts/check-rust-source-policy.test.sh`. *Status:* planned.
+  *Evidence:* `scripts/check-rust-source-policy.sh` and
+  `scripts/check-rust-source-policy.test.sh`. *Status:* implemented.

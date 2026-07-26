@@ -80,7 +80,9 @@ observe public-contract regressions before they ship.
   public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
 - **Source and toolchain policy:** enforced first-party unsafe-code policy
-  ([#146](https://github.com/flyingrobots/colorful-language/issues/146)) and
+  ([#146](https://github.com/flyingrobots/colorful-language/issues/146)), with
+  automatic standalone-workspace discovery
+  ([#170](https://github.com/flyingrobots/colorful-language/issues/170)), and
   reviewed Rust, Node, and TypeScript evidence toolchains
   ([#147](https://github.com/flyingrobots/colorful-language/issues/147)):
   exact primary evidence pins with separately scheduled forward-compatibility
