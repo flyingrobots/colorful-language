@@ -126,6 +126,34 @@ function workflowJobBodies(workflow) {
   return jobs;
 }
 
+function jobEnvValue(job, key) {
+  const lines = job.split("\n");
+  const headerIndent = lines[0].match(/^\s*/u)[0].length;
+  const envIndent = headerIndent + 2;
+  const valueIndent = envIndent + 2;
+  const envIndex = lines.findIndex((line) =>
+    new RegExp(`^\\s{${envIndent}}env:\\s*$`, "u").test(line),
+  );
+  if (envIndex === -1) {
+    return null;
+  }
+  const valuePattern = new RegExp(
+    `^\\s{${valueIndent}}${key}:\\s*["']?([^"'\\s]+)["']?\\s*$`,
+    "u",
+  );
+  for (const line of lines.slice(envIndex + 1)) {
+    const indent = line.match(/^\s*/u)[0].length;
+    if (line.trim() && indent <= envIndent) {
+      break;
+    }
+    const match = line.match(valuePattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
 function hasRootRunBefore(job, prerequisite, target) {
   const lines = job.split("\n");
   const targetIndexes = lines
@@ -236,17 +264,36 @@ function assertCompatibilityWorkflow(workflow, nodeMajor) {
       );
     }
   }
-  if (!/^\s*toolchain:\s*stable\s*$/mu.test(workflow)) {
+  const rustJobs = workflowJobBodies(workflow)
+    .map((job) => ({
+      job,
+      actions: actionStepBlocks(job, "dtolnay/rust-toolchain"),
+    }))
+    .filter(({ actions }) => actions.length > 0);
+  if (rustJobs.length === 0) {
     reject(
       "E_COMPAT_RUST_SELECTOR",
       "compatibility workflow must select the moving Rust stable channel",
     );
   }
-  if (!/^\s*RUSTUP_TOOLCHAIN:\s*stable\s*$/mu.test(workflow)) {
-    reject(
-      "E_COMPAT_RUST_OVERRIDE",
-      "compatibility workflow must override the checked-in Rust toolchain",
-    );
+  for (const { job, actions } of rustJobs) {
+    for (const action of actions) {
+      const selectors = [
+        ...action.body.matchAll(/^\s*toolchain:\s*["']?([^"'\s]+)["']?\s*$/gmu),
+      ];
+      if (selectors.length !== 1 || selectors[0][1] !== "stable") {
+        reject(
+          "E_COMPAT_RUST_SELECTOR",
+          "compatibility workflow must select the moving Rust stable channel",
+        );
+      }
+    }
+    if (jobEnvValue(job, "RUSTUP_TOOLCHAIN") !== "stable") {
+      reject(
+        "E_COMPAT_RUST_OVERRIDE",
+        "compatibility workflow must override the checked-in Rust toolchain",
+      );
+    }
   }
   const nodeActions = actionStepBlocks(workflow, "actions/setup-node");
   if (nodeActions.length === 0) {
@@ -718,6 +765,36 @@ function selfTest() {
             .replace("RUSTUP_TOOLCHAIN: stable", "RUSTUP_TOOLCHAIN: 1.97.1"),
         ),
       "E_COMPAT_RUST_OVERRIDE",
+    ],
+    [
+      "misplaced Rust compatibility override",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          `${files
+            .get(".github/workflows/compatibility.yml")
+            .replace(
+              "RUSTUP_TOOLCHAIN: stable",
+              'RUSTUP_TOOLCHAIN: "1.97.1"',
+            )}
+env:
+  RUSTUP_TOOLCHAIN: stable
+`,
+        ),
+      "E_COMPAT_RUST_OVERRIDE",
+    ],
+    [
+      "second fixed Rust compatibility selector",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          `${files.get(".github/workflows/compatibility.yml")}
+- uses: dtolnay/rust-toolchain@0123456789abcdef0123456789abcdef01234567
+  with:
+    toolchain: "1.97.1"
+`,
+        ),
+      "E_COMPAT_RUST_SELECTOR",
     ],
     [
       "fixed Node compatibility selector",
