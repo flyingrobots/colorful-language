@@ -1,0 +1,560 @@
+#!/usr/bin/env node
+
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ACTION_SHA = /^[0-9a-f]{40}$/u;
+const EXACT_VERSION = /^\d+\.\d+\.\d+$/u;
+const REQUIRED_PATHS = [
+  "rust-toolchain.toml",
+  ".node-version",
+  "package.json",
+  "package-lock.json",
+  ".github/workflows/ci.yml",
+  ".github/workflows/compatibility.yml",
+  ".github/workflows/release.yml",
+  "Cargo.toml",
+  "CONTRIBUTING.md",
+  "README.md",
+  "docs/workflows/evidence-toolchains/README.md",
+  "editors/vscode/package-lock.json",
+  "editors/vscode/package.json",
+  "scripts/ir-witness.sh",
+  "scripts/release-prep.sh",
+];
+
+class PolicyError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "PolicyError";
+    this.code = code;
+  }
+}
+
+function reject(code, message) {
+  throw new PolicyError(code, message);
+}
+
+function parseJson(files, file) {
+  try {
+    return JSON.parse(files.get(file));
+  } catch (error) {
+    reject("E_JSON", `${file}: ${error.message}`);
+  }
+}
+
+function exactVersion(value, code, subject) {
+  if (typeof value !== "string" || !EXACT_VERSION.test(value)) {
+    reject(code, `${subject} must be an exact X.Y.Z release`);
+  }
+  return value;
+}
+
+function countMatches(text, pattern) {
+  return [...text.matchAll(pattern)].length;
+}
+
+function assertPinnedRustActions(workflow, file, rustVersion) {
+  const actionLines = [
+    ...workflow.matchAll(
+      /^\s*-\s+uses:\s+dtolnay\/rust-toolchain@([^\s#]+).*$/gmu,
+    ),
+  ];
+  if (actionLines.length === 0) {
+    reject("E_PRIMARY_RUST_SELECTOR", `${file}: no Rust setup action found`);
+  }
+  for (const match of actionLines) {
+    if (!ACTION_SHA.test(match[1])) {
+      reject(
+        "E_PRIMARY_RUST_SELECTOR",
+        `${file}: Rust setup action must use a full commit SHA`,
+      );
+    }
+  }
+  const exactSelectors = countMatches(
+    workflow,
+    new RegExp(
+      `^\\s*toolchain:\\s*["']?${rustVersion.replaceAll(".", "\\.")}["']?\\s*$`,
+      "gmu",
+    ),
+  );
+  if (exactSelectors !== actionLines.length) {
+    reject(
+      "E_PRIMARY_RUST_SELECTOR",
+      `${file}: every Rust action must select ${rustVersion}`,
+    );
+  }
+}
+
+function assertPinnedNodeActions(workflow, file) {
+  const actionCount = countMatches(
+    workflow,
+    /^\s*-\s+uses:\s+actions\/setup-node@[^\s#]+.*$/gmu,
+  );
+  if (actionCount === 0) {
+    return;
+  }
+  const fileSelectorCount = countMatches(
+    workflow,
+    /^\s*node-version-file:\s*["']?\.node-version["']?\s*$/gmu,
+  );
+  if (fileSelectorCount !== actionCount) {
+    reject(
+      "E_PRIMARY_NODE_SELECTOR",
+      `${file}: every Node action must select .node-version`,
+    );
+  }
+  if (/^\s*node-version:\s*/mu.test(workflow)) {
+    reject(
+      "E_PRIMARY_NODE_SELECTOR",
+      `${file}: primary workflows must not use a moving Node selector`,
+    );
+  }
+}
+
+function assertTypeScriptLock(lock, file, expected) {
+  const declared = lock.packages?.[""]?.devDependencies?.typescript;
+  const installed = lock.packages?.["node_modules/typescript"]?.version;
+  if (declared !== expected || installed !== expected) {
+    reject(
+      "E_TYPESCRIPT_LOCK",
+      `${file}: declared and installed TypeScript must both be ${expected}`,
+    );
+  }
+}
+
+function assertCompatibilityWorkflow(workflow, nodeMajor) {
+  for (const marker of ["schedule:", "workflow_dispatch:", "cron:"]) {
+    if (!workflow.includes(marker)) {
+      reject(
+        "E_COMPAT_TRIGGER",
+        `.github/workflows/compatibility.yml: missing ${marker}`,
+      );
+    }
+  }
+  if (!/^\s*toolchain:\s*stable\s*$/mu.test(workflow)) {
+    reject(
+      "E_COMPAT_RUST_SELECTOR",
+      "compatibility workflow must select the moving Rust stable channel",
+    );
+  }
+  const nodeSelector = workflow.match(/^\s*node-version:\s*["']?([^"'\s]+)["']?\s*$/mu);
+  if (!nodeSelector || nodeSelector[1] !== nodeMajor) {
+    reject(
+      "E_COMPAT_NODE_SELECTOR",
+      `compatibility workflow must select supported Node line ${nodeMajor}`,
+    );
+  }
+  for (const match of workflow.matchAll(/^\s*-\s+uses:\s+[^@\s]+@([^\s#]+).*$/gmu)) {
+    if (!ACTION_SHA.test(match[1])) {
+      reject(
+        "E_COMPAT_ACTION_PIN",
+        "compatibility workflow actions must use full commit SHAs",
+      );
+    }
+  }
+}
+
+function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
+  const workflowDoc = files.get("docs/workflows/evidence-toolchains/README.md");
+  for (const required of [
+    rustVersion,
+    nodeVersion,
+    typeScriptVersion,
+    "MSRV",
+    "weekly",
+    "maintainer",
+    "advisory",
+  ]) {
+    if (!workflowDoc.includes(required)) {
+      reject(
+        "E_POLICY_DOC",
+        `evidence-toolchain reference must document ${required}`,
+      );
+    }
+  }
+  for (const file of ["README.md", "CONTRIBUTING.md"]) {
+    const document = files.get(file);
+    if (!document.includes(rustVersion) || !document.includes("MSRV")) {
+      reject(
+        "E_POLICY_DOC",
+        `${file}: must name the evidence Rust release and MSRV status`,
+      );
+    }
+  }
+}
+
+function validatePolicy(files) {
+  for (const file of REQUIRED_PATHS) {
+    if (!files.has(file)) {
+      reject("E_REQUIRED_FILE", `missing required policy input: ${file}`);
+    }
+  }
+
+  const rustToolchain = files.get("rust-toolchain.toml");
+  const rustMatch = rustToolchain.match(/^\s*channel\s*=\s*"([^"]+)"\s*$/mu);
+  const rustVersion = exactVersion(
+    rustMatch?.[1],
+    "E_RUST_PIN",
+    "rust-toolchain.toml channel",
+  );
+  for (const required of [
+    'profile = "minimal"',
+    '"rustfmt"',
+    '"clippy"',
+    '"wasm32-wasip1"',
+  ]) {
+    if (!rustToolchain.includes(required)) {
+      reject(
+        "E_RUST_TOOLCHAIN_SHAPE",
+        `rust-toolchain.toml must include ${required}`,
+      );
+    }
+  }
+
+  const nodeVersion = exactVersion(
+    files.get(".node-version").trim(),
+    "E_NODE_PIN",
+    ".node-version",
+  );
+  const nodeMajor = nodeVersion.split(".", 1)[0];
+
+  if (/^\s*rust-version\s*=/mu.test(files.get("Cargo.toml"))) {
+    reject(
+      "E_MSRV_UNVERIFIED",
+      "Cargo.toml must not declare rust-version until an MSRV lane verifies it",
+    );
+  }
+
+  const rootPackage = parseJson(files, "package.json");
+  const editorPackage = parseJson(files, "editors/vscode/package.json");
+  const typeScriptVersion = exactVersion(
+    rootPackage.devDependencies?.typescript,
+    "E_TYPESCRIPT_PIN",
+    "root TypeScript dependency",
+  );
+  if (editorPackage.devDependencies?.typescript !== typeScriptVersion) {
+    reject(
+      "E_TYPESCRIPT_PIN",
+      `editor TypeScript dependency must exactly match ${typeScriptVersion}`,
+    );
+  }
+  assertTypeScriptLock(
+    parseJson(files, "package-lock.json"),
+    "package-lock.json",
+    typeScriptVersion,
+  );
+  assertTypeScriptLock(
+    parseJson(files, "editors/vscode/package-lock.json"),
+    "editors/vscode/package-lock.json",
+    typeScriptVersion,
+  );
+
+  const ci = files.get(".github/workflows/ci.yml");
+  const release = files.get(".github/workflows/release.yml");
+  assertPinnedRustActions(ci, ".github/workflows/ci.yml", rustVersion);
+  assertPinnedRustActions(release, ".github/workflows/release.yml", rustVersion);
+  assertPinnedNodeActions(ci, ".github/workflows/ci.yml");
+
+  if (ci.includes("npm install -g typescript")) {
+    reject(
+      "E_AMBIENT_TYPESCRIPT",
+      ".github/workflows/ci.yml must not install a global TypeScript compiler",
+    );
+  }
+  if (!ci.includes("- run: npm ci") || !ci.includes("bash scripts/ir-witness.sh")) {
+    reject(
+      "E_TYPESCRIPT_INSTALL",
+      "primary CI must install root evidence dependencies before the IR witness",
+    );
+  }
+
+  const witness = files.get("scripts/ir-witness.sh");
+  if (
+    !witness.includes('"$root/node_modules/.bin/tsc" -p witness/tsconfig.json') ||
+    witness.includes("command -v tsc")
+  ) {
+    reject(
+      "E_AMBIENT_TYPESCRIPT",
+      "IR witness must invoke the root-local TypeScript compiler",
+    );
+  }
+  const releasePrep = files.get("scripts/release-prep.sh");
+  if (!/^\s*npm ci\s*$/mu.test(releasePrep)) {
+    reject(
+      "E_TYPESCRIPT_INSTALL",
+      "release preparation must install root evidence dependencies",
+    );
+  }
+
+  assertCompatibilityWorkflow(
+    files.get(".github/workflows/compatibility.yml"),
+    nodeMajor,
+  );
+  assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion);
+}
+
+function fixtureFiles() {
+  const rustVersion = "1.97.1";
+  const nodeVersion = "22.23.1";
+  const typeScriptVersion = "5.9.3";
+  const fullSha = "0123456789abcdef0123456789abcdef01234567";
+  const packageJson = JSON.stringify({
+    private: true,
+    devDependencies: { typescript: typeScriptVersion },
+  });
+  const packageLock = JSON.stringify({
+    packages: {
+      "": { devDependencies: { typescript: typeScriptVersion } },
+      "node_modules/typescript": { version: typeScriptVersion },
+    },
+  });
+  const primaryWorkflow = `
+- uses: dtolnay/rust-toolchain@${fullSha}
+  with:
+    toolchain: "${rustVersion}"
+- uses: actions/setup-node@${fullSha}
+  with:
+    node-version-file: ".node-version"
+- run: npm ci
+- run: bash scripts/ir-witness.sh
+`;
+  return new Map([
+    [".github/workflows/ci.yml", primaryWorkflow],
+    [
+      ".github/workflows/compatibility.yml",
+      `on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+jobs:
+  rust:
+    steps:
+      - uses: dtolnay/rust-toolchain@${fullSha}
+        with:
+          toolchain: stable
+  node:
+    steps:
+      - uses: actions/setup-node@${fullSha}
+        with:
+          node-version: "22"
+`,
+    ],
+    [".github/workflows/release.yml", primaryWorkflow],
+    [".node-version", `${nodeVersion}\n`],
+    [
+      "Cargo.toml",
+      "# rust-version is intentionally unset until an MSRV lane verifies it.\n",
+    ],
+    [
+      "CONTRIBUTING.md",
+      `Evidence Rust ${rustVersion}; MSRV is intentionally unset.\n`,
+    ],
+    ["README.md", `Evidence Rust ${rustVersion}; MSRV is intentionally unset.\n`],
+    [
+      "docs/workflows/evidence-toolchains/README.md",
+      `Rust ${rustVersion}; Node ${nodeVersion}; TypeScript ${typeScriptVersion}.
+MSRV is unset. The maintainer reviews the weekly advisory lane.
+`,
+    ],
+    ["editors/vscode/package-lock.json", packageLock],
+    ["editors/vscode/package.json", packageJson],
+    ["package-lock.json", packageLock],
+    ["package.json", packageJson],
+    [
+      "rust-toolchain.toml",
+      `[toolchain]
+channel = "${rustVersion}"
+profile = "minimal"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-wasip1"]
+`,
+    ],
+    [
+      "scripts/ir-witness.sh",
+      '"$root/node_modules/.bin/tsc" -p witness/tsconfig.json\n',
+    ],
+    ["scripts/release-prep.sh", "npm ci\n"],
+  ]);
+}
+
+function expectRejection(name, mutate, expectedCode) {
+  const files = fixtureFiles();
+  mutate(files);
+  assert.throws(
+    () => validatePolicy(files),
+    (error) => error instanceof PolicyError && error.code === expectedCode,
+    name,
+  );
+}
+
+function selfTest() {
+  validatePolicy(fixtureFiles());
+  const cases = [
+    [
+      "moving Rust evidence channel",
+      (files) =>
+        files.set(
+          "rust-toolchain.toml",
+          files.get("rust-toolchain.toml").replace('1.97.1', "stable"),
+        ),
+      "E_RUST_PIN",
+    ],
+    [
+      "incomplete Rust toolchain shape",
+      (files) =>
+        files.set(
+          "rust-toolchain.toml",
+          files.get("rust-toolchain.toml").replace('"clippy"', '"llvm-tools"'),
+        ),
+      "E_RUST_TOOLCHAIN_SHAPE",
+    ],
+    [
+      "moving primary Rust selector",
+      (files) =>
+        files.set(
+          ".github/workflows/ci.yml",
+          files
+            .get(".github/workflows/ci.yml")
+            .replace('toolchain: "1.97.1"', "toolchain: stable"),
+        ),
+      "E_PRIMARY_RUST_SELECTOR",
+    ],
+    [
+      "moving primary Node selector",
+      (files) =>
+        files.set(
+          ".github/workflows/ci.yml",
+          files
+            .get(".github/workflows/ci.yml")
+            .replace('node-version-file: ".node-version"', 'node-version: "22"'),
+        ),
+      "E_PRIMARY_NODE_SELECTOR",
+    ],
+    [
+      "non-exact Node evidence release",
+      (files) => files.set(".node-version", "22\n"),
+      "E_NODE_PIN",
+    ],
+    [
+      "TypeScript dependency range",
+      (files) => {
+        const json = JSON.parse(files.get("package.json"));
+        json.devDependencies.typescript = "^5.9.3";
+        files.set("package.json", JSON.stringify(json));
+      },
+      "E_TYPESCRIPT_PIN",
+    ],
+    [
+      "TypeScript lock drift",
+      (files) => {
+        const json = JSON.parse(files.get("package-lock.json"));
+        json.packages["node_modules/typescript"].version = "5.9.2";
+        files.set("package-lock.json", JSON.stringify(json));
+      },
+      "E_TYPESCRIPT_LOCK",
+    ],
+    [
+      "unverified MSRV declaration",
+      (files) => files.set("Cargo.toml", 'rust-version = "1.80"\n'),
+      "E_MSRV_UNVERIFIED",
+    ],
+    [
+      "ambient TypeScript compiler",
+      (files) =>
+        files.set(
+          "scripts/ir-witness.sh",
+          "command -v tsc\ntsc -p witness/tsconfig.json\n",
+        ),
+      "E_AMBIENT_TYPESCRIPT",
+    ],
+    [
+      "fixed Rust compatibility selector",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace("toolchain: stable", 'toolchain: "1.97.1"'),
+        ),
+      "E_COMPAT_RUST_SELECTOR",
+    ],
+    [
+      "fixed Node compatibility selector",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace('node-version: "22"', 'node-version: "22.23.1"'),
+        ),
+      "E_COMPAT_NODE_SELECTOR",
+    ],
+    [
+      "unpinned compatibility action",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace(
+              "actions/setup-node@0123456789abcdef0123456789abcdef01234567",
+              "actions/setup-node@v5",
+            ),
+        ),
+      "E_COMPAT_ACTION_PIN",
+    ],
+    [
+      "missing policy ownership",
+      (files) =>
+        files.set(
+          "docs/workflows/evidence-toolchains/README.md",
+          files
+            .get("docs/workflows/evidence-toolchains/README.md")
+            .replace("maintainer", "operator"),
+        ),
+      "E_POLICY_DOC",
+    ],
+  ];
+  for (const [name, mutate, expectedCode] of cases) {
+    expectRejection(name, mutate, expectedCode);
+  }
+  console.log(
+    `check-evidence-toolchains: ${cases.length} mutation cases passed`,
+  );
+}
+
+function repositoryFiles(root) {
+  const files = new Map();
+  for (const file of REQUIRED_PATHS) {
+    const absolute = path.join(root, file);
+    if (fs.existsSync(absolute)) {
+      files.set(file, fs.readFileSync(absolute, "utf8"));
+    }
+  }
+  return files;
+}
+
+const scriptPath = fileURLToPath(import.meta.url);
+const root = path.resolve(path.dirname(scriptPath), "..");
+
+try {
+  if (process.argv.length === 3 && process.argv[2] === "--self-test") {
+    selfTest();
+  } else if (process.argv.length === 2) {
+    validatePolicy(repositoryFiles(root));
+    console.log("check-evidence-toolchains: policy satisfied");
+  } else {
+    console.error("usage: node scripts/check-evidence-toolchains.mjs [--self-test]");
+    process.exitCode = 2;
+  }
+} catch (error) {
+  if (error instanceof PolicyError) {
+    console.error(`check-evidence-toolchains: ${error.code}: ${error.message}`);
+    process.exitCode = 1;
+  } else {
+    throw error;
+  }
+}
