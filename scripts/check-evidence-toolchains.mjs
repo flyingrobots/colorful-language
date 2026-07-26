@@ -13,6 +13,29 @@ const FIXTURE = Object.freeze({
   typeScriptVersion: "5.9.3",
   fullSha: "0123456789abcdef0123456789abcdef01234567",
 });
+const POLICY_CODES = new Set([
+  "E_AMBIENT_TYPESCRIPT",
+  "E_COMPAT_ACTION_PIN",
+  "E_COMPAT_CONCURRENCY",
+  "E_COMPAT_NODE_SELECTOR",
+  "E_COMPAT_RUST_OVERRIDE",
+  "E_COMPAT_RUST_SELECTOR",
+  "E_COMPAT_TRIGGER",
+  "E_JSON",
+  "E_MSRV_UNVERIFIED",
+  "E_NODE_ENGINE",
+  "E_NODE_PIN",
+  "E_POLICY_DOC",
+  "E_PRIMARY_ACTION_PIN",
+  "E_PRIMARY_NODE_SELECTOR",
+  "E_PRIMARY_RUST_SELECTOR",
+  "E_REQUIRED_FILE",
+  "E_RUST_PIN",
+  "E_RUST_TOOLCHAIN_SHAPE",
+  "E_TYPESCRIPT_INSTALL",
+  "E_TYPESCRIPT_LOCK",
+  "E_TYPESCRIPT_PIN",
+]);
 const REQUIRED_PATHS = [
   "rust-toolchain.toml",
   ".node-version",
@@ -41,6 +64,7 @@ class PolicyError extends Error {
 }
 
 function reject(code, message) {
+  assert(POLICY_CODES.has(code), `unregistered policy code: ${code}`);
   throw new PolicyError(code, message);
 }
 
@@ -627,6 +651,16 @@ function selfTest() {
   validatePolicy(capitalizedProse);
   const cases = [
     [
+      "missing required policy input",
+      (files) => files.delete("rust-toolchain.toml"),
+      "E_REQUIRED_FILE",
+    ],
+    [
+      "malformed package manifest",
+      (files) => files.set("package.json", "{"),
+      "E_JSON",
+    ],
+    [
       "moving Rust evidence channel",
       (files) =>
         files.set(
@@ -812,6 +846,26 @@ function selfTest() {
       "E_TYPESCRIPT_INSTALL",
     ],
     [
+      "missing release TypeScript install",
+      (files) =>
+        files.set(
+          "scripts/release-prep.sh",
+          files.get("scripts/release-prep.sh").replace("npm ci\n", ""),
+        ),
+      "E_TYPESCRIPT_INSTALL",
+    ],
+    [
+      "missing compatibility schedule",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace("  schedule:\n", ""),
+        ),
+      "E_COMPAT_TRIGGER",
+    ],
+    [
       "fixed Rust compatibility selector",
       (files) =>
         files.set(
@@ -939,6 +993,12 @@ env:
       "E_POLICY_DOC",
     ],
   ];
+  const testedCodes = new Set(cases.map(([, , expectedCode]) => expectedCode));
+  assert.deepEqual(
+    [...testedCodes].sort(),
+    [...POLICY_CODES].sort(),
+    "every registered policy code must have mutation coverage",
+  );
   for (const [name, mutate, expectedCode] of cases) {
     expectRejection(name, mutate, expectedCode);
   }

@@ -13,11 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Repository and release evidence now pin Rust 1.97.1, Node 22.23.1, and
   TypeScript 5.9.3 through reviewed toolchain files, exact manifests, and
   lockfiles. The IR witness invokes only the root-local TypeScript compiler.
-  A deterministic 14-mutation policy self-test prevents moving primary
-  selectors, dependency drift, ambient compiler use, or an unverified MSRV
-  claim. A separate weekly advisory workflow floats current Rust stable and
-  the supported Node 22 line so forward compatibility can fail visibly without
-  replacing the reproducibility oracle.
+  A deterministic, exhaustive policy-code mutation suite prevents moving
+  primary selectors, dependency drift, ambient compiler use, or an unverified
+  MSRV claim. A separate weekly advisory workflow floats current Rust stable
+  and the supported Node 22 line so forward compatibility can fail visibly
+  without replacing the reproducibility oracle.
 - **Schema-generated vocabulary validators.**
   `contracts/colorful/vocabulary.v1.schema.json` is now the single authority
   for legal vocabulary role names and token-axis keys. A deterministic,
