@@ -67,4 +67,22 @@ if [[ -n "$other_files" ]]; then
 fi
 echo "OK: the default HOME directory was not touched"
 
+echo "Checking a custom CARGO wrapper receives only Cargo-native arguments..."
+cargo_wrapper="$work/cargo-wrapper"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'if [[ "${1:-}" == +* ]]; then' \
+  '  echo "custom cargo wrapper received rustup-only toolchain syntax" >&2' \
+  '  exit 64' \
+  'fi' \
+  'exec cargo "$@"' > "$cargo_wrapper"
+chmod +x "$cargo_wrapper"
+wrapper_home="$work/wrapper-home"
+CARGO="$cargo_wrapper" COLORFUL_HOME="$wrapper_home" \
+  bash "$root/scripts/install-local.sh" >/dev/null ||
+  fail "custom CARGO wrapper could not install colorful"
+[[ -x "$wrapper_home/bin/colorful" ]] ||
+  fail "custom CARGO wrapper did not install colorful"
+
 echo "smoke-test-install-local passed."
