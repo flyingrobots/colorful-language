@@ -110,6 +110,29 @@ function hasYamlKey(source, key) {
   ).test(source);
 }
 
+function hasWeeklySchedule(source) {
+  const entries = source.matchAll(
+    /^\s*-\s*cron:\s*["']([^"']+)["']\s*(?:#.*)?$/gmu,
+  );
+  for (const [, expression] of entries) {
+    const [minute, hour, dayOfMonth, month, dayOfWeek, ...extra] =
+      expression.trim().split(/\s+/u);
+    if (
+      extra.length === 0 &&
+      /^\d{1,2}$/u.test(minute) &&
+      Number(minute) <= 59 &&
+      /^\d{1,2}$/u.test(hour) &&
+      Number(hour) <= 23 &&
+      dayOfMonth === "*" &&
+      month === "*" &&
+      /^[0-7]$/u.test(dayOfWeek)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
@@ -295,13 +318,19 @@ function assertTypeScriptLock(lock, file, expected) {
 }
 
 function assertCompatibilityWorkflow(workflow, nodeMajor) {
-  for (const marker of ["schedule", "workflow_dispatch", "cron"]) {
+  for (const marker of ["schedule", "workflow_dispatch"]) {
     if (!hasYamlKey(workflow, marker)) {
       reject(
         "E_COMPAT_TRIGGER",
         `.github/workflows/compatibility.yml: missing ${marker}:`,
       );
     }
+  }
+  if (!hasWeeklySchedule(workflow)) {
+    reject(
+      "E_COMPAT_TRIGGER",
+      ".github/workflows/compatibility.yml: missing a weekly cron schedule",
+    );
   }
   if (
     !workflow.includes(
@@ -908,6 +937,17 @@ function selfTest() {
           files
             .get(".github/workflows/compatibility.yml")
             .replace("schedule:", "not-schedule:"),
+        ),
+      "E_COMPAT_TRIGGER",
+    ],
+    [
+      "monthly compatibility schedule",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace('cron: "0 0 * * 1"', 'cron: "0 0 1 * *"'),
         ),
       "E_COMPAT_TRIGGER",
     ],
