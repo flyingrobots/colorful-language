@@ -102,10 +102,15 @@ lives in `crates/colorful-lexicon/src/lib.rs`.
   *Status:* implemented.
 - **LEX-11a** — *Requirement:* LEX-11. *Behavior:* parser token formation and
   lexicon `is_number` agree for integers, decimals, grouping, Unicode numerics,
-  repeated separators, and leading/trailing separators. *Oracle:* exact parser
-  token spans and lexicon `PosClass` equality for one shared table; malformed
-  forms are rejected by both surfaces. *Evidence type:* cross-crate table-driven
-  parity test. *Tracking:*
+  mixed comma/period forms, repeated separators, and leading/trailing
+  separators. Both consume `colorful_core::numeric_prefix_len`'s
+  `N+([.,]N+)*` contract. *Oracle:* one TSV matrix pins exact parser leaf
+  slices, the scanner's whole-token decision, and lexicon `PosClass` equality;
+  malformed separator placement is never `Number`. *Evidence type:* shared
+  pure scanner and cross-crate table-driven parity test. *Planned evidence:*
+  `colorful_core::numeric_prefix_len`,
+  `crates/colorful-lexicon/tests/fixtures/numeric_parity.tsv`, and
+  `crates/colorful-lexicon/tests/numeric_parity.rs`. *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
   *Status:* planned.
 

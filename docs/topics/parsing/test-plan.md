@@ -75,11 +75,17 @@ lives in `crates/colorful-parse/src/lib.rs`.
   two words and is skipped. *Oracle:* structural equality. *Evidence:*
   `tests::unicode_spaces_are_skipped`. *Status:* implemented.
 - **PAR-7a** — *Requirement:* PAR-7. *Behavior:* one shared table covers
-  integers, decimals, grouping, Unicode numerics, repeated separators, and
-  leading/trailing separators through parser tokenization and lexicon lookup.
-  *Oracle:* exact parser spans and lexicon class equality; malformed forms are
-  rejected by both surfaces. *Evidence type:* cross-crate table-driven parity
-  test. *Tracking:*
+  integers, decimals, grouping, Unicode numerics, mixed comma/period forms,
+  repeated separators, and leading/trailing separators. Both adapters use the
+  pure `colorful_core::numeric_prefix_len` scanner implementing
+  `N+([.,]N+)*`, where `N` is a Unicode numeric character. *Oracle:* one TSV
+  matrix pins exact parser leaf slices, the shared scanner's whole-token
+  decision, and lexicon class equality; malformed forms split at the invalid
+  separator and classify as content when presented whole. *Evidence type:*
+  shared pure scanner and cross-crate table-driven parity test. *Planned
+  evidence:* `colorful_core::numeric_prefix_len`,
+  `crates/colorful-lexicon/tests/fixtures/numeric_parity.tsv`, and
+  `crates/colorful-lexicon/tests/numeric_parity.rs`. *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
   *Status:* planned.
 - **PAR-8a** — *Requirement:* PAR-8. *Behavior:* a bounded seeded corpus drives
