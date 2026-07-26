@@ -157,12 +157,21 @@ Implemented and planned cases are listed below.
   `tests::cli_and_lsp_positions_agree_across_unicode_and_mixed_line_endings`.
   *Status:* implemented.
 - **LINT-11a** — *Requirement:* LINT-11. *Behavior:* `was red`, `is sacred`, and
-  reviewed ambiguous adjective constructions are not silently classified as
-  passive voice; participle findings require lexical class plus reviewed
-  dictionary or rule evidence. *Oracle:* exact finding vectors for positive,
-  negative, and ambiguous fixtures plus a published precision measurement
-  before rule expansion. *Evidence type:* deterministic rule fixtures and
-  reviewed evaluation report. *Tracking:*
+  reviewed result-state adjective constructions are not silently classified as
+  passive voice. A finding requires a lexically classified `be` auxiliary, an
+  eligible content/verb token in the reviewed participle table, and any
+  entry-specific disambiguation evidence; result-state entries require a
+  following lexically classified `by` phrase. *Oracle:* a reviewed development
+  corpus reports exactly 4 true positives, 0 false positives, 9 true negatives,
+  and 0 false negatives; CLI/LSP golden parity includes the named negatives;
+  the finding message continues to say “candidate”; and documentation states
+  that fixture precision is not a held-out product-quality estimate.
+  *Evidence type:* deterministic TSV corpus, rule-table unit tests, CLI/LSP
+  golden fixtures, and current reference. *Planned evidence:*
+  `crates/colorful-lint/tests/fixtures/passive_voice.tsv`,
+  `crates/colorful-lint/tests/passive_voice_precision.rs`,
+  `crates/colorful-cli/fixtures/lint/{passive-voice,false-positives}.*`, and
+  `docs/topics/linting/README.md`. *Tracking:*
   [#138](https://github.com/flyingrobots/colorful-language/issues/138).
   *Status:* planned.
 - **LINT-12a** — *Requirement:* LINT-12. *Behavior:* the chosen quotation policy
