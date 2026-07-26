@@ -102,6 +102,14 @@ function tomlStringArray(source, key) {
   return [...body.matchAll(/"([^"]+)"/gu)].map((match) => match[1]);
 }
 
+function hasYamlKey(source, key) {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return new RegExp(
+    `^\\s*(?:-\\s*)?${escapedKey}\\s*:`,
+    "mu",
+  ).test(source);
+}
+
 function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
@@ -287,11 +295,11 @@ function assertTypeScriptLock(lock, file, expected) {
 }
 
 function assertCompatibilityWorkflow(workflow, nodeMajor) {
-  for (const marker of ["schedule:", "workflow_dispatch:", "cron:"]) {
-    if (!workflow.includes(marker)) {
+  for (const marker of ["schedule", "workflow_dispatch", "cron"]) {
+    if (!hasYamlKey(workflow, marker)) {
       reject(
         "E_COMPAT_TRIGGER",
-        `.github/workflows/compatibility.yml: missing ${marker}`,
+        `.github/workflows/compatibility.yml: missing ${marker}:`,
       );
     }
   }
@@ -862,6 +870,17 @@ function selfTest() {
           files
             .get(".github/workflows/compatibility.yml")
             .replace("  schedule:\n", ""),
+        ),
+      "E_COMPAT_TRIGGER",
+    ],
+    [
+      "lookalike compatibility schedule key",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace("schedule:", "not-schedule:"),
         ),
       "E_COMPAT_TRIGGER",
     ],
