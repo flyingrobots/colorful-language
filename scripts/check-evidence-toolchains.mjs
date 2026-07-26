@@ -283,6 +283,7 @@ function validatePolicy(files) {
   assertPinnedRustActions(ci, ".github/workflows/ci.yml", rustVersion);
   assertPinnedRustActions(release, ".github/workflows/release.yml", rustVersion);
   assertPinnedNodeActions(ci, ".github/workflows/ci.yml");
+  assertPinnedNodeActions(release, ".github/workflows/release.yml");
 
   if (ci.includes("npm install -g typescript")) {
     reject(
@@ -458,6 +459,19 @@ function selfTest() {
           files
             .get(".github/workflows/ci.yml")
             .replace('node-version-file: ".node-version"', 'node-version: "22"'),
+        ),
+      "E_PRIMARY_NODE_SELECTOR",
+    ],
+    [
+      "moving release Node selector",
+      (files) =>
+        files.set(
+          ".github/workflows/release.yml",
+          `${files.get(".github/workflows/release.yml")}
+- uses: actions/setup-node@0123456789abcdef0123456789abcdef01234567
+  with:
+    node-version: "22"
+`,
         ),
       "E_PRIMARY_NODE_SELECTOR",
     ],
