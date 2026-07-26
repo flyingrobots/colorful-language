@@ -105,6 +105,8 @@ each page's own status note before trusting a specific finding.
   profile adapter, automation boundary, publication, and witness discipline.
 - [PR size reporting](workflows/pr-size-reporting/README.md) — informational line-count
   diff advisory signal and exclusions in CI.
+- [Rust source policy](workflows/rust-source-policy/README.md) — first-party
+  unsafe-code declarations, Cargo-target inventory, and reviewed exceptions.
 
 ## Releases
 
