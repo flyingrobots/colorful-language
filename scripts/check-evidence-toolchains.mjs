@@ -56,6 +56,61 @@ function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
 
+function workflowJobBodies(workflow) {
+  const lines = workflow.split("\n");
+  const jobsIndex = lines.findIndex((line) => /^jobs:\s*$/u.test(line));
+  if (jobsIndex === -1) {
+    return [workflow];
+  }
+
+  const jobs = [];
+  let current = [];
+  for (const line of lines.slice(jobsIndex + 1)) {
+    if (/^  [A-Za-z0-9_-]+:\s*(?:#.*)?$/u.test(line)) {
+      if (current.length > 0) {
+        jobs.push(current.join("\n"));
+      }
+      current = [line];
+    } else if (current.length > 0) {
+      current.push(line);
+    }
+  }
+  if (current.length > 0) {
+    jobs.push(current.join("\n"));
+  }
+  return jobs;
+}
+
+function hasRootRunBefore(job, prerequisite, target) {
+  const lines = job.split("\n");
+  const targetIndexes = lines
+    .map((line, index) => [line.trim(), index])
+    .filter(([line]) => line === `- run: ${target}`)
+    .map(([, index]) => index);
+  if (targetIndexes.length === 0) {
+    return null;
+  }
+
+  return targetIndexes.every((targetIndex) => {
+    for (let index = 0; index < targetIndex; index += 1) {
+      if (lines[index].trim() !== `- run: ${prerequisite}`) {
+        continue;
+      }
+      const indent = lines[index].match(/^\s*/u)[0].length;
+      const following = lines.slice(index + 1, targetIndex);
+      const nextStep = following.findIndex((line) =>
+        new RegExp(`^\\s{${indent}}-\\s+`, "u").test(line),
+      );
+      const stepTail =
+        nextStep === -1 ? following : following.slice(0, nextStep);
+      if (!stepTail.some((line) => /^\s*working-directory:/u.test(line))) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
 function assertPinnedActions(workflow, file) {
   for (const match of workflow.matchAll(
     /^\s*(?:-\s+)?uses:\s+[^@\s]+@([^\s#]+).*$/gmu,
@@ -291,7 +346,13 @@ function validatePolicy(files) {
       ".github/workflows/ci.yml must not install a global TypeScript compiler",
     );
   }
-  if (!ci.includes("- run: npm ci") || !ci.includes("bash scripts/ir-witness.sh")) {
+  const installOrdering = workflowJobBodies(ci)
+    .map((job) => hasRootRunBefore(job, "npm ci", "bash scripts/ir-witness.sh"))
+    .filter((result) => result !== null);
+  if (
+    installOrdering.length === 0 ||
+    installOrdering.some((result) => !result)
+  ) {
     reject(
       "E_TYPESCRIPT_INSTALL",
       "primary CI must install root evidence dependencies before the IR witness",
@@ -531,6 +592,20 @@ function selfTest() {
           "command -v tsc\ntsc -p witness/tsconfig.json\n",
         ),
       "E_AMBIENT_TYPESCRIPT",
+    ],
+    [
+      "editor install after the IR witness",
+      (files) =>
+        files.set(
+          ".github/workflows/ci.yml",
+          `${files
+            .get(".github/workflows/ci.yml")
+            .replace("- run: npm ci\n", "")}
+- run: npm ci
+  working-directory: editors/vscode
+`,
+        ),
+      "E_TYPESCRIPT_INSTALL",
     ],
     [
       "fixed Rust compatibility selector",
