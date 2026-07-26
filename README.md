@@ -29,6 +29,21 @@ ports underlie CLI highlighting, lint warnings, and LSP diagnostics.
 That is the current contract. Future phases are tracked in the
 [roadmap](ROADMAP.md), not promised by this README.
 
+## Requirements
+
+Rust 1.97.1 is the reviewed compiler for repository and release evidence.
+The checked-in `rust-toolchain.toml` selects it automatically in a source
+checkout. Published crates intentionally do not declare a minimum supported
+Rust version (MSRV): 1.97.1 is the reproducibility oracle, not a claimed lower
+compatibility bound, and older compilers are unverified.
+
+Contributors running JavaScript evidence or building the VS Code adapter use
+Node 22.23.1 and TypeScript 5.9.3. Version managers can read `.node-version`;
+`npm ci` at the repository root and in `editors/vscode/` reproduces the two
+locked dependency graphs. See the
+[evidence-toolchain workflow](docs/workflows/evidence-toolchains/) for version
+ownership and forward-compatibility policy.
+
 ## Try it now (30 seconds)
 
 ```bash

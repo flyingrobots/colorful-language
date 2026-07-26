@@ -6,6 +6,9 @@
 
 # We ship binaries (CLI + LSP), so Cargo.lock IS committed — do not ignore it.
 
+# Node
+/node_modules/
+
 # macOS
 .DS_Store
 ._*

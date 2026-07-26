@@ -37,7 +37,9 @@ Canonical issue:
   *Oracle:* a clean rustup-enabled checkout reports the recorded release, and a
   deterministic policy check rejects any moving or mismatched primary selector.
   *Evidence type:* toolchain manifest, workflow execution, and policy-check
-  self-test. *Status:* planned.
+  self-test. *Evidence:* `rust-toolchain.toml`, the `rust` and `editors` jobs
+  in `.github/workflows/ci.yml`, `.github/workflows/release.yml`, and
+  `scripts/check-evidence-toolchains.mjs`. *Status:* implemented.
 - **ETC-2a** — *Requirements:* ETC-3, ETC-6. *Behavior:* the repository names
   one exact Node release; root evidence tooling and the VS Code adapter declare
   the same exact TypeScript release in lockfile-backed manifests; the IR
@@ -46,24 +48,33 @@ Canonical issue:
   witness pass, and the policy self-test rejects ranges, version disagreement,
   and ambient/global TypeScript installation. *Evidence type:* version file,
   package manifests and locks, executable witness, and policy-check self-test.
-  *Status:* planned.
+  *Evidence:* `.node-version`, both `package.json` / `package-lock.json` pairs,
+  `scripts/ir-witness.sh`, and `scripts/check-evidence-toolchains.mjs`.
+  *Status:* implemented.
 - **ETC-3a** — *Requirement:* ETC-4. *Behavior:* the workspace manifest and
   contributor references explicitly distinguish the evidence compiler from
   MSRV; no lower-bound claim exists until a dedicated compatibility lane
   verifies it. *Oracle:* policy inspection rejects a declared or documented
   MSRV that lacks matching executable evidence. *Evidence type:* manifest,
-  operational reference, and policy check. *Status:* planned.
+  operational reference, and policy check. *Evidence:* `Cargo.toml`,
+  `README.md`, `CONTRIBUTING.md`, and
+  `scripts/check-evidence-toolchains.mjs`. *Status:* implemented.
 - **ETC-4a** — *Requirements:* ETC-5, ETC-7. *Behavior:* a weekly and
   manually-dispatchable workflow runs the Rust gate on current stable and the
   JavaScript/editor gates on the supported Node major line. The workflow and
   reference name the maintainer as owner and classify failures as advisory
   compatibility signals requiring triage. *Oracle:* workflow trigger and
-  selector inspection plus successful manual execution. *Evidence type:*
-  scheduled workflow, policy check, and Actions run. *Status:* planned.
+  selector inspection plus the first post-merge scheduled or manual execution.
+  *Evidence type:* scheduled workflow, policy check, and Actions run.
+  *Evidence:* `.github/workflows/compatibility.yml`,
+  `docs/workflows/evidence-toolchains/README.md`, and
+  `scripts/check-evidence-toolchains.mjs`. *Status:* implemented; live execution
+  begins after the workflow reaches the default branch.
 - **ETC-5a** — *Requirements:* ETC-6, ETC-7. *Behavior:* a deterministic
   repository policy checker validates exact primary selectors, package/lock
   agreement, the MSRV separation, and the moving compatibility selectors; its
   self-test mutates each protected condition and observes the expected stable
   failure category. *Oracle:* the self-test passes only when every mutation is
   rejected for its intended reason. *Evidence type:* executable policy checker
-  and CI step. *Status:* planned.
+  and CI step. *Evidence:* `scripts/check-evidence-toolchains.mjs` and the
+  `docs` job in `.github/workflows/ci.yml`. *Status:* implemented.

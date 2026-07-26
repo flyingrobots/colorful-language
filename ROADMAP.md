@@ -82,7 +82,9 @@ observe public-contract regressions before they ship.
 - **Source and toolchain policy:** enforced first-party unsafe-code policy
   ([#146](https://github.com/flyingrobots/colorful-language/issues/146)) and
   reviewed Rust, Node, and TypeScript evidence toolchains
-  [#147](https://github.com/flyingrobots/colorful-language/issues/147).
+  ([#147](https://github.com/flyingrobots/colorful-language/issues/147)):
+  exact primary evidence pins with separately scheduled forward-compatibility
+  lanes.
 - **Merge and dependency governance:** required green checks
   [#150](https://github.com/flyingrobots/colorful-language/issues/150), pinned
   actions and grouped updates

@@ -140,6 +140,12 @@ function assertCompatibilityWorkflow(workflow, nodeMajor) {
       "compatibility workflow must select the moving Rust stable channel",
     );
   }
+  if (!/^\s*RUSTUP_TOOLCHAIN:\s*stable\s*$/mu.test(workflow)) {
+    reject(
+      "E_COMPAT_RUST_OVERRIDE",
+      "compatibility workflow must override the checked-in Rust toolchain",
+    );
+  }
   const nodeSelector = workflow.match(/^\s*node-version:\s*["']?([^"'\s]+)["']?\s*$/mu);
   if (!nodeSelector || nodeSelector[1] !== nodeMajor) {
     reject(
@@ -331,6 +337,8 @@ function fixtureFiles() {
   workflow_dispatch:
 jobs:
   rust:
+    env:
+      RUSTUP_TOOLCHAIN: stable
     steps:
       - uses: dtolnay/rust-toolchain@${fullSha}
         with:
@@ -480,6 +488,17 @@ function selfTest() {
             .replace("toolchain: stable", 'toolchain: "1.97.1"'),
         ),
       "E_COMPAT_RUST_SELECTOR",
+    ],
+    [
+      "missing Rust compatibility override",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace("RUSTUP_TOOLCHAIN: stable", "RUSTUP_TOOLCHAIN: 1.97.1"),
+        ),
+      "E_COMPAT_RUST_OVERRIDE",
     ],
     [
       "fixed Node compatibility selector",

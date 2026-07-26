@@ -19,6 +19,8 @@ command -v markdownlint-cli2 >/dev/null 2>&1 || fail "markdownlint-cli2 is requi
 command -v actionlint >/dev/null 2>&1 || fail "actionlint is required"
 
 bash scripts/release-profile-check.sh
+node scripts/check-evidence-toolchains.mjs --self-test
+node scripts/check-evidence-toolchains.mjs
 
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
@@ -26,9 +28,8 @@ cargo test --all --locked
 bash scripts/package-witness.sh
 bash scripts/smoke-test-install-local.sh
 cargo build --release --locked
+npm ci
 npm --prefix editors/vscode ci
-export PATH="$root/editors/vscode/node_modules/.bin:$PATH"
-command -v tsc >/dev/null 2>&1 || fail "typescript compiler is required"
 bash scripts/ir-witness.sh
 bash scripts/check-generated-ir-drift.sh
 bash scripts/check-generated-vocabulary-drift.sh

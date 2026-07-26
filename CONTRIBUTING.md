@@ -14,6 +14,27 @@ current truth -> planned verification -> executable evidence -> historical reaso
 Every artifact has one job, and a pull request should leave those artifacts in
 agreement.
 
+## Evidence Toolchains
+
+Rust 1.97.1 is the exact compiler used by the primary CI and release evidence.
+The checked-in `rust-toolchain.toml` also installs `rustfmt`, `clippy`, and the
+Zed adapter's `wasm32-wasip1` target. Node 22.23.1 is recorded in
+`.node-version`, and both JavaScript package manifests lock TypeScript 5.9.3.
+Install their dependency graphs before running cross-language or editor gates:
+
+```bash
+npm ci
+npm --prefix editors/vscode ci
+```
+
+The evidence compiler is not the minimum supported Rust version (MSRV).
+`Cargo.toml` intentionally leaves `rust-version` unset because no lower-bound
+lane continuously verifies one. Do not infer or advertise an MSRV from the
+evidence pin. The
+[evidence-toolchain workflow](docs/workflows/evidence-toolchains/README.md)
+defines version ownership, update cadence, and the separate advisory
+compatibility lanes.
+
 ## The Mental Model
 
 Think of the docs as a contract graph. A feature or concept has current
