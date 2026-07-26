@@ -16,8 +16,12 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
   and hyphens (`don't`, `well-being`), and — once the word starts with a
   letter — internal digits too (`covid19`, `H2O` are each one word). A token
   that starts with a digit is a number instead (`3.5`), never a word. Numbers
-  (`150`, `3.14`, `1,000`) are also emitted as word nodes; the lexicon decides
-  they are numeric.
+  are also emitted as word nodes; the lexicon decides they are numeric.
+  Parser and lexicon share the allocation-free grammar `N+([.,]N+)*`, where
+  `N` is any Unicode numeric character. This accepts `150`, `3.14`, `1,000`,
+  `1.234,56`, and Unicode numerics such as `٣.١٤`. Every separator must have
+  numeric characters on both sides: `1..2` becomes `1`, `.`, `.`, `2`, while
+  `.5` becomes `.`, `5`.
 - **Sentences.** A run of `.`/`!`/`?` ends a sentence (the terminator is the
   sentence's last child). Text with no terminator flushes as a single trailing
   sentence. A closing quote or bracket sitting *immediately* after the terminator

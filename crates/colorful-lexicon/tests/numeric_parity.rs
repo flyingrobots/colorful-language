@@ -1,4 +1,4 @@
-use colorful_core::{Lexicon, Node, Parser, PosClass, Span};
+use colorful_core::{numeric_prefix_len, Lexicon, Node, Parser, PosClass, Span};
 use colorful_lexicon::ClosedClassLexicon;
 use colorful_parse::ProseParser;
 
@@ -61,6 +61,12 @@ fn parser_and_lexicon_share_the_numeric_matrix() {
             "content" => false,
             other => panic!("row {} has unknown class {other:?}", index + 1),
         };
+        assert_eq!(
+            numeric_prefix_len(input) == Some(input.len()),
+            expected_number,
+            "row {} shared scanner for {input:?}",
+            index + 1
+        );
         assert_eq!(
             lexicon.classify(input) == PosClass::Number,
             expected_number,

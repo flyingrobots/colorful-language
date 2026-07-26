@@ -82,12 +82,13 @@ lives in `crates/colorful-parse/src/lib.rs`.
   matrix pins exact parser leaf slices, the shared scanner's whole-token
   decision, and lexicon class equality; malformed forms split at the invalid
   separator and classify as content when presented whole. *Evidence type:*
-  shared pure scanner and cross-crate table-driven parity test. *Planned
-  evidence:* `colorful_core::numeric_prefix_len`,
+  shared pure scanner and cross-crate table-driven parity test. *Evidence:*
+  `colorful_core::numeric_prefix_len`,
   `crates/colorful-lexicon/tests/fixtures/numeric_parity.tsv`, and
-  `crates/colorful-lexicon/tests/numeric_parity.rs`. *Tracking:*
+  `crates/colorful-lexicon/tests/numeric_parity.rs`
+  (`parser_and_lexicon_share_the_numeric_matrix`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
-  *Status:* planned.
+  *Status:* implemented.
 - **PAR-8a** — *Requirement:* PAR-8. *Behavior:* a bounded seeded corpus drives
   arbitrary valid Unicode and known parser regressions through parsing and
   source reconstruction in normal CI. *Oracle:* no panic; every accepted span
@@ -101,5 +102,4 @@ lives in `crates/colorful-parse/src/lib.rs`.
 
 - No fixtures yet for deeply nested punctuation or clause boundaries; deferred
   until structure deepens beyond `v0`.
-- Parser/lexicon numeric parity remains open in PAR-7a.
 - Bounded deterministic fuzz/property evidence remains open in PAR-8a.

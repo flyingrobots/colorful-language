@@ -279,6 +279,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Parser/lexicon numeric recognition parity.** A single allocation-free
+  scanner now implements `N+([.,]N+)*` for parser token formation and lexicon
+  classification. An 18-row cross-crate matrix pins ASCII and Unicode
+  numerics, decimals, grouping, mixed comma/period forms, and leading,
+  trailing, or repeated separator failures.
 - **Passive-voice suffix false positives.** The lint rule no longer treats
   every `-ed` word after `be` as a participle. It now requires lexical-class
   eligibility plus a reviewed participle entry, and ambiguous result-state

@@ -14,8 +14,16 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{Node, Parser, PassIdentity, Span, Tree};
+use colorful_core::{numeric_prefix_len, Node, Parser, PassIdentity, Span, Tree};
 use logos::Logos;
+
+fn lex_number(lexer: &mut logos::Lexer<'_, Tok>) {
+    let start = lexer.span().start;
+    let initial_length = lexer.slice().len();
+    let token_length = numeric_prefix_len(&lexer.source()[start..])
+        .expect("numeric callback starts on a Unicode numeric character");
+    lexer.bump(token_length - initial_length);
+}
 
 /// Mechanical token kinds produced by the lexer.
 #[derive(Logos, Debug, PartialEq, Eq)]
@@ -28,7 +36,7 @@ enum Tok {
     Word,
     /// A numeric token with optional internal separators (`150`, `3.14`,
     /// `1,000`).
-    #[regex(r"\p{N}+(?:[.,]\p{N}+)*")]
+    #[regex(r"\p{N}", lex_number)]
     Number,
     /// A run of sentence-ending punctuation (`.`, `!`, `?`, `?!`, `...`).
     #[regex(r"[.!?]+")]

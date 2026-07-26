@@ -107,16 +107,16 @@ lives in `crates/colorful-lexicon/src/lib.rs`.
   `N+([.,]N+)*` contract. *Oracle:* one TSV matrix pins exact parser leaf
   slices, the scanner's whole-token decision, and lexicon `PosClass` equality;
   malformed separator placement is never `Number`. *Evidence type:* shared
-  pure scanner and cross-crate table-driven parity test. *Planned evidence:*
+  pure scanner and cross-crate table-driven parity test. *Evidence:*
   `colorful_core::numeric_prefix_len`,
   `crates/colorful-lexicon/tests/fixtures/numeric_parity.tsv`, and
-  `crates/colorful-lexicon/tests/numeric_parity.rs`. *Tracking:*
+  `crates/colorful-lexicon/tests/numeric_parity.rs`
+  (`parser_and_lexicon_share_the_numeric_matrix`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps
 
 - No regression fixture yet asserting the full word list; the size floor and
   per-kind samples are the current guard. The duplicate-key check is enforced at
   compile time by `phf`.
-- Numeric-recognition parity remains open in LEX-11a.
