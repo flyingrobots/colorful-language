@@ -12,6 +12,7 @@ const REQUIRED_PATHS = [
   ".node-version",
   "package.json",
   "package-lock.json",
+  ".npmrc",
   ".github/workflows/ci.yml",
   ".github/workflows/compatibility.yml",
   ".github/workflows/release.yml",
@@ -397,6 +398,7 @@ function validatePolicy(files) {
     ".node-version",
   );
   const nodeMajor = nodeVersion.split(".", 1)[0];
+  const nodeEngine = `>=${nodeVersion} <${Number(nodeMajor) + 1}`;
 
   for (const [file, contents] of files) {
     if (
@@ -412,6 +414,15 @@ function validatePolicy(files) {
 
   const rootPackage = parseJson(files, "package.json");
   const editorPackage = parseJson(files, "editors/vscode/package.json");
+  if (
+    rootPackage.engines?.node !== nodeEngine ||
+    files.get(".npmrc").trim() !== "engine-strict=true"
+  ) {
+    reject(
+      "E_NODE_ENGINE",
+      `root npm installs must enforce Node ${nodeEngine}`,
+    );
+  }
   const typeScriptVersion = exactVersion(
     rootPackage.devDependencies?.typescript,
     "E_TYPESCRIPT_PIN",
@@ -494,6 +505,7 @@ function fixtureFiles() {
   const fullSha = "0123456789abcdef0123456789abcdef01234567";
   const packageJson = JSON.stringify({
     private: true,
+    engines: { node: ">=22.23.1 <23" },
     devDependencies: { typescript: typeScriptVersion },
   });
   const packageLock = JSON.stringify({
@@ -540,6 +552,7 @@ jobs:
     ],
     [".github/workflows/release.yml", primaryWorkflow],
     [".node-version", `${nodeVersion}\n`],
+    [".npmrc", "engine-strict=true\n"],
     [
       "Cargo.toml",
       "# rust-version is intentionally unset until an MSRV lane verifies it.\n",
@@ -704,6 +717,15 @@ function selfTest() {
       "non-exact Node evidence release",
       (files) => files.set(".node-version", "22\n"),
       "E_NODE_PIN",
+    ],
+    [
+      "missing Node engine constraint",
+      (files) => {
+        const json = JSON.parse(files.get("package.json"));
+        delete json.engines;
+        files.set("package.json", JSON.stringify(json));
+      },
+      "E_NODE_ENGINE",
     ],
     [
       "TypeScript dependency range",
