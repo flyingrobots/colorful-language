@@ -133,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   single machine's first measurement isn't a stable baseline) and that the
   combined production path and memory are open benchmarking gaps, not implied
   by "cheap."
-- **Golden fixtures for the prose-linting rule pack.** Seven reviewed
+- **Golden fixtures for the prose-linting rule pack.** Eight reviewed
   input/output fixtures under `crates/colorful-cli/fixtures/lint/` pin the
   exact CLI report for each of the four lint rules, a false-positive
   near-miss per rule, multi-rule source ordering, and CRLF line endings. A
@@ -143,6 +143,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   diagnostics never disagree with the CLI's findings for the same input.
   `colorful_cli::line_col` is now public (previously private) so the
   harness can cross-check CLI and LSP positions directly.
+- **Quoted weak words remain intentionally in scope.** Straight and curly quote
+  marks do not suppress editorial findings for enclosed word tokens. Balanced,
+  nested, punctuated, apostrophe-bearing, and unbalanced quote fixtures now pin
+  that existing policy and exact CLI/LSP parity, replacing a misleading source
+  comment that implied quoted words were excluded.
 - **`colorful-lexicon`'s ambiguous-word rules are now named, data-driven
   senses.** `contextual_kind` previously hand-matched each ambiguous lexeme
   (`book`, `record`, `lead`, `fast`) against a separate senses-only table,

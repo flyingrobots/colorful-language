@@ -27,6 +27,7 @@ const FIXTURES: &[&str] = &[
     "run-on",
     "length-outlier",
     "passive-voice",
+    "quoted-weak-words",
     "mixed-ordering",
     "false-positives",
     "crlf-line-endings",
@@ -101,9 +102,10 @@ fn cli_and_lsp_agree_on_every_fixture_finding() {
                 "{name}: severity mismatch for {code}"
             );
 
-            // These fixtures are ASCII-only, so UTF-8 character columns and
-            // UTF-16 code-unit columns coincide: the LSP's 0-based line/
-            // character should equal the CLI's 1-based line/column minus one.
+            // These fixtures contain no astral scalars, so Unicode-scalar and
+            // UTF-16 code-unit columns coincide even where curly quote
+            // punctuation is present: the LSP's 0-based line/character should
+            // equal the CLI's 1-based line/column minus one.
             // Check both ends of the range -- a truncated or extended end
             // would still leave the start matching, so start alone can't
             // prove the ranges agree.

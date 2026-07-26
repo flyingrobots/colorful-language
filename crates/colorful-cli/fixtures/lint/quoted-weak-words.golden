@@ -1,0 +1,6 @@
+quoted-weak-words.txt:1:18: info [weak-word]: weak word 'really'
+quoted-weak-words.txt:2:19: info [weak-word]: weak word 'actually'
+quoted-weak-words.txt:3:33: info [weak-word]: weak word 'quite'
+quoted-weak-words.txt:3:47: info [weak-word]: weak word 'really'
+quoted-weak-words.txt:4:18: info [weak-word]: weak word 'very'
+quoted-weak-words.txt:5:16: info [weak-word]: weak word 'just'

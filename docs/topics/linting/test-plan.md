@@ -120,9 +120,10 @@ Implemented and planned cases are listed below.
 - **LINT-8d** — *Requirement:* LINT-8. *Behavior:* clean prose yields no
   diagnostics. *Oracle:* empty diagnostics. *Evidence:* `colorful-lsp`
   `tests::clean_prose_yields_no_diagnostics`. *Status:* implemented.
-- **LINT-9a** — *Requirement:* LINT-9. *Behavior:* seven reviewed fixtures
+- **LINT-9a** — *Requirement:* LINT-9. *Behavior:* eight reviewed fixtures
   (`weak-word`, `run-on`, `length-outlier`, `passive-voice`,
-  `mixed-ordering`, `false-positives`, `crlf-line-endings`) each pin the
+  `quoted-weak-words`, `mixed-ordering`, `false-positives`,
+  `crlf-line-endings`) each pin the
   exact `colorful lint`-style report for a real prose sample, including a
   false-positive near-miss per rule (an exactly-40-word active-voice
   sentence with no filler words), multi-rule source ordering, and a
@@ -139,8 +140,9 @@ Implemented and planned cases are listed below.
   report the same findings in the same order: equal rule codes,
   severities, and messages, and a *complete* range match — both the start
   and the end position, not just the start — once UTF-16 and
-  UTF-8-character columns are reconciled (both are ASCII, so they
-  coincide). *Oracle:* per-finding field equality, including
+  UTF-8-character columns are reconciled. The fixtures contain no astral
+  scalars; curly quote punctuation is one scalar and one UTF-16 code unit, so
+  columns still coincide. *Oracle:* per-finding field equality, including
   `range.start` and `range.end` independently. *Evidence:* `colorful-cli`
   `tests::cli_and_lsp_agree_on_every_fixture_finding` (in
   `crates/colorful-cli/tests/lint_golden_fixtures.rs`). *Status:*
@@ -183,14 +185,14 @@ Implemented and planned cases are listed below.
   test pins the policy, CLI and LSP return equal findings and spans through the
   shared fixture harness, and the current reference explains why quotation
   alone is not a suppression boundary. *Evidence type:* unit test, golden
-  fixture, cross-surface integration test, and current reference. *Planned
-  evidence:* `colorful-lint`
+  fixture, cross-surface integration test, and current reference. *Evidence:*
+  `colorful-lint`
   `tests::weak_words_inside_quotes_are_intentionally_flagged`,
   `crates/colorful-cli/fixtures/lint/quoted-weak-words.{txt,golden}`,
   `crates/colorful-cli/tests/lint_golden_fixtures.rs`, and
   `docs/topics/linting/README.md`. *Tracking:*
   [#139](https://github.com/flyingrobots/colorful-language/issues/139).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13a** — *Requirement:* LINT-13. *Behavior:* a Harper or Vale adapter
   lives outside `colorful-core`, normalizes findings deterministically, leaves
   the built-in analyzer usable without network or external binaries, and emits
@@ -211,7 +213,6 @@ Implemented and planned cases are listed below.
 
 ## Open verification gaps
 
-- Quotation policy remains open in LINT-12a.
 - Optional external-analyzer parity remains open in LINT-13a.
 - Product-level comparative evidence remains open in LINT-14a; built-in rule
   fixtures are not a substitute for the held-out oracle.
