@@ -142,4 +142,56 @@ if [[ "$output" != *"check-rust-source-policy passed: 2 production root(s)"* ]];
   exit 1
 fi
 
+mkdir -p "$fixture/tools/standalone/src"
+cat >"$fixture/tools/standalone/Cargo.toml" <<'EOF'
+[package]
+name = "source-policy-standalone-fixture"
+version = "0.0.0"
+edition = "2021"
+
+[workspace]
+
+[lib]
+path = "src/lib.rs"
+EOF
+cat >"$fixture/tools/standalone/src/lib.rs" <<'EOF'
+pub fn unprotected_standalone() {}
+EOF
+cargo generate-lockfile \
+  --manifest-path "$fixture/tools/standalone/Cargo.toml" >/dev/null
+
+output=""
+if output="$("$checker" --root "$fixture" 2>&1)"; then
+  printf 'expected discovered-workspace failure\n%s\n' "$output" >&2
+  exit 1
+fi
+if [[ "$output" != *"missing #![forbid(unsafe_code)]: tools/standalone/src/lib.rs"* ]]; then
+  printf 'wrong discovered-workspace failure\n%s\n' "$output" >&2
+  exit 1
+fi
+
+cat >"$fixture/tools/standalone/src/lib.rs" <<'EOF'
+#![forbid(unsafe_code)]
+
+pub fn protected_standalone() {}
+EOF
+output="$("$checker" --root "$fixture")"
+if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]]; then
+  printf 'discovered workspace was not inventoried exactly once\n%s\n' \
+    "$output" >&2
+  exit 1
+fi
+
+for excluded in .git node_modules target vendor; do
+  mkdir -p "$fixture/$excluded/ignored"
+  cat >"$fixture/$excluded/ignored/Cargo.toml" <<'EOF'
+This is deliberately not a Cargo manifest.
+EOF
+done
+output="$("$checker" --root "$fixture")"
+if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]]; then
+  printf 'excluded manifest directory was not pruned\n%s\n' "$output" >&2
+  exit 1
+fi
+
 printf 'check-rust-source-policy tests passed\n'
