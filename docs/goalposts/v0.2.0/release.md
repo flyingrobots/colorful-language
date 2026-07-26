@@ -92,3 +92,28 @@ versions.
   the release-prep PR is merged.
 
 See [`verification.md`](verification.md) for the release witness.
+
+## Historical correction — 2026-07-26
+
+The packet above is preserved as the release record. Its included-scope claim
+that the Graft reference consumer validated UTF-8 byte offsets overstated the
+fail-closed guarantees present in the tagged `v0.2.0` artifact. That consumer
+used byte-based coordinates and verified the vocabulary and source hashes, but
+its coordinate mapper clamped out-of-range offsets into the source and decoded
+UTF-8 without fatal error handling. A malformed source or range could therefore
+be repaired or replacement-decoded instead of being rejected.
+
+The later remediation tracked by
+[#64](https://github.com/flyingrobots/colorful-language/issues/64) added one
+ordered artifact-admission gate with stable error categories. Current executable
+evidence in
+[`consumers/graft-projection.test.mjs`](../../../consumers/graft-projection.test.mjs)
+rejects malformed source bytes as `E_SOURCE_UTF8` and rejects reversed,
+out-of-bounds, or mid-code-point ranges as `E_BYTE_RANGE_ORDER`,
+`E_BYTE_RANGE_BOUNDS`, or `E_BYTE_RANGE_BOUNDARY`. The process-level matrix in
+[`scripts/ir-witness.sh`](../../../scripts/ir-witness.sh) additionally proves
+that an out-of-range offset exits nonzero as `E_BYTE_RANGE_BOUNDS` and emits no
+canonical output.
+
+Those checks describe the remediated current consumer, not a protection
+retroactively present in `v0.2.0`.

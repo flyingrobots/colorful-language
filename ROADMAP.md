@@ -121,9 +121,10 @@ deterministically and use valid data without reverse-engineering Colorful.
   [#145](https://github.com/flyingrobots/colorful-language/issues/145); and add
   process-level negative IR witness legs
   [#148](https://github.com/flyingrobots/colorful-language/issues/148).
-- **Consumer honesty:** append the historical v0.2.0 Graft correction
-  [#149](https://github.com/flyingrobots/colorful-language/issues/149) and prove
-  independent consumer value and migration across two contract versions
+- **Consumer honesty:** preserve the historical v0.2.0 packet with its dated
+  Graft correction
+  ([#149](https://github.com/flyingrobots/colorful-language/issues/149)), then
+  prove independent consumer value and migration across two contract versions
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
 
 **Exit signal:** invalid spans, graphs, identities, hashes, versions, vocabulary,

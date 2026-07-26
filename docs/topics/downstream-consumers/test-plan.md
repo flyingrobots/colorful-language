@@ -148,18 +148,22 @@ workspace.
   generates Rust and JavaScript role/key validators, and either stale consumer
   fails regeneration CI. *Oracle:* generated files are byte-identical to fresh
   output and both consumers accept/reject the same manifest keys.
-  *Evidence type:* generator drift check and cross-language fixtures.
+  *Evidence type:* generator drift check and cross-language fixtures. *Evidence:*
+  `scripts/check-generated-vocabulary-drift.sh`,
+  `scripts/generate-vocabulary-validators.test.mjs`, and
+  `crates/colorful-ir/tests/fixtures/vocabulary-validator-parity.json`.
   *Tracking:*
   [#145](https://github.com/flyingrobots/colorful-language/issues/145).
-  *Status:* planned.
+  *Status:* implemented.
 - **CONSUMER-9a** — *Requirement:* CONSUMER-9. *Behavior:* real witness
   processes reject mismatched source, invalid JSON, wrong hashes, illegal axes,
   fractional/out-of-range offsets, and missing fields with no canonical output.
   *Oracle:* nonzero status, exact stable error category, and empty canonical
   output for every fixture. *Evidence type:* process-level negative matrix.
+  *Evidence:* `scripts/ir-witness.sh` and `witness/process-negative.mjs`.
   *Tracking:*
   [#148](https://github.com/flyingrobots/colorful-language/issues/148).
-  *Status:* planned.
+  *Status:* implemented.
 - **CONSUMER-10a** — *Requirement:* CONSUMER-10. *Behavior:* a non-Rust
   consumer validates source identity/schema/vocabulary/version, renders a useful
   artifact, rejects an incompatible version, and migrates across two contract
@@ -177,10 +181,5 @@ workspace.
   the runtime host.
 - Graft package API compatibility checks belong in the Graft repository; this
   repository keeps only the reference consumer witness.
-- Shared strict-invariant parity remains open in CONSUMER-7a. Producer-local
-  projection-input rejection belongs to IR-15a; it is not a missing Graft
-  admission check.
-- Generated vocabulary authority and process-level refusal evidence remain open
-  in CONSUMER-8a and CONSUMER-9a.
 - Independent consumption, migration, and integration-cost evidence remains
   open in CONSUMER-10a.
