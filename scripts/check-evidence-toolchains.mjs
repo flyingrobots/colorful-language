@@ -7,6 +7,12 @@ import { fileURLToPath } from "node:url";
 
 const ACTION_SHA = /^[0-9a-f]{40}$/u;
 const EXACT_VERSION = /^\d+\.\d+\.\d+$/u;
+const FIXTURE = Object.freeze({
+  rustVersion: "1.97.1",
+  nodeVersion: "22.23.1",
+  typeScriptVersion: "5.9.3",
+  fullSha: "0123456789abcdef0123456789abcdef01234567",
+});
 const REQUIRED_PATHS = [
   "rust-toolchain.toml",
   ".node-version",
@@ -503,13 +509,11 @@ function validatePolicy(files) {
 }
 
 function fixtureFiles() {
-  const rustVersion = "1.97.1";
-  const nodeVersion = "22.23.1";
-  const typeScriptVersion = "5.9.3";
-  const fullSha = "0123456789abcdef0123456789abcdef01234567";
+  const { rustVersion, nodeVersion, typeScriptVersion, fullSha } = FIXTURE;
+  const nodeMajor = nodeVersion.split(".", 1)[0];
   const packageJson = JSON.stringify({
     private: true,
-    engines: { node: ">=22.23.1 <23" },
+    engines: { node: `>=${nodeVersion} <${Number(nodeMajor) + 1}` },
     devDependencies: { typescript: typeScriptVersion },
   });
   const packageLock = JSON.stringify({
@@ -604,6 +608,14 @@ function expectRejection(name, mutate, expectedCode) {
 }
 
 function selfTest() {
+  const source = fs.readFileSync(fileURLToPath(import.meta.url), "utf8");
+  for (const value of Object.values(FIXTURE)) {
+    assert.equal(
+      source.split(value).length - 1,
+      1,
+      `fixture authority ${value} must occur exactly once`,
+    );
+  }
   validatePolicy(fixtureFiles());
   const capitalizedProse = fixtureFiles();
   capitalizedProse.set(
@@ -619,7 +631,9 @@ function selfTest() {
       (files) =>
         files.set(
           "rust-toolchain.toml",
-          files.get("rust-toolchain.toml").replace('1.97.1', "stable"),
+          files
+            .get("rust-toolchain.toml")
+            .replace(FIXTURE.rustVersion, "stable"),
         ),
       "E_RUST_PIN",
     ],
@@ -653,7 +667,10 @@ function selfTest() {
           ".github/workflows/ci.yml",
           files
             .get(".github/workflows/ci.yml")
-            .replace('toolchain: "1.97.1"', "toolchain: stable"),
+            .replace(
+              `toolchain: "${FIXTURE.rustVersion}"`,
+              "toolchain: stable",
+            ),
         ),
       "E_PRIMARY_RUST_SELECTOR",
     ],
@@ -664,10 +681,13 @@ function selfTest() {
           ".github/workflows/ci.yml",
           `${files
             .get(".github/workflows/ci.yml")
-            .replace('toolchain: "1.97.1"', "toolchain: stable")}
+            .replace(
+              `toolchain: "${FIXTURE.rustVersion}"`,
+              "toolchain: stable",
+            )}
 - run: echo misplaced
   env:
-    toolchain: "1.97.1"
+    toolchain: "${FIXTURE.rustVersion}"
 `,
         ),
       "E_PRIMARY_RUST_SELECTOR",
@@ -704,7 +724,7 @@ function selfTest() {
         files.set(
           ".github/workflows/release.yml",
           `${files.get(".github/workflows/release.yml")}
-- uses: actions/setup-node@0123456789abcdef0123456789abcdef01234567
+- uses: actions/setup-node@${FIXTURE.fullSha}
   with:
     node-version: "22"
 `,
@@ -719,7 +739,7 @@ function selfTest() {
           files
             .get(".github/workflows/ci.yml")
             .replace(
-              "actions/setup-node@0123456789abcdef0123456789abcdef01234567",
+              `actions/setup-node@${FIXTURE.fullSha}`,
               "actions/setup-node@v5",
             ),
         ),
@@ -743,7 +763,7 @@ function selfTest() {
       "TypeScript dependency range",
       (files) => {
         const json = JSON.parse(files.get("package.json"));
-        json.devDependencies.typescript = "^5.9.3";
+        json.devDependencies.typescript = `^${FIXTURE.typeScriptVersion}`;
         files.set("package.json", JSON.stringify(json));
       },
       "E_TYPESCRIPT_PIN",
@@ -798,7 +818,10 @@ function selfTest() {
           ".github/workflows/compatibility.yml",
           files
             .get(".github/workflows/compatibility.yml")
-            .replace("toolchain: stable", 'toolchain: "1.97.1"'),
+            .replace(
+              "toolchain: stable",
+              `toolchain: "${FIXTURE.rustVersion}"`,
+            ),
         ),
       "E_COMPAT_RUST_SELECTOR",
     ],
@@ -826,7 +849,10 @@ function selfTest() {
           ".github/workflows/compatibility.yml",
           files
             .get(".github/workflows/compatibility.yml")
-            .replace("RUSTUP_TOOLCHAIN: stable", "RUSTUP_TOOLCHAIN: 1.97.1"),
+            .replace(
+              "RUSTUP_TOOLCHAIN: stable",
+              `RUSTUP_TOOLCHAIN: ${FIXTURE.rustVersion}`,
+            ),
         ),
       "E_COMPAT_RUST_OVERRIDE",
     ],
@@ -839,7 +865,7 @@ function selfTest() {
             .get(".github/workflows/compatibility.yml")
             .replace(
               "RUSTUP_TOOLCHAIN: stable",
-              'RUSTUP_TOOLCHAIN: "1.97.1"',
+              `RUSTUP_TOOLCHAIN: "${FIXTURE.rustVersion}"`,
             )}
 env:
   RUSTUP_TOOLCHAIN: stable
@@ -853,9 +879,9 @@ env:
         files.set(
           ".github/workflows/compatibility.yml",
           `${files.get(".github/workflows/compatibility.yml")}
-- uses: dtolnay/rust-toolchain@0123456789abcdef0123456789abcdef01234567
+- uses: dtolnay/rust-toolchain@${FIXTURE.fullSha}
   with:
-    toolchain: "1.97.1"
+    toolchain: "${FIXTURE.rustVersion}"
 `,
         ),
       "E_COMPAT_RUST_SELECTOR",
@@ -867,7 +893,10 @@ env:
           ".github/workflows/compatibility.yml",
           files
             .get(".github/workflows/compatibility.yml")
-            .replace('node-version: "22"', 'node-version: "22.23.1"'),
+            .replace(
+              `node-version: "${FIXTURE.nodeVersion.split(".", 1)[0]}"`,
+              `node-version: "${FIXTURE.nodeVersion}"`,
+            ),
         ),
       "E_COMPAT_NODE_SELECTOR",
     ],
@@ -877,7 +906,7 @@ env:
         files.set(
           ".github/workflows/compatibility.yml",
           `${files.get(".github/workflows/compatibility.yml")}
-- uses: actions/setup-node@0123456789abcdef0123456789abcdef01234567
+- uses: actions/setup-node@${FIXTURE.fullSha}
   with:
     node-version: "24"
 `,
@@ -892,7 +921,7 @@ env:
           files
             .get(".github/workflows/compatibility.yml")
             .replace(
-              "actions/setup-node@0123456789abcdef0123456789abcdef01234567",
+              `actions/setup-node@${FIXTURE.fullSha}`,
               "actions/setup-node@v5",
             ),
         ),
