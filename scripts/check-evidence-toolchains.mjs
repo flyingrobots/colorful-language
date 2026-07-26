@@ -248,12 +248,25 @@ function assertCompatibilityWorkflow(workflow, nodeMajor) {
       "compatibility workflow must override the checked-in Rust toolchain",
     );
   }
-  const nodeSelector = workflow.match(/^\s*node-version:\s*["']?([^"'\s]+)["']?\s*$/mu);
-  if (!nodeSelector || nodeSelector[1] !== nodeMajor) {
+  const nodeActions = actionStepBlocks(workflow, "actions/setup-node");
+  if (nodeActions.length === 0) {
     reject(
       "E_COMPAT_NODE_SELECTOR",
       `compatibility workflow must select supported Node line ${nodeMajor}`,
     );
+  }
+  for (const action of nodeActions) {
+    const selectors = [
+      ...action.body.matchAll(
+        /^\s*node-version:\s*["']?([^"'\s]+)["']?\s*$/gmu,
+      ),
+    ];
+    if (selectors.length !== 1 || selectors[0][1] !== nodeMajor) {
+      reject(
+        "E_COMPAT_NODE_SELECTOR",
+        `compatibility workflow must select supported Node line ${nodeMajor}`,
+      );
+    }
   }
   for (const match of workflow.matchAll(/^\s*-\s+uses:\s+[^@\s]+@([^\s#]+).*$/gmu)) {
     if (!ACTION_SHA.test(match[1])) {
@@ -714,6 +727,19 @@ function selfTest() {
           files
             .get(".github/workflows/compatibility.yml")
             .replace('node-version: "22"', 'node-version: "22.23.1"'),
+        ),
+      "E_COMPAT_NODE_SELECTOR",
+    ],
+    [
+      "second incompatible Node selector",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          `${files.get(".github/workflows/compatibility.yml")}
+- uses: actions/setup-node@0123456789abcdef0123456789abcdef01234567
+  with:
+    node-version: "24"
+`,
         ),
       "E_COMPAT_NODE_SELECTOR",
     ],
