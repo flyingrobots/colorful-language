@@ -52,6 +52,25 @@ function exactVersion(value, code, subject) {
   return value;
 }
 
+function tomlString(source, key) {
+  return source.match(
+    new RegExp(
+      `^\\s*${key}\\s*=\\s*"([^"]+)"\\s*(?:#.*)?$`,
+      "mu",
+    ),
+  )?.[1];
+}
+
+function tomlStringArray(source, key) {
+  const body = source.match(
+    new RegExp(`^\\s*${key}\\s*=\\s*\\[([^\\]]*)\\]\\s*(?:#.*)?$`, "mu"),
+  )?.[1];
+  if (body === undefined) {
+    return null;
+  }
+  return [...body.matchAll(/"([^"]+)"/gu)].map((match) => match[1]);
+}
+
 function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
@@ -283,24 +302,23 @@ function validatePolicy(files) {
   }
 
   const rustToolchain = files.get("rust-toolchain.toml");
-  const rustMatch = rustToolchain.match(/^\s*channel\s*=\s*"([^"]+)"\s*$/mu);
   const rustVersion = exactVersion(
-    rustMatch?.[1],
+    tomlString(rustToolchain, "channel"),
     "E_RUST_PIN",
     "rust-toolchain.toml channel",
   );
-  for (const required of [
-    'profile = "minimal"',
-    '"rustfmt"',
-    '"clippy"',
-    '"wasm32-wasip1"',
-  ]) {
-    if (!rustToolchain.includes(required)) {
-      reject(
-        "E_RUST_TOOLCHAIN_SHAPE",
-        `rust-toolchain.toml must include ${required}`,
-      );
-    }
+  const components = tomlStringArray(rustToolchain, "components");
+  const targets = tomlStringArray(rustToolchain, "targets");
+  if (
+    tomlString(rustToolchain, "profile") !== "minimal" ||
+    !components?.includes("rustfmt") ||
+    !components.includes("clippy") ||
+    !targets?.includes("wasm32-wasip1")
+  ) {
+    reject(
+      "E_RUST_TOOLCHAIN_SHAPE",
+      "rust-toolchain.toml must select minimal, rustfmt, clippy, and wasm32-wasip1",
+    );
   }
 
   const nodeVersion = exactVersion(
@@ -513,6 +531,20 @@ function selfTest() {
         files.set(
           "rust-toolchain.toml",
           files.get("rust-toolchain.toml").replace('"clippy"', '"llvm-tools"'),
+        ),
+      "E_RUST_TOOLCHAIN_SHAPE",
+    ],
+    [
+      "commented Rust toolchain component",
+      (files) =>
+        files.set(
+          "rust-toolchain.toml",
+          files
+            .get("rust-toolchain.toml")
+            .replace(
+              'components = ["rustfmt", "clippy"]',
+              'components = ["rustfmt"] # "clippy"',
+            ),
         ),
       "E_RUST_TOOLCHAIN_SHAPE",
     ],
