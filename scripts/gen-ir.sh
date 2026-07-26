@@ -33,5 +33,6 @@ wesley emit typescript --schema "$contracts/vocabulary.v1.graphql" --out "$gen_t
 cp "$contracts/syntax.v1.graphql" "$crate_contracts/syntax.v1.graphql"
 cp "$contracts/vocabulary.v1.graphql" "$crate_contracts/vocabulary.v1.graphql"
 cp "$contracts/vocabulary.v1.json" "$crate_contracts/vocabulary.v1.json"
+node "$root/scripts/generate-vocabulary-validators.mjs"
 
-echo "Regenerated from contracts (wesley $required_wesley_version). Review the diff and commit."
+echo "Regenerated DTOs and vocabulary validators (wesley $required_wesley_version). Review the diff and commit."

@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colorful.flyingrobots.dev/contracts/colorful/vocabulary.v1.schema.json",
+  "title": "colorful.vocabulary/v1 manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "classRoles", "roleProjections"],
+  "properties": {
+    "version": {
+      "const": "colorful.vocabulary/v1"
+    },
+    "classRoles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/classRole"
+      }
+    },
+    "roleProjections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/roleProjection"
+      }
+    }
+  },
+  "$defs": {
+    "tokenKind": {
+      "type": "string",
+      "enum": ["WORD", "NUMBER", "PUNCTUATION", "QUOTE"]
+    },
+    "lexicalClass": {
+      "type": "string",
+      "enum": ["FUNCTION", "CONTENT", "PROPER_NOUN_CANDIDATE"]
+    },
+    "openClassKind": {
+      "type": "string",
+      "enum": ["NOUN", "VERB", "ADJECTIVE", "ADVERB"]
+    },
+    "visualRole": {
+      "type": "string",
+      "enum": [
+        "STRUCTURAL_KEYWORD",
+        "TYPE_LIKE",
+        "LITERAL",
+        "QUOTED",
+        "MUTED",
+        "UNSTYLED",
+        "NOUN",
+        "VERB",
+        "ADJECTIVE",
+        "ADVERB"
+      ]
+    },
+    "classRoleKey": {
+      "oneOf": [
+        {
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "FUNCTION" },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "NOUN" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "VERB" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "ADJECTIVE" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "CONTENT" },
+            "openClassKind": { "const": "ADVERB" }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "WORD" },
+            "lexicalClass": { "const": "PROPER_NOUN_CANDIDATE" },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "NUMBER" },
+            "lexicalClass": { "const": null },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "PUNCTUATION" },
+            "lexicalClass": { "const": null },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        },
+        {
+          "properties": {
+            "tokenKind": { "const": "QUOTE" },
+            "lexicalClass": { "const": null },
+            "openClassKind": { "const": null }
+          },
+          "required": ["tokenKind", "lexicalClass", "openClassKind"]
+        }
+      ]
+    },
+    "classRole": {
+      "type": "object",
+      "$ref": "#/$defs/classRoleKey",
+      "additionalProperties": false,
+      "required": [
+        "tokenKind",
+        "lexicalClass",
+        "openClassKind",
+        "visualRole"
+      ],
+      "properties": {
+        "tokenKind": {
+          "$ref": "#/$defs/tokenKind"
+        },
+        "lexicalClass": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/lexicalClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "openClassKind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/openClassKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "visualRole": {
+          "$ref": "#/$defs/visualRole"
+        }
+      }
+    },
+    "roleProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visualRole", "ansi", "lspTokenType", "graftClass"],
+      "properties": {
+        "visualRole": {
+          "$ref": "#/$defs/visualRole"
+        },
+        "ansi": {
+          "type": ["string", "null"]
+        },
+        "lspTokenType": {
+          "type": ["string", "null"]
+        },
+        "graftClass": {
+          "type": ["string", "null"]
+        }
+      }
+    }
+  }
+}

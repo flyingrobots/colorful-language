@@ -418,12 +418,31 @@ Requirements:
   [#144](https://github.com/flyingrobots/colorful-language/issues/144).
   *Status:* implemented.
 - **IR-16a** — *Requirement:* IR-16. *Behavior:* one schema artifact generates
-  Rust and JavaScript role/key validators, and either stale consumer fails
-  regeneration CI. *Oracle:* fresh generation is byte-identical and both
-  validators accept/reject the same key matrix. *Evidence type:* generator,
-  drift check, and cross-language fixtures. *Tracking:*
+  the Rust and JavaScript role/key validators. The checked-in generator reads
+  `contracts/colorful/vocabulary.v1.schema.json`, emits both language
+  boundaries deterministically, and never treats either generated file as an
+  authority. CI and release preparation generate into a temporary directory
+  and compare both outputs byte-for-byte, so either stale consumer fails the
+  gate. A schema-mutation fixture adds one legal role and key and proves that
+  both outputs change together; the Rust and JavaScript manifest validators
+  consume one shared class-role case matrix covering every legal key plus
+  illegal axis combinations. *Oracle:* fresh generation is byte-identical to
+  both committed outputs; changing the authority changes both outputs; every
+  shared case has the same accept/reject result at both generated language
+  boundaries. *Evidence type:* schema, generator, drift check, and
+  cross-language fixtures. *Evidence:*
+  `contracts/colorful/vocabulary.v1.schema.json`,
+  `scripts/generate-vocabulary-validators.mjs`,
+  `scripts/generate-vocabulary-validators.test.mjs`,
+  `scripts/check-generated-vocabulary-drift.sh`,
+  `crates/colorful-ir/src/generated/vocabulary_validator_v1.rs`,
+  `consumers/generated/vocabulary-validator-v1.mjs`,
+  `crates/colorful-ir/tests/fixtures/vocabulary-schema-extension.json`,
+  `crates/colorful-ir/tests/fixtures/vocabulary-validator-parity.json`, and
+  `vocabulary::tests::shared_class_role_cases_match_generated_rust_validator`;
+  CI job `generated-ir-drift`; `scripts/release-prep.sh`. *Tracking:*
   [#145](https://github.com/flyingrobots/colorful-language/issues/145).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-17a** — *Requirement:* IR-17. *Behavior:* real witness processes reject
   mismatched source, invalid JSON, wrong contract/schema/vocabulary hashes,
   illegal axes, fractional/out-of-range offsets, and missing fields without
@@ -490,7 +509,6 @@ Requirements:
   and `ruleId` now name a real, validated producer identity (IR-8), but
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
-- Generated vocabulary validation remains open in IR-16a.
 - Complexity-policy and mutation evidence remains open in IR-18b and IR-18c.
 - The independent two-version consumer and
   [product-evidence decision](architecture.md#product-evidence-gate) remains

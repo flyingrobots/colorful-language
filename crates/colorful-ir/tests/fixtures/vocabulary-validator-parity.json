@@ -1,0 +1,140 @@
+{
+  "cases": [
+    {
+      "name": "word-function",
+      "tokenKind": "WORD",
+      "lexicalClass": "FUNCTION",
+      "openClassKind": null,
+      "visualRole": "STRUCTURAL_KEYWORD",
+      "accepted": true
+    },
+    {
+      "name": "word-content",
+      "tokenKind": "WORD",
+      "lexicalClass": "CONTENT",
+      "openClassKind": null,
+      "visualRole": "UNSTYLED",
+      "accepted": true
+    },
+    {
+      "name": "word-content-noun",
+      "tokenKind": "WORD",
+      "lexicalClass": "CONTENT",
+      "openClassKind": "NOUN",
+      "visualRole": "NOUN",
+      "accepted": true
+    },
+    {
+      "name": "word-content-verb",
+      "tokenKind": "WORD",
+      "lexicalClass": "CONTENT",
+      "openClassKind": "VERB",
+      "visualRole": "VERB",
+      "accepted": true
+    },
+    {
+      "name": "word-content-adjective",
+      "tokenKind": "WORD",
+      "lexicalClass": "CONTENT",
+      "openClassKind": "ADJECTIVE",
+      "visualRole": "ADJECTIVE",
+      "accepted": true
+    },
+    {
+      "name": "word-content-adverb",
+      "tokenKind": "WORD",
+      "lexicalClass": "CONTENT",
+      "openClassKind": "ADVERB",
+      "visualRole": "ADVERB",
+      "accepted": true
+    },
+    {
+      "name": "word-proper-noun-candidate",
+      "tokenKind": "WORD",
+      "lexicalClass": "PROPER_NOUN_CANDIDATE",
+      "openClassKind": null,
+      "visualRole": "TYPE_LIKE",
+      "accepted": true
+    },
+    {
+      "name": "number",
+      "tokenKind": "NUMBER",
+      "lexicalClass": null,
+      "openClassKind": null,
+      "visualRole": "LITERAL",
+      "accepted": true
+    },
+    {
+      "name": "punctuation",
+      "tokenKind": "PUNCTUATION",
+      "lexicalClass": null,
+      "openClassKind": null,
+      "visualRole": "MUTED",
+      "accepted": true
+    },
+    {
+      "name": "quote",
+      "tokenKind": "QUOTE",
+      "lexicalClass": null,
+      "openClassKind": null,
+      "visualRole": "QUOTED",
+      "accepted": true
+    },
+    {
+      "name": "word-without-lexical-class",
+      "tokenKind": "WORD",
+      "lexicalClass": null,
+      "openClassKind": null,
+      "visualRole": "UNSTYLED",
+      "accepted": false
+    },
+    {
+      "name": "function-word-with-open-class",
+      "tokenKind": "WORD",
+      "lexicalClass": "FUNCTION",
+      "openClassKind": "NOUN",
+      "visualRole": "STRUCTURAL_KEYWORD",
+      "accepted": false
+    },
+    {
+      "name": "proper-noun-candidate-with-open-class",
+      "tokenKind": "WORD",
+      "lexicalClass": "PROPER_NOUN_CANDIDATE",
+      "openClassKind": "ADVERB",
+      "visualRole": "TYPE_LIKE",
+      "accepted": false
+    },
+    {
+      "name": "number-with-lexical-class",
+      "tokenKind": "NUMBER",
+      "lexicalClass": "CONTENT",
+      "openClassKind": null,
+      "visualRole": "LITERAL",
+      "accepted": false
+    },
+    {
+      "name": "number-with-open-class",
+      "tokenKind": "NUMBER",
+      "lexicalClass": null,
+      "openClassKind": "NOUN",
+      "visualRole": "LITERAL",
+      "accepted": false
+    },
+    {
+      "name": "punctuation-with-lexical-class",
+      "tokenKind": "PUNCTUATION",
+      "lexicalClass": "FUNCTION",
+      "openClassKind": null,
+      "visualRole": "MUTED",
+      "accepted": false
+    },
+    {
+      "name": "quote-with-open-class",
+      "tokenKind": "QUOTE",
+      "lexicalClass": null,
+      "openClassKind": "VERB",
+      "visualRole": "QUOTED",
+      "accepted": false
+    }
+  ]
+}
