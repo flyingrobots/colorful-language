@@ -23,15 +23,17 @@ if [[ -z "$toolchain" ]]; then
   exit 1
 fi
 
-cargo_args=()
 if [[ "$CARGO" == "cargo" ]]; then
-  cargo_args=("+$toolchain")
+  "$CARGO" "+$toolchain" install \
+    --path "$ROOT/crates/colorful-cli" \
+    --root "$COLORFUL_HOME" \
+    --force
+else
+  RUSTUP_TOOLCHAIN="$toolchain" "$CARGO" install \
+    --path "$ROOT/crates/colorful-cli" \
+    --root "$COLORFUL_HOME" \
+    --force
 fi
-
-"$CARGO" "${cargo_args[@]}" install \
-  --path "$ROOT/crates/colorful-cli" \
-  --root "$COLORFUL_HOME" \
-  --force
 
 cat <<EOF
 

@@ -69,6 +69,11 @@ echo "OK: the default HOME directory was not touched"
 
 echo "Checking a custom CARGO wrapper receives only Cargo-native arguments..."
 cargo_wrapper="$work/cargo-wrapper"
+expected_toolchain="$(
+  sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' \
+    "$root/rust-toolchain.toml"
+)"
+export EXPECTED_TOOLCHAIN="$expected_toolchain"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'set -euo pipefail' \
@@ -76,10 +81,14 @@ printf '%s\n' \
   '  echo "custom cargo wrapper received rustup-only toolchain syntax" >&2' \
   '  exit 64' \
   'fi' \
+  'if [[ "${RUSTUP_TOOLCHAIN:-}" != "$EXPECTED_TOOLCHAIN" ]]; then' \
+  '  echo "custom cargo wrapper did not receive the pinned toolchain" >&2' \
+  '  exit 65' \
+  'fi' \
   'exec cargo "$@"' > "$cargo_wrapper"
 chmod +x "$cargo_wrapper"
 wrapper_home="$work/wrapper-home"
-CARGO="$cargo_wrapper" COLORFUL_HOME="$wrapper_home" \
+RUSTUP_TOOLCHAIN=off-policy CARGO="$cargo_wrapper" COLORFUL_HOME="$wrapper_home" \
   bash "$root/scripts/install-local.sh" >/dev/null ||
   fail "custom CARGO wrapper could not install colorful"
 [[ -x "$wrapper_home/bin/colorful" ]] ||
