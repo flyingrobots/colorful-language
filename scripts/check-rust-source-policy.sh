@@ -2,6 +2,12 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ "${1:-}" == "--root" && $# -eq 2 ]]; then
+  root="$(cd "$2" && pwd)"
+elif (( $# != 0 )); then
+  printf 'usage: bash scripts/check-rust-source-policy.sh [--root DIR]\n' >&2
+  exit 2
+fi
 exceptions="$root/docs/workflows/rust-source-policy/exceptions.tsv"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -47,6 +53,52 @@ for package in metadata["packages"]:
 ' "$root"
 }
 
+crate_forbids_unsafe() {
+  local crate_root="$1"
+  python3 - "$crate_root" <<'PY'
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+if source.startswith("\ufeff"):
+    source = source[1:]
+
+position = 0
+length = len(source)
+
+if source.startswith("#!") and not source.startswith("#!["):
+    newline = source.find("\n")
+    position = length if newline == -1 else newline + 1
+
+while True:
+    while position < length and source[position].isspace():
+        position += 1
+    if source.startswith("//", position):
+        newline = source.find("\n", position + 2)
+        position = length if newline == -1 else newline + 1
+        continue
+    if source.startswith("/*", position):
+        depth = 1
+        position += 2
+        while depth:
+            if position >= length:
+                raise SystemExit("unterminated block comment in crate preamble")
+            if source.startswith("/*", position):
+                depth += 1
+                position += 2
+            elif source.startswith("*/", position):
+                depth -= 1
+                position += 2
+            else:
+                position += 1
+        continue
+    break
+
+policy = "#![forbid(unsafe_code)]"
+raise SystemExit(0 if source.startswith(policy, position) else 1)
+PY
+}
+
 inventory_manifest "$root/Cargo.toml" >>"$inventory"
 inventory_manifest "$root/editors/zed/Cargo.toml" >>"$inventory"
 sort -u -o "$inventory" "$inventory"
@@ -79,8 +131,7 @@ done <"$exceptions"
 
 failures=0
 while IFS= read -r crate_root; do
-  if grep -Eq '^#!\[forbid\(unsafe_code\)\][[:space:]]*$' \
-    "$root/$crate_root"; then
+  if crate_forbids_unsafe "$root/$crate_root"; then
     if grep -Fqx "$crate_root" "$exception_roots"; then
       printf 'source-policy exception is stale: %s already forbids unsafe code\n' \
         "$crate_root" >&2

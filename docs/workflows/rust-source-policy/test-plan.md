@@ -32,7 +32,8 @@ Canonical issue:
   repository fails for the three unprotected roots, passes after they declare
   the policy, and any newly inventoried unprotected production root fails.
   *Evidence type:* executable source-policy script. *Evidence:*
-  `scripts/check-rust-source-policy.sh` and
+  `scripts/check-rust-source-policy.sh`,
+  `scripts/check-rust-source-policy.test.sh`, and
   `docs/workflows/rust-source-policy/exceptions.tsv`. *Status:* implemented.
 - **RSP-2a** — *Requirements:* RSP-3, RSP-6. *Behavior:* normal CI runs the
   source-policy check, while the workflow reference states the first-party

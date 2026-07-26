@@ -24,6 +24,10 @@ parallel crate-name list. It inventories the production target kinds `bin`,
 workspace and `editors/zed/Cargo.toml`. Development-only benchmark, example,
 and test targets are outside this production-root contract.
 
+Only a declaration in the crate preamble satisfies the check. The same text in
+a child module, comment, or string literal does not protect the crate and does
+not pass the policy.
+
 The executable evidence and supported-target compiler oracles are recorded in
 the [test plan](test-plan.md).
 
