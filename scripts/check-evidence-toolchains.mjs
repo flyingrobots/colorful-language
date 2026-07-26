@@ -338,16 +338,17 @@ function assertCompatibilityWorkflow(workflow, nodeMajor) {
 
 function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
   const workflowDoc = files.get("docs/workflows/evidence-toolchains/README.md");
-  for (const required of [
-    rustVersion,
-    nodeVersion,
-    typeScriptVersion,
-    "MSRV",
-    "weekly",
-    "maintainer",
-    "advisory",
-  ]) {
+  for (const required of [rustVersion, nodeVersion, typeScriptVersion]) {
     if (!workflowDoc.includes(required)) {
+      reject(
+        "E_POLICY_DOC",
+        `evidence-toolchain reference must document ${required}`,
+      );
+    }
+  }
+  const lowerWorkflowDoc = workflowDoc.toLowerCase();
+  for (const required of ["msrv", "weekly", "maintainer", "advisory"]) {
+    if (!lowerWorkflowDoc.includes(required)) {
       reject(
         "E_POLICY_DOC",
         `evidence-toolchain reference must document ${required}`,
@@ -356,7 +357,10 @@ function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
   }
   for (const file of ["README.md", "CONTRIBUTING.md"]) {
     const document = files.get(file);
-    if (!document.includes(rustVersion) || !document.includes("MSRV")) {
+    if (
+      !document.includes(rustVersion) ||
+      !document.toLowerCase().includes("msrv")
+    ) {
       reject(
         "E_POLICY_DOC",
         `${file}: must name the evidence Rust release and MSRV status`,
@@ -601,6 +605,14 @@ function expectRejection(name, mutate, expectedCode) {
 
 function selfTest() {
   validatePolicy(fixtureFiles());
+  const capitalizedProse = fixtureFiles();
+  capitalizedProse.set(
+    "docs/workflows/evidence-toolchains/README.md",
+    capitalizedProse
+      .get("docs/workflows/evidence-toolchains/README.md")
+      .replace("maintainer", "Maintainer"),
+  );
+  validatePolicy(capitalizedProse);
   const cases = [
     [
       "moving Rust evidence channel",
