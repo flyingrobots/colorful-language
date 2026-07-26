@@ -17,8 +17,10 @@ fi
 
 make_node() {
   local version="$1"
-  printf '#!/usr/bin/env bash\nprintf '"'"'%s\\n'"'"' '"'"'v%s'"'"'\n' "$version" > "$work/node"
+  printf '#!/usr/bin/env bash\nprintf '"'"'v%s\\n'"'"'\n' "$version" > "$work/node"
   chmod +x "$work/node"
+  [[ "$("$work/node")" == "v$version" ]] ||
+    fail "fake Node did not report v$version"
 }
 
 off_policy="0.0.0"

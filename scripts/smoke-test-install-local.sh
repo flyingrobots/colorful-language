@@ -74,6 +74,8 @@ expected_toolchain="$(
     "$root/rust-toolchain.toml"
 )"
 export EXPECTED_TOOLCHAIN="$expected_toolchain"
+# The quoted expressions belong to the generated wrapper, not this process.
+# shellcheck disable=SC2016
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'set -euo pipefail' \
