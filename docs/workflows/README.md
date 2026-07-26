@@ -12,6 +12,8 @@ Product and user-facing concepts still belong in [`../topics/`](../topics/).
 
 ## Workflows
 
+- [Evidence toolchains](evidence-toolchains/README.md) — current Rust, Node, and
+  TypeScript evidence selection and its separation from MSRV.
 - [Release process](release-process/README.md) — release preparation, tag
   publication, verification, and retrospective discipline.
 - [PR size reporting](pr-size-reporting/README.md) — informational line-count diff
