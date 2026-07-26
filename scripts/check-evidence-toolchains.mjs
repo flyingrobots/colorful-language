@@ -56,6 +56,32 @@ function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
 
+function actionStepBlocks(workflow, action) {
+  const lines = workflow.split("\n");
+  const steps = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(
+      /^(\s*)-\s+uses:\s+([^@\s]+)@([^\s#]+).*$/u,
+    );
+    if (!match || match[2] !== action) {
+      continue;
+    }
+    const indent = match[1].length;
+    let end = index + 1;
+    while (
+      end < lines.length &&
+      !new RegExp(`^\\s{${indent}}-\\s+`, "u").test(lines[end])
+    ) {
+      end += 1;
+    }
+    steps.push({
+      ref: match[3],
+      body: lines.slice(index, end).join("\n"),
+    });
+  }
+  return steps;
+}
+
 function workflowJobBodies(workflow) {
   const lines = workflow.split("\n");
   const jobsIndex = lines.findIndex((line) => /^jobs:\s*$/u.test(line));
@@ -125,60 +151,49 @@ function assertPinnedActions(workflow, file) {
 }
 
 function assertPinnedRustActions(workflow, file, rustVersion) {
-  const actionLines = [
-    ...workflow.matchAll(
-      /^\s*-\s+uses:\s+dtolnay\/rust-toolchain@([^\s#]+).*$/gmu,
-    ),
-  ];
-  if (actionLines.length === 0) {
+  const actions = actionStepBlocks(workflow, "dtolnay/rust-toolchain");
+  if (actions.length === 0) {
     reject("E_PRIMARY_RUST_SELECTOR", `${file}: no Rust setup action found`);
   }
-  for (const match of actionLines) {
-    if (!ACTION_SHA.test(match[1])) {
+  const selector = new RegExp(
+    `^\\s*toolchain:\\s*["']?${rustVersion.replaceAll(".", "\\.")}["']?\\s*$`,
+    "gmu",
+  );
+  for (const action of actions) {
+    if (!ACTION_SHA.test(action.ref)) {
       reject(
         "E_PRIMARY_RUST_SELECTOR",
         `${file}: Rust setup action must use a full commit SHA`,
       );
     }
-  }
-  const exactSelectors = countMatches(
-    workflow,
-    new RegExp(
-      `^\\s*toolchain:\\s*["']?${rustVersion.replaceAll(".", "\\.")}["']?\\s*$`,
-      "gmu",
-    ),
-  );
-  if (exactSelectors !== actionLines.length) {
-    reject(
-      "E_PRIMARY_RUST_SELECTOR",
-      `${file}: every Rust action must select ${rustVersion}`,
-    );
+    if (countMatches(action.body, selector) !== 1) {
+      reject(
+        "E_PRIMARY_RUST_SELECTOR",
+        `${file}: every Rust action must select ${rustVersion}`,
+      );
+    }
   }
 }
 
 function assertPinnedNodeActions(workflow, file) {
-  const actionCount = countMatches(
-    workflow,
-    /^\s*-\s+uses:\s+actions\/setup-node@[^\s#]+.*$/gmu,
-  );
-  if (actionCount === 0) {
+  const actions = actionStepBlocks(workflow, "actions/setup-node");
+  if (actions.length === 0) {
     return;
   }
-  const fileSelectorCount = countMatches(
-    workflow,
-    /^\s*node-version-file:\s*["']?\.node-version["']?\s*$/gmu,
-  );
-  if (fileSelectorCount !== actionCount) {
-    reject(
-      "E_PRIMARY_NODE_SELECTOR",
-      `${file}: every Node action must select .node-version`,
+  for (const action of actions) {
+    const fileSelectorCount = countMatches(
+      action.body,
+      /^\s*node-version-file:\s*["']?\.node-version["']?\s*$/gmu,
     );
-  }
-  if (/^\s*node-version:\s*/mu.test(workflow)) {
-    reject(
-      "E_PRIMARY_NODE_SELECTOR",
-      `${file}: primary workflows must not use a moving Node selector`,
-    );
+    if (
+      fileSelectorCount !== 1 ||
+      /^\s*node-version:\s*/mu.test(action.body)
+    ) {
+      reject(
+        "E_PRIMARY_NODE_SELECTOR",
+        `${file}: every Node action must select .node-version`,
+      );
+    }
   }
 }
 
@@ -513,6 +528,21 @@ function selfTest() {
       "E_PRIMARY_RUST_SELECTOR",
     ],
     [
+      "misplaced primary Rust selector",
+      (files) =>
+        files.set(
+          ".github/workflows/ci.yml",
+          `${files
+            .get(".github/workflows/ci.yml")
+            .replace('toolchain: "1.97.1"', "toolchain: stable")}
+- run: echo misplaced
+  env:
+    toolchain: "1.97.1"
+`,
+        ),
+      "E_PRIMARY_RUST_SELECTOR",
+    ],
+    [
       "moving primary Node selector",
       (files) =>
         files.set(
@@ -520,6 +550,21 @@ function selfTest() {
           files
             .get(".github/workflows/ci.yml")
             .replace('node-version-file: ".node-version"', 'node-version: "22"'),
+        ),
+      "E_PRIMARY_NODE_SELECTOR",
+    ],
+    [
+      "misplaced primary Node selector",
+      (files) =>
+        files.set(
+          ".github/workflows/ci.yml",
+          `${files
+            .get(".github/workflows/ci.yml")
+            .replace('node-version-file: ".node-version"', "cache: npm")}
+- run: echo misplaced
+  env:
+    node-version-file: ".node-version"
+`,
         ),
       "E_PRIMARY_NODE_SELECTOR",
     ],
