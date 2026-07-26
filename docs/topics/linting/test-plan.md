@@ -167,13 +167,13 @@ Implemented and planned cases are listed below.
   the finding message continues to say “candidate”; and documentation states
   that fixture precision is not a held-out product-quality estimate.
   *Evidence type:* deterministic TSV corpus, rule-table unit tests, CLI/LSP
-  golden fixtures, and current reference. *Planned evidence:*
+  golden fixtures, and current reference. *Evidence:*
   `crates/colorful-lint/tests/fixtures/passive_voice.tsv`,
   `crates/colorful-lint/tests/passive_voice_precision.rs`,
   `crates/colorful-cli/fixtures/lint/{passive-voice,false-positives}.*`, and
   `docs/topics/linting/README.md`. *Tracking:*
   [#138](https://github.com/flyingrobots/colorful-language/issues/138).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-12a** — *Requirement:* LINT-12. *Behavior:* the chosen quotation policy
   produces deterministic weak-word findings for balanced, nested, and
   unbalanced straight/curly quotes and is identical across CLI and LSP.
@@ -201,7 +201,6 @@ Implemented and planned cases are listed below.
 
 ## Open verification gaps
 
-- Passive-voice precision remains open in LINT-11a.
 - Quotation policy remains open in LINT-12a.
 - Optional external-analyzer parity remains open in LINT-13a.
 - Product-level comparative evidence remains open in LINT-14a; built-in rule

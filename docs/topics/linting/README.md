@@ -45,12 +45,38 @@ never in the core or the surfaces.
 | `weak-word` | Info | A `Content` or `Open(_)` token whose lexeme is in the filler list (`very`, `really`, `just`, `actually`, …). |
 | `run-on` | Warning | A sentence with more than `run_on_words` (default 40) words. |
 | `length-outlier` | Info | A sentence at least `outlier_ratio`× (default 2×) the document's mean sentence length, past an absolute floor (default 25 words) — and **under** the run-on cap, so the two rules never double-report. |
-| `passive-voice` | Info | A `be`-auxiliary (`is`/`are`/`was`/`were`/…) followed by a past participle (an `-ed` word or a known irregular), optionally one `-ly` adverb between (`was carefully reviewed`). |
+| `passive-voice` | Info | A lexically classified `be` auxiliary followed by an eligible content/verb token in the reviewed participle table, optionally with one classified or `-ly` adverb between them. Result-state entries require a following classified `by` phrase. |
 
 The pack is intentionally conservative: every rule reports a *candidate* a writer
 can dismiss, and the noisiest heuristic (passive voice) is `Info`, not a warning.
 Findings come back in source order, ties broken by rule code, so the stream is
 reproducible regardless of rule evaluation order.
+
+### Passive-voice evidence boundary
+
+Passive-voice detection does not treat an `-ed` suffix as grammatical proof.
+The rule requires all of the following:
+
+1. The auxiliary token is classified as an auxiliary and is a form of `be`.
+2. The candidate token is classified as undifferentiated content or as a verb.
+3. Its lowercase lexeme occurs in the reviewed participle table.
+4. A result-state entry such as `broken`, `closed`, `known`, or `lost` is
+   followed by a lexically classified `by` preposition.
+
+An explicit adjective class therefore wins over the participle table. A
+result-state construction such as `the door was closed` also stays silent
+without the local `by` evidence. Even when all evidence is present, the message
+says `passive-voice candidate`; the shallow rule does not claim a complete
+grammatical parse.
+
+The checked-in development corpus at
+`crates/colorful-lint/tests/fixtures/passive_voice.tsv` contains 4 reviewed
+positive rows and 9 reviewed negative rows. The current rule produces 4 true
+positives, 0 false positives, 9 true negatives, and 0 false negatives: fixture
+precision is `4 / (4 + 0) = 100%`. This is a deterministic regression
+measurement on a small, visible development corpus, not a held-out estimate of
+real-world precision or recall. Product-level blinded evaluation remains
+tracked by [#155](https://github.com/flyingrobots/colorful-language/issues/155).
 
 ## Terminal output (`colorful lint`)
 

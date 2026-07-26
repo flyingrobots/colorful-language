@@ -13,17 +13,102 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use colorful_core::{Analyzer, Finding, Node, PosClass, Rule, Severity, Span, Token, Tree};
+use std::collections::BTreeMap;
+
+use colorful_core::{
+    Analyzer, Finding, FunctionKind, Node, OpenClassKind, PosClass, Rule, Severity, Span, Token,
+    Tree,
+};
 
 /// `be`-auxiliaries that open a passive-voice construction.
 const BE_AUXILIARIES: &[&str] = &["is", "are", "was", "were", "be", "been", "being", "am"];
 
-/// Common irregular past participles, for the passive-voice heuristic — the ones
-/// an `-ed` test misses. Kept small and high-frequency on purpose.
-const IRREGULAR_PARTICIPLES: &[&str] = &[
-    "done", "made", "seen", "taken", "given", "written", "broken", "known", "shown", "gone",
-    "found", "held", "told", "built", "brought", "bought", "caught", "taught", "thought", "sent",
-    "kept", "left", "felt", "met", "paid", "said", "set", "put", "lost", "won", "drawn", "chosen",
+/// Evidence required before a reviewed participle can become a passive-voice
+/// candidate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ParticipleRule {
+    /// The reviewed lexeme is sufficiently eventive for a low-severity
+    /// candidate without further context.
+    Eventive,
+    /// The lexeme can also describe a result state, so require a following
+    /// lexically classified `by` phrase as local event evidence.
+    RequiresByPhrase,
+}
+
+/// One reviewed past-participle decision.
+#[derive(Debug, Clone, Copy)]
+struct ParticipleEvidence {
+    lexeme: &'static str,
+    rule: ParticipleRule,
+}
+
+impl ParticipleEvidence {
+    const fn eventive(lexeme: &'static str) -> Self {
+        Self {
+            lexeme,
+            rule: ParticipleRule::Eventive,
+        }
+    }
+
+    const fn requires_by_phrase(lexeme: &'static str) -> Self {
+        Self {
+            lexeme,
+            rule: ParticipleRule::RequiresByPhrase,
+        }
+    }
+}
+
+/// Conservative, alphabetized participle evidence for the passive-voice rule.
+///
+/// Absence is deliberate uncertainty, not evidence that a word cannot be a
+/// participle. Additions require a reviewed corpus row before this table grows.
+const REVIEWED_PARTICIPLES: &[ParticipleEvidence] = &[
+    ParticipleEvidence::eventive("approved"),
+    ParticipleEvidence::eventive("assigned"),
+    ParticipleEvidence::eventive("bought"),
+    ParticipleEvidence::requires_by_phrase("broken"),
+    ParticipleEvidence::eventive("brought"),
+    ParticipleEvidence::eventive("built"),
+    ParticipleEvidence::eventive("caught"),
+    ParticipleEvidence::eventive("chosen"),
+    ParticipleEvidence::eventive("cleaned"),
+    ParticipleEvidence::requires_by_phrase("closed"),
+    ParticipleEvidence::eventive("completed"),
+    ParticipleEvidence::eventive("delivered"),
+    ParticipleEvidence::eventive("documented"),
+    ParticipleEvidence::eventive("done"),
+    ParticipleEvidence::eventive("drawn"),
+    ParticipleEvidence::eventive("edited"),
+    ParticipleEvidence::eventive("felt"),
+    ParticipleEvidence::eventive("found"),
+    ParticipleEvidence::eventive("given"),
+    ParticipleEvidence::eventive("held"),
+    ParticipleEvidence::eventive("implemented"),
+    ParticipleEvidence::eventive("kept"),
+    ParticipleEvidence::requires_by_phrase("known"),
+    ParticipleEvidence::requires_by_phrase("left"),
+    ParticipleEvidence::requires_by_phrase("lost"),
+    ParticipleEvidence::eventive("made"),
+    ParticipleEvidence::eventive("met"),
+    ParticipleEvidence::eventive("paid"),
+    ParticipleEvidence::eventive("published"),
+    ParticipleEvidence::eventive("put"),
+    ParticipleEvidence::eventive("rejected"),
+    ParticipleEvidence::eventive("repaired"),
+    ParticipleEvidence::eventive("reviewed"),
+    ParticipleEvidence::eventive("said"),
+    ParticipleEvidence::eventive("seen"),
+    ParticipleEvidence::eventive("sent"),
+    ParticipleEvidence::requires_by_phrase("set"),
+    ParticipleEvidence::eventive("shown"),
+    ParticipleEvidence::eventive("taken"),
+    ParticipleEvidence::eventive("taught"),
+    ParticipleEvidence::eventive("tested"),
+    ParticipleEvidence::eventive("thought"),
+    ParticipleEvidence::eventive("told"),
+    ParticipleEvidence::eventive("validated"),
+    ParticipleEvidence::eventive("won"),
+    ParticipleEvidence::eventive("written"),
 ];
 
 /// The default filler / weak words flagged by the [`Rule::WeakWord`] rule.
@@ -99,7 +184,7 @@ impl Analyzer for ProseLinter {
         self.weak_words(source, tokens, &mut findings);
         self.run_on(source, sentences, &mut findings);
         self.length_outlier(sentences, &mut findings);
-        self.passive_voice(source, sentences, &mut findings);
+        self.passive_voice(source, sentences, tokens, &mut findings);
 
         // Both surfaces want findings in source order; break ties by rule code
         // for a stable, reproducible stream regardless of rule evaluation order.
@@ -192,30 +277,53 @@ impl ProseLinter {
     }
 
     /// [`Rule::PassiveVoice`]: flag a `be`-auxiliary followed by a past
-    /// participle (an `-ed` word or a known irregular), optionally with one
-    /// `-ly` adverb between them (`was carefully written`).
-    fn passive_voice(&self, source: &str, sentences: &[Node], out: &mut Vec<Finding>) {
+    /// reviewed participle, optionally with one classified or `-ly` adverb
+    /// between them (`was carefully written`).
+    fn passive_voice(
+        &self,
+        source: &str,
+        sentences: &[Node],
+        tokens: &[Token],
+        out: &mut Vec<Finding>,
+    ) {
+        let classes: BTreeMap<(usize, usize), PosClass> = tokens
+            .iter()
+            .map(|token| ((token.span.start, token.span.end), token.class))
+            .collect();
+
         for sentence in sentences {
             let Node::Sentence { parts, .. } = sentence else {
                 continue;
             };
-            let words: Vec<Span> = parts
+            let words: Vec<(Span, PosClass)> = parts
                 .iter()
                 .filter_map(|p| match p {
-                    Node::Word { span } => Some(*span),
+                    Node::Word { span } => classes
+                        .get(&(span.start, span.end))
+                        .copied()
+                        .map(|class| (*span, class)),
                     _ => None,
                 })
                 .collect();
 
-            for window in words.windows(2).chain(words.windows(3)) {
-                let aux = window[0];
-                let participle = window[window.len() - 1];
-                if window.len() == 3 && !is_adverb(window[1].slice(source)) {
+            for (aux_index, &(aux, aux_class)) in words.iter().enumerate() {
+                if !is_be_auxiliary(aux.slice(source), aux_class) {
                     continue;
                 }
-                if is_be_auxiliary(aux.slice(source))
-                    && is_past_participle(participle.slice(source))
-                {
+
+                let Some(&(next, next_class)) = words.get(aux_index + 1) else {
+                    continue;
+                };
+                let participle_index =
+                    aux_index + usize::from(is_adverb(next.slice(source), next_class)) + 1;
+                let Some(&(participle, participle_class)) = words.get(participle_index) else {
+                    continue;
+                };
+                let following = words
+                    .get(participle_index + 1)
+                    .map(|&(span, class)| (span.slice(source), class));
+
+                if is_past_participle(participle.slice(source), participle_class, following) {
                     out.push(Finding {
                         span: Span::new(aux.start, participle.end),
                         rule: Rule::PassiveVoice,
@@ -239,23 +347,51 @@ fn word_count(parts: &[Node]) -> usize {
         .count()
 }
 
-/// Whether `word` is a `be`-auxiliary (case-insensitive).
-fn is_be_auxiliary(word: &str) -> bool {
+/// Whether `word` is a lexically classified `be` auxiliary.
+fn is_be_auxiliary(word: &str, class: PosClass) -> bool {
+    if class != PosClass::Function(FunctionKind::Auxiliary) {
+        return false;
+    }
     let lower = word.to_ascii_lowercase();
     BE_AUXILIARIES.contains(&lower.as_str())
 }
 
-/// Whether `word` reads as an adverb for the passive heuristic: an `-ly` word.
-fn is_adverb(word: &str) -> bool {
+/// Whether `word` reads as an adverb for the passive heuristic.
+fn is_adverb(word: &str, class: PosClass) -> bool {
+    if class == PosClass::Open(OpenClassKind::Adverb) {
+        return true;
+    }
+    if class != PosClass::Content {
+        return false;
+    }
     let lower = word.to_ascii_lowercase();
     lower.len() > 2 && lower.ends_with("ly")
 }
 
-/// Whether `word` is a past participle: an `-ed` word (longer than the suffix)
-/// or a known irregular.
-fn is_past_participle(word: &str) -> bool {
+/// Whether lexical class, reviewed vocabulary, and local rule evidence support
+/// treating `word` as a past participle.
+fn is_past_participle(word: &str, class: PosClass, following: Option<(&str, PosClass)>) -> bool {
+    if !matches!(
+        class,
+        PosClass::Content | PosClass::Open(OpenClassKind::Verb)
+    ) {
+        return false;
+    }
+
     let lower = word.to_ascii_lowercase();
-    (lower.len() > 2 && lower.ends_with("ed")) || IRREGULAR_PARTICIPLES.contains(&lower.as_str())
+    let Ok(index) =
+        REVIEWED_PARTICIPLES.binary_search_by_key(&lower.as_str(), |entry| entry.lexeme)
+    else {
+        return false;
+    };
+
+    match REVIEWED_PARTICIPLES[index].rule {
+        ParticipleRule::Eventive => true,
+        ParticipleRule::RequiresByPhrase => following.is_some_and(|(word, class)| {
+            class == PosClass::Function(FunctionKind::Preposition)
+                && word.eq_ignore_ascii_case("by")
+        }),
+    }
 }
 
 #[cfg(test)]
@@ -419,6 +555,37 @@ mod tests {
             .analyze(src, &tree, &tokens)
             .iter()
             .all(|finding| finding.rule != Rule::PassiveVoice));
+    }
+
+    #[test]
+    fn reviewed_participle_table_is_sorted_unique_and_covers_both_rules() {
+        assert!(
+            REVIEWED_PARTICIPLES
+                .windows(2)
+                .all(|pair| pair[0].lexeme < pair[1].lexeme),
+            "binary-searched participle table must be sorted and unique"
+        );
+        assert!(REVIEWED_PARTICIPLES
+            .iter()
+            .any(|entry| entry.rule == ParticipleRule::Eventive));
+        assert!(REVIEWED_PARTICIPLES
+            .iter()
+            .any(|entry| entry.rule == ParticipleRule::RequiresByPhrase));
+    }
+
+    #[test]
+    fn result_state_participle_requires_a_classified_by_phrase() {
+        assert!(!is_past_participle("broken", PosClass::Content, None));
+        assert!(!is_past_participle(
+            "broken",
+            PosClass::Content,
+            Some(("near", PosClass::Function(FunctionKind::Preposition)))
+        ));
+        assert!(is_past_participle(
+            "broken",
+            PosClass::Content,
+            Some(("by", PosClass::Function(FunctionKind::Preposition)))
+        ));
     }
 
     #[test]
