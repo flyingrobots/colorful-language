@@ -12,3 +12,6 @@ categories = ["text-processing"]
 [dependencies]
 colorful-core = { workspace = true }
 phf = { workspace = true }
+
+[dev-dependencies]
+colorful-parse = { workspace = true }

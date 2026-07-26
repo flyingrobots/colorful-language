@@ -191,6 +191,7 @@ name = "colorful-lexicon"
 version = "0.4.0"
 dependencies = [
  "colorful-core",
+ "colorful-parse",
  "phf",
 ]
 

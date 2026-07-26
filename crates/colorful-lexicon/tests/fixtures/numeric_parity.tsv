@@ -1,0 +1,19 @@
+# class	input	parser leaves
+number	150	150
+number	3.14	3.14
+number	1,000	1,000
+number	1,234.56	1,234.56
+number	1.234,56	1.234,56
+number	٣.١٤	٣.١٤
+number	３,０００	３,０００
+number	Ⅷ	Ⅷ
+content	1..2	1|..|2
+content	1,,000	1|,|,|000
+content	1.,2	1|.|,|2
+content	1,.2	1|,|.|2
+content	.5	.|5
+content	,5	,|5
+content	3.	3|.
+content	3,	3|,
+content	.	.
+content	,	,
