@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 checker="$root/scripts/check-rust-source-policy.sh"
 fixture="$(mktemp -d)"
+fixture="$(cd "$fixture" && pwd -P)"
 trap 'rm -rf "$fixture"' EXIT
 
 mkdir -p \
@@ -175,10 +176,42 @@ cat >"$fixture/tools/standalone/src/lib.rs" <<'EOF'
 
 pub fn protected_standalone() {}
 EOF
-output="$("$checker" --root "$fixture")"
+real_cargo="$(command -v cargo)"
+cargo_log="$fixture/cargo-manifests.log"
+mkdir -p "$fixture/test-bin"
+cat >"$fixture/test-bin/cargo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+previous=""
+for argument in "$@"; do
+  if [[ "$previous" == "--manifest-path" ]]; then
+    printf '%s\n' "$argument" >>"${CARGO_INVOCATION_LOG:?}"
+    break
+  fi
+  previous="$argument"
+done
+exec "${REAL_CARGO:?}" "$@"
+EOF
+chmod +x "$fixture/test-bin/cargo"
+output="$(
+  PATH="$fixture/test-bin:$PATH" \
+    REAL_CARGO="$real_cargo" \
+    CARGO_INVOCATION_LOG="$cargo_log" \
+    "$checker" --root "$fixture"
+)"
 if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]]; then
-  printf 'discovered workspace was not inventoried exactly once\n%s\n' \
-    "$output" >&2
+  printf 'protected discovered workspace did not pass\n%s\n' "$output" >&2
+  exit 1
+fi
+root_metadata_calls="$(grep -Fxc "$fixture/Cargo.toml" "$cargo_log")"
+member_metadata_calls="$(grep -Fxc "$fixture/crate/Cargo.toml" "$cargo_log")"
+total_metadata_calls="$(wc -l <"$cargo_log" | tr -d ' ')"
+if [[ "$root_metadata_calls" != 2 ||
+  "$member_metadata_calls" != 1 ||
+  "$total_metadata_calls" != 7 ]]; then
+  printf 'workspace manifests were not deduplicated before inventory\n' >&2
+  sed 's/^/  /' "$cargo_log" >&2
   exit 1
 fi
 
