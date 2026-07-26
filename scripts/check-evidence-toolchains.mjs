@@ -264,6 +264,16 @@ function assertCompatibilityWorkflow(workflow, nodeMajor) {
       );
     }
   }
+  if (
+    !workflow.includes(
+      "concurrency:\n  group: ${{ github.workflow }}\n  cancel-in-progress: false",
+    )
+  ) {
+    reject(
+      "E_COMPAT_CONCURRENCY",
+      "compatibility workflow must serialize runs without cancellation",
+    );
+  }
   const rustJobs = workflowJobBodies(workflow)
     .map((job) => ({
       job,
@@ -510,6 +520,9 @@ function fixtureFiles() {
   schedule:
     - cron: "0 0 * * 1"
   workflow_dispatch:
+concurrency:
+  group: \${{ github.workflow }}
+  cancel-in-progress: false
 jobs:
   rust:
     env:
@@ -754,6 +767,23 @@ function selfTest() {
             .replace("toolchain: stable", 'toolchain: "1.97.1"'),
         ),
       "E_COMPAT_RUST_SELECTOR",
+    ],
+    [
+      "missing compatibility concurrency",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace(
+              `concurrency:
+  group: \${{ github.workflow }}
+  cancel-in-progress: false
+`,
+              "",
+            ),
+        ),
+      "E_COMPAT_CONCURRENCY",
     ],
     [
       "missing Rust compatibility override",
