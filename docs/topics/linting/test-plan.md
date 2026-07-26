@@ -175,10 +175,20 @@ Implemented and planned cases are listed below.
   [#138](https://github.com/flyingrobots/colorful-language/issues/138).
   *Status:* implemented.
 - **LINT-12a** — *Requirement:* LINT-12. *Behavior:* the chosen quotation policy
-  produces deterministic weak-word findings for balanced, nested, and
-  unbalanced straight/curly quotes and is identical across CLI and LSP.
-  *Oracle:* exact finding/diagnostic vectors and documented policy equality.
-  *Evidence type:* unit fixtures and cross-surface integration test. *Tracking:*
+  always evaluates word tokens inside quotation marks; quote pairing does not
+  suppress editorial findings. Balanced straight quotes, balanced curly quotes,
+  nested curly quotes with embedded punctuation, apostrophes, and unbalanced
+  straight/curly input all produce the same deterministic weak-word decisions.
+  *Oracle:* an exact golden report names every quoted weak word, a direct unit
+  test pins the policy, CLI and LSP return equal findings and spans through the
+  shared fixture harness, and the current reference explains why quotation
+  alone is not a suppression boundary. *Evidence type:* unit test, golden
+  fixture, cross-surface integration test, and current reference. *Planned
+  evidence:* `colorful-lint`
+  `tests::weak_words_inside_quotes_are_intentionally_flagged`,
+  `crates/colorful-cli/fixtures/lint/quoted-weak-words.{txt,golden}`,
+  `crates/colorful-cli/tests/lint_golden_fixtures.rs`, and
+  `docs/topics/linting/README.md`. *Tracking:*
   [#139](https://github.com/flyingrobots/colorful-language/issues/139).
   *Status:* planned.
 - **LINT-13a** — *Requirement:* LINT-13. *Behavior:* a Harper or Vale adapter
