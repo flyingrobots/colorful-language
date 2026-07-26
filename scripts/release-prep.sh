@@ -18,6 +18,8 @@ fi
 command -v markdownlint-cli2 >/dev/null 2>&1 || fail "markdownlint-cli2 is required"
 command -v actionlint >/dev/null 2>&1 || fail "actionlint is required"
 
+bash scripts/check-node-version.test.sh
+bash scripts/check-node-version.sh
 bash scripts/release-profile-check.sh
 node scripts/check-evidence-toolchains.mjs --self-test
 node scripts/check-evidence-toolchains.mjs

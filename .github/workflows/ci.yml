@@ -26,6 +26,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".node-version"
+      - name: Self-test the Node-version checker
+        run: bash scripts/check-node-version.test.sh
+      - name: Check the exact Node evidence version
+        run: bash scripts/check-node-version.sh
       - name: Self-test the evidence-toolchain checker
         run: node scripts/check-evidence-toolchains.mjs --self-test
       - name: Check evidence-toolchain policy
