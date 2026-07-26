@@ -449,11 +449,13 @@ function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
     const document = files.get(file);
     if (
       !document.includes(rustVersion) ||
+      !document.includes(nodeVersion) ||
+      !document.includes(typeScriptVersion) ||
       !document.toLowerCase().includes("msrv")
     ) {
       reject(
         "E_POLICY_DOC",
-        `${file}: must name the evidence Rust release and MSRV status`,
+        `${file}: must name every evidence release and the MSRV status`,
       );
     }
   }
@@ -651,11 +653,15 @@ jobs:
     ],
     [
       "CONTRIBUTING.md",
-      `Evidence Rust ${rustVersion}; the evidence compiler is not the minimum supported Rust version (MSRV).\n`,
+      `Evidence Rust ${rustVersion}; Node ${nodeVersion}; TypeScript ${typeScriptVersion}.
+The evidence compiler is not the minimum supported Rust version (MSRV).
+`,
     ],
     [
       "README.md",
-      `Evidence Rust ${rustVersion}; published crates do not declare a minimum supported Rust version (MSRV).\n`,
+      `Evidence Rust ${rustVersion}; Node ${nodeVersion}; TypeScript ${typeScriptVersion}.
+Published crates do not declare a minimum supported Rust version (MSRV).
+`,
     ],
     [
       "docs/workflows/evidence-toolchains/README.md",
@@ -1093,6 +1099,24 @@ The MSRV is ${FIXTURE.rustVersion}. The maintainer reviews the weekly advisory l
             `Evidence Rust ${FIXTURE.rustVersion} is the MSRV.\n`,
           );
         }
+      },
+      "E_POLICY_DOC",
+    ],
+    [
+      "stale contributor Node and TypeScript claims",
+      (files) => {
+        files.set(
+          "README.md",
+          `Evidence Rust ${FIXTURE.rustVersion}; Node 20.0.0; TypeScript 5.0.0.
+Published crates do not declare a minimum supported Rust version (MSRV).
+`,
+        );
+        files.set(
+          "CONTRIBUTING.md",
+          `Evidence Rust ${FIXTURE.rustVersion}; Node 20.0.0; TypeScript 5.0.0.
+The evidence compiler is not the minimum supported Rust version (MSRV).
+`,
+        );
       },
       "E_POLICY_DOC",
     ],
