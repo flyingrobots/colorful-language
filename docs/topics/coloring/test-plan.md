@@ -32,9 +32,11 @@ Requirements:
   published alongside the numbers, and a stated (not yet CI-enforced)
   budget. `compute_semantic_tokens()` answers a `semanticTokens/full`
   request's token-computation problem without running the production
-  `DocumentStore`. After `didOpen` or a debounced `didChange`, the server runs
-  `analyze_document()` once for the accepted generation and caches both
-  diagnostics and semantic tokens; that scheduled path is not yet benchmarked.
+  `DocumentStore`. After `didOpen` or a debounced `didChange`, each accepted
+  generation within the size limit runs `analyze_document()` once and caches
+  both diagnostics and semantic tokens. An oversized generation bypasses
+  parsing, classification, and linting while caching the stable limit
+  diagnostic and empty tokens. Neither scheduled path is benchmarked here.
 - **COL-13** Real `colorful-lsp` process tests cover the public JSON-RPC
   lifecycle, diagnostics, and semantic-token contract.
 - **COL-14** Packaged editor evidence covers activation, incremental edits,

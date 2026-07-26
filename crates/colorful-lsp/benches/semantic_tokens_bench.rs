@@ -3,8 +3,11 @@
 //! This directly times the stateless helper that computes one full semantic-token
 //! result, so every benchmark iteration parses and classifies its input. It does
 //! not exercise the production `DocumentStore`: after `didOpen` or a debounced
-//! `didChange`, the server calls `analyze_document` once for the accepted
-//! generation and caches both diagnostics and semantic tokens.
+//! `didChange`, the server calls `analyze_document` once for each accepted
+//! generation within the document-size limit and caches both diagnostics and
+//! semantic tokens. An oversized generation instead bypasses parsing,
+//! classification, and linting while caching a limit diagnostic and empty token
+//! data.
 //!
 //! Consequently this benchmark omits snapshot conversion, debounce and queue
 //! delay, cancellation, lint analysis, cache coordination, diagnostic
