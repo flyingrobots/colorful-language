@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use zed_extension_api::{
     self as zed, settings::LspSettings, Command, LanguageServerId, Result, Worktree,
 };

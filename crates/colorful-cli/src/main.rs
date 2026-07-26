@@ -1,5 +1,7 @@
 //! The `colorful` binary: color English prose by part of speech in the terminal.
 
+#![forbid(unsafe_code)]
+
 use std::process::ExitCode;
 
 fn main() -> ExitCode {

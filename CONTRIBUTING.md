@@ -276,6 +276,18 @@ separation is what makes future escalation cheap. Each name below is a real
 If a change needs a new capability, prefer adding it as a port + adapter over
 threading a concrete dependency through the core.
 
+### Unsafe-code source policy
+
+Every first-party production library, binary, and editor-adapter crate root
+forbids unsafe code. Run `bash scripts/check-rust-source-policy.sh` to verify the
+Cargo-derived inventory. The policy covers first-party source, not third-party
+dependencies.
+
+Any exception or relaxation requires an architecture review and a design record
+registered through the
+[Rust source-policy workflow](docs/workflows/rust-source-policy/README.md). An
+omitted attribute without that reviewed record fails CI.
+
 ## Commits and Pull Requests
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
