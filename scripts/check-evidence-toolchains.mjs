@@ -227,11 +227,16 @@ function validatePolicy(files) {
   );
   const nodeMajor = nodeVersion.split(".", 1)[0];
 
-  if (/^\s*rust-version\s*=/mu.test(files.get("Cargo.toml"))) {
-    reject(
-      "E_MSRV_UNVERIFIED",
-      "Cargo.toml must not declare rust-version until an MSRV lane verifies it",
-    );
+  for (const [file, contents] of files) {
+    if (
+      file.endsWith("Cargo.toml") &&
+      /^\s*rust-version\s*=/mu.test(contents)
+    ) {
+      reject(
+        "E_MSRV_UNVERIFIED",
+        `${file} must not declare rust-version until an MSRV lane verifies it`,
+      );
+    }
   }
 
   const rootPackage = parseJson(files, "package.json");
@@ -470,6 +475,12 @@ function selfTest() {
       "E_MSRV_UNVERIFIED",
     ],
     [
+      "unverified package-level MSRV declaration",
+      (files) =>
+        files.set("crates/sample/Cargo.toml", 'rust-version = "1.80"\n'),
+      "E_MSRV_UNVERIFIED",
+    ],
+    [
       "ambient TypeScript compiler",
       (files) =>
         files.set(
@@ -545,9 +556,30 @@ function selfTest() {
   );
 }
 
+function findCargoManifests(directory, relative = "") {
+  const manifests = [];
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const childRelative = relative
+      ? `${relative}/${entry.name}`
+      : entry.name;
+    if (entry.isDirectory()) {
+      if ([".git", "node_modules", "target"].includes(entry.name)) {
+        continue;
+      }
+      manifests.push(
+        ...findCargoManifests(path.join(directory, entry.name), childRelative),
+      );
+    } else if (entry.name === "Cargo.toml") {
+      manifests.push(childRelative);
+    }
+  }
+  return manifests;
+}
+
 function repositoryFiles(root) {
   const files = new Map();
-  for (const file of REQUIRED_PATHS) {
+  const inputs = new Set([...REQUIRED_PATHS, ...findCargoManifests(root)]);
+  for (const file of inputs) {
     const absolute = path.join(root, file);
     if (fs.existsSync(absolute)) {
       files.set(file, fs.readFileSync(absolute, "utf8"));
