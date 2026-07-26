@@ -1,0 +1,14 @@
+# expectation	source	evidence
+positive	The report was reviewed by the committee.	reviewed eventive participle with an explicit agent
+positive	The floor was carefully cleaned.	cleaned eventive participle with one classified adverb
+positive	The window was broken by the storm.	broken result-state participle disambiguated by a by phrase
+positive	The manuscript was written.	written reviewed irregular eventive participle
+negative	The wall was red.	red is an adjective, not a participle
+negative	The chapel is sacred.	sacred is an adjective, not a participle
+negative	The door was closed.	closed is ambiguous between an event and a result state
+negative	The window was broken.	broken is ambiguous without an agent phrase
+negative	The answer was known.	known is ambiguous without an agent phrase
+negative	The package was lost.	lost is ambiguous without an agent phrase
+negative	The worker was tired.	tired is an adjectival complement
+negative	The manager was concerned.	concerned is an adjectival complement
+negative	The team reviewed the report.	active voice has no be auxiliary

@@ -405,6 +405,23 @@ mod tests {
     }
 
     #[test]
+    fn explicit_adjective_class_suppresses_a_participle_candidate() {
+        let src = "The report was reviewed.";
+        let tree = ProseParser::new().parse(src);
+        let mut tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(src, &tree);
+        let reviewed = tokens
+            .iter_mut()
+            .find(|token| token.span.slice(src) == "reviewed")
+            .expect("fixture contains reviewed");
+        reviewed.class = PosClass::Open(colorful_core::OpenClassKind::Adjective);
+
+        assert!(ProseLinter::new()
+            .analyze(src, &tree, &tokens)
+            .iter()
+            .all(|finding| finding.rule != Rule::PassiveVoice));
+    }
+
+    #[test]
     fn findings_are_returned_in_source_order() {
         let src = "This is just very broken.";
         let starts: Vec<usize> = lint(src).iter().map(|f| f.span.start).collect();
