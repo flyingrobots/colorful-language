@@ -7,10 +7,33 @@ CARGO="${CARGO:-cargo}"
 
 mkdir -p "$COLORFUL_HOME"
 
-"$CARGO" install \
-  --path "$ROOT/crates/colorful-cli" \
-  --root "$COLORFUL_HOME" \
-  --force
+toolchain="$(
+  awk '
+    /^[[:space:]]*channel[[:space:]]*=[[:space:]]*"[^"]+"[[:space:]]*(#.*)?$/ {
+      value = $0
+      sub(/^[^"]*"/, "", value)
+      sub(/".*$/, "", value)
+      print value
+      exit
+    }
+  ' "$ROOT/rust-toolchain.toml"
+)"
+if [[ -z "$toolchain" ]]; then
+  echo "install-local: rust-toolchain.toml has no exact channel" >&2
+  exit 1
+fi
+
+if [[ "$CARGO" == "cargo" ]]; then
+  "$CARGO" "+$toolchain" install \
+    --path "$ROOT/crates/colorful-cli" \
+    --root "$COLORFUL_HOME" \
+    --force
+else
+  RUSTUP_TOOLCHAIN="$toolchain" "$CARGO" install \
+    --path "$ROOT/crates/colorful-cli" \
+    --root "$COLORFUL_HOME" \
+    --force
+fi
 
 cat <<EOF
 

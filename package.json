@@ -1,0 +1,13 @@
+{
+  "name": "colorful-language-evidence",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pinned JavaScript tooling for colorful-language repository evidence.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.23.1 <23"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

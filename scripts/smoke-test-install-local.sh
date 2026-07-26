@@ -67,4 +67,49 @@ if [[ -n "$other_files" ]]; then
 fi
 echo "OK: the default HOME directory was not touched"
 
+echo "Checking a custom CARGO wrapper receives only Cargo-native arguments..."
+cargo_wrapper="$work/cargo-wrapper"
+expected_toolchain="$(
+  sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' \
+    "$root/rust-toolchain.toml"
+)"
+export EXPECTED_TOOLCHAIN="$expected_toolchain"
+# The quoted expressions belong to the generated wrapper, not this process.
+# shellcheck disable=SC2016
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'if [[ "${1:-}" == +* ]]; then' \
+  '  echo "custom cargo wrapper received rustup-only toolchain syntax" >&2' \
+  '  exit 64' \
+  'fi' \
+  'if [[ "${RUSTUP_TOOLCHAIN:-}" != "$EXPECTED_TOOLCHAIN" ]]; then' \
+  '  echo "custom cargo wrapper did not receive the pinned toolchain" >&2' \
+  '  exit 65' \
+  'fi' \
+  'exec cargo "$@"' > "$cargo_wrapper"
+chmod +x "$cargo_wrapper"
+wrapper_home="$work/wrapper-home"
+RUSTUP_TOOLCHAIN=off-policy CARGO="$cargo_wrapper" COLORFUL_HOME="$wrapper_home" \
+  bash "$root/scripts/install-local.sh" >/dev/null ||
+  fail "custom CARGO wrapper could not install colorful"
+[[ -x "$wrapper_home/bin/colorful" ]] ||
+  fail "custom CARGO wrapper did not install colorful"
+
+echo "Checking Rust channel parsing accepts policy-valid whitespace..."
+parser_root="$work/parser-root"
+mkdir -p "$parser_root/scripts" "$parser_root/crates/colorful-cli"
+cp "$root/scripts/install-local.sh" "$parser_root/scripts/install-local.sh"
+printf '[toolchain]\n  channel="1.97.1" # reviewed\n' \
+  > "$parser_root/rust-toolchain.toml"
+parser_cargo="$work/parser-cargo"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'exit 0' > "$parser_cargo"
+chmod +x "$parser_cargo"
+CARGO="$parser_cargo" COLORFUL_HOME="$work/parser-home" \
+  bash "$parser_root/scripts/install-local.sh" >/dev/null ||
+  fail "installer rejected policy-valid Rust channel whitespace"
+
 echo "smoke-test-install-local passed."

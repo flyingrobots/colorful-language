@@ -43,11 +43,11 @@ else
 fi
 
 echo "Type-checking the generated TS contract..."
-if command -v tsc >/dev/null 2>&1; then
-  tsc -p witness/tsconfig.json
+if [[ -x "$root/node_modules/.bin/tsc" ]]; then
+  "$root/node_modules/.bin/tsc" -p witness/tsconfig.json
   echo "  ✅ generated TS contract type-checks"
 else
-  echo "  ❌ tsc not found; cannot type-check generated TS contract" >&2
+  echo "  ❌ root-local tsc not found; run npm ci before the IR witness" >&2
   exit 1
 fi
 

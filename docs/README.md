@@ -101,6 +101,8 @@ each page's own status note before trusting a specific finding.
 
 ## Contributor workflows
 
+- [evidence toolchains](workflows/evidence-toolchains/README.md) — current Rust,
+  Node, and TypeScript evidence selection and its separation from MSRV.
 - [release process](workflows/release-process/README.md) — the release runbook,
   profile adapter, automation boundary, publication, and witness discipline.
 - [PR size reporting](workflows/pr-size-reporting/README.md) — informational line-count
