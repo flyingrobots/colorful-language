@@ -84,8 +84,8 @@ lives in `crates/colorful-parse/src/lib.rs`.
   separator and classify as content when presented whole. *Evidence type:*
   shared pure scanner and cross-crate table-driven parity test. *Evidence:*
   `colorful_core::numeric_prefix_len`,
-  `crates/colorful-lexicon/tests/fixtures/numeric_parity.tsv`, and
-  `crates/colorful-lexicon/tests/numeric_parity.rs`
+  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv`, and
+  `crates/colorful-parse/tests/numeric_parity.rs`
   (`parser_and_lexicon_share_the_numeric_matrix`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
   *Status:* implemented.

@@ -12,3 +12,6 @@ categories = ["text-processing", "parser-implementations"]
 [dependencies]
 colorful-core = { workspace = true }
 logos = { workspace = true }
+
+[dev-dependencies]
+colorful-lexicon = { workspace = true }
