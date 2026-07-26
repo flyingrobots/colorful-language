@@ -1,7 +1,7 @@
 //! The `colorful-lsp` binary: a language server that emits part-of-speech
 //! semantic tokens for English prose.
 //!
-//! It keeps a [`Rope`] mirror of each open document, applies incremental edits,
+//! It keeps a [`Rope`](ropey::Rope) mirror of each open document, applies incremental edits,
 //! schedules one whole-document analysis for each accepted generation, publishes
 //! diagnostics, and answers `textDocument/semanticTokens/full` from that
 //! generation's cache. The `colorful_lsp` library owns pure analysis and
