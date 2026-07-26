@@ -8,7 +8,15 @@ CARGO="${CARGO:-cargo}"
 mkdir -p "$COLORFUL_HOME"
 
 toolchain="$(
-  sed -n 's/^channel = "\([^"]*\)"$/\1/p' "$ROOT/rust-toolchain.toml"
+  awk '
+    /^[[:space:]]*channel[[:space:]]*=[[:space:]]*"[^"]+"[[:space:]]*(#.*)?$/ {
+      value = $0
+      sub(/^[^"]*"/, "", value)
+      sub(/".*$/, "", value)
+      print value
+      exit
+    }
+  ' "$ROOT/rust-toolchain.toml"
 )"
 if [[ -z "$toolchain" ]]; then
   echo "install-local: rust-toolchain.toml has no exact channel" >&2
