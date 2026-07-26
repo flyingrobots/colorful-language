@@ -69,19 +69,29 @@ nothing.
 
 ## Editor output (`colorful-lsp`)
 
-The server lints on every `didOpen` and `didChange` and publishes the results as
-diagnostics, so an editor's "Problems" view tracks the document live; closing a
-document clears them. Each `Finding` maps to a `Diagnostic` carrying its rule
-`code`, a `colorful` source tag, the message, and a severity — warnings as
-`Warning`, advisory findings as `Information`. Ranges use the same UTF-16 line
-model as the semantic-token path, so positions agree across both features.
+The server schedules linting after `didOpen` and debounced `didChange` activity,
+then publishes diagnostics only for the accepted current generation, so an
+editor's "Problems" view tracks the document live without stale results;
+closing a document clears them. Each `Finding` maps to a `Diagnostic` carrying
+its rule `code`, a `colorful` source tag, the message, and a severity — warnings
+as `Warning`, advisory findings as `Information`. Ranges use the same UTF-16
+line model as the semantic-token path, so positions agree across both features.
 
-The pure `compute_diagnostics(text, parser, annotator, analyzer)` does the work;
-the binary is thin transport over it, which is what keeps the position
-arithmetic unit-testable. The current server reparses for diagnostics separately
-from semantic-token requests; it does not yet cache one shared analysis snapshot
-across both paths. See the
-[coloring limitations](../coloring/README.md#performance) and the
-[linting test plan](test-plan.md) for the tracked maturity work.
+The pure `compute_diagnostics(text, parser, annotator, analyzer)` helper remains
+available for direct callers and CLI/LSP parity tests. It performs one standalone
+parse, classification, and lint pass, which keeps diagnostic projection and
+position arithmetic unit-testable without the transport.
 
-See the [test plan](test-plan.md) for the cases that pin this behavior.
+The production binary does not call that helper independently on each
+`didChange`. Its `DocumentStore` schedules `analyze_document()` after
+`didOpen` or a debounced edit. Analysis is still whole-document, but each
+accepted generation is parsed and classified once; the resulting
+`DocumentAnalysis` supplies both published diagnostics and cached semantic
+tokens. A semantic-token request waits for that generation's cached value
+rather than starting another parse. The release-mode SLO and overload harness
+for this combined production path remain tracked by
+[#122](https://github.com/flyingrobots/colorful-language/issues/122), while
+broader cross-stage benchmarks remain tracked by
+[#135](https://github.com/flyingrobots/colorful-language/issues/135). See the
+[coloring performance reference](../coloring/README.md#performance) and the
+[linting test plan](test-plan.md) for the current evidence.

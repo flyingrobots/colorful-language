@@ -2,8 +2,10 @@
 //! semantic tokens for English prose.
 //!
 //! It keeps a [`Rope`] mirror of each open document, applies incremental edits,
-//! and answers `textDocument/semanticTokens/full` by classifying the text. All
-//! the real logic lives in the `colorful_lsp` library; this file is transport.
+//! schedules one whole-document analysis for each accepted generation, publishes
+//! diagnostics, and answers `textDocument/semanticTokens/full` from that
+//! generation's cache. The `colorful_lsp` library owns pure analysis and
+//! projection; this binary owns transport and document-state coordination.
 
 #![forbid(unsafe_code)]
 

@@ -1,13 +1,20 @@
 //! Release-mode latency benchmarks for `colorful_lsp::compute_semantic_tokens`.
 //!
-//! This times the function that answers one `textDocument/semanticTokens/
-//! full` request -- it is *not* the `did_change` handler, which calls
-//! `compute_diagnostics` instead (a separate reparse, not benchmarked here).
-//! `v0`'s incrementality model reparses the whole document on every request
-//! (see `docs/topics/coloring/README.md`), so this is one of the real costs
-//! an editor pays around an edit, not the full combined per-edit cost. Run
-//! with `cargo bench -p colorful-lsp`. See `docs/topics/coloring/README.md`
-//! for the measured figures this produces and how to read them.
+//! This directly times the stateless helper that computes one full semantic-token
+//! result, so every benchmark iteration parses and classifies its input. It does
+//! not exercise the production `DocumentStore`: after `didOpen` or a debounced
+//! `didChange`, the server calls `analyze_document` once for the accepted
+//! generation and caches both diagnostics and semantic tokens.
+//!
+//! Consequently this benchmark omits snapshot conversion, debounce and queue
+//! delay, cancellation, lint analysis, cache coordination, diagnostic
+//! publication, and JSON-RPC transport. Run it with
+//! `cargo bench -p colorful-lsp`. See `docs/topics/coloring/README.md` for the
+//! measured helper figures and the
+//! [#122](https://github.com/flyingrobots/colorful-language/issues/122)
+//! production-overload and
+//! [#135](https://github.com/flyingrobots/colorful-language/issues/135)
+//! cross-stage benchmark gaps.
 
 use colorful_lexicon::ContextualOpenClassAnnotator;
 use colorful_parse::ProseParser;

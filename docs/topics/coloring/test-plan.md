@@ -31,8 +31,10 @@ Requirements:
   against a small and a medium fixture, with hardware, toolchain, and date
   published alongside the numbers, and a stated (not yet CI-enforced)
   budget. `compute_semantic_tokens()` answers a `semanticTokens/full`
-  request specifically — it is not the `did_change` handler, which calls
-  `compute_diagnostics` instead (not yet benchmarked).
+  request's token-computation problem without running the production
+  `DocumentStore`. After `didOpen` or a debounced `didChange`, the server runs
+  `analyze_document()` once for the accepted generation and caches both
+  diagnostics and semantic tokens; that scheduled path is not yet benchmarked.
 - **COL-13** Real `colorful-lsp` process tests cover the public JSON-RPC
   lifecycle, diagnostics, and semantic-token contract.
 - **COL-14** Packaged editor evidence covers activation, incremental edits,
@@ -293,9 +295,14 @@ Requirements:
   into CI once a run of stable baselines exists. The guarded canonical IR path
   used by `colorful ir` and `colorful diagnose --json` is outside COL-12's two
   measured functions; its projection plus fail-closed `validate_document`
-  postcondition remains unmeasured. `compute_diagnostics` (what `did_change`
-  actually calls) has no benchmark yet, and neither does memory/allocation.
-  COL-15a through COL-17a own the document-state, supported-envelope, and
-  broader benchmark evidence.
+  postcondition remains unmeasured. The production `analyze_document()` plus
+  `DocumentStore` scheduling, queueing, caching, publication, and JSON-RPC path
+  is also unmeasured, as are memory and allocation. The standalone
+  `compute_diagnostics()` helper is not benchmarked either, but it is not the
+  `didChange` handler. COL-16a, tracked by
+  [#122](https://github.com/flyingrobots/colorful-language/issues/122), owns the
+  production supported-envelope evidence; COL-17a and
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135) own
+  broader cross-stage evidence.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.
