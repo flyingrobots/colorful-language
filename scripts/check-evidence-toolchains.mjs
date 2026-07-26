@@ -56,6 +56,19 @@ function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
 
+function assertPinnedActions(workflow, file) {
+  for (const match of workflow.matchAll(
+    /^\s*(?:-\s+)?uses:\s+[^@\s]+@([^\s#]+).*$/gmu,
+  )) {
+    if (!ACTION_SHA.test(match[1])) {
+      reject(
+        "E_PRIMARY_ACTION_PIN",
+        `${file}: every action must use a full commit SHA`,
+      );
+    }
+  }
+}
+
 function assertPinnedRustActions(workflow, file, rustVersion) {
   const actionLines = [
     ...workflow.matchAll(
@@ -265,6 +278,8 @@ function validatePolicy(files) {
 
   const ci = files.get(".github/workflows/ci.yml");
   const release = files.get(".github/workflows/release.yml");
+  assertPinnedActions(ci, ".github/workflows/ci.yml");
+  assertPinnedActions(release, ".github/workflows/release.yml");
   assertPinnedRustActions(ci, ".github/workflows/ci.yml", rustVersion);
   assertPinnedRustActions(release, ".github/workflows/release.yml", rustVersion);
   assertPinnedNodeActions(ci, ".github/workflows/ci.yml");
@@ -445,6 +460,20 @@ function selfTest() {
             .replace('node-version-file: ".node-version"', 'node-version: "22"'),
         ),
       "E_PRIMARY_NODE_SELECTOR",
+    ],
+    [
+      "unpinned primary action",
+      (files) =>
+        files.set(
+          ".github/workflows/ci.yml",
+          files
+            .get(".github/workflows/ci.yml")
+            .replace(
+              "actions/setup-node@0123456789abcdef0123456789abcdef01234567",
+              "actions/setup-node@v5",
+            ),
+        ),
+      "E_PRIMARY_ACTION_PIN",
     ],
     [
       "non-exact Node evidence release",
