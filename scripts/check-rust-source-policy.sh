@@ -130,7 +130,8 @@ inventory_manifest "$root/Cargo.toml" >>"$inventory"
 inventory_manifest "$root/editors/zed/Cargo.toml" >>"$inventory"
 sort -u -o "$inventory" "$inventory"
 
-while IFS=$'\t' read -r crate_root design_record extra; do
+while IFS=$'\t' read -r crate_root design_record extra ||
+  [[ -n "$crate_root" || -n "$design_record" || -n "$extra" ]]; do
   if [[ -z "$crate_root" || "$crate_root" == \#* ]]; then
     continue
   fi

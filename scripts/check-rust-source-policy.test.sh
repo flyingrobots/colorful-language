@@ -120,4 +120,26 @@ if [[ "$output" != *"source-policy exception: crate/src/lib.rs -> docs/design/ap
   exit 1
 fi
 
+cat >"$fixture/crate/src/lib.rs" <<'EOF'
+#![forbid(unsafe_code)]
+EOF
+printf 'crate/src/lib.rs\tdocs/design/approved.md' \
+  >"$fixture/docs/workflows/rust-source-policy/exceptions.tsv"
+output=""
+if output="$("$checker" --root "$fixture" 2>&1)"; then
+  printf 'expected unterminated stale-exception failure\n%s\n' "$output" >&2
+  exit 1
+fi
+if [[ "$output" != *"source-policy exception is stale: crate/src/lib.rs"* ]]; then
+  printf 'wrong unterminated-row failure\n%s\n' "$output" >&2
+  exit 1
+fi
+
+: >"$fixture/docs/workflows/rust-source-policy/exceptions.tsv"
+output="$("$checker" --root "$fixture")"
+if [[ "$output" != *"check-rust-source-policy passed: 2 production root(s)"* ]]; then
+  printf 'empty exception registry failed\n%s\n' "$output" >&2
+  exit 1
+fi
+
 printf 'check-rust-source-policy tests passed\n'
