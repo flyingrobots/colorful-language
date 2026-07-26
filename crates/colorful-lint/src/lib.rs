@@ -559,18 +559,43 @@ mod tests {
         assert!(REVIEWED_PARTICIPLES
             .iter()
             .any(|entry| entry.rule == ParticipleRule::RequiresByPhrase));
+
+        let corpus_lexemes: std::collections::BTreeSet<String> =
+            include_str!("../tests/fixtures/passive_voice.tsv")
+                .lines()
+                .filter(|row| !row.is_empty() && !row.starts_with('#'))
+                .filter_map(|row| row.split('\t').nth(1))
+                .flat_map(|source| {
+                    source
+                        .split(|character: char| !character.is_alphabetic())
+                        .filter(|word| !word.is_empty())
+                        .map(str::to_ascii_lowercase)
+                })
+                .collect();
+        for entry in REVIEWED_PARTICIPLES {
+            assert!(
+                corpus_lexemes.contains(entry.lexeme),
+                "reviewed participle {} has no corpus row",
+                entry.lexeme
+            );
+        }
     }
 
     #[test]
     fn result_state_participle_requires_a_classified_by_phrase() {
         assert!(!is_past_participle("broken", PosClass::Content, false));
         assert!(is_past_participle("broken", PosClass::Content, true));
-        assert!(
-            lint("The window was broken, by contrast.")
-                .iter()
-                .all(|finding| finding.rule != Rule::PassiveVoice),
-            "punctuation must not be erased when recognizing a by phrase"
-        );
+        for source in [
+            "The window was broken by.",
+            "The window was broken, by contrast.",
+        ] {
+            assert!(
+                lint(source)
+                    .iter()
+                    .all(|finding| finding.rule != Rule::PassiveVoice),
+                "incomplete or punctuated by phrase must not count: {source}"
+            );
+        }
     }
 
     #[test]
