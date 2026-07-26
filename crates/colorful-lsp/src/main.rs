@@ -5,6 +5,8 @@
 //! and answers `textDocument/semanticTokens/full` by classifying the text. All
 //! the real logic lives in the `colorful_lsp` library; this file is transport.
 
+#![forbid(unsafe_code)]
+
 use std::sync::Arc;
 use std::time::Duration;
 

@@ -79,8 +79,8 @@ observe public-contract regressions before they ship.
   [#137](https://github.com/flyingrobots/colorful-language/issues/137), and
   public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-- **Source and toolchain policy:** explicit unsafe-code policy
-  [#146](https://github.com/flyingrobots/colorful-language/issues/146) and
+- **Source and toolchain policy:** enforced first-party unsafe-code policy
+  ([#146](https://github.com/flyingrobots/colorful-language/issues/146)) and
   reviewed Rust, Node, and TypeScript evidence toolchains
   [#147](https://github.com/flyingrobots/colorful-language/issues/147).
 - **Merge and dependency governance:** required green checks

@@ -31,13 +31,17 @@ Canonical issue:
   registry names that root and an existing design record. *Oracle:* the current
   repository fails for the three unprotected roots, passes after they declare
   the policy, and any newly inventoried unprotected production root fails.
-  *Evidence type:* executable source-policy script. *Status:* planned.
+  *Evidence type:* executable source-policy script. *Evidence:*
+  `scripts/check-rust-source-policy.sh` and
+  `docs/workflows/rust-source-policy/exceptions.tsv`. *Status:* implemented.
 - **RSP-2a** — *Requirements:* RSP-3, RSP-6. *Behavior:* normal CI runs the
   source-policy check, while the workflow reference states the first-party
   boundary and exception process. *Oracle:* workflow inspection plus
   documentation checks. *Evidence type:* CI workflow and current operational
-  reference. *Status:* planned.
+  reference. *Evidence:* the `rust` job in `.github/workflows/ci.yml` and
+  `docs/workflows/rust-source-policy/README.md`. *Status:* implemented.
 - **RSP-3a** — *Requirement:* RSP-5. *Behavior:* the main workspace and Zed
   adapter compile with the declarations enabled on their supported targets.
   *Oracle:* the Rust gate passes and the Zed adapter builds for
-  `wasm32-wasip1`. *Evidence type:* compiler execution. *Status:* planned.
+  `wasm32-wasip1`. *Evidence type:* compiler execution. *Evidence:* the `rust`
+  and `editors` jobs in `.github/workflows/ci.yml`. *Status:* implemented.
