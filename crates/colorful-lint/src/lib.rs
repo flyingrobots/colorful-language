@@ -63,51 +63,12 @@ impl ParticipleEvidence {
 /// Absence is deliberate uncertainty, not evidence that a word cannot be a
 /// participle. Additions require a reviewed corpus row before this table grows.
 const REVIEWED_PARTICIPLES: &[ParticipleEvidence] = &[
-    ParticipleEvidence::eventive("approved"),
-    ParticipleEvidence::eventive("assigned"),
-    ParticipleEvidence::eventive("bought"),
     ParticipleEvidence::requires_by_phrase("broken"),
-    ParticipleEvidence::eventive("brought"),
-    ParticipleEvidence::eventive("built"),
-    ParticipleEvidence::eventive("caught"),
-    ParticipleEvidence::eventive("chosen"),
     ParticipleEvidence::eventive("cleaned"),
     ParticipleEvidence::requires_by_phrase("closed"),
-    ParticipleEvidence::eventive("completed"),
-    ParticipleEvidence::eventive("delivered"),
-    ParticipleEvidence::eventive("documented"),
-    ParticipleEvidence::eventive("done"),
-    ParticipleEvidence::eventive("drawn"),
-    ParticipleEvidence::eventive("edited"),
-    ParticipleEvidence::eventive("felt"),
-    ParticipleEvidence::eventive("found"),
-    ParticipleEvidence::eventive("given"),
-    ParticipleEvidence::eventive("held"),
-    ParticipleEvidence::eventive("implemented"),
-    ParticipleEvidence::eventive("kept"),
     ParticipleEvidence::requires_by_phrase("known"),
-    ParticipleEvidence::requires_by_phrase("left"),
     ParticipleEvidence::requires_by_phrase("lost"),
-    ParticipleEvidence::eventive("made"),
-    ParticipleEvidence::eventive("met"),
-    ParticipleEvidence::eventive("paid"),
-    ParticipleEvidence::eventive("published"),
-    ParticipleEvidence::eventive("put"),
-    ParticipleEvidence::eventive("rejected"),
-    ParticipleEvidence::eventive("repaired"),
     ParticipleEvidence::eventive("reviewed"),
-    ParticipleEvidence::eventive("said"),
-    ParticipleEvidence::eventive("seen"),
-    ParticipleEvidence::eventive("sent"),
-    ParticipleEvidence::requires_by_phrase("set"),
-    ParticipleEvidence::eventive("shown"),
-    ParticipleEvidence::eventive("taken"),
-    ParticipleEvidence::eventive("taught"),
-    ParticipleEvidence::eventive("tested"),
-    ParticipleEvidence::eventive("thought"),
-    ParticipleEvidence::eventive("told"),
-    ParticipleEvidence::eventive("validated"),
-    ParticipleEvidence::eventive("won"),
     ParticipleEvidence::eventive("written"),
 ];
 
@@ -319,11 +280,14 @@ impl ProseLinter {
                 let Some(&(participle, participle_class)) = words.get(participle_index) else {
                     continue;
                 };
-                let following = words
-                    .get(participle_index + 1)
-                    .map(|&(span, class)| (span.slice(source), class));
+                let by_phrase = has_by_phrase(
+                    source,
+                    participle,
+                    words.get(participle_index + 1).copied(),
+                    words.get(participle_index + 2).copied(),
+                );
 
-                if is_past_participle(participle.slice(source), participle_class, following) {
+                if is_past_participle(participle.slice(source), participle_class, by_phrase) {
                     out.push(Finding {
                         span: Span::new(aux.start, participle.end),
                         rule: Rule::PassiveVoice,
@@ -370,7 +334,7 @@ fn is_adverb(word: &str, class: PosClass) -> bool {
 
 /// Whether lexical class, reviewed vocabulary, and local rule evidence support
 /// treating `word` as a past participle.
-fn is_past_participle(word: &str, class: PosClass, following: Option<(&str, PosClass)>) -> bool {
+fn is_past_participle(word: &str, class: PosClass, has_by_phrase: bool) -> bool {
     if !matches!(
         class,
         PosClass::Content | PosClass::Open(OpenClassKind::Verb)
@@ -387,11 +351,35 @@ fn is_past_participle(word: &str, class: PosClass, following: Option<(&str, PosC
 
     match REVIEWED_PARTICIPLES[index].rule {
         ParticipleRule::Eventive => true,
-        ParticipleRule::RequiresByPhrase => following.is_some_and(|(word, class)| {
-            class == PosClass::Function(FunctionKind::Preposition)
-                && word.eq_ignore_ascii_case("by")
-        }),
+        ParticipleRule::RequiresByPhrase => has_by_phrase,
     }
+}
+
+/// Whether `participle` is followed by an unpunctuated, classified `by WORD`
+/// sequence in the same sentence.
+fn has_by_phrase(
+    source: &str,
+    participle: Span,
+    by: Option<(Span, PosClass)>,
+    object: Option<(Span, PosClass)>,
+) -> bool {
+    let (by_span, by_class) = match by {
+        Some(by) => by,
+        None => return false,
+    };
+    let (object_span, _) = match object {
+        Some(object) => object,
+        None => return false,
+    };
+
+    by_class == PosClass::Function(FunctionKind::Preposition)
+        && by_span.slice(source).eq_ignore_ascii_case("by")
+        && source
+            .get(participle.end..by_span.start)
+            .is_some_and(|gap| gap.chars().all(char::is_whitespace))
+        && source
+            .get(by_span.end..object_span.start)
+            .is_some_and(|gap| gap.chars().all(char::is_whitespace))
 }
 
 #[cfg(test)]
@@ -575,17 +563,14 @@ mod tests {
 
     #[test]
     fn result_state_participle_requires_a_classified_by_phrase() {
-        assert!(!is_past_participle("broken", PosClass::Content, None));
-        assert!(!is_past_participle(
-            "broken",
-            PosClass::Content,
-            Some(("near", PosClass::Function(FunctionKind::Preposition)))
-        ));
-        assert!(is_past_participle(
-            "broken",
-            PosClass::Content,
-            Some(("by", PosClass::Function(FunctionKind::Preposition)))
-        ));
+        assert!(!is_past_participle("broken", PosClass::Content, false));
+        assert!(is_past_participle("broken", PosClass::Content, true));
+        assert!(
+            lint("The window was broken, by contrast.")
+                .iter()
+                .all(|finding| finding.rule != Rule::PassiveVoice),
+            "punctuation must not be erased when recognizing a by phrase"
+        );
     }
 
     #[test]
