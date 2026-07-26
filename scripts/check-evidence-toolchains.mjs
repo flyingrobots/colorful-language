@@ -17,6 +17,7 @@ const POLICY_CODES = new Set([
   "E_AMBIENT_TYPESCRIPT",
   "E_COMPAT_ACTION_PIN",
   "E_COMPAT_CONCURRENCY",
+  "E_COMPAT_GATE",
   "E_COMPAT_NODE_SELECTOR",
   "E_COMPAT_RUST_OVERRIDE",
   "E_COMPAT_RUST_SELECTOR",
@@ -161,6 +162,46 @@ function actionStepBlocks(workflow, action) {
     });
   }
   return steps;
+}
+
+function runStepBlocks(workflow) {
+  const lines = workflow.split("\n");
+  const steps = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(/^(\s*)-\s+run:\s+(.+?)\s*$/u);
+    if (!match || match[2] === "|") {
+      continue;
+    }
+    const indent = match[1].length;
+    let end = index + 1;
+    while (
+      end < lines.length &&
+      !new RegExp(`^\\s{${indent}}-\\s+`, "u").test(lines[end])
+    ) {
+      end += 1;
+    }
+    steps.push({
+      command: match[2],
+      body: lines.slice(index, end).join("\n"),
+    });
+  }
+  return steps;
+}
+
+function hasRunStep(job, command, workingDirectory = null) {
+  return runStepBlocks(job).some((step) => {
+    if (step.command !== command) {
+      return false;
+    }
+    const directories = [
+      ...step.body.matchAll(
+        /^\s*working-directory:\s*["']?([^"'\s]+)["']?\s*$/gmu,
+      ),
+    ].map((match) => match[1]);
+    return workingDirectory === null
+      ? directories.length === 0
+      : directories.length === 1 && directories[0] === workingDirectory;
+  });
 }
 
 function workflowJobBodies(workflow) {
@@ -372,25 +413,65 @@ function assertCompatibilityWorkflow(workflow, nodeMajor) {
         "compatibility workflow must override the checked-in Rust toolchain",
       );
     }
+    const requiredCommands = [
+      "cargo fmt --all -- --check",
+      "cargo clippy --locked --all-targets --all-features -- -D warnings",
+      "cargo test --all --locked",
+      "cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked",
+    ];
+    for (const command of requiredCommands) {
+      if (!hasRunStep(job, command)) {
+        reject(
+          "E_COMPAT_GATE",
+          `Rust compatibility job must run: ${command}`,
+        );
+      }
+    }
   }
-  const nodeActions = actionStepBlocks(workflow, "actions/setup-node");
-  if (nodeActions.length === 0) {
+  const nodeJobs = workflowJobBodies(workflow)
+    .map((job) => ({
+      job,
+      actions: actionStepBlocks(job, "actions/setup-node"),
+    }))
+    .filter(({ actions }) => actions.length > 0);
+  if (nodeJobs.length === 0) {
     reject(
       "E_COMPAT_NODE_SELECTOR",
       `compatibility workflow must select supported Node line ${nodeMajor}`,
     );
   }
-  for (const action of nodeActions) {
-    const selectors = [
-      ...action.body.matchAll(
-        /^\s*node-version:\s*["']?([^"'\s]+)["']?\s*$/gmu,
-      ),
+  for (const { job, actions } of nodeJobs) {
+    for (const action of actions) {
+      const selectors = [
+        ...action.body.matchAll(
+          /^\s*node-version:\s*["']?([^"'\s]+)["']?\s*$/gmu,
+        ),
+      ];
+      if (selectors.length !== 1 || selectors[0][1] !== nodeMajor) {
+        reject(
+          "E_COMPAT_NODE_SELECTOR",
+          `compatibility workflow must select supported Node line ${nodeMajor}`,
+        );
+      }
+    }
+    const requiredCommands = [
+      ["npm ci", null],
+      ["npm ci", "editors/vscode"],
+      ["npm run compile", "editors/vscode"],
+      ["./node_modules/.bin/tsc -p witness/tsconfig.json", null],
+      ["node scripts/generate-vocabulary-validators.test.mjs", null],
+      ["node consumers/graft-projection.test.mjs", null],
     ];
-    if (selectors.length !== 1 || selectors[0][1] !== nodeMajor) {
-      reject(
-        "E_COMPAT_NODE_SELECTOR",
-        `compatibility workflow must select supported Node line ${nodeMajor}`,
-      );
+    for (const [command, workingDirectory] of requiredCommands) {
+      if (!hasRunStep(job, command, workingDirectory)) {
+        const scope = workingDirectory
+          ? ` in ${workingDirectory}`
+          : " at the repository root";
+        reject(
+          "E_COMPAT_GATE",
+          `Node compatibility job must run ${command}${scope}`,
+        );
+      }
     }
   }
   for (const match of workflow.matchAll(/^\s*-\s+uses:\s+[^@\s]+@([^\s#]+).*$/gmu)) {
@@ -637,11 +718,23 @@ jobs:
       - uses: dtolnay/rust-toolchain@${fullSha}
         with:
           toolchain: stable
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - run: cargo test --all --locked
+      - run: cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked
   node:
     steps:
       - uses: actions/setup-node@${fullSha}
         with:
           node-version: "22"
+      - run: npm ci
+      - run: npm ci
+        working-directory: editors/vscode
+      - run: npm run compile
+        working-directory: editors/vscode
+      - run: ./node_modules/.bin/tsc -p witness/tsconfig.json
+      - run: node scripts/generate-vocabulary-validators.test.mjs
+      - run: node consumers/graft-projection.test.mjs
 `,
     ],
     [".github/workflows/release.yml", primaryWorkflow],
@@ -1003,6 +1096,17 @@ function selfTest() {
       "E_COMPAT_RUST_OVERRIDE",
     ],
     [
+      "missing Rust compatibility gate",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace("      - run: cargo test --all --locked\n", ""),
+        ),
+      "E_COMPAT_GATE",
+    ],
+    [
       "misplaced Rust compatibility override",
       (files) =>
         files.set(
@@ -1045,6 +1149,22 @@ env:
             ),
         ),
       "E_COMPAT_NODE_SELECTOR",
+    ],
+    [
+      "missing editor compatibility gate",
+      (files) =>
+        files.set(
+          ".github/workflows/compatibility.yml",
+          files
+            .get(".github/workflows/compatibility.yml")
+            .replace(
+              `      - run: npm run compile
+        working-directory: editors/vscode
+`,
+              "",
+            ),
+        ),
+      "E_COMPAT_GATE",
     ],
     [
       "second incompatible Node selector",
