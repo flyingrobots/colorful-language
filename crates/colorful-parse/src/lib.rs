@@ -20,9 +20,11 @@ use logos::Logos;
 fn lex_number(lexer: &mut logos::Lexer<'_, Tok>) {
     let start = lexer.span().start;
     let initial_length = lexer.slice().len();
-    let token_length = numeric_prefix_len(&lexer.source()[start..])
-        .expect("numeric callback starts on a Unicode numeric character");
-    lexer.bump(token_length - initial_length);
+    if let Some(token_length) =
+        numeric_prefix_len(&lexer.source()[start..]).filter(|length| *length >= initial_length)
+    {
+        lexer.bump(token_length - initial_length);
+    }
 }
 
 /// Mechanical token kinds produced by the lexer.
