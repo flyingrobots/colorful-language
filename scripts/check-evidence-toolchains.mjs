@@ -393,6 +393,29 @@ function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
       );
     }
   }
+  const separationClaims = new Map([
+    [
+      "docs/workflows/evidence-toolchains/README.md",
+      "does not declare a minimum supported rust version (msrv)",
+    ],
+    [
+      "README.md",
+      "do not declare a minimum supported rust version (msrv)",
+    ],
+    [
+      "CONTRIBUTING.md",
+      "evidence compiler is not the minimum supported rust version (msrv)",
+    ],
+  ]);
+  for (const [file, claim] of separationClaims) {
+    const normalized = files.get(file).toLowerCase().replace(/\s+/gu, " ");
+    if (!normalized.includes(claim)) {
+      reject(
+        "E_POLICY_DOC",
+        `${file}: must distinguish the evidence compiler from MSRV`,
+      );
+    }
+  }
   for (const file of ["README.md", "CONTRIBUTING.md"]) {
     const document = files.get(file);
     if (
@@ -599,13 +622,17 @@ jobs:
     ],
     [
       "CONTRIBUTING.md",
-      `Evidence Rust ${rustVersion}; MSRV is intentionally unset.\n`,
+      `Evidence Rust ${rustVersion}; the evidence compiler is not the minimum supported Rust version (MSRV).\n`,
     ],
-    ["README.md", `Evidence Rust ${rustVersion}; MSRV is intentionally unset.\n`],
+    [
+      "README.md",
+      `Evidence Rust ${rustVersion}; published crates do not declare a minimum supported Rust version (MSRV).\n`,
+    ],
     [
       "docs/workflows/evidence-toolchains/README.md",
       `Rust ${rustVersion}; Node ${nodeVersion}; TypeScript ${typeScriptVersion}.
-MSRV is unset. The maintainer reviews the weekly advisory lane.
+The workspace does not declare a minimum supported Rust version (MSRV).
+The maintainer reviews the weekly advisory lane.
 `,
     ],
     ["editors/vscode/package-lock.json", packageLock],
@@ -1009,6 +1036,24 @@ env:
             .get("docs/workflows/evidence-toolchains/README.md")
             .replace("maintainer", "operator"),
         ),
+      "E_POLICY_DOC",
+    ],
+    [
+      "evidence compiler documented as MSRV",
+      (files) => {
+        files.set(
+          "docs/workflows/evidence-toolchains/README.md",
+          `Rust ${FIXTURE.rustVersion}; Node ${FIXTURE.nodeVersion}; TypeScript ${FIXTURE.typeScriptVersion}.
+The MSRV is ${FIXTURE.rustVersion}. The maintainer reviews the weekly advisory lane.
+`,
+        );
+        for (const file of ["README.md", "CONTRIBUTING.md"]) {
+          files.set(
+            file,
+            `Evidence Rust ${FIXTURE.rustVersion} is the MSRV.\n`,
+          );
+        }
+      },
       "E_POLICY_DOC",
     ],
   ];

@@ -54,10 +54,11 @@ Canonical issue:
 - **ETC-3a** — *Requirement:* ETC-4. *Behavior:* the workspace manifest and
   contributor references explicitly distinguish the evidence compiler from
   MSRV; no lower-bound claim exists until a dedicated compatibility lane
-  verifies it. *Oracle:* policy inspection rejects a declared or documented
-  MSRV that lacks matching executable evidence. *Evidence type:* manifest,
-  operational reference, and policy check. *Evidence:* `Cargo.toml`,
-  `README.md`, `CONTRIBUTING.md`, and
+  verifies it. *Oracle:* policy inspection rejects a `rust-version` declaration
+  and requires current references to state that the evidence compiler is not
+  MSRV; human review remains the oracle for broader prose claims. *Evidence
+  type:* manifest, operational reference, policy check, and review. *Evidence:*
+  `Cargo.toml`, `README.md`, `CONTRIBUTING.md`, and
   `scripts/check-evidence-toolchains.mjs`. *Status:* implemented.
 - **ETC-4a** — *Requirements:* ETC-5, ETC-7. *Behavior:* a weekly and
   manually-dispatchable workflow runs the Rust gate on current stable and the
