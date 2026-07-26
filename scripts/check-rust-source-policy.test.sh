@@ -80,4 +80,44 @@ pub unsafe fn allowed_at_crate_root() {}
 EOF
 expect_unprotected "string-literal text"
 
+cat >"$fixture/crate/src/lib.rs" <<'EOF'
+pub fn unprotected() {}
+EOF
+cat >"$fixture/docs/workflows/outside.md" <<'EOF'
+# Not a design record
+EOF
+
+expect_invalid_design_record() {
+  local name="$1"
+  local output
+  if output="$("$checker" --root "$fixture" 2>&1)"; then
+    printf 'expected design-record failure: %s\n%s\n' "$name" "$output" >&2
+    exit 1
+  fi
+  if [[ "$output" != *"source-policy exception has no design record:"* ]]; then
+    printf 'wrong design-record failure: %s\n%s\n' "$name" "$output" >&2
+    exit 1
+  fi
+}
+
+printf 'crate/src/lib.rs\tdocs/design/../workflows/outside.md\n' \
+  >"$fixture/docs/workflows/rust-source-policy/exceptions.tsv"
+expect_invalid_design_record "parent traversal"
+
+ln -s ../workflows/outside.md "$fixture/docs/design/escape.md"
+printf 'crate/src/lib.rs\tdocs/design/escape.md\n' \
+  >"$fixture/docs/workflows/rust-source-policy/exceptions.tsv"
+expect_invalid_design_record "symlink escape"
+
+cat >"$fixture/docs/design/approved.md" <<'EOF'
+# Approved fixture exception
+EOF
+printf 'crate/src/lib.rs\tdocs/design/approved.md\n' \
+  >"$fixture/docs/workflows/rust-source-policy/exceptions.tsv"
+output="$("$checker" --root "$fixture")"
+if [[ "$output" != *"source-policy exception: crate/src/lib.rs -> docs/design/approved.md"* ]]; then
+  printf 'valid design-record exception failed\n%s\n' "$output" >&2
+  exit 1
+fi
+
 printf 'check-rust-source-policy tests passed\n'

@@ -57,6 +57,7 @@ architecture review. Its design record must explain:
 - what evidence or dependency change would allow its removal.
 
 The checker rejects an exception for an uninventoried root, a missing design
-record, a duplicate entry, or a root that already forbids unsafe code. Removing
-the declaration without adding a reviewed record therefore fails CI rather than
-silently weakening the policy.
+record, a duplicate entry, or a root that already forbids unsafe code. It
+canonicalizes every record path, so parent traversal and symlink escapes cannot
+leave `docs/design/`. Removing the declaration without adding a reviewed record
+therefore fails CI rather than silently weakening the policy.

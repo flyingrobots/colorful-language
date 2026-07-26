@@ -99,6 +99,33 @@ raise SystemExit(0 if source.startswith(policy, position) else 1)
 PY
 }
 
+design_record_is_valid() {
+  local design_record="$1"
+  python3 - "$root" "$design_record" <<'PY'
+import pathlib
+import sys
+
+repository = pathlib.Path(sys.argv[1]).resolve()
+record_text = sys.argv[2]
+record = pathlib.Path(record_text)
+if (
+    record.is_absolute()
+    or not record_text.startswith("docs/design/")
+    or not record_text.endswith(".md")
+):
+    raise SystemExit(1)
+
+try:
+    design_root = (repository / "docs/design").resolve(strict=True)
+    candidate = (repository / record).resolve(strict=True)
+    candidate.relative_to(design_root)
+except (OSError, ValueError):
+    raise SystemExit(1)
+
+raise SystemExit(0 if candidate.is_file() else 1)
+PY
+}
+
 inventory_manifest "$root/Cargo.toml" >>"$inventory"
 inventory_manifest "$root/editors/zed/Cargo.toml" >>"$inventory"
 sort -u -o "$inventory" "$inventory"
@@ -116,8 +143,7 @@ while IFS=$'\t' read -r crate_root design_record extra; do
       "$crate_root" >&2
     exit 1
   fi
-  if [[ "$design_record" != docs/design/*.md ||
-    ! -f "$root/$design_record" ]]; then
+  if ! design_record_is_valid "$design_record"; then
     printf 'source-policy exception has no design record: %s -> %s\n' \
       "$crate_root" "$design_record" >&2
     exit 1
