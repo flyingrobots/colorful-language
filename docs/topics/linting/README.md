@@ -61,7 +61,9 @@ The rule requires all of the following:
 2. The candidate token is classified as undifferentiated content or as a verb.
 3. Its lowercase lexeme occurs in the reviewed participle table.
 4. A result-state entry such as `broken`, `closed`, `known`, or `lost` is
-   followed by a lexically classified `by` preposition.
+   followed by an unpunctuated, lexically classified `by` phrase whose object
+   can conservatively name an agent. Temporal `by now` and `by then` phrases do
+   not supply that evidence.
 
 An explicit adjective class therefore wins over the participle table. A
 result-state construction such as `the door was closed` also stays silent
@@ -71,8 +73,8 @@ grammatical parse.
 
 The checked-in development corpus at
 `crates/colorful-lint/tests/fixtures/passive_voice.tsv` contains 4 reviewed
-positive rows and 9 reviewed negative rows. The current rule produces 4 true
-positives, 0 false positives, 9 true negatives, and 0 false negatives: fixture
+positive rows and 11 reviewed negative rows. The current rule produces 4 true
+positives, 0 false positives, 11 true negatives, and 0 false negatives: fixture
 precision is `4 / (4 + 0) = 100%`. This is a deterministic regression
 measurement on a small, visible development corpus, not a held-out estimate of
 real-world precision or recall. Product-level blinded evaluation remains

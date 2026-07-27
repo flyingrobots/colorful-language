@@ -181,7 +181,9 @@ Implemented and planned cases are listed below.
   passive-voice candidates. *Evidence type:* deterministic reviewed corpus.
   *Tracking:*
   [#138](https://github.com/flyingrobots/colorful-language/issues/138).
-  *Status:* planned.
+  *Evidence:* `crates/colorful-lint/tests/fixtures/passive_voice.tsv` and
+  `crates/colorful-lint/tests/passive_voice_precision.rs`. *Status:*
+  implemented.
 - **LINT-12a** — *Requirement:* LINT-12. *Behavior:* the chosen quotation policy
   produces deterministic weak-word findings for balanced, nested, and
   unbalanced straight/curly quotes and is identical across CLI and LSP.

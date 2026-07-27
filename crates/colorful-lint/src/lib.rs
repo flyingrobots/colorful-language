@@ -23,6 +23,9 @@ use colorful_core::{
 /// `be`-auxiliaries that open a passive-voice construction.
 const BE_AUXILIARIES: &[&str] = &["is", "are", "was", "were", "be", "been", "being", "am"];
 
+/// Temporal deictics that cannot supply an agent for a `by` phrase.
+const TEMPORAL_BY_OBJECTS: &[&str] = &["now", "then"];
+
 /// Evidence required before a reviewed participle can become a passive-voice
 /// candidate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -280,12 +283,7 @@ impl ProseLinter {
                 let Some(&(participle, participle_class)) = words.get(participle_index) else {
                     continue;
                 };
-                let by_phrase = has_by_phrase(
-                    source,
-                    participle,
-                    words.get(participle_index + 1).copied(),
-                    words.get(participle_index + 2).copied(),
-                );
+                let by_phrase = has_by_phrase(source, participle, &words[participle_index + 1..]);
 
                 if is_past_participle(participle.slice(source), participle_class, by_phrase) {
                     out.push(Finding {
@@ -357,29 +355,51 @@ fn is_past_participle(word: &str, class: PosClass, has_by_phrase: bool) -> bool 
 
 /// Whether `participle` is followed by an unpunctuated, classified `by WORD`
 /// sequence in the same sentence.
-fn has_by_phrase(
-    source: &str,
-    participle: Span,
-    by: Option<(Span, PosClass)>,
-    object: Option<(Span, PosClass)>,
-) -> bool {
-    let (by_span, by_class) = match by {
-        Some(by) => by,
-        None => return false,
+fn has_by_phrase(source: &str, participle: Span, following_words: &[(Span, PosClass)]) -> bool {
+    let Some(&(by_span, by_class)) = following_words.first() else {
+        return false;
     };
-    let (object_span, _) = match object {
-        Some(object) => object,
-        None => return false,
+    let Some(&(first_object_span, first_object_class)) = following_words.get(1) else {
+        return false;
+    };
+    let (object_span, object_class, has_nominal_modifier) = if matches!(
+        first_object_class,
+        PosClass::Function(FunctionKind::Article | FunctionKind::Determiner)
+    ) {
+        let Some(&object) = following_words.get(2) else {
+            return false;
+        };
+        (object.0, object.1, true)
+    } else {
+        (first_object_span, first_object_class, false)
     };
 
     by_class == PosClass::Function(FunctionKind::Preposition)
         && by_span.slice(source).eq_ignore_ascii_case("by")
+        && is_agentive_by_object(object_span.slice(source), object_class)
         && source
             .get(participle.end..by_span.start)
             .is_some_and(|gap| gap.chars().all(char::is_whitespace))
         && source
-            .get(by_span.end..object_span.start)
+            .get(by_span.end..first_object_span.start)
             .is_some_and(|gap| gap.chars().all(char::is_whitespace))
+        && (!has_nominal_modifier
+            || source
+                .get(first_object_span.end..object_span.start)
+                .is_some_and(|gap| gap.chars().all(char::is_whitespace)))
+}
+
+/// Whether the object of `by` can conservatively name an agent.
+fn is_agentive_by_object(word: &str, class: PosClass) -> bool {
+    matches!(
+        class,
+        PosClass::Content
+            | PosClass::ProperNoun
+            | PosClass::Open(OpenClassKind::Noun)
+            | PosClass::Function(FunctionKind::Pronoun)
+    ) && !TEMPORAL_BY_OBJECTS
+        .iter()
+        .any(|temporal| word.eq_ignore_ascii_case(temporal))
 }
 
 #[cfg(test)]
