@@ -73,20 +73,17 @@ cat >"$fixture/test-bin/cargo-deny" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-previous=""
-manifest=""
-for argument in "$@"; do
-  if [[ "$previous" == "--manifest-path" ]]; then
-    manifest="$argument"
-    break
-  fi
-  previous="$argument"
-done
-
-if [[ -z "$manifest" ]]; then
-  printf 'missing --manifest-path\n' >&2
+if [[ "$#" -ne 5 ||
+  "$1" != "--manifest-path" ||
+  "$3" != "--locked" ||
+  "$4" != "check" ||
+  "$5" != "advisories" ]]; then
+  printf 'unexpected cargo-deny arguments:' >&2
+  printf ' %q' "$@" >&2
+  printf '\n' >&2
   exit 2
 fi
+manifest="$2"
 printf '%s\n' "$manifest" >>"${CARGO_DENY_INVOCATION_LOG:?}"
 if [[ -n "${FAIL_MANIFEST:-}" && "$manifest" == "$FAIL_MANIFEST" ]]; then
   printf 'fixture advisory failure: %s\n' "$manifest" >&2
