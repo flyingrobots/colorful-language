@@ -28,5 +28,8 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
 ## Known gaps
 
 Issue [#152](https://github.com/flyingrobots/colorful-language/issues/152) will
-extend this plan before adding issue intake, license/source policy, pull-request
-dependency review, CodeQL, and ownership configuration.
+extend this plan before installing the pinned advisory tool in CI, wiring the
+self-test and live scan into CI and release preparation, and adding issue
+intake, license/source policy, pull-request dependency review, CodeQL, and
+ownership configuration. Until that slice lands, RM-1a is a documented
+maintainer command rather than an automated merge or release gate.
