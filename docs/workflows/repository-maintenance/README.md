@@ -35,11 +35,12 @@ current inventory:
 - the standalone Zed adapter at `editors/zed/Cargo.toml`.
 
 Both checks use their workspace lockfile. Vulnerability and unsoundness
-advisories fail through the evolving RustSec database. Licenses outside the
-reviewed SPDX allowlist fail, as do Git dependencies and registries other than
-the public crates.io index. There are no advisory or per-crate license
-exceptions. The checker self-test adds a third standalone workspace to prove
-that a future workspace cannot silently escape the inventory.
+advisories fail through the evolving RustSec database. Production and
+development dependencies with licenses outside the reviewed SPDX allowlist
+fail, as do Git dependencies and registries other than the public crates.io
+index. There are no advisory or per-crate license exceptions. The checker
+self-test adds a third standalone workspace to prove that a future workspace
+cannot silently escape the inventory.
 
 The RustSec database is an external, evolving oracle. A newly published
 advisory can therefore make an unchanged lockfile fail. The maintainer owns

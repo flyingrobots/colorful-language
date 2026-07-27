@@ -18,6 +18,7 @@ confidence-threshold = 0.8
 # One shared policy covers multiple workspaces, so a reviewed license can be
 # present in one lockfile and absent from another without creating noise.
 unused-allowed-license = "allow"
+include-dev = true
 exceptions = []
 
 [sources]

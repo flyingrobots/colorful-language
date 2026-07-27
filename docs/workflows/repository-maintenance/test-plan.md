@@ -49,10 +49,11 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   implemented.
 - **RM-2a — Shared Rust license and source policy.** *Requirement:* RM-2.
   *Behavior:* the all-workspace dependency scan accepts only the reviewed SPDX
-  license set already present in the root and Zed lockfiles, denies unknown
-  registries and Git sources, and carries no blanket exception. *Oracle:*
-  `cargo deny --locked check licenses sources` exits zero for both workspaces;
-  mutating the allowlist or source policy makes the structural checker fail.
+  license set already present in the root and Zed lockfiles for production and
+  development dependencies, denies unknown registries and Git sources, and
+  carries no blanket exception. *Oracle:* `cargo deny --locked check licenses
+  sources` exits zero for both workspaces; mutating dev-dependency coverage, the
+  allowlist, or source policy makes the structural checker fail.
   *Evidence type:* checked-in `cargo-deny` policy, live dependency scan, and
   deterministic mutation test. *Evidence:* `deny.toml`,
   `scripts/check-rust-dependency-policy.sh`, and

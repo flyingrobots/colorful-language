@@ -229,6 +229,16 @@ function tomlString(section, key, code) {
   return match[1];
 }
 
+function tomlBoolean(section, key, code) {
+  const match = section.match(
+    new RegExp(`^\\s*${key}\\s*=\\s*(true|false)\\s*$`, "mu"),
+  );
+  if (match === null) {
+    reject(code, `deny.toml:${key}`, "boolean value is missing");
+  }
+  return match[1] === "true";
+}
+
 function validateRustPolicy(source) {
   const advisories = tomlSection(source, "advisories");
   if (tomlStringArray(advisories, "ignore", "E_RUST_ADVISORY_EXCEPTION").length) {
@@ -259,6 +269,13 @@ function validateRustPolicy(source) {
       "E_RUST_LICENSES",
       "deny.toml:licenses.unused-allowed-license",
       "must permit reviewed licenses used by a different workspace",
+    );
+  }
+  if (!tomlBoolean(licenses, "include-dev", "E_RUST_LICENSES")) {
+    reject(
+      "E_RUST_LICENSES",
+      "deny.toml:licenses.include-dev",
+      "must include workspace development dependencies",
     );
   }
   if (tomlStringArray(licenses, "exceptions", "E_RUST_LICENSES").length) {
