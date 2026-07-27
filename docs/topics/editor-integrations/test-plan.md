@@ -110,13 +110,13 @@ Verification for editor adapters and the `colorful-lsp` surface.
   lockfile-policy mutations reject the vulnerable client and leaf versions or
   an incompatible editor floor; a pinned-Node `npm audit --audit-level=high`
   exits zero. *Evidence type:* lockfile policy self-test, editor compile, and
-  network-backed advisory audit. *Planned evidence:*
+  network-backed advisory audit. *Evidence:*
   `scripts/check-vscode-dependency-policy.mjs`,
   `scripts/check-vscode-dependency-policy.test.mjs`,
   `editors/vscode/package.json`, `editors/vscode/package-lock.json`, and the
   editor CI job. *Tracking:*
   [#152](https://github.com/flyingrobots/colorful-language/issues/152).
-  *Status:* planned.
+  *Status:* implemented.
 - **EDIT-5a** — *Requirement:* EDIT-5. *Behavior:* recipe docs state that
   marketplace packages are not published and that custom open-class token types
   may need theme rules. *Oracle:* documentation review. *Evidence:*

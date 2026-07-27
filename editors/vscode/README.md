@@ -8,6 +8,9 @@ nouns, numbers, and quotes accentuated; unlisted content left clean.
 
 ## Requirements
 
+Use VS Code 1.91 or newer. The extension's supported
+`vscode-languageclient` release requires that editor floor.
+
 The extension drives the `colorful-lsp` binary; install it once:
 
 ```bash

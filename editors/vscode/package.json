@@ -10,7 +10,7 @@
     "url": "https://github.com/flyingrobots/colorful-language"
   },
   "engines": {
-    "vscode": "^1.84.0"
+    "vscode": "^1.91.0"
   },
   "categories": [
     "Programming Languages",
@@ -116,11 +116,11 @@
     "vscode:prepublish": "npm run compile"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^10.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/vscode": "^1.84.0",
+    "@types/vscode": "^1.91.0",
     "typescript": "5.9.3"
   }
 }
