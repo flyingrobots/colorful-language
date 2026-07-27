@@ -218,8 +218,8 @@ impl Analyzer for ProseLinter {
 
 impl ProseLinter {
     /// [`Rule::WeakWord`]: flag a lexical content token whose lexeme is in the
-    /// filler list. Requiring `Content` or `Open(_)` keeps a capitalized name (a
-    /// proper noun) or a quoted word from being mistaken for filler.
+    /// filler list. Requiring `Content` or `Open(_)` excludes proper nouns and
+    /// quote punctuation; quotation marks do not suppress enclosed word tokens.
     fn weak_words(&self, source: &str, tokens: &[Token], out: &mut Vec<Finding>) {
         for token in tokens {
             if !matches!(token.class, PosClass::Content | PosClass::Open(_)) {
@@ -497,6 +497,29 @@ mod tests {
         assert_eq!(findings.len(), 1, "{findings:?}");
         assert_eq!(findings[0].rule, Rule::WeakWord);
         assert_eq!(findings[0].message, "weak word 'really'");
+    }
+
+    #[test]
+    fn weak_words_inside_quotes_are_intentionally_flagged() {
+        let cases = [
+            ("She said, \"It is really clear.\"", vec!["really"]),
+            ("She wrote, “It is actually clear.”", vec!["actually"]),
+            (
+                "She said, “The note said ‘it is quite clear,’ really.”",
+                vec!["quite", "really"],
+            ),
+            ("The label isn't “very clear.", vec!["very"]),
+            ("The note says \"just clear.", vec!["just"]),
+        ];
+
+        for (source, expected) in cases {
+            let actual: Vec<&str> = lint(source)
+                .iter()
+                .filter(|finding| finding.rule == Rule::WeakWord)
+                .map(|finding| finding.span.slice(source))
+                .collect();
+            assert_eq!(actual, expected, "{source}");
+        }
     }
 
     #[test]

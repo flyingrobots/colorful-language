@@ -54,6 +54,20 @@ reproducible regardless of rule evaluation order.
 Passive analysis joins the ordered syntax leaves and classified tokens with one
 forward cursor; it does not allocate a whole-document token lookup.
 
+### Quotation policy
+
+Weak-word findings are evaluated inside quoted text. Straight and curly quote
+marks are punctuation context, not evidence that the enclosed prose belongs to
+someone else or should bypass editorial checks. Colorful therefore keeps no
+quote-balance suppression state: balanced, nested, and unbalanced quotes all
+leave enclosed word tokens eligible for the same weak-word rule.
+
+This also keeps apostrophes in contractions independent of quotation handling.
+For example, the weak word in `The label isn't “very clear.` is intentionally
+reported despite the contraction and unmatched opening quote. CLI and LSP
+parity for the full policy matrix is pinned by the `quoted-weak-words` golden
+fixture.
+
 ### Passive-voice evidence boundary
 
 Passive-voice detection does not treat an `-ed` suffix as grammatical proof.
