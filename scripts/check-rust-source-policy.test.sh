@@ -227,4 +227,29 @@ if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]];
   exit 1
 fi
 
+mkdir -p "$fixture/vendor/dep/src"
+cat >>"$fixture/crate/Cargo.toml" <<'EOF'
+
+[dependencies]
+source-policy-vendored-fixture = { path = "../vendor/dep" }
+EOF
+cat >"$fixture/vendor/dep/Cargo.toml" <<'EOF'
+[package]
+name = "source-policy-vendored-fixture"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+EOF
+cat >"$fixture/vendor/dep/src/lib.rs" <<'EOF'
+pub fn unprotected_vendored_dependency() {}
+EOF
+cargo generate-lockfile --manifest-path "$fixture/Cargo.toml" >/dev/null
+output="$("$checker" --root "$fixture")"
+if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]]; then
+  printf 'vendored path dependency entered the inventory\n%s\n' "$output" >&2
+  exit 1
+fi
+
 printf 'check-rust-source-policy tests passed\n'
