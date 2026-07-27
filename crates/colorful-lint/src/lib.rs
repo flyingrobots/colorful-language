@@ -619,6 +619,31 @@ mod tests {
     }
 
     #[test]
+    fn classification_cursor_visits_ordered_tokens_once() {
+        let source = "The report, was reviewed.";
+        let tree = ProseParser::new().parse(source);
+        let tokens = LexicalAnnotator::new(ClosedClassLexicon::new()).annotate(source, &tree);
+        let Node::Document(sentences) = &tree.root else {
+            panic!("parser must return a document");
+        };
+        let Node::Sentence { parts, .. } = &sentences[0] else {
+            panic!("document must contain a sentence");
+        };
+        let mut cursor = ClassificationCursor::new(&tokens);
+
+        let words = collect_classified_words(parts, &mut cursor);
+
+        assert_eq!(
+            words
+                .iter()
+                .map(|(span, _)| span.slice(source))
+                .collect::<Vec<_>>(),
+            ["The", "report", "was", "reviewed"]
+        );
+        assert_eq!(cursor.inspected_tokens(), tokens.len() - 1);
+    }
+
+    #[test]
     fn findings_are_returned_in_source_order() {
         let src = "This is just very broken.";
         let starts: Vec<usize> = lint(src).iter().map(|f| f.span.start).collect();
