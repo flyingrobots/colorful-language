@@ -34,6 +34,14 @@ updates:
       cargo:
         patterns:
           - "*"
+  - package-ecosystem: cargo
+    directory: /editors/zed
+    schedule:
+      interval: weekly
+    groups:
+      zed-cargo:
+        patterns:
+          - "*"
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -132,6 +140,18 @@ test("rejects an unsupported Dependabot schema version", () => {
 test("rejects a missing update source", () => {
   expectCode(({ dependabot }) => {
     dependabot.updates.pop();
+  }, "E_DEPENDABOT_SOURCE");
+});
+
+test("rejects omission of the standalone Zed Cargo workspace", () => {
+  expectCode(({ dependabot }) => {
+    dependabot.updates = dependabot.updates.filter(
+      (update) =>
+        !(
+          update["package-ecosystem"] === "cargo" &&
+          update.directory === "/editors/zed"
+        ),
+    );
   }, "E_DEPENDABOT_SOURCE");
 });
 
