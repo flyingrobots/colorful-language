@@ -156,4 +156,23 @@ if [[ "$output" != *"fixture advisory failure: $fixture/editors/zed/Cargo.toml"*
   exit 1
 fi
 
+mutated_checker="$fixture/check-rust-advisories-without-locked.sh"
+sed '/^[[:space:]]*--locked/d' "$checker" >"$mutated_checker"
+chmod +x "$mutated_checker"
+: >"$invocations"
+output=""
+if output="$(
+  PATH="$fixture/test-bin:$PATH" \
+    CARGO_DENY_INVOCATION_LOG="$invocations" \
+    "$mutated_checker" --root "$fixture" 2>&1
+)"; then
+  printf 'expected the self-test stub to reject a missing --locked argument\n%s\n' \
+    "$output" >&2
+  exit 1
+fi
+if [[ "$output" != *"unexpected cargo-deny arguments:"* ]]; then
+  printf 'wrong cargo-deny argument-contract failure\n%s\n' "$output" >&2
+  exit 1
+fi
+
 printf 'check-rust-advisories self-test passed\n'
