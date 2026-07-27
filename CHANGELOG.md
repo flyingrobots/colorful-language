@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enforced protected-branch CI contract.** The live `mainline` ruleset now
+  requires the documentation, Rust, Cargo package, IR round-trip, and editor
+  compilation GitHub Actions contexts with strict default-branch freshness.
+  Source-controlled drift evidence and a tested recovery workflow preserve the
+  existing signed-commit, merge-only, branch-protection, thread-resolution, and
+  bypass-actor policies.
 - **Automatic first-party Cargo workspace source-policy discovery.** The
   unsafe-code policy gate now discovers every Cargo manifest outside exact
   repository-metadata, generated-output, installed-dependency, and vendored-

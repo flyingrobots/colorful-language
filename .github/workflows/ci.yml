@@ -44,6 +44,12 @@ jobs:
         run: node scripts/check-doc-citations.mjs --self-test
       - name: Check cited file paths exist
         run: node scripts/check-doc-citations.mjs
+      - name: Self-test the main ruleset checker
+        run: node scripts/check-main-ruleset.test.mjs
+      - name: Check the live main ruleset contract
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-main-ruleset.mjs --allow-redacted-bypass
 
   rust:
     name: Rust (fmt, clippy, test)
