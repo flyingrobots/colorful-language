@@ -51,8 +51,8 @@ Run the deterministic mutation tests:
 node scripts/check-main-ruleset.test.mjs
 ```
 
-With an authenticated GitHub CLI session that can read the repository, compare
-the live ruleset with the manifest:
+With an authenticated GitHub CLI session that has repository write access,
+compare the live ruleset with the manifest:
 
 ```bash
 gh auth status
@@ -73,12 +73,14 @@ ruleset or removes `Docs & whitespace` from its required contexts can also
 remove the checker's authority to block. Treat any mismatch as a governance
 incident and restore the reviewed contract immediately.
 
-GitHub redacts `bypass_actors` from the read-only workflow token. Depending on
-the API caller, the response omits the field or returns `null`. CI uses the
-explicit `--allow-redacted-bypass` mode, which accepts only those two redacted
-representations and still rejects any visible actor mismatch. The authenticated
-maintainer command above remains strict and is the authoritative bypass-actor
-check.
+GitHub redacts `bypass_actors` from callers without repository write access,
+including the read-only workflow token. Depending on the API caller, the
+response omits the field or returns `null`. A read-only caller may run
+`node scripts/check-main-ruleset.mjs --allow-redacted-bypass` to check every
+visible field, but that result cannot verify the bypass actor. CI uses this
+explicit mode, which accepts only those two redacted representations and still
+rejects any visible actor mismatch. The write-capable maintainer command above
+remains strict and is the authoritative bypass-actor check.
 
 ## Apply a reviewed ruleset change
 
