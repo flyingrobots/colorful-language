@@ -95,6 +95,23 @@ fi
 EOF
 chmod +x "$fixture/test-bin/cargo-deny"
 
+mkdir -p "$fixture/no-python-bin"
+for tool in bash cargo cargo-deny dirname; do
+  ln -s "$(command -v "$tool")" "$fixture/no-python-bin/$tool"
+done
+output=""
+if output="$(
+  PATH="$fixture/no-python-bin" \
+    "$checker" --root "$fixture" 2>&1
+)"; then
+  printf 'expected a missing-python3 prerequisite failure\n%s\n' "$output" >&2
+  exit 1
+fi
+if [[ "$output" != "Rust advisory check failed: python3 is required" ]]; then
+  printf 'wrong missing-python3 failure\n%s\n' "$output" >&2
+  exit 1
+fi
+
 invocations="$fixture/cargo-deny-invocations.log"
 output="$(
   PATH="$fixture/test-bin:$PATH" \
