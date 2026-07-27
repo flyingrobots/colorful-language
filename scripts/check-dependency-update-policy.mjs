@@ -8,11 +8,20 @@ import { parse as parseYaml } from "yaml";
 const scriptPath = fileURLToPath(import.meta.url);
 const FULL_SHA = /^[0-9a-f]{40}$/u;
 const EXPECTED_SOURCES = new Map([
-  ["github-actions\u0000/", "github-actions"],
-  ["cargo\u0000/", "cargo"],
-  ["cargo\u0000/editors/zed", "zed-cargo"],
-  ["npm\u0000/", "root-node"],
-  ["npm\u0000/editors/vscode", "vscode"],
+  [
+    "github-actions\u0000/",
+    { group: "github-actions", manualDependencies: [] },
+  ],
+  ["cargo\u0000/", { group: "cargo", manualDependencies: [] }],
+  [
+    "cargo\u0000/editors/zed",
+    { group: "zed-cargo", manualDependencies: [] },
+  ],
+  ["npm\u0000/", { group: "root-node", manualDependencies: ["typescript"] }],
+  [
+    "npm\u0000/editors/vscode",
+    { group: "vscode", manualDependencies: ["typescript"] },
+  ],
 ]);
 
 export class DependencyUpdatePolicyError extends Error {
@@ -91,6 +100,51 @@ function validateUpdateGroup(update, expectedGroup, description) {
   }
 }
 
+function validateManualDependencies(update, expectedDependencies, description) {
+  if (expectedDependencies.length === 0) {
+    if (update.ignore !== undefined) {
+      reject(
+        "E_DEPENDABOT_MANUAL_DEPENDENCY",
+        `${description}: unexpected manual dependency exclusions`,
+      );
+    }
+    return;
+  }
+  if (
+    !Array.isArray(update.ignore) ||
+    update.ignore.length !== expectedDependencies.length
+  ) {
+    reject(
+      "E_DEPENDABOT_MANUAL_DEPENDENCY",
+      `${description}: exact shared dependencies must remain manual`,
+    );
+  }
+  const observed = update.ignore.map((rule) => {
+    if (
+      rule === null ||
+      typeof rule !== "object" ||
+      Object.keys(rule).length !== 1 ||
+      typeof rule["dependency-name"] !== "string"
+    ) {
+      reject(
+        "E_DEPENDABOT_MANUAL_DEPENDENCY",
+        `${description}: manual dependency exclusions must name one dependency`,
+      );
+    }
+    return rule["dependency-name"];
+  });
+  if (
+    observed
+      .toSorted()
+      .some((dependency, index) => dependency !== expectedDependencies[index])
+  ) {
+    reject(
+      "E_DEPENDABOT_MANUAL_DEPENDENCY",
+      `${description}: exact shared dependencies must remain manual`,
+    );
+  }
+}
+
 function validateDependabot(dependabot) {
   if (dependabot?.version !== 2) {
     reject(
@@ -108,8 +162,8 @@ function validateDependabot(dependabot) {
   const observed = new Set();
   for (const update of dependabot.updates) {
     const key = sourceKey(update);
-    const expectedGroup = EXPECTED_SOURCES.get(key);
-    if (expectedGroup === undefined || observed.has(key)) {
+    const expected = EXPECTED_SOURCES.get(key);
+    if (expected === undefined || observed.has(key)) {
       reject(
         "E_DEPENDABOT_SOURCE",
         "dependabot.yml contains an unexpected or duplicate update source",
@@ -119,7 +173,12 @@ function validateDependabot(dependabot) {
     const [ecosystem, directory] = key.split("\u0000");
     validateUpdateGroup(
       update,
-      expectedGroup,
+      expected.group,
+      `${ecosystem} at ${directory}`,
+    );
+    validateManualDependencies(
+      update,
+      expected.manualDependencies,
       `${ecosystem} at ${directory}`,
     );
   }

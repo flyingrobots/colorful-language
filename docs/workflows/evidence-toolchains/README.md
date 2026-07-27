@@ -81,8 +81,8 @@ Dependabot opens five independent weekly groups from
 | `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
 | `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
-| `root-node` | Root evidence tooling and lockfile | Evidence-tooling revert |
-| `vscode` | VS Code adapter packages and lockfile | Editor-adapter revert |
+| `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
+| `vscode` | VS Code packages except TypeScript | Editor-adapter revert |
 
 Do not combine these groups. Their evidence, failure modes, and rollback scopes
 differ. Issue
@@ -99,8 +99,10 @@ gate before merging.
 
 Changing a primary Rust, Node, or TypeScript evidence release remains a manual
 policy change: update every authority and current reference named above in the
-same reviewed pull request. A Dependabot lockfile update must not silently
-change those exact declarations.
+same reviewed pull request. Both npm update sources explicitly ignore
+`typescript`, because an independent root or VS Code update cannot satisfy the
+cross-graph exact-version invariant. A Dependabot lockfile update must not
+silently change those exact declarations.
 
 Run the update-policy evidence directly with:
 
@@ -112,8 +114,9 @@ node scripts/check-dependency-update-policy.mjs
 
 The mutation suite rejects a floating action ref, a missing action-version
 comment, any missing, duplicate, or unexpected update source, a non-weekly
-cadence, and group-name or wildcard-pattern drift. The live check scans every
-workflow file, including workflows added later.
+cadence, group-name or wildcard-pattern drift, and any attempt to automate one
+side of the shared TypeScript pin. The live check scans every workflow file,
+including workflows added later.
 
 The complete requirements and evidence map live in the
 [evidence-toolchain test plan](test-plan.md).

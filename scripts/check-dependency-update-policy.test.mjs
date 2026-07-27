@@ -46,6 +46,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: typescript
     groups:
       root-node:
         patterns:
@@ -54,6 +56,8 @@ updates:
     directory: /editors/vscode
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: typescript
     groups:
       vscode:
         patterns:
@@ -196,6 +200,25 @@ test("rejects a partial dependency group pattern", () => {
   expectCode(({ dependabot }) => {
     dependabot.updates[0].groups["github-actions"].patterns = ["actions/*"];
   }, "E_DEPENDABOT_GROUP");
+});
+
+test("rejects automatic root TypeScript updates", () => {
+  expectCode(({ dependabot }) => {
+    delete dependabot.updates.find(
+      (update) =>
+        update["package-ecosystem"] === "npm" && update.directory === "/",
+    ).ignore;
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects automatic VS Code TypeScript updates", () => {
+  expectCode(({ dependabot }) => {
+    delete dependabot.updates.find(
+      (update) =>
+        update["package-ecosystem"] === "npm" &&
+        update.directory === "/editors/vscode",
+    ).ignore;
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
 });
 
 test("the checked-in update and workflow policy passes", () => {

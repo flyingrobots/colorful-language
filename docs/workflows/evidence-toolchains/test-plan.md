@@ -34,7 +34,7 @@ Canonical issues:
   updates by review and rollback boundary without creating competing cadences.
 - **ETC-9** Deterministic policy evidence must reject floating action
   references, missing action-release comments, and dependency-update ecosystem,
-  directory, cadence, or grouping drift.
+  directory, cadence, grouping, or manual shared-dependency drift.
 
 ## Cases
 
@@ -101,9 +101,10 @@ Canonical issues:
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite
   removes or changes each protected field independently. *Oracle:* every
-  mutation is rejected with its intended stable error category, while the
-  reviewed configuration passes. *Evidence type:* executable policy checker,
-  mutation test, CI step, and release-preparation gate. *Evidence:*
+  mutation is rejected with its intended stable error category, including
+  removal of either npm source's manual TypeScript exclusion, while the reviewed
+  configuration passes. *Evidence type:* executable policy checker, mutation
+  test, CI step, and release-preparation gate. *Evidence:*
   `scripts/check-dependency-update-policy.mjs`,
   `scripts/check-dependency-update-policy.test.mjs`, the `docs` job in
   `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*

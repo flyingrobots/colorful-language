@@ -28,6 +28,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: typescript
     groups:
       root-node:
         patterns:
@@ -36,6 +38,8 @@ updates:
     directory: /editors/vscode
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: typescript
     groups:
       vscode:
         patterns:
