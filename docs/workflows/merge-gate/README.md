@@ -21,7 +21,11 @@ active and requires:
   - `Rust (fmt, clippy, test)`;
   - `Cargo package witness`;
   - `IR cross-language round-trip witness`;
-  - `Editor integrations (compile)`.
+  - `Editor integrations (compile)`;
+  - `Rust dependency policy`;
+  - `Dependency review`;
+  - `CodeQL (rust)`; and
+  - `CodeQL (javascript-typescript)`.
 
 Each required check is pinned to GitHub Actions application `15368`. Strict
 freshness is enabled, so GitHub requires the pull request to be tested with the
@@ -32,7 +36,7 @@ GitHub also reports a pre-existing classic branch-protection layer that requires
 the `CodeRabbit` status from application `347564`. That layer is not part of
 ruleset `17949589`, is not applied by the manifest, and was not changed by this
 workflow. GitHub combines both layers, so the effective normal merge path
-requires the five ruleset contexts and the classic CodeRabbit context.
+requires the nine ruleset contexts and the classic CodeRabbit context.
 
 The existing repository-role bypass actor remains actor `5` in `always` mode.
 It is a recovery capability, not the normal merge path. Changing that actor or
@@ -112,7 +116,7 @@ node scripts/check-main-ruleset.mjs
 ```
 
 Inspect the pull request's required checks and merge state before merging. A
-normal merge requires all five ruleset contexts and every coexisting classic
+normal merge requires all nine ruleset contexts and every coexisting classic
 requirement to pass, and it must not use the repository role's bypass.
 
 ## Rename or retire a required context
@@ -131,7 +135,7 @@ For a planned rename:
    jobs in place during this ruleset-migration pull request.
 5. Review the complete live-ruleset snapshot and manifest diff.
 6. Apply the manifest with the command above.
-7. Run the live checker and wait for all five required contexts on the migration
+7. Run the live checker and wait for all nine required contexts on the migration
    pull request.
 8. Merge the ruleset-migration pull request normally.
 9. Remove the old compatibility job in a separate pull request after the new
@@ -147,7 +151,7 @@ For an unplanned missing context:
    manifest.
 4. Update the workflow, manifest, and reference on a branch.
 5. Apply only the reviewed manifest, then run the live checker.
-6. Require the replacement context and the other four checks to pass before a
+6. Require the replacement context and the other eight checks to pass before a
    normal merge.
 
 If the branch cannot produce either the old or replacement context, stop and

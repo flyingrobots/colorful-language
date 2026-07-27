@@ -101,7 +101,9 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   omitted or renamed context, and the privileged live checker reports full
   parity without changing the bypass actor. *Evidence type:* deterministic
   ruleset test, source-controlled manifest, and privileged live API check.
-  *Status:* planned.
+  *Evidence:* `.github/rulesets/mainline.json`,
+  `scripts/check-main-ruleset.test.mjs`, and
+  `scripts/check-main-ruleset.mjs`. *Status:* implemented.
 - **RM-5a — Useful CodeQL coverage.** *Requirement:* RM-5. *Behavior:* one
   advanced CodeQL workflow analyzes Rust and JavaScript/TypeScript with the
   supported build mode on pull requests, default-branch pushes, and weekly

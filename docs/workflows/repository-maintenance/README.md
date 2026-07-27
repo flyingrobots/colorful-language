@@ -66,7 +66,9 @@ and manual recovery:
 
 The same repository-policy mutation tests run in the required documentation job
 and release preparation. Release preparation also reruns the Rust self-test and
-live dependency scan.
+live dependency scan. The mainline ruleset requires the Rust policy,
+dependency-review, and both CodeQL language contexts, so these hosted failures
+block the normal merge path.
 
 ## Updates and ownership
 

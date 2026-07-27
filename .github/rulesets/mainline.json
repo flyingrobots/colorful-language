@@ -67,6 +67,22 @@
           {
             "context": "Editor integrations (compile)",
             "integration_id": 15368
+          },
+          {
+            "context": "Rust dependency policy",
+            "integration_id": 15368
+          },
+          {
+            "context": "Dependency review",
+            "integration_id": 15368
+          },
+          {
+            "context": "CodeQL (rust)",
+            "integration_id": 15368
+          },
+          {
+            "context": "CodeQL (javascript-typescript)",
+            "integration_id": 15368
           }
         ],
         "strict_required_status_checks_policy": true
