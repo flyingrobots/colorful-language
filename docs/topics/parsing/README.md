@@ -21,7 +21,8 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
   `N` is any Unicode numeric character. This accepts `150`, `3.14`, `1,000`,
   `1.234,56`, and Unicode numerics such as `٣.١٤`. Every separator must have
   numeric characters on both sides: `1..2` becomes `1`, `..`, `2`, while `.5`
-  becomes `.`, `5`.
+  becomes `.`, `5`. The shared scanner—not the Unicode tables compiled into
+  the lexer—decides whether a numeric token starts.
 - **Sentences.** A run of `.`/`!`/`?` ends a sentence (the terminator is the
   sentence's last child). Text with no terminator flushes as a single trailing
   sentence. A closing quote or bracket sitting *immediately* after the terminator

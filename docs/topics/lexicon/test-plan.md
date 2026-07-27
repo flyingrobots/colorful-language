@@ -122,15 +122,16 @@ lives in `crates/colorful-lexicon/src/lib.rs`.
   16 tables. *Oracle:* exhaustive equality among parser `Word`, scanner
   whole-token acceptance, and lexicon `Number`, plus typed malformed-token
   fixtures. *Evidence type:* typed table-driven regression plus deterministic
-  exhaustive Unicode property test. *Planned evidence:*
-  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv` and
-  `crates/colorful-parse/tests/numeric_parity.rs`. *Tracking:*
+  exhaustive Unicode property test. *Evidence:*
+  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv`;
+  `crates/colorful-parse/tests/numeric_parity.rs`
+  (`parser_and_lexicon_share_the_numeric_matrix` and
+  `every_unicode_numeric_scalar_has_parser_lexicon_parity`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps
 
 - No regression fixture yet asserting the full word list; the size floor and
   per-kind samples are the current guard. The duplicate-key check is enforced at
   compile time by `phf`.
-- Exhaustive Unicode-table and parser-node-kind parity remains open in LEX-11b.

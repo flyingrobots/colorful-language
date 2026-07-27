@@ -98,11 +98,13 @@ lives in `crates/colorful-parse/src/lib.rs`.
   `Node::Word`; the scanner accepts the whole scalar; the lexicon returns
   `Number`. Malformed matrix rows retain their exact `Word`/`Punct` sequence.
   *Evidence type:* typed table-driven regression plus deterministic exhaustive
-  Unicode property test. *Planned evidence:*
-  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv` and
-  `crates/colorful-parse/tests/numeric_parity.rs`. *Tracking:*
+  Unicode property test. *Evidence:*
+  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv`;
+  `crates/colorful-parse/tests/numeric_parity.rs`
+  (`parser_and_lexicon_share_the_numeric_matrix` and
+  `every_unicode_numeric_scalar_has_parser_lexicon_parity`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
-  *Status:* planned.
+  *Status:* implemented.
 - **PAR-8a** — *Requirement:* PAR-8. *Behavior:* a bounded seeded corpus drives
   arbitrary valid Unicode and known parser regressions through parsing and
   source reconstruction in normal CI. *Oracle:* no panic; every accepted span
@@ -116,5 +118,4 @@ lives in `crates/colorful-parse/src/lib.rs`.
 
 - No fixtures yet for deeply nested punctuation or clause boundaries; deferred
   until structure deepens beyond `v0`.
-- Unicode-table and parser-node-kind parity remains open in PAR-7b.
 - Bounded deterministic fuzz/property evidence remains open in PAR-8a.

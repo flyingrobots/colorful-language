@@ -17,14 +17,16 @@
 use colorful_core::{numeric_prefix_len, Node, Parser, PassIdentity, Span, Tree};
 use logos::Logos;
 
-fn lex_number(lexer: &mut logos::Lexer<'_, Tok>) {
+fn extend_numeric_error(lexer: &mut logos::Lexer<'_, Tok>) -> bool {
     let start = lexer.span().start;
     let initial_length = lexer.slice().len();
-    if let Some(token_length) =
-        numeric_prefix_len(&lexer.source()[start..]).filter(|length| *length >= initial_length)
-    {
-        lexer.bump(token_length - initial_length);
-    }
+    let Some(additional_length) = numeric_prefix_len(&lexer.source()[start..])
+        .and_then(|token_length| token_length.checked_sub(initial_length))
+    else {
+        return false;
+    };
+    lexer.bump(additional_length);
+    true
 }
 
 /// Mechanical token kinds produced by the lexer.
@@ -33,13 +35,9 @@ fn lex_number(lexer: &mut logos::Lexer<'_, Tok>) {
 enum Tok {
     /// A letter-initial word, allowing internal digits, apostrophes, and hyphens
     /// (`don't`, `well-being`, `covid19`, `H2O`). A digit-initial token is a
-    /// [`Tok::Number`] instead.
+    /// numeric token instead.
     #[regex(r"\p{L}[\p{L}\p{N}]*(?:['\u{2019}\-][\p{L}\p{N}]+)*")]
     Word,
-    /// A numeric token with optional internal separators (`150`, `3.14`,
-    /// `1,000`).
-    #[regex(r"\p{N}", lex_number)]
-    Number,
     /// A run of sentence-ending punctuation (`.`, `!`, `?`, `?!`, `...`).
     #[regex(r"[.!?]+")]
     SentenceEnd,
@@ -83,6 +81,10 @@ impl Parser for ProseParser {
 
         let mut lexer = Tok::lexer(text);
         while let Some(result) = lexer.next() {
+            // Numeric characters deliberately have no Logos pattern. An
+            // unmatched scalar enters the shared scanner, which is therefore
+            // the only Unicode table deciding numeric-token initiation.
+            let is_number = result.is_err() && extend_numeric_error(&mut lexer);
             let range = lexer.span();
             let span = Span::new(range.start, range.end);
             let is_closer =
@@ -109,7 +111,8 @@ impl Parser for ProseParser {
             sent_end = span.end;
 
             match result {
-                Ok(Tok::Word | Tok::Number) => parts.push(Node::Word { span }),
+                Ok(Tok::Word) => parts.push(Node::Word { span }),
+                Err(()) if is_number => parts.push(Node::Word { span }),
                 Ok(Tok::SentenceEnd) => {
                     parts.push(Node::Punct { span });
                     pending_flush = true;
