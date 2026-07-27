@@ -22,7 +22,7 @@ function fail(code, message) {
 function parseVersion(value, code, subject) {
   const match =
     typeof value === "string"
-      ? value.match(/^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/u)
+      ? value.match(/^(\d+)\.(\d+)\.(\d+)$/u)
       : null;
   if (match === null) {
     fail(code, `${subject} must be an X.Y.Z version; found ${String(value)}`);

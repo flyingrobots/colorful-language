@@ -67,6 +67,13 @@ test("rejects a vulnerable locked language client", () => {
   expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_LOCK");
 });
 
+test("rejects a prerelease locked language client", () => {
+  const { editorPackage, lockfile } = fixture();
+  lockfile.packages["node_modules/vscode-languageclient"].version =
+    "10.1.0-next.1";
+  expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_LOCK");
+});
+
 test("rejects a manifest and lockfile dependency mismatch", () => {
   const { editorPackage, lockfile } = fixture();
   lockfile.packages[""].dependencies["vscode-languageclient"] = "^10.2.0";
@@ -82,6 +89,12 @@ test("rejects the last vulnerable brace-expansion release", () => {
 test("rejects the currently locked vulnerable brace-expansion major", () => {
   const { editorPackage, lockfile } = fixture();
   lockfile.packages["node_modules/brace-expansion"].version = "2.1.2";
+  expectCode(editorPackage, lockfile, "E_BRACE_EXPANSION");
+});
+
+test("rejects a prerelease patched brace-expansion", () => {
+  const { editorPackage, lockfile } = fixture();
+  lockfile.packages["node_modules/brace-expansion"].version = "5.0.8-beta.0";
   expectCode(editorPackage, lockfile, "E_BRACE_EXPANSION");
 });
 
