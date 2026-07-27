@@ -15,6 +15,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 inventory="$tmp/inventory"
 exception_roots="$tmp/exception-roots"
+excluded_directories=(.git node_modules target vendor)
 : >"$inventory"
 : >"$exception_roots"
 
@@ -31,6 +32,7 @@ import pathlib
 import sys
 
 repository = pathlib.Path(sys.argv[1]).resolve()
+excluded_directories = set(sys.argv[2:])
 production_kinds = {
     "bin",
     "cdylib",
@@ -46,22 +48,24 @@ for package in metadata["packages"]:
         if production_kinds.intersection(target["kind"]):
             source = pathlib.Path(target["src_path"]).resolve()
             try:
-                print(source.relative_to(repository))
+                relative_source = source.relative_to(repository)
             except ValueError:
                 raise SystemExit(
                     f"first-party target is outside the repository: {source}"
                 )
-' "$root"
+            if excluded_directories.isdisjoint(relative_source.parts):
+                print(relative_source)
+' "$root" "${excluded_directories[@]}"
 }
 
 discover_manifests() {
-  python3 - "$root" <<'PY'
+  python3 - "$root" "${excluded_directories[@]}" <<'PY'
 import os
 import pathlib
 import sys
 
 repository = pathlib.Path(sys.argv[1]).resolve()
-excluded_directories = {".git", "node_modules", "target", "vendor"}
+excluded_directories = set(sys.argv[2:])
 
 for directory, child_directories, files in os.walk(repository, topdown=True):
     child_directories[:] = sorted(
