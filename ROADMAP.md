@@ -60,7 +60,9 @@ through [#175](https://github.com/flyingrobots/colorful-language/issues/175),
 [#150](https://github.com/flyingrobots/colorful-language/issues/150) was
 included in that snapshot because prerequisite
 [PR #184](https://github.com/flyingrobots/colorful-language/pull/184) had not
-yet merged.
+yet merged. The follow-up advisory pass added the independently reviewable
+Zed lockfile remediation
+[#197](https://github.com/flyingrobots/colorful-language/issues/197).
 Each open slice has one primary home below; delivered foundations remain
 visible rather than disappearing from the story. GitHub remains authoritative
 for live issue state. Links in later dependency and architecture tables are
@@ -80,7 +82,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — close the remaining operational loop** | Boundary integrity, stale-LSP protection, and required merge checks have landed; dependency governance and supported LSP capacity must become explicit. | Advance M0 governance (#151, #152, #187) while #122 establishes the LSP service envelope. |
+| **Now — close the remaining operational loop** | Boundary integrity, stale-LSP protection, and required merge checks have landed; dependency governance and supported LSP capacity must become explicit. | Remediate the Zed advisory (#197), then advance M0 governance (#152, #187), while #122 establishes the LSP service envelope. |
 | **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete the remaining M0–M2 queue. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -110,9 +112,11 @@ observe public-contract regressions before they ship.
   [#137](https://github.com/flyingrobots/colorful-language/issues/137) and
   runnable public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-- **Open maintenance governance:** add tested maintenance intake, advisory,
-  license, and dependency review
-  [#152](https://github.com/flyingrobots/colorful-language/issues/152); and
+- **Open maintenance governance:** remediate the Zed adapter's known unsound
+  locked dependency
+  [#197](https://github.com/flyingrobots/colorful-language/issues/197), then
+  add tested maintenance intake, advisory, license, and dependency review
+  [#152](https://github.com/flyingrobots/colorful-language/issues/152), and
   make roadmap issue-state coverage executable
   [#187](https://github.com/flyingrobots/colorful-language/issues/187).
 
