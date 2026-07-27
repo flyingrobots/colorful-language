@@ -49,7 +49,7 @@ jobs:
       - name: Check the live main ruleset contract
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/check-main-ruleset.mjs
+        run: node scripts/check-main-ruleset.mjs --allow-redacted-bypass
 
   rust:
     name: Rust (fmt, clippy, test)

@@ -63,6 +63,11 @@ The `Docs & whitespace` CI job runs both checks. A live policy change that does
 not update the manifest, or a manifest change that has not reached GitHub,
 therefore fails the merge gate.
 
+GitHub redacts `bypass_actors` from the read-only workflow token. CI uses the
+explicit `--allow-redacted-bypass` mode, which accepts only a `null` redaction
+and still rejects any visible actor mismatch. The authenticated maintainer
+command above remains strict and is the authoritative bypass-actor check.
+
 ## Apply a reviewed ruleset change
 
 Warning: the following command immediately changes protection for `main`. Run

@@ -35,9 +35,11 @@ Canonical issue:
   prior deletion, non-fast-forward, signature, pull-request, thread-resolution,
   and repository-role bypass settings remain unchanged. *Oracle:* a
   deterministic checker compares the governed live fields with the manifest and
-  reports the first mismatch using a stable error category. *Evidence type:*
-  ruleset manifest, checker self-test, live API inspection, and CI execution.
-  *Evidence:*
+  reports the first mismatch using a stable error category. The read-only CI
+  token may redact bypass actors; an explicit mode accepts only that `null`
+  redaction, while the privileged maintainer check remains strict.
+  *Evidence type:* ruleset manifest, checker self-test, privileged live API
+  inspection, and CI execution. *Evidence:*
   `.github/rulesets/mainline.json`,
   `scripts/check-main-ruleset.mjs`,
   `scripts/check-main-ruleset.test.mjs`, and the `docs` job in

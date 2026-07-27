@@ -90,7 +90,11 @@ export function makeUpdatePayload(manifest) {
   };
 }
 
-export function validateRuleset(actual, expected = loadManifest()) {
+export function validateRuleset(
+  actual,
+  expected = loadManifest(),
+  { allowRedactedBypass = false } = {},
+) {
   if (actual.id !== expected.ruleset_id) {
     fail(
       "E_RULESET_ID",
@@ -114,7 +118,10 @@ export function validateRuleset(actual, expected = loadManifest()) {
     );
   }
 
+  const bypassIsPermittedRedaction =
+    allowRedactedBypass && actual.bypass_actors === null;
   if (
+    !bypassIsPermittedRedaction &&
     !same(
       sortedActors(actual.bypass_actors ?? []),
       sortedActors(expected.bypass_actors),
@@ -216,7 +223,8 @@ function readInput(path) {
 
 function usage() {
   return [
-    "usage: node scripts/check-main-ruleset.mjs [--input <path|->]",
+    "usage: node scripts/check-main-ruleset.mjs [--allow-redacted-bypass]",
+    "       node scripts/check-main-ruleset.mjs --input <path|-> [--allow-redacted-bypass]",
     "       node scripts/check-main-ruleset.mjs --print-update-payload",
   ].join("\n");
 }
@@ -228,16 +236,27 @@ function main(args) {
     return;
   }
 
+  const redactionFlags = args.filter(
+    (argument) => argument === "--allow-redacted-bypass",
+  );
+  if (redactionFlags.length > 1) {
+    fail("E_USAGE", usage());
+  }
+  const allowRedactedBypass = redactionFlags.length === 1;
+  const modeArgs = args.filter(
+    (argument) => argument !== "--allow-redacted-bypass",
+  );
+
   let actual;
-  if (args.length === 0) {
+  if (modeArgs.length === 0) {
     actual = readLiveRuleset(manifest);
-  } else if (args.length === 2 && args[0] === "--input") {
-    actual = readInput(args[1]);
+  } else if (modeArgs.length === 2 && modeArgs[0] === "--input") {
+    actual = readInput(modeArgs[1]);
   } else {
     fail("E_USAGE", usage());
   }
 
-  validateRuleset(actual, manifest);
+  validateRuleset(actual, manifest, { allowRedactedBypass });
   process.stdout.write(
     `merge-gate: OK ruleset ${manifest.ruleset_id} matches the manifest\n`,
   );
