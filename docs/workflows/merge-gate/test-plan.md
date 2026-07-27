@@ -1,0 +1,56 @@
+# Merge-gate test plan
+
+Verification for the protected `main` branch, its required evidence, and safe
+recovery when a required check changes identity.
+
+Canonical issue:
+[#150](https://github.com/flyingrobots/colorful-language/issues/150).
+
+## Requirements
+
+- **MG-1** The active default-branch ruleset must require the five authoritative
+  CI contexts for documentation, Rust, package publication, IR interoperability,
+  and editor compilation.
+- **MG-2** Each required context must come from the GitHub Actions application,
+  and pull requests must be tested against the latest default-branch state.
+- **MG-3** Adding required checks must preserve the existing deletion,
+  non-fast-forward, signed-commit, merge-only pull-request, review-thread, and
+  bypass-actor policies.
+- **MG-4** A pull request with a failing required check must be blocked without
+  bypass, while a representative pull request with all required checks passing
+  must remain eligible for a normal merge.
+- **MG-5** Maintainers must have an exact, reviewable recovery procedure for a
+  renamed or retired required context without weakening unrelated protections.
+- **MG-6** Repository evidence must detect live ruleset drift with stable failure
+  categories and a source-controlled desired-state manifest.
+
+## Cases
+
+- **MG-1a** — *Requirements:* MG-1, MG-2, MG-3, MG-6. *Behavior:* the
+  source-controlled `mainline` manifest and live ruleset require
+  `Docs & whitespace`, `Rust (fmt, clippy, test)`, `Cargo package witness`,
+  `IR cross-language round-trip witness`, and
+  `Editor integrations (compile)` from GitHub Actions application `15368`,
+  with strict default-branch freshness. The prior deletion, non-fast-forward,
+  signature, pull-request, thread-resolution, and repository-role bypass
+  settings remain unchanged. *Oracle:* a deterministic checker compares the
+  governed live fields with the manifest and reports the first mismatch using a
+  stable error category. *Evidence type:* ruleset manifest, checker self-test,
+  live API inspection, and CI execution. *Status:* planned.
+- **MG-2a** — *Requirement:* MG-4. *Behavior:* a disposable pull request whose
+  documentation check fails is reported as blocked even after its other
+  required checks finish; no bypass merge is attempted. *Oracle:* the pull
+  request check rollup names the failing required context and GitHub reports a
+  blocked merge state. *Evidence type:* disposable GitHub pull request and
+  ruleset evaluation. *Status:* planned.
+- **MG-2b** — *Requirement:* MG-4. *Behavior:* the real slice pull request
+  remains normally merge-eligible after all five required contexts pass.
+  *Oracle:* GitHub reports all required checks successful and a clean merge
+  state without an administrative override. *Evidence type:* GitHub pull
+  request check rollup and ruleset evaluation. *Status:* planned.
+- **MG-3a** — *Requirement:* MG-5. *Behavior:* the current workflow reference
+  gives exact planned-rename and emergency-recovery procedures that preserve
+  every unrelated rule and verify the replacement context's source before
+  changing the live requirement. *Oracle:* documentation inspection and the
+  executable live-contract check after recovery. *Evidence type:* current
+  workflow reference and checker. *Status:* planned.
