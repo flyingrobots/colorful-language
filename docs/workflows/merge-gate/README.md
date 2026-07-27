@@ -28,6 +28,12 @@ freshness is enabled, so GitHub requires the pull request to be tested with the
 latest default-branch state. Merge `origin/main` into a behind feature branch;
 do not rewrite shared history.
 
+GitHub also reports a pre-existing classic branch-protection layer that requires
+the `CodeRabbit` status from application `347564`. That layer is not part of
+ruleset `17949589`, is not applied by the manifest, and was not changed by this
+workflow. GitHub combines both layers, so the effective normal merge path
+requires the five ruleset contexts and the classic CodeRabbit context.
+
 The existing repository-role bypass actor remains actor `5` in `always` mode.
 It is a recovery capability, not the normal merge path. Changing that actor or
 its mode requires explicit owner approval.
@@ -100,8 +106,8 @@ node scripts/check-main-ruleset.mjs
 ```
 
 Inspect the pull request's required checks and merge state before merging. A
-normal merge requires all five contexts to pass and must not use the repository
-role's bypass.
+normal merge requires all five ruleset contexts and every coexisting classic
+requirement to pass, and it must not use the repository role's bypass.
 
 ## Rename or retire a required context
 

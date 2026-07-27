@@ -56,10 +56,11 @@ Canonical issue:
   [30249653591](https://github.com/flyingrobots/colorful-language/actions/runs/30249653591);
   its remote branch was deleted after the proof. *Status:* implemented.
 - **MG-2b** — *Requirement:* MG-4. *Behavior:* the real slice pull request
-  remains normally merge-eligible after all five required contexts pass.
-  *Oracle:* GitHub reports all required checks successful and a clean merge
-  state without an administrative override. *Evidence type:* GitHub pull
-  request check rollup and ruleset evaluation. *Status:* planned.
+  remains normally merge-eligible after all five ruleset contexts and the
+  pre-existing classic CodeRabbit requirement pass. *Oracle:* GitHub reports
+  all effective required checks successful and a clean merge state without an
+  administrative override. *Evidence type:* GitHub pull request check rollup
+  and ruleset evaluation. *Status:* planned.
 - **MG-3a** — *Requirement:* MG-5. *Behavior:* the current workflow reference
   gives exact planned-rename and emergency-recovery procedures that preserve
   every unrelated rule and verify the replacement context's source before
@@ -82,3 +83,7 @@ other field.
 | Commit protection | verified signatures | unchanged |
 | Pull-request policy | merge commits only, stale approvals dismissed, all threads resolved, no required approval count | unchanged |
 | Required checks | none | five named contexts, GitHub Actions application `15368`, strict freshness, enforced on creation |
+
+The update endpoint for this slice was the repository-ruleset endpoint only. A
+separate classic branch-protection layer requiring CodeRabbit application
+`347564` was not mutated and remains part of GitHub's effective merge gate.
