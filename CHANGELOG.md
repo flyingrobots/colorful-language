@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Grouped, mutation-tested dependency updates.** One weekly Dependabot policy
+  now keeps GitHub Actions, the root and standalone Zed Cargo workspaces, root
+  Node evidence tooling, and the VS Code adapter in separate review and
+  rollback groups. A deterministic checker scans every workflow for full-SHA
+  action references and same-line release comments by parsed YAML key rather
+  than source formatting, rejects update-source, cadence, grouping, or manual
+  shared-dependency drift, and runs in CI and release preparation. Both npm
+  lanes exclude TypeScript so its exact cross-graph evidence pin advances only
+  in one coordinated manual change. Remote Docker actions must use immutable
+  SHA-256 image digests with same-line image-version comments rather than
+  mutable tags.
 - **Enforced protected-branch CI contract.** The live `mainline` ruleset now
   requires the documentation, Rust, Cargo package, IR round-trip, and editor
   compilation GitHub Actions contexts with strict default-branch freshness.

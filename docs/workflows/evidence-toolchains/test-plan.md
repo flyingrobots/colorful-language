@@ -3,8 +3,9 @@
 Verification for deterministic Rust, Node, and TypeScript evidence toolchains,
 an explicitly separate MSRV policy, and advisory forward-compatibility lanes.
 
-Canonical issue:
-[#147](https://github.com/flyingrobots/colorful-language/issues/147).
+Canonical issues:
+[#147](https://github.com/flyingrobots/colorful-language/issues/147) and
+[#151](https://github.com/flyingrobots/colorful-language/issues/151).
 
 ## Requirements
 
@@ -28,6 +29,13 @@ Canonical issue:
 - **ETC-7** The operational reference must document version ownership,
   compatibility semantics, update cadence, and the response to an advisory
   compatibility failure.
+- **ETC-8** Weekly dependency automation must group GitHub Actions, the root
+  Cargo workspace, the standalone Zed Cargo workspace, root Node, and VS Code
+  updates by review and rollback boundary without creating competing cadences.
+- **ETC-9** Deterministic policy evidence must reject floating action
+  references, mutable Docker action tags, missing action-release comments, and
+  dependency-update ecosystem, directory, cadence, grouping, or manual
+  shared-dependency drift.
 
 ## Cases
 
@@ -79,3 +87,28 @@ Canonical issue:
   rejected for its intended reason. *Evidence type:* executable policy checker
   and CI step. *Evidence:* `scripts/check-evidence-toolchains.mjs` and the
   `docs` job in `.github/workflows/ci.yml`. *Status:* implemented.
+- **ETC-6a** — *Requirement:* ETC-8. *Behavior:* one Dependabot configuration
+  schedules weekly grouped updates for GitHub Actions, the root Cargo
+  workspace, the standalone Zed Cargo workspace, root Node evidence
+  dependencies, and the VS Code adapter's separate Node graph. Each source has
+  one named group and one cadence. *Oracle:* structural inspection finds
+  exactly the expected ecosystem/directory pairs, including both Cargo
+  workspaces, weekly schedules, and risk-separated group names with no
+  duplicate pair or extra update source. *Evidence type:* repository
+  configuration and deterministic policy test. *Evidence:*
+  `.github/dependabot.yml` and
+  `scripts/check-dependency-update-policy.test.mjs`. *Status:* implemented.
+- **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
+  policy checker preserves full-SHA third-party action references with release
+  comments and the exact Dependabot source/group matrix. Its mutation suite
+  removes or changes each protected field independently. *Oracle:* every
+  mutation is rejected with its intended stable error category, including
+  removal of either npm source's manual TypeScript exclusion and legal alternate
+  YAML spellings of an unsafe `uses` key, plus mutable or uncommented Docker
+  action references, while the reviewed configuration passes. *Evidence type:*
+  executable policy checker, mutation test, CI step, and release-preparation
+  gate. *Evidence:*
+  `scripts/check-dependency-update-policy.mjs`,
+  `scripts/check-dependency-update-policy.test.mjs`, the `docs` job in
+  `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*
+  implemented.

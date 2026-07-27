@@ -99,6 +99,9 @@ observe public-contract regressions before they ship.
   exact Rust, Node, and TypeScript evidence pins with separate advisory
   compatibility lanes
   ([#147](https://github.com/flyingrobots/colorful-language/issues/147)); and
+  full-SHA action references plus weekly, rollback-separated dependency update
+  groups
+  ([#151](https://github.com/flyingrobots/colorful-language/issues/151)); and
   required green checks on the protected branch
   ([#150](https://github.com/flyingrobots/colorful-language/issues/150),
   delivered through
@@ -107,10 +110,8 @@ observe public-contract regressions before they ship.
   [#137](https://github.com/flyingrobots/colorful-language/issues/137) and
   runnable public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-- **Open merge and dependency governance:** pin actions and group dependency
-  updates
-  [#151](https://github.com/flyingrobots/colorful-language/issues/151); add
-  tested maintenance intake, advisory, license, and dependency review
+- **Open maintenance governance:** add tested maintenance intake, advisory,
+  license, and dependency review
   [#152](https://github.com/flyingrobots/colorful-language/issues/152); and
   make roadmap issue-state coverage executable
   [#187](https://github.com/flyingrobots/colorful-language/issues/187).

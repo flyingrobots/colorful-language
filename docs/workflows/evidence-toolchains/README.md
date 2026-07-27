@@ -71,5 +71,57 @@ primary workflows, fixed selectors in the compatibility workflow, and a
 silently declared MSRV. The weekly advisory lane supplies the forward signal;
 it never silently rewrites the reviewed evidence versions.
 
+## Reviewing dependency updates
+
+Dependabot opens five independent weekly groups from
+`.github/dependabot.yml`:
+
+| Group | Dependency boundary | Rollback boundary |
+| --- | --- | --- |
+| `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
+| `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
+| `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
+| `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
+| `vscode` | VS Code packages except TypeScript | Editor-adapter revert |
+
+Do not combine these groups. Their evidence, failure modes, and rollback scopes
+differ. Issue
+[#152](https://github.com/flyingrobots/colorful-language/issues/152) may extend
+repository maintenance around this configuration, but this workflow remains the
+single owner of update sources, grouping, and cadence.
+
+For an action update, inspect the upstream release and source commit, retain the
+full 40-character commit SHA in every `uses:` reference, and keep its release
+or source-version comment on the same line. A Docker action is the sole remote
+format exception: use `docker://<image>@sha256:<64 lowercase hex characters>`
+plus the same-line image-version comment; mutable image tags are rejected.
+Local `./` actions remain source-controlled by the repository. For Cargo or
+Node updates, inspect the manifest and lockfile diff for unrelated movement,
+review upstream release and advisory notes, and run the affected gate plus the
+full release-preparation gate before merging.
+
+Changing a primary Rust, Node, or TypeScript evidence release remains a manual
+policy change: update every authority and current reference named above in the
+same reviewed pull request. Both npm update sources explicitly ignore
+`typescript`, because an independent root or VS Code update cannot satisfy the
+cross-graph exact-version invariant. A Dependabot lockfile update must not
+silently change those exact declarations.
+
+Run the update-policy evidence directly with:
+
+```bash
+npm ci
+node --test scripts/check-dependency-update-policy.test.mjs
+node scripts/check-dependency-update-policy.mjs
+```
+
+The mutation suite rejects a floating action ref, a missing action-version
+comment, any missing, duplicate, or unexpected update source, a non-weekly
+cadence, group-name or wildcard-pattern drift, and any attempt to automate one
+side of the shared TypeScript pin. The live check parses the YAML node graph, so
+legal key quoting or whitespace cannot hide a `uses` entry, and scans every
+workflow file, including workflows added later. It also rejects a Docker action
+unless an immutable SHA-256 image digest replaces a mutable tag.
+
 The complete requirements and evidence map live in the
 [evidence-toolchain test plan](test-plan.md).

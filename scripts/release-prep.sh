@@ -33,6 +33,8 @@ bash scripts/package-witness.sh
 bash scripts/smoke-test-install-local.sh
 cargo build --release --locked
 npm ci
+node --test scripts/check-dependency-update-policy.test.mjs
+node scripts/check-dependency-update-policy.mjs
 node scripts/check-vscode-dependency-policy.test.mjs
 node scripts/check-vscode-dependency-policy.mjs
 npm --prefix editors/vscode ci
