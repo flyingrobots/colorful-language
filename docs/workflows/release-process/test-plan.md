@@ -33,6 +33,16 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-4a** — *Requirement:* REL-4. *Behavior:* crates publish from leaf
   dependencies to dependents. *Oracle:* workflow source review. *Evidence:*
   `.github/workflows/release.yml`; `docs/RELEASING.md`. *Status:* implemented.
+- **REL-4b** — *Requirement:* REL-4. *Behavior:* the release profile and tag
+  workflow declare the same complete, duplicate-free publish list, and every
+  internal normal, build, or dev dependency precedes its dependent. This
+  includes the versioned lexicon-before-parse and LSP-before-CLI dev-dependency
+  edges. *Oracle:* a deterministic checker derives internal edges from
+  `cargo metadata`, parses both declared orders, and rejects reordered,
+  duplicated, missing, or drifted packages in synthetic self-tests. *Evidence
+  type:* release-policy script and mutation self-test. *Planned evidence:*
+  `scripts/check-release-publish-order.mjs` and
+  `scripts/check-release-publish-order.test.mjs`. *Status:* planned.
 - **REL-5a** — *Requirement:* REL-5. *Behavior:* release instructions live in
   `docs/RELEASING.md`; the topic points to it instead of duplicating the full
   runbook. *Oracle:* documentation review. *Evidence:*
