@@ -109,6 +109,8 @@ each page's own status note before trusting a specific finding.
   diff advisory signal and exclusions in CI.
 - [merge gate](workflows/merge-gate/README.md) — protected-branch requirements,
   live ruleset drift evidence, and required-context recovery.
+- [repository maintenance](workflows/repository-maintenance/README.md) — locked
+  Rust advisory coverage across every committed Cargo workspace.
 - [Rust source policy](workflows/rust-source-policy/README.md) — first-party
   unsafe-code declarations, Cargo-target inventory, and reviewed exceptions.
 
