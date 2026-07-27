@@ -68,6 +68,18 @@ This is deliberately not a Cargo manifest.
 EOF
 done
 
+git -C "$fixture" init -q
+git -C "$fixture" add \
+  Cargo.toml \
+  crate/Cargo.toml \
+  editors/zed/Cargo.toml \
+  tools/standalone/Cargo.toml
+
+mkdir -p "$fixture/scratch"
+cat >"$fixture/scratch/Cargo.toml" <<'EOF'
+This untracked scratch manifest must not affect repository policy.
+EOF
+
 mkdir -p "$fixture/test-bin"
 cat >"$fixture/test-bin/cargo-deny" <<'EOF'
 #!/usr/bin/env bash
