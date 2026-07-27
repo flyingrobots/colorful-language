@@ -89,6 +89,20 @@ lives in `crates/colorful-parse/src/lib.rs`.
   (`parser_and_lexicon_share_the_numeric_matrix`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
   *Status:* implemented.
+- **PAR-7b** — *Requirement:* PAR-7. *Behavior:* numeric-token initiation uses
+  the same Unicode predicate as the shared scanner, independent of the Unicode
+  tables compiled into Logos. The parity oracle preserves `Word` versus
+  `Punct`, covers the Unicode 17 numerics absent from regex-syntax 0.8.11's
+  Unicode 16 tables, and exhaustively checks every `char::is_numeric()` scalar
+  as a singleton. *Oracle:* every valid numeric singleton is one exact
+  `Node::Word`; the scanner accepts the whole scalar; the lexicon returns
+  `Number`. Malformed matrix rows retain their exact `Word`/`Punct` sequence.
+  *Evidence type:* typed table-driven regression plus deterministic exhaustive
+  Unicode property test. *Planned evidence:*
+  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv` and
+  `crates/colorful-parse/tests/numeric_parity.rs`. *Tracking:*
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
+  *Status:* planned.
 - **PAR-8a** — *Requirement:* PAR-8. *Behavior:* a bounded seeded corpus drives
   arbitrary valid Unicode and known parser regressions through parsing and
   source reconstruction in normal CI. *Oracle:* no panic; every accepted span
@@ -102,4 +116,5 @@ lives in `crates/colorful-parse/src/lib.rs`.
 
 - No fixtures yet for deeply nested punctuation or clause boundaries; deferred
   until structure deepens beyond `v0`.
+- Unicode-table and parser-node-kind parity remains open in PAR-7b.
 - Bounded deterministic fuzz/property evidence remains open in PAR-8a.

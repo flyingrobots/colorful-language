@@ -114,9 +114,23 @@ lives in `crates/colorful-lexicon/src/lib.rs`.
   (`parser_and_lexicon_share_the_numeric_matrix`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
   *Status:* implemented.
+- **LEX-11b** — *Requirement:* LEX-11. *Behavior:* the lexicon and parser
+  recognize every Rust Unicode numeric scalar through one authoritative
+  predicate even when Logos and the pinned compiler carry different Unicode
+  table versions. The cross-crate oracle preserves parser node kinds and
+  includes the Unicode 17 numerics missing from regex-syntax 0.8.11's Unicode
+  16 tables. *Oracle:* exhaustive equality among parser `Word`, scanner
+  whole-token acceptance, and lexicon `Number`, plus typed malformed-token
+  fixtures. *Evidence type:* typed table-driven regression plus deterministic
+  exhaustive Unicode property test. *Planned evidence:*
+  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv` and
+  `crates/colorful-parse/tests/numeric_parity.rs`. *Tracking:*
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
+  *Status:* planned.
 
 ## Known gaps
 
 - No regression fixture yet asserting the full word list; the size floor and
   per-kind samples are the current guard. The duplicate-key check is enforced at
   compile time by `phf`.
+- Exhaustive Unicode-table and parser-node-kind parity remains open in LEX-11b.
