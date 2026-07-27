@@ -33,6 +33,8 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
 - **RM-7 — Maintenance policy drift.** The repository must reject malformed or
   weakened intake, ownership, dependency, and security configuration before it
   reaches the hosted workflow.
+- **RM-8 — Enforced security results.** Security jobs that claim to reject a
+  pull request must be required default-branch checks, not advisory signals.
 
 ## Cases
 
@@ -92,6 +94,14 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   `.github/workflows/security.yml`,
   `scripts/check-dependency-update-policy.test.mjs`, and
   `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
+- **RM-4b — Required security contexts.** *Requirements:* RM-4, RM-5, RM-8.
+  *Behavior:* the live and checked-in mainline rulesets require Rust dependency
+  policy, dependency review, and both CodeQL language jobs from GitHub Actions
+  application `15368`. *Oracle:* the exact ruleset-payload test rejects an
+  omitted or renamed context, and the privileged live checker reports full
+  parity without changing the bypass actor. *Evidence type:* deterministic
+  ruleset test, source-controlled manifest, and privileged live API check.
+  *Status:* planned.
 - **RM-5a — Useful CodeQL coverage.** *Requirement:* RM-5. *Behavior:* one
   advanced CodeQL workflow analyzes Rust and JavaScript/TypeScript with the
   supported build mode on pull requests, default-branch pushes, and weekly

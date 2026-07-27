@@ -23,6 +23,8 @@ Canonical issue:
   renamed or retired required context without weakening unrelated protections.
 - **MG-6** Repository evidence must detect live ruleset drift with stable failure
   categories and a source-controlled desired-state manifest.
+- **MG-7** A security job that rejects dependency or static-analysis failures
+  must be a required status check rather than an advisory signal.
 
 ## Cases
 
@@ -73,6 +75,14 @@ Canonical issue:
   workflow reference and checker. *Evidence:*
   `docs/workflows/merge-gate/README.md` and
   `scripts/check-main-ruleset.mjs`. *Status:* implemented.
+- **MG-4a** — *Requirement:* MG-7. *Behavior:* the mainline ruleset requires
+  `Rust dependency policy`, `Dependency review`, `CodeQL (rust)`, and
+  `CodeQL (javascript-typescript)` from GitHub Actions application `15368` in
+  addition to the five existing contexts. *Oracle:* the update-payload test
+  rejects omission of any context, and the privileged live checker preserves
+  every non-status rule and the bypass actor while reporting manifest parity.
+  *Evidence type:* deterministic ruleset test, source-controlled manifest, and
+  privileged live API check. *Status:* planned.
 
 ## Ruleset change audit
 
