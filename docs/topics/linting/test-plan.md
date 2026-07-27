@@ -162,8 +162,9 @@ Implemented and planned cases are listed below.
   eligible content/verb token in the reviewed participle table, and any
   entry-specific disambiguation evidence; result-state entries require a
   following lexically classified `by` phrase. *Oracle:* a reviewed development
-  corpus reports exactly 4 true positives, 0 false positives, 9 true negatives,
-  and 0 false negatives; CLI/LSP golden parity includes the named negatives;
+  corpus reports exactly 4 true positives, 0 false positives, 11 true
+  negatives, and 0 false negatives; CLI/LSP golden parity includes the named
+  and temporal negatives;
   the finding message continues to say “candidate”; and documentation states
   that fixture precision is not a held-out product-quality estimate.
   *Evidence type:* deterministic TSV corpus, rule-table unit tests, CLI/LSP

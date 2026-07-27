@@ -395,8 +395,8 @@ fn is_past_participle(word: &str, class: PosClass, has_by_phrase: bool) -> bool 
     }
 }
 
-/// Whether `participle` is followed by an unpunctuated, classified `by WORD`
-/// sequence in the same sentence.
+/// Whether `participle` is followed by an unpunctuated, classified agentive
+/// `by` phrase, with an optional article or determiner.
 fn has_by_phrase(source: &str, participle: Span, following_words: &[(Span, PosClass)]) -> bool {
     let Some(&(by_span, by_class)) = following_words.first() else {
         return false;
