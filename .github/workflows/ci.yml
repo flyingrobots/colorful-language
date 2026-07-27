@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: ".node-version"
+      - name: Install repository policy dependencies
+        run: npm ci
       - name: Self-test the Node-version checker
         run: bash scripts/check-node-version.test.sh
       - name: Check the exact Node evidence version
@@ -34,6 +36,10 @@ jobs:
         run: node scripts/check-evidence-toolchains.mjs --self-test
       - name: Check evidence-toolchain policy
         run: node scripts/check-evidence-toolchains.mjs
+      - name: Self-test dependency-update policy
+        run: node --test scripts/check-dependency-update-policy.test.mjs
+      - name: Check dependency-update policy
+        run: node scripts/check-dependency-update-policy.mjs
       - name: Self-test the release publish-order checker
         run: node scripts/check-release-publish-order.test.mjs
       - name: Self-test the internal-link checker
