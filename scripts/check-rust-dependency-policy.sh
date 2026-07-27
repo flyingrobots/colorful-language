@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Scan every Git-tracked Cargo workspace against the RustSec advisory database.
+# Scan every Git-tracked Cargo workspace against the reviewed dependency policy.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ "${1:-}" == "--root" && $# -eq 2 ]]; then
   root="$(cd "$2" && pwd)"
 elif (( $# != 0 )); then
-  printf 'usage: scripts/check-rust-advisories.sh [--root DIR]\n' >&2
+  printf 'usage: scripts/check-rust-dependency-policy.sh [--root DIR]\n' >&2
   exit 2
 fi
 
 fail() {
-  printf 'Rust advisory check failed: %s\n' "$*" >&2
+  printf 'Rust dependency policy check failed: %s\n' "$*" >&2
   exit 1
 }
 
@@ -95,12 +95,14 @@ done <"$manifest_candidates" | sort -u >"$workspace_manifests"
 
 while IFS= read -r manifest; do
   relative_manifest="${manifest#"$root"/}"
-  printf 'Checking locked Rust advisories for %s\n' "$relative_manifest"
+  printf 'Checking locked Rust dependency policy for %s\n' "$relative_manifest"
   cargo-deny \
     --manifest-path "$manifest" \
     --locked \
-    check advisories
+    check \
+    --config "$root/deny.toml" \
+    advisories licenses sources
 done <"$workspace_manifests"
 
 count="$(wc -l <"$workspace_manifests" | tr -d ' ')"
-printf 'check-rust-advisories passed: %s workspace(s)\n' "$count"
+printf 'check-rust-dependency-policy passed: %s workspace(s)\n' "$count"

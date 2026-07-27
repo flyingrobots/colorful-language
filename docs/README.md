@@ -110,7 +110,8 @@ each page's own status note before trusting a specific finding.
 - [merge gate](workflows/merge-gate/README.md) — protected-branch requirements,
   live ruleset drift evidence, and required-context recovery.
 - [repository maintenance](workflows/repository-maintenance/README.md) — locked
-  Rust advisory coverage across every committed Cargo workspace.
+  Rust dependency policy, actionable intake, ownership, dependency review, and
+  CodeQL.
 - [Rust source policy](workflows/rust-source-policy/README.md) — first-party
   unsafe-code declarations, Cargo-target inventory, and reviewed exceptions.
 

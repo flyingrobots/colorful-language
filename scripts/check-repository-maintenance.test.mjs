@@ -84,6 +84,7 @@ allow = [
   "Unlicense",
   "Zlib",
 ]
+unused-allowed-license = "allow"
 exceptions = []
 
 [sources]
@@ -106,8 +107,8 @@ allow-git = []
               uses: INSTALL_ACTION,
               with: { tool: "cargo-deny@0.18.9" },
             },
-            { run: "bash scripts/check-rust-advisories.test.sh" },
-            { run: "bash scripts/check-rust-advisories.sh" },
+            { run: "bash scripts/check-rust-dependency-policy.test.sh" },
+            { run: "bash scripts/check-rust-dependency-policy.sh" },
           ],
         },
         "dependency-review": {
@@ -171,8 +172,8 @@ allow-git = []
     },
     releasePrep: `node --test scripts/check-repository-maintenance.test.mjs
 node scripts/check-repository-maintenance.mjs
-bash scripts/check-rust-advisories.test.sh
-bash scripts/check-rust-advisories.sh
+bash scripts/check-rust-dependency-policy.test.sh
+bash scripts/check-rust-dependency-policy.sh
 `,
     codeowners: "* @flyingrobots\n",
     ruleset: {
@@ -319,7 +320,7 @@ test("rejects missing CI policy execution", () => {
 test("rejects missing release-preparation policy execution", () => {
   expectCode((candidate) => {
     candidate.releasePrep = candidate.releasePrep.replace(
-      "bash scripts/check-rust-advisories.sh\n",
+      "bash scripts/check-rust-dependency-policy.sh\n",
       "",
     );
   }, "E_RELEASE_PREP");

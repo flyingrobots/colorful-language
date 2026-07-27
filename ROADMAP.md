@@ -82,7 +82,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — close the remaining operational loop** | Boundary integrity, stale-LSP protection, required merge checks, and the known Zed advisory remediation have landed; dependency governance and supported LSP capacity must become explicit. | Advance M0 governance (#152, #187), while #122 establishes the LSP service envelope. |
+| **Now — close the remaining operational loop** | Boundary integrity, stale-LSP protection, required merge checks, Zed advisory remediation, and dependency governance have landed; roadmap drift and supported LSP capacity must become explicit. | Advance M0 roadmap evidence (#187), while #122 establishes the LSP service envelope. |
 | **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete the remaining M0–M2 queue. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -105,7 +105,10 @@ observe public-contract regressions before they ship.
   groups
   ([#151](https://github.com/flyingrobots/colorful-language/issues/151)); the
   first all-workspace advisory scan and Zed lockfile remediation
-  ([#197](https://github.com/flyingrobots/colorful-language/issues/197)); and
+  ([#197](https://github.com/flyingrobots/colorful-language/issues/197));
+  tested maintenance intake, license/source policy, dependency review, CodeQL,
+  and solo-safe ownership
+  ([#152](https://github.com/flyingrobots/colorful-language/issues/152)); and
   required green checks on the protected branch
   ([#150](https://github.com/flyingrobots/colorful-language/issues/150),
   delivered through
@@ -114,10 +117,7 @@ observe public-contract regressions before they ship.
   [#137](https://github.com/flyingrobots/colorful-language/issues/137) and
   runnable public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-- **Open maintenance governance:** add tested maintenance intake, advisory,
-  license, and dependency review
-  [#152](https://github.com/flyingrobots/colorful-language/issues/152), and
-  make roadmap issue-state coverage executable
+- **Open maintenance governance:** make roadmap issue-state coverage executable
   [#187](https://github.com/flyingrobots/colorful-language/issues/187).
 
 **Exit signal:** the documented local gate and the protected-branch gate name

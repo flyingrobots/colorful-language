@@ -21,6 +21,7 @@ Product and user-facing concepts still belong in [`../topics/`](../topics/).
 - [Merge gate](merge-gate/README.md) — default-branch protections, required CI
   contexts, live drift evidence, and safe context migration.
 - [Repository maintenance](repository-maintenance/README.md) — locked Rust
-  advisory coverage across every committed Cargo workspace.
+  dependency policy, actionable intake, ownership, dependency review, and
+  CodeQL.
 - [Rust source policy](rust-source-policy/README.md) — first-party unsafe-code
   declarations, Cargo-target inventory, and reviewed exceptions.

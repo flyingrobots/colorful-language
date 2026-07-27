@@ -35,6 +35,10 @@ cargo build --release --locked
 npm ci
 node --test scripts/check-dependency-update-policy.test.mjs
 node scripts/check-dependency-update-policy.mjs
+node --test scripts/check-repository-maintenance.test.mjs
+node scripts/check-repository-maintenance.mjs
+bash scripts/check-rust-dependency-policy.test.sh
+bash scripts/check-rust-dependency-policy.sh
 node scripts/check-vscode-dependency-policy.test.mjs
 node scripts/check-vscode-dependency-policy.mjs
 npm --prefix editors/vscode ci

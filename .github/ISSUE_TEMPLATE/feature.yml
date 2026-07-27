@@ -1,0 +1,37 @@
+name: Feature proposal
+description: Propose an actionable Colorful product change
+title: "[feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a concrete proposal. Use the Ideas Discussion link on
+        the issue chooser when the design still needs open-ended exploration.
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe who is blocked, the job they are doing, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe observable behavior without prescribing hidden internals.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Explain current workarounds and why they are insufficient.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and acceptance oracle
+      description: Add examples, measurements, or a deterministic success condition.

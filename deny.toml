@@ -1,0 +1,27 @@
+# One dependency policy covers every first-party Cargo workspace. Keep this
+# allowlist narrow: additions require a reviewed license/source decision.
+
+[advisories]
+ignore = []
+
+[licenses]
+allow = [
+  "0BSD",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+confidence-threshold = 0.8
+# One shared policy covers multiple workspaces, so a reviewed license can be
+# present in one lockfile and absent from another without creating noise.
+unused-allowed-license = "allow"
+exceptions = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

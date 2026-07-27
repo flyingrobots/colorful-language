@@ -35,8 +35,8 @@ const REQUIRED_COMMANDS = [
   "node scripts/check-repository-maintenance.mjs",
 ];
 const RUST_POLICY_COMMANDS = [
-  "bash scripts/check-rust-advisories.test.sh",
-  "bash scripts/check-rust-advisories.sh",
+  "bash scripts/check-rust-dependency-policy.test.sh",
+  "bash scripts/check-rust-dependency-policy.sh",
 ];
 
 export class RepositoryMaintenanceError extends Error {
@@ -246,6 +246,19 @@ function validateRustPolicy(source) {
       "E_RUST_LICENSES",
       "deny.toml:licenses.allow",
       "must equal the reviewed Rust SPDX allowlist",
+    );
+  }
+  if (
+    tomlString(
+      licenses,
+      "unused-allowed-license",
+      "E_RUST_LICENSES",
+    ) !== "allow"
+  ) {
+    reject(
+      "E_RUST_LICENSES",
+      "deny.toml:licenses.unused-allowed-license",
+      "must permit reviewed licenses used by a different workspace",
     );
   }
   if (tomlStringArray(licenses, "exceptions", "E_RUST_LICENSES").length) {
