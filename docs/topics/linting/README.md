@@ -51,6 +51,8 @@ The pack is intentionally conservative: every rule reports a *candidate* a write
 can dismiss, and the noisiest heuristic (passive voice) is `Info`, not a warning.
 Findings come back in source order, ties broken by rule code, so the stream is
 reproducible regardless of rule evaluation order.
+Passive analysis joins the ordered syntax leaves and classified tokens with one
+forward cursor; it does not allocate a whole-document token lookup.
 
 ### Passive-voice evidence boundary
 

@@ -191,7 +191,9 @@ Implemented and planned cases are listed below.
   once while retaining exact passive findings. *Evidence type:* deterministic
   unit test. *Tracking:*
   [#138](https://github.com/flyingrobots/colorful-language/issues/138).
-  *Status:* planned.
+  *Evidence:*
+  `colorful_lint::tests::classification_cursor_visits_ordered_tokens_once`.
+  *Status:* implemented.
 - **LINT-12a** — *Requirement:* LINT-12. *Behavior:* the chosen quotation policy
   produces deterministic weak-word findings for balanced, nested, and
   unbalanced straight/curly quotes and is identical across CLI and LSP.

@@ -13,8 +13,6 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use std::collections::BTreeMap;
-
 use colorful_core::{
     Analyzer, Finding, FunctionKind, Node, OpenClassKind, PosClass, Rule, Severity, Span, Token,
     Tree,
@@ -88,6 +86,62 @@ const DEFAULT_WEAK_WORDS: &[&str] = &[
     "totally",
     "definitely",
 ];
+
+/// Monotonic join cursor for ordered syntax leaves and classified tokens.
+struct ClassificationCursor<'a> {
+    tokens: &'a [Token],
+    next: usize,
+    #[cfg(test)]
+    inspected: usize,
+}
+
+impl<'a> ClassificationCursor<'a> {
+    fn new(tokens: &'a [Token]) -> Self {
+        Self {
+            tokens,
+            next: 0,
+            #[cfg(test)]
+            inspected: 0,
+        }
+    }
+
+    fn class_for(&mut self, span: Span) -> Option<PosClass> {
+        loop {
+            let token = self.tokens.get(self.next)?;
+            #[cfg(test)]
+            {
+                self.inspected += 1;
+            }
+            if token.span.end <= span.start {
+                self.next += 1;
+                continue;
+            }
+            if token.span == span {
+                self.next += 1;
+                return Some(token.class);
+            }
+            return None;
+        }
+    }
+
+    #[cfg(test)]
+    fn inspected_tokens(&self) -> usize {
+        self.inspected
+    }
+}
+
+fn collect_classified_words(
+    parts: &[Node],
+    cursor: &mut ClassificationCursor<'_>,
+) -> Vec<(Span, PosClass)> {
+    parts
+        .iter()
+        .filter_map(|part| match part {
+            Node::Word { span } => cursor.class_for(*span).map(|class| (*span, class)),
+            _ => None,
+        })
+        .collect()
+}
 
 /// Tunable thresholds and word lists for the rule pack.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -250,25 +304,13 @@ impl ProseLinter {
         tokens: &[Token],
         out: &mut Vec<Finding>,
     ) {
-        let classes: BTreeMap<(usize, usize), PosClass> = tokens
-            .iter()
-            .map(|token| ((token.span.start, token.span.end), token.class))
-            .collect();
+        let mut classes = ClassificationCursor::new(tokens);
 
         for sentence in sentences {
             let Node::Sentence { parts, .. } = sentence else {
                 continue;
             };
-            let words: Vec<(Span, PosClass)> = parts
-                .iter()
-                .filter_map(|p| match p {
-                    Node::Word { span } => classes
-                        .get(&(span.start, span.end))
-                        .copied()
-                        .map(|class| (*span, class)),
-                    _ => None,
-                })
-                .collect();
+            let words = collect_classified_words(parts, &mut classes);
 
             for (aux_index, &(aux, aux_class)) in words.iter().enumerate() {
                 if !is_be_auxiliary(aux.slice(source), aux_class) {
