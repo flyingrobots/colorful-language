@@ -80,6 +80,17 @@ test("preserves the bypass actor before evaluating status checks", () => {
   expectCode(actual, "E_RULESET_BYPASS");
 });
 
+test("accepts API-redacted bypass actors only in explicit CI mode", () => {
+  const actual = liveShape();
+  actual.bypass_actors = null;
+  expectCode(actual, "E_RULESET_BYPASS");
+  assert.doesNotThrow(() =>
+    validateRuleset(actual, loadManifest(), {
+      allowRedactedBypass: true,
+    }),
+  );
+});
+
 test("preserves merge-only pull requests and thread resolution", () => {
   const actual = liveShape();
   rule(actual, "pull_request").parameters.allowed_merge_methods.push("squash");
