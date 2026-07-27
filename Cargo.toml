@@ -19,14 +19,14 @@ colorful-ir = { path = "crates/colorful-ir", version = "0.4.0" }
 colorful-lint = { path = "crates/colorful-lint", version = "0.4.0" }
 colorful-projection = { path = "crates/colorful-projection", version = "0.4.0" }
 
-logos = "0.14"
-phf = { version = "0.11", features = ["macros"] }
+logos = "0.16"
+phf = { version = "0.14", features = ["macros"] }
 ropey = "1.6"
 tower-lsp = "0.20"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "sync", "time"] }
 # Match tower-lsp 0.20's direct dependency so the LSP links one DashMap copy.
-dashmap = "5.5.3"
+dashmap = "6.2.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sha2 = "0.10"
-criterion = "0.5"
+sha2 = "0.11"
+criterion = "0.8"
