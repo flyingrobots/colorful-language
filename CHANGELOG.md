@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **All-workspace Rust advisory evidence.** A single repository command scans
+  the locked dependency graph for both the root Rust workspace and the
+  standalone Zed adapter. The first run exposed and removed the Zed lockfile's
+  `anyhow 1.0.102`, affected by `RUSTSEC-2026-0190`, without broadening the
+  dependency update.
 - **Grouped, mutation-tested dependency updates.** One weekly Dependabot policy
   now keeps GitHub Actions, the root and standalone Zed Cargo workspaces, root
   Node evidence tooling, and the VS Code adapter in separate review and
