@@ -135,6 +135,24 @@ test("rejects an action pin without its release comment", () => {
   }, "E_ACTION_RELEASE_COMMENT");
 });
 
+test("rejects a floating action behind a spaced YAML key", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      "steps:\n  - uses : actions/checkout@v5 # v5\n",
+    );
+  }, "E_ACTION_PIN");
+});
+
+test("rejects a missing comment behind a quoted YAML key", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      `steps:\n  - "uses": actions/checkout@${ACTION_SHA}\n`,
+    );
+  }, "E_ACTION_RELEASE_COMMENT");
+});
+
 test("rejects an unsupported Dependabot schema version", () => {
   expectCode(({ dependabot }) => {
     dependabot.version = 3;

@@ -115,8 +115,9 @@ node scripts/check-dependency-update-policy.mjs
 The mutation suite rejects a floating action ref, a missing action-version
 comment, any missing, duplicate, or unexpected update source, a non-weekly
 cadence, group-name or wildcard-pattern drift, and any attempt to automate one
-side of the shared TypeScript pin. The live check scans every workflow file,
-including workflows added later.
+side of the shared TypeScript pin. The live check parses the YAML node graph, so
+legal key quoting or whitespace cannot hide a `uses` entry, and scans every
+workflow file, including workflows added later.
 
 The complete requirements and evidence map live in the
 [evidence-toolchain test plan](test-plan.md).

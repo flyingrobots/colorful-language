@@ -3,7 +3,12 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { parse as parseYaml } from "yaml";
+import {
+  isScalar,
+  parse as parseYaml,
+  parseDocument,
+  visit,
+} from "yaml";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const FULL_SHA = /^[0-9a-f]{40}$/u;
@@ -44,33 +49,50 @@ function sourceKey(update) {
 
 function validateActionPins(workflows) {
   for (const [file, workflow] of workflows) {
-    for (const [index, line] of workflow.split(/\r?\n/u).entries()) {
-      const value = line.match(
-        /^\s*(?:-\s+)?uses:\s+(.+?)\s*$/u,
-      )?.[1];
-      if (
-        value === undefined ||
-        value.startsWith("./") ||
-        value.startsWith("docker://")
-      ) {
-        continue;
-      }
-      const action = value.match(
-        /^([^@\s]+)@([^\s#]+)(?:\s+#\s*(\S.*))?$/u,
-      );
-      if (action === null || !FULL_SHA.test(action[2])) {
-        reject(
-          "E_ACTION_PIN",
-          `${file}:${index + 1}: third-party actions must use a full commit SHA`,
-        );
-      }
-      if (action[3] === undefined) {
-        reject(
-          "E_ACTION_RELEASE_COMMENT",
-          `${file}:${index + 1}: action pins must retain a release comment`,
-        );
-      }
+    const document = parseDocument(workflow);
+    if (document.errors.length > 0) {
+      reject("E_WORKFLOW_YAML", `${file}: ${document.errors[0].message}`);
     }
+    visit(document, {
+      Pair(_, pair) {
+        if (!isScalar(pair.key) || pair.key.value !== "uses") {
+          return;
+        }
+        if (
+          !isScalar(pair.value) ||
+          typeof pair.value.value !== "string" ||
+          pair.value.range === undefined
+        ) {
+          reject(
+            "E_ACTION_PIN",
+            `${file}: action references must be scalar strings`,
+          );
+        }
+        const value = pair.value.value;
+        if (value.startsWith("./") || value.startsWith("docker://")) {
+          return;
+        }
+        const line =
+          workflow.slice(0, pair.value.range[0]).split(/\r?\n/u).length;
+        const action = value.match(/^([^@\s]+)@([^\s]+)$/u);
+        if (action === null || !FULL_SHA.test(action[2])) {
+          reject(
+            "E_ACTION_PIN",
+            `${file}:${line}: third-party actions must use a full commit SHA`,
+          );
+        }
+        const trailingSource = workflow.slice(
+          pair.value.range[1],
+          pair.value.range[2],
+        );
+        if (!/^[\t ]+#[\t ]*\S/u.test(trailingSource)) {
+          reject(
+            "E_ACTION_RELEASE_COMMENT",
+            `${file}:${line}: action pins must retain a release comment`,
+          );
+        }
+      },
+    });
   }
 }
 

@@ -13,10 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now keeps GitHub Actions, the root and standalone Zed Cargo workspaces, root
   Node evidence tooling, and the VS Code adapter in separate review and
   rollback groups. A deterministic checker scans every workflow for full-SHA
-  action references and same-line release comments, rejects update-source,
-  cadence, grouping, or manual shared-dependency drift, and runs in CI and
-  release preparation. Both npm lanes exclude TypeScript so its exact
-  cross-graph evidence pin advances only in one coordinated manual change.
+  action references and same-line release comments by parsed YAML key rather
+  than source formatting, rejects update-source, cadence, grouping, or manual
+  shared-dependency drift, and runs in CI and release preparation. Both npm
+  lanes exclude TypeScript so its exact cross-graph evidence pin advances only
+  in one coordinated manual change.
 - **Enforced protected-branch CI contract.** The live `mainline` ruleset now
   requires the documentation, Rust, Cargo package, IR round-trip, and editor
   compilation GitHub Actions contexts with strict default-branch freshness.

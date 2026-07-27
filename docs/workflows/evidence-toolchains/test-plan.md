@@ -102,9 +102,10 @@ Canonical issues:
   comments and the exact Dependabot source/group matrix. Its mutation suite
   removes or changes each protected field independently. *Oracle:* every
   mutation is rejected with its intended stable error category, including
-  removal of either npm source's manual TypeScript exclusion, while the reviewed
-  configuration passes. *Evidence type:* executable policy checker, mutation
-  test, CI step, and release-preparation gate. *Evidence:*
+  removal of either npm source's manual TypeScript exclusion and legal alternate
+  YAML spellings of an unsafe `uses` key, while the reviewed configuration
+  passes. *Evidence type:* executable policy checker, mutation test, CI step,
+  and release-preparation gate. *Evidence:*
   `scripts/check-dependency-update-policy.mjs`,
   `scripts/check-dependency-update-policy.test.mjs`, the `docs` job in
   `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*
