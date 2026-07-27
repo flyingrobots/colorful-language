@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   extractProfileOrder,
   extractWorkflowOrder,
+  validateMatchingOrders,
   validatePublishOrder,
 } from "./check-release-publish-order.mjs";
 
@@ -37,7 +38,7 @@ assert.deepEqual(
   ],
 );
 assert.deepEqual(validatePublishOrder(["colorful-core", "colorful-parse"], packages), [
-  "publish order is missing workspace package colorful-lexicon",
+  "publish order is missing publishable workspace package colorful-lexicon",
 ]);
 assert.deepEqual(
   validatePublishOrder(
@@ -45,6 +46,13 @@ assert.deepEqual(
     packages,
   ),
   ["publish order repeats colorful-parse"],
+);
+assert.deepEqual(
+  validatePublishOrder(validOrder, [
+    ...packages,
+    { name: "repository-tool", publish: [], dependencies: [] },
+  ]),
+  [],
 );
 
 const profile = `
@@ -65,5 +73,16 @@ for crate in colorful-core colorful-lexicon colorful-parse; do
 done
 `;
 assert.deepEqual(extractWorkflowOrder(workflow), validOrder);
+assert.deepEqual(validateMatchingOrders(validOrder, validOrder), []);
+assert.deepEqual(
+  validateMatchingOrders(validOrder, [
+    "colorful-core",
+    "colorful-parse",
+    "colorful-lexicon",
+  ]),
+  [
+    "release profile and workflow publish orders differ: profile=colorful-core,colorful-lexicon,colorful-parse workflow=colorful-core,colorful-parse,colorful-lexicon",
+  ],
+);
 
 console.log("check-release-publish-order tests passed");

@@ -72,6 +72,11 @@ the crates.io registry index, so rerunning the workflow after a partial publish
 can continue without moving the tag. The release job timeout is sized for the
 aggregate index-readiness polling window across all eight crates.
 
+PR CI and release preparation derive internal normal, build, and dev
+dependencies from `cargo metadata`, require the release profile and tag
+workflow to declare the same complete publish order, and reject any dependency
+that does not precede its dependent.
+
 The workflow relies on the pre-merge gate for checks that are not repeated on
 tag pushes. Pull-request CI covers Markdown lint, whitespace checks, the IR
 witness, editor integration compile, and release profile validation. Workflow

@@ -34,6 +34,8 @@ jobs:
         run: node scripts/check-evidence-toolchains.mjs --self-test
       - name: Check evidence-toolchain policy
         run: node scripts/check-evidence-toolchains.mjs
+      - name: Self-test the release publish-order checker
+        run: node scripts/check-release-publish-order.test.mjs
       - name: Self-test the internal-link checker
         run: node scripts/check-internal-links.mjs --self-test
       - name: Check internal links and anchors
@@ -52,7 +54,11 @@ jobs:
         with:
           toolchain: "1.97.1"
           components: rustfmt, clippy
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: ".node-version"
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - run: node scripts/check-release-publish-order.mjs
       - run: bash scripts/check-rust-source-policy.test.sh
       - run: bash scripts/check-rust-source-policy.sh
       - run: cargo fmt --all -- --check

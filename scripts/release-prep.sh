@@ -23,6 +23,8 @@ bash scripts/check-node-version.sh
 bash scripts/release-profile-check.sh
 node scripts/check-evidence-toolchains.mjs --self-test
 node scripts/check-evidence-toolchains.mjs
+node scripts/check-release-publish-order.test.mjs
+node scripts/check-release-publish-order.mjs
 
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings

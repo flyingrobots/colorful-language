@@ -403,13 +403,20 @@ The current workflow publishes these crates in dependency order:
 7. `colorful-lsp`
 8. `colorful-cli`
 
-`colorful-lsp` publishes before `colorful-cli` even though it appears later
-alphabetically: `colorful-cli` carries a versioned
-`colorful-lsp = { path = ..., version = "..." }` dev-dependency (used only by
-its lint golden-fixture parity test), and cargo requires a versioned
-dependency — dev or not — to resolve from the registry at publish time.
-`colorful-lsp` has no dependency on `colorful-cli`, so this ordering
-introduces no cycle.
+Cargo requires every versioned dependency, including a dev-dependency, to
+resolve from the registry at publication time. Two test-evidence edges
+therefore constrain the order:
+
+- `colorful-lexicon` publishes before `colorful-parse`, whose numeric parity
+  integration test carries a versioned lexicon dev-dependency.
+- `colorful-lsp` publishes before `colorful-cli`, whose lint parity integration
+  test carries a versioned LSP dev-dependency.
+
+Neither dependency is reversed, so these edges introduce no cycle. PR CI and
+release preparation run `scripts/check-release-publish-order.mjs`, which
+derives every internal normal, build, and dev edge from `cargo metadata`,
+requires the release profile and tag workflow to declare the same order, and
+rejects missing, duplicate, non-publishable, or misordered packages.
 
 It then builds one `x86_64-unknown-linux-gnu` archive containing `colorful`,
 `colorful-lsp`, `README.md`, `LICENSE`, `NOTICE`, and `CHANGELOG.md`, writes a

@@ -28,9 +28,14 @@ Verification for install paths and published artifacts.
   `scripts/package-witness.sh`; CI `Cargo package witness` job. *Status:*
   implemented.
 - **DIST-2a** — *Requirement:* DIST-2. *Behavior:* crates publish in dependency
-  order after a `v*` tag on `main`. *Oracle:* release workflow source and release
-  witness. *Evidence:* `.github/workflows/release.yml`;
-  `docs/RELEASING.md`. *Status:* implemented in workflow.
+  order after a `v*` tag on `main`; the release profile and workflow agree, and
+  every internal normal, build, or dev dependency precedes its dependent.
+  *Oracle:* deterministic metadata-derived policy check, release workflow
+  source, and release witness. *Evidence:*
+  `scripts/check-release-publish-order.mjs`;
+  `scripts/check-release-publish-order.test.mjs`;
+  `.github/workflows/release.yml`; `docs/RELEASING.md`. *Status:* implemented
+  in workflow and PR CI.
 - **DIST-3a** — *Requirement:* DIST-3. *Behavior:* the release archive includes
   the CLI and LSP binaries plus release metadata and checksum files. *Oracle:*
   release workflow source and release witness. *Evidence:*
