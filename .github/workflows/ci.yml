@@ -188,6 +188,11 @@ jobs:
         with:
           node-version-file: ".node-version"
       - run: npm ci
+      - run: node scripts/check-vscode-dependency-policy.test.mjs
+      - run: node scripts/check-vscode-dependency-policy.mjs
+      - run: npm ci
+        working-directory: editors/vscode
+      - run: npm audit --audit-level=high
         working-directory: editors/vscode
       - run: npm run compile
         working-directory: editors/vscode

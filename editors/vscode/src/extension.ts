@@ -9,7 +9,9 @@ import {
 let client: LanguageClient | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
-  const output = vscode.window.createOutputChannel("Colorful Language");
+  const output = vscode.window.createOutputChannel("Colorful Language", {
+    log: true,
+  });
   context.subscriptions.push(output);
 
   const config = vscode.workspace.getConfiguration("colorful");

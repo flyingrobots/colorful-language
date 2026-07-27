@@ -33,7 +33,10 @@ bash scripts/package-witness.sh
 bash scripts/smoke-test-install-local.sh
 cargo build --release --locked
 npm ci
+node scripts/check-vscode-dependency-policy.test.mjs
+node scripts/check-vscode-dependency-policy.mjs
 npm --prefix editors/vscode ci
+npm --prefix editors/vscode audit --audit-level=high
 bash scripts/ir-witness.sh
 bash scripts/check-generated-ir-drift.sh
 bash scripts/check-generated-vocabulary-drift.sh

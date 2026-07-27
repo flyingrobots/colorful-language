@@ -346,6 +346,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **VS Code client dependency resource-exhaustion remediation
+  ([GHSA-mh99-v99m-4gvg](https://github.com/advisories/GHSA-mh99-v99m-4gvg)).**
+  The source extension now uses `vscode-languageclient` 10.1.0, which moves its
+  runtime graph from vulnerable `minimatch` 5.1.9 and `brace-expansion` 2.1.2
+  to patched `minimatch` 10.2.5 and `brace-expansion` 5.0.8. The supported VS
+  Code floor rises from 1.84 to 1.91 to match the client package's declared
+  engine. A deterministic lockfile policy now rejects either vulnerable package
+  floor and an editor/client engine mismatch in CI and release preparation.
 - **`ValidationError`'s `Display` output could carry forged log lines or
   terminal control sequences from an untrusted document.** `contractVersion`,
   the schema/vocabulary/content hash "found" values, and derivation `passId`

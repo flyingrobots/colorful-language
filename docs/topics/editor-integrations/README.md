@@ -18,6 +18,7 @@ The repository currently ships source integrations and recipes:
   highlighting for **Plain Text** and **Markdown**, declares Colorful-owned
   semantic token types, maps them to TextMate scopes for theme fallback, and
   exposes an **Output -> Colorful Language** channel for LSP startup evidence.
+  Its supported language-client release requires VS Code 1.91 or newer.
 - Zed uses the source extension in [`editors/zed/`](../../../editors/zed/).
   The extension registers `colorful-lsp` for Zed's built-in **Plain Text** and
   **Markdown** languages. Users must enable Zed semantic tokens
