@@ -19,7 +19,7 @@ workspace in the repository while pruning `.git`, `node_modules`, `target`, and
 - the root Rust workspace at `Cargo.toml`; and
 - the standalone Zed adapter at `editors/zed/Cargo.toml`.
 
-Both checks use the committed lockfile and the RustSec advisory database.
+Both checks use their workspace lockfile and the RustSec advisory database.
 Vulnerability and unsoundness advisories fail the command. The repository does
 not carry a blanket advisory exception. The checker self-test adds a third
 standalone workspace to prove that a future workspace cannot silently escape
