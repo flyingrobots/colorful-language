@@ -115,7 +115,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `scripts/check-vscode-dependency-policy.test.mjs`,
   `editors/vscode/package.json`, `editors/vscode/package-lock.json`, and the
   editor CI job. *Tracking:*
-  [#152](https://github.com/flyingrobots/colorful-language/issues/152).
+  [#185](https://github.com/flyingrobots/colorful-language/issues/185).
   *Status:* implemented.
 - **EDIT-5a** — *Requirement:* EDIT-5. *Behavior:* recipe docs state that
   marketplace packages are not published and that custom open-class token types
