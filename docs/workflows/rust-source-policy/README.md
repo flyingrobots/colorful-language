@@ -17,9 +17,10 @@ The normal Rust CI job runs:
 bash scripts/check-rust-source-policy.sh
 ```
 
-The checker recursively discovers `Cargo.toml` files, asks `cargo metadata`
-which workspace owns each manifest, deduplicates those workspaces, and obtains
-their target roots from Cargo. It does not maintain parallel workspace or
+The checker recursively discovers `Cargo.toml` files, asks
+`cargo locate-project --workspace` which workspace owns each manifest,
+deduplicates those workspaces, and then obtains each workspace's target roots
+with one `cargo metadata` call. It does not maintain parallel workspace or
 crate-name lists. It inventories the production target kinds `bin`, `cdylib`,
 `dylib`, `lib`, `proc-macro`, `rlib`, and `staticlib`. Development-only
 benchmark, example, and test targets are outside this production-root contract.

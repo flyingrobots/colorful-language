@@ -80,28 +80,27 @@ PY
 
 workspace_manifest_for() {
   local manifest="$1"
-  cargo metadata \
+  cargo locate-project \
+    --workspace \
     --manifest-path "$manifest" \
-    --no-deps \
-    --locked \
-    --format-version 1 |
+    --message-format json |
     python3 -c '
 import json
 import pathlib
 import sys
 
 repository = pathlib.Path(sys.argv[1]).resolve()
-metadata = json.load(sys.stdin)
-workspace = pathlib.Path(metadata["workspace_root"]).resolve()
+workspace_manifest = pathlib.Path(json.load(sys.stdin)["root"]).resolve()
 try:
-    workspace.relative_to(repository)
+    workspace_manifest.relative_to(repository)
 except ValueError:
-    raise SystemExit(f"first-party workspace is outside the repository: {workspace}")
+    raise SystemExit(
+        f"first-party workspace manifest is outside the repository: {workspace_manifest}"
+    )
 
-manifest = workspace / "Cargo.toml"
-if not manifest.is_file():
-    raise SystemExit(f"workspace manifest does not exist: {manifest}")
-print(manifest)
+if not workspace_manifest.is_file():
+    raise SystemExit(f"workspace manifest does not exist: {workspace_manifest}")
+print(workspace_manifest)
 ' "$root"
 }
 

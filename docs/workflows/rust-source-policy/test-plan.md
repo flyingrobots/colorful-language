@@ -74,4 +74,5 @@ Canonical issues:
   *Oracle:* the multi-member fixture records four `locate-project` calls, three
   metadata calls, no member-manifest metadata call, and one metadata call for
   the main workspace root. *Evidence type:* deterministic Cargo-wrapper
-  fixture. *Status:* planned.
+  fixture. *Evidence:* `scripts/check-rust-source-policy.test.sh`. *Status:*
+  implemented.
