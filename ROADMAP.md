@@ -49,21 +49,31 @@ without changing that meaning.
 ## Product maturity runway
 
 The moonshot remains the destination. The maturity runway turns the current
-prototype into a product sturdy enough to carry it. These tracks organize the
-34 non-epic issues open at intake on 2026-07-24. Each issue has one primary home
-below; GitHub remains authoritative for live issue state. Links in later
-dependency and architecture tables are cross-references, not duplicate
-ownership.
+prototype into a product sturdy enough to carry it. These tracks organized the
+34 non-epic issues open at intake on 2026-07-24. The live 2026-07-27 triage
+found 25 open non-epic slices after adding the later idea and maintenance
+issues [#172](https://github.com/flyingrobots/colorful-language/issues/172)
+through [#175](https://github.com/flyingrobots/colorful-language/issues/175),
+[#187](https://github.com/flyingrobots/colorful-language/issues/187), and
+[#188](https://github.com/flyingrobots/colorful-language/issues/188). Issue
+[#150](https://github.com/flyingrobots/colorful-language/issues/150) was
+included in that snapshot because prerequisite
+[PR #184](https://github.com/flyingrobots/colorful-language/pull/184) had not
+yet merged.
+Each open slice has one primary home below; delivered foundations remain
+visible rather than disappearing from the story. GitHub remains authoritative
+for live issue state. Links in later dependency and architecture tables are
+cross-references, not duplicate ownership.
 
 Track order expresses evidence dependencies, not a ban on parallel work. The
-P0 boundary and LSP tracks may advance while repository guardrails land.
+M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 ### Execution order
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — contain operational risk** | Stale LSP work cannot win; malformed producer or wire data cannot become trusted output; the checks used to prove both are reproducible. | Run the critical portions of M0, M1, and M2 together. Characterize first, then refactor behind stable public contracts. |
-| **Next — make quality measurable** | Public binaries, semantic decisions, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete M0–M2. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
+| **Now — close the remaining operational loop** | Boundary integrity, stale-LSP protection, and required merge checks have landed; dependency governance and supported LSP capacity must become explicit. | Advance M0 governance (#151, #152, #187) while #122 establishes the LSP service envelope. |
+| **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete the remaining M0–M2 queue. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -73,28 +83,29 @@ P0 boundary and LSP tracks may advance while repository guardrails land.
 **Reader job:** a maintainer can reproduce the build, trust the merge gate, and
 observe public-contract regressions before they ship.
 
-- **Public-contract evidence:** real CLI/LSP binary process tests
-  [#133](https://github.com/flyingrobots/colorful-language/issues/133),
-  conservative coverage floors
-  [#137](https://github.com/flyingrobots/colorful-language/issues/137), and
-  public API doctests
+- **Delivered foundation:** real CLI/LSP process tests
+  ([#133](https://github.com/flyingrobots/colorful-language/issues/133));
+  first-party unsafe-code policy with automatic standalone-workspace discovery
+  ([#146](https://github.com/flyingrobots/colorful-language/issues/146),
+  [#170](https://github.com/flyingrobots/colorful-language/issues/170)); and
+  exact Rust, Node, and TypeScript evidence pins with separate advisory
+  compatibility lanes
+  ([#147](https://github.com/flyingrobots/colorful-language/issues/147)); and
+  required green checks on the protected branch
+  ([#150](https://github.com/flyingrobots/colorful-language/issues/150),
+  delivered through
+  [PR #184](https://github.com/flyingrobots/colorful-language/pull/184)).
+- **Open public-contract evidence:** add conservative coverage floors
+  [#137](https://github.com/flyingrobots/colorful-language/issues/137) and
+  runnable public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-- **Source and toolchain policy:** enforced first-party unsafe-code policy
-  ([#146](https://github.com/flyingrobots/colorful-language/issues/146)), with
-  automatic standalone-workspace discovery
-  ([#170](https://github.com/flyingrobots/colorful-language/issues/170)), and
-  reviewed Rust, Node, and TypeScript evidence toolchains
-  ([#147](https://github.com/flyingrobots/colorful-language/issues/147)):
-  exact primary evidence pins with separately scheduled forward-compatibility
-  lanes.
-- **Merge and dependency governance:** required green checks
-  ([#150](https://github.com/flyingrobots/colorful-language/issues/150);
-  delivered by [#184](https://github.com/flyingrobots/colorful-language/pull/184)),
-  pinned
-  actions and grouped updates
-  [#151](https://github.com/flyingrobots/colorful-language/issues/151), and
+- **Open merge and dependency governance:** pin actions and group dependency
+  updates
+  [#151](https://github.com/flyingrobots/colorful-language/issues/151); add
   tested maintenance intake, advisory, license, and dependency review
-  [#152](https://github.com/flyingrobots/colorful-language/issues/152).
+  [#152](https://github.com/flyingrobots/colorful-language/issues/152); and
+  make roadmap issue-state coverage executable
+  [#187](https://github.com/flyingrobots/colorful-language/issues/187).
 
 **Exit signal:** the documented local gate and the protected-branch gate name
 the same reproducible evidence; public binary transport and API examples are
@@ -105,30 +116,29 @@ covered; new code cannot silently lower the accepted baseline.
 **User job:** an adapter or independent consumer can reject malformed data
 deterministically and use valid data without reverse-engineering Colorful.
 
-- **Validator maintainability:** keep validation error metadata in one
-  declarative definition
-  [#80](https://github.com/flyingrobots/colorful-language/issues/80), make the
-  complexity budget enforceable or explicitly retire it
-  [#81](https://github.com/flyingrobots/colorful-language/issues/81), and use
-  real mutation evidence where it pays for itself
-  [#82](https://github.com/flyingrobots/colorful-language/issues/82).
-- **Validated producer input:** enforce strict IR graph and token invariants
-  [#126](https://github.com/flyingrobots/colorful-language/issues/126),
-  validate adapter spans and trees
-  [#142](https://github.com/flyingrobots/colorful-language/issues/142), and
-  reject malformed classification input before projection
-  [#144](https://github.com/flyingrobots/colorful-language/issues/144).
-- **Adversarial evidence:** fuzz parser, projection, validation, and coordinate
-  invariants
-  [#134](https://github.com/flyingrobots/colorful-language/issues/134);
-  generate Rust and JavaScript vocabulary validators from one authority
-  [#145](https://github.com/flyingrobots/colorful-language/issues/145); and add
-  process-level negative IR witness legs
-  [#148](https://github.com/flyingrobots/colorful-language/issues/148).
-- **Consumer honesty:** preserve the historical v0.2.0 packet with its dated
-  Graft correction
-  ([#149](https://github.com/flyingrobots/colorful-language/issues/149)), then
-  prove independent consumer value and migration across two contract versions
+- **Delivered foundation:** centralize validation error metadata
+  ([#80](https://github.com/flyingrobots/colorful-language/issues/80)); enforce
+  strict graph, token, adapter, and classification boundaries
+  ([#126](https://github.com/flyingrobots/colorful-language/issues/126),
+  [#142](https://github.com/flyingrobots/colorful-language/issues/142),
+  [#144](https://github.com/flyingrobots/colorful-language/issues/144)); prove
+  Rust/JavaScript validator parity and generate vocabulary validators from one
+  authority
+  ([#83](https://github.com/flyingrobots/colorful-language/issues/83),
+  [#145](https://github.com/flyingrobots/colorful-language/issues/145)); add
+  process-level negative IR witnesses
+  ([#148](https://github.com/flyingrobots/colorful-language/issues/148)); and
+  preserve the historical v0.2.0 packet with its dated Graft correction
+  ([#149](https://github.com/flyingrobots/colorful-language/issues/149)).
+- **Open validator confidence:** make the complexity budget enforceable or
+  explicitly retire it
+  [#81](https://github.com/flyingrobots/colorful-language/issues/81), use real
+  mutation evidence where it pays for itself
+  [#82](https://github.com/flyingrobots/colorful-language/issues/82), and fuzz
+  parser, projection, validation, and coordinate invariants
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+- **Open consumer honesty:** prove independent consumer value and migration
+  across two contract versions
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
 
 **Exit signal:** invalid spans, graphs, identities, hashes, versions, vocabulary,
@@ -141,21 +151,22 @@ IR is cheaper and safer than CLI text or LSP tokens.
 **User job:** editing stays responsive inside a declared document envelope, and
 CLI/LSP findings agree without hiding ambiguity.
 
-- **LSP freshness and capacity:** deliver versioned per-document state,
-  cancellation, caching, debouncing, and limits
-  [#121](https://github.com/flyingrobots/colorful-language/issues/121), then
-  establish the release-mode SLO and overload envelope
-  [#122](https://github.com/flyingrobots/colorful-language/issues/122).
-- **Measured cost:** cross-stage parsing, annotation, lint, IR, semantic-token,
+- **Delivered foundation:** versioned per-document state, cancellation,
+  caching, debouncing, stale-result rejection, and document limits
+  ([#121](https://github.com/flyingrobots/colorful-language/issues/121));
+  Unicode and mixed-line-ending CLI/LSP coordinate parity
+  ([#125](https://github.com/flyingrobots/colorful-language/issues/125)); and
+  evidence-based passive-voice, quotation, and numeric-scanner decisions
+  ([#138](https://github.com/flyingrobots/colorful-language/issues/138),
+  [#139](https://github.com/flyingrobots/colorful-language/issues/139),
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143)).
+- **Open capacity evidence:** establish the release-mode LSP SLO and overload
+  envelope
+  [#122](https://github.com/flyingrobots/colorful-language/issues/122), then
+  complete cross-stage parsing, annotation, lint, IR, semantic-token,
   incremental-edit, and Graft benchmarks
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
-- **Finding and scanner precision:** evidence-based passive-voice decisions
-  [#138](https://github.com/flyingrobots/colorful-language/issues/138),
-  explicit quotation policy for weak words
-  [#139](https://github.com/flyingrobots/colorful-language/issues/139), and
-  parser/lexicon numeric-recognition parity
-  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
-- **Optional comparison adapter:** prototype an external `Analyzer` without
+- **Open comparison adapter:** prototype an external `Analyzer` without
   weakening the pure port or making an engine mandatory
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
 
@@ -169,14 +180,17 @@ CLI and LSP.
 **User job:** a user can install Colorful through a normal channel, verify what
 was installed, and reach the first useful editor result.
 
-- **Compatibility policy:** define adapter/server version ownership and drift
-  checks
-  [#141](https://github.com/flyingrobots/colorful-language/issues/141), and keep
-  the supported VS Code dependency graph outside known high-severity advisory
-  ranges
-  [#185](https://github.com/flyingrobots/colorful-language/issues/185).
-- **Package evidence:** add clean-install editor and scripted LSP transcript
-  tests
+- **Delivered foundation:** restore strict VS Code declaration checking,
+  rationalize compatible Rust dependencies, and keep the supported VS Code
+  dependency graph outside known high-severity advisory ranges
+  ([#123](https://github.com/flyingrobots/colorful-language/issues/123),
+  [#124](https://github.com/flyingrobots/colorful-language/issues/124),
+  [#185](https://github.com/flyingrobots/colorful-language/issues/185)).
+- **Open compatibility policy:** define adapter/server version ownership and
+  drift checks
+  [#141](https://github.com/flyingrobots/colorful-language/issues/141).
+- **Open package evidence:** add clean-install editor and scripted LSP
+  transcript tests
   [#136](https://github.com/flyingrobots/colorful-language/issues/136), then
   publish signed VS Code, Open VSX, Zed, and platform server artifacts with
   rollback evidence
@@ -214,6 +228,27 @@ than architectural momentum.
 expansion pauses; the IR is retained, simplified compatibly, or deliberately
 versioned according to the independent-consumer result.
 
+### Parked experiments — preserve options without stealing the critical path
+
+**Reader job:** a contributor can find worthwhile product experiments without
+mistaking an idea for a committed milestone or an already validated user need.
+
+- Add deterministic project-local lexicon overlays behind the existing ports
+  [#172](https://github.com/flyingrobots/colorful-language/issues/172).
+- Explain token classifications through CLI and LSP hover using one accepted
+  analysis snapshot
+  [#173](https://github.com/flyingrobots/colorful-language/issues/173).
+- Produce a privacy-safe editor and LSP support bundle
+  [#174](https://github.com/flyingrobots/colorful-language/issues/174).
+- Build a zero-install WASM playground from the pure analysis stack
+  [#175](https://github.com/flyingrobots/colorful-language/issues/175).
+- Emit deterministic SARIF for CI-native lint findings
+  [#188](https://github.com/flyingrobots/colorful-language/issues/188).
+
+**Promotion rule:** move an experiment into M0–M4 only when a current user job,
+dependency boundary, and executable proof justify its place. Parking preserves
+the idea; it does not authorize new contract surface or displace the moonshot.
+
 ## Architecture accountability
 
 Architecture is an investment, not a proxy for product evidence. This table
@@ -226,7 +261,7 @@ preserving the deeper destination.
 | `colorful.syntax/v1` surface IR | Move structured analysis across a process/language boundary. | `colorful ir`, current Graft/jedit fixtures, and the IR witness; independent proof planned in #156. | High wire-compatibility cost; preserve v1 bytes unless a reviewed version change is worth it. | **Validate next.** Retain or simplify according to measured consumer cost. |
 | `colorful.vocabulary/v1` | Give every surface one versioned role/key authority. | Current ANSI, LSP, Graft projection, manifest hash checks, and schema-generated validators (#145). | High drift cost across Rust and JavaScript. | **Keep generated.** One schema authority drives both consumers. |
 | `PassIdentity` and derivation trace seed | Identify which parser and annotator produced an artifact. | `colorful-projection`, IR validation, and witness fixtures. | Existing fields are a compatibility obligation; replayable provenance would add substantial contract and cross-system cost. | **Preserve; freeze expansion.** Do not add provenance layers before the deep-end gate. |
-| Graft projection | Give agents a fail-closed structured prose projection. | `consumers/graft-projection.mjs`, parity fixtures, and process witnesses. | Boundary code must reject, never clamp or coerce, malformed artifacts. | **Harden and validate.** Use #148 and #156 before expanding the contract. |
+| Graft projection | Give agents a fail-closed structured prose projection. | `consumers/graft-projection.mjs`, parity fixtures, and process witnesses. | Boundary code must reject, never clamp or coerce, malformed artifacts. | **Boundary hardened; validate value.** #148 supplies negative witnesses; use #156 before expanding the contract. |
 | `colorful-lsp` and editor adapters | Deliver live POS visualization and deterministic diagnostics while a user writes. | Current LSP binary, source VS Code/Zed adapters, and generic clients; packaged smoke tests planned in #136. | High operational cost around freshness, memory, packaging, and version drift. | **Invest now.** M2 and M3 are the shortest path to observed user value. |
 | Contract English | Express unambiguous shape declarations that can lower to canonical GraphQL SDL. | No current product consumer; the future target is Wesley. | High grammar, compatibility, and proof burden. | **Preserve as Phase 5; freeze new surface area** until the deep-end gate passes. |
 | Intent English | Express explicit effectful intent as an Edict surface AST. | No current product consumer; the future target is Edict. | High semantic and safety cost; depends on Contract English. | **Preserve as Phase 6; freeze new surface area** until Phase 5 has evidence. |
@@ -239,18 +274,21 @@ The freeze on new provenance, CNL, and Edict surface area is a sequencing rule,
 not a cancellation. Phase 5 may resume when all of the following evidence
 exists:
 
-1. **Boundary integrity:** #126, #142, #144, #145, and #148 prove that producer,
-   wire, vocabulary, identity, range, and source failures are rejected.
-2. **Live operability:** #121 and #122 prove freshness and the supported LSP
-   envelope under forced stale completion and overload.
-3. **Real distribution:** #136 and #154 prove clean installation, activation,
-   version compatibility, useful output, and rollback from public artifacts.
-4. **Independent consumer value:** #156 shows that the IR reduces downstream
-   integration cost or improves correctness relative to CLI text and LSP
-   tokens. If it does not, simplify before extending the contract.
-5. **Observed product value:** #155 and #158 provide held-out comparative and
-   behavioral evidence for a primary user/job. If they do not, pause expansion
-   and improve or narrow the existing product.
+1. **Boundary integrity — satisfied:** #126, #142, #144, #145, and #148 prove
+   that producer, wire, vocabulary, identity, range, and source failures are
+   rejected.
+2. **Live operability — partial:** #121 proves freshness under forced stale
+   completion; #122 remains open for the supported LSP envelope and overload
+   evidence.
+3. **Real distribution — open:** #136 and #154 must prove clean installation,
+   activation, version compatibility, useful output, and rollback from public
+   artifacts.
+4. **Independent consumer value — open:** #156 must show that the IR reduces
+   downstream integration cost or improves correctness relative to CLI text
+   and LSP tokens. If it does not, simplify before extending the contract.
+5. **Observed product value — open:** #155 and #158 must provide held-out
+   comparative and behavioral evidence for a primary user/job. If they do not,
+   pause expansion and improve or narrow the existing product.
 
 Passing the gate permits the depth sequence to continue; it does not make later
 phases automatic. A failed gate changes what gets hardened or simplified next.
@@ -301,8 +339,15 @@ crate, and structured, path-aware `ValidationError`s — each recorded in
 [v0.2.1 release packet](docs/goalposts/v0.2.1/release.md), and the
 [v0.3.0 release packet](docs/goalposts/v0.3.0/release.md).
 
-The active maturity critical path is boundary integrity and LSP freshness,
-supported by reproducible repository evidence. Distribution follows that
-operational proof; independent product validation follows real distribution.
-The CNL, Edict, provenance, Ouroboros, and semantic-closure phases remain in
-place behind the explicit deep-end evidence gate.
+Boundary integrity, stale-result protection, and required merge checks are now
+delivered foundations. The active maturity critical path is the remaining
+repository contract
+([#151](https://github.com/flyingrobots/colorful-language/issues/151),
+[#152](https://github.com/flyingrobots/colorful-language/issues/152), and
+[#187](https://github.com/flyingrobots/colorful-language/issues/187)) alongside
+the measured LSP capacity envelope
+([#122](https://github.com/flyingrobots/colorful-language/issues/122)).
+Distribution follows that operational proof; independent product validation
+follows real distribution. The CNL, Edict, provenance, Ouroboros, and
+semantic-closure phases remain in place behind the explicit deep-end evidence
+gate.

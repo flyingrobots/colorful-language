@@ -24,9 +24,9 @@ proven by deterministic executable evidence.
 ## Planning and maturity
 
 The [roadmap](../ROADMAP.md) is the planning index. Its depth and reach phases
-preserve the long-term destination; its M0–M4 maturity tracks give the captured
-non-epic issue inventory one primary execution home. Linked GitHub issues remain
-authoritative for live state.
+preserve the long-term destination; its M0–M4 maturity tracks and parked
+experiment section give each open non-epic issue one primary execution home.
+Linked GitHub issues remain authoritative for live state.
 
 Topic `README.md` files below remain current truth only. Planned behavior belongs
 in the topic's `test-plan.md`, the owning issue, and the roadmap until executable
