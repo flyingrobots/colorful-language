@@ -12,9 +12,9 @@ Run the locked advisory scan from the repository root:
 bash scripts/check-rust-advisories.sh
 ```
 
-The command requires `cargo-deny`. It discovers and deduplicates every Cargo
-workspace in the repository while pruning `.git`, `node_modules`, `target`, and
-`vendor` directories. The current inventory is:
+The command requires Cargo, `cargo-deny`, and Python 3. It discovers and
+deduplicates every Cargo workspace in the repository while pruning `.git`,
+`node_modules`, `target`, and `vendor` directories. The current inventory is:
 
 - the root Rust workspace at `Cargo.toml`; and
 - the standalone Zed adapter at `editors/zed/Cargo.toml`.

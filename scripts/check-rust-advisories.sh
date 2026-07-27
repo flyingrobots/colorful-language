@@ -19,6 +19,8 @@ command -v cargo >/dev/null 2>&1 ||
   fail "cargo is required"
 command -v cargo-deny >/dev/null 2>&1 ||
   fail "cargo-deny is required"
+command -v python3 >/dev/null 2>&1 ||
+  fail "python3 is required"
 
 excluded_directories=(.git node_modules target vendor)
 tmp="$(mktemp -d)"
