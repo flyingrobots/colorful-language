@@ -1,0 +1,75 @@
+{
+  "repository": "flyingrobots/colorful-language",
+  "ruleset_id": 17949589,
+  "name": "mainline",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [
+    {
+      "actor_id": 5,
+      "actor_type": "RepositoryRole",
+      "bypass_mode": "always"
+    }
+  ],
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "~DEFAULT_BRANCH"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "required_signatures"
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": true,
+        "required_reviewers": [],
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true,
+        "allowed_merge_methods": [
+          "merge"
+        ]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "required_status_checks": [
+          {
+            "context": "Docs & whitespace",
+            "integration_id": 15368
+          },
+          {
+            "context": "Rust (fmt, clippy, test)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Cargo package witness",
+            "integration_id": 15368
+          },
+          {
+            "context": "IR cross-language round-trip witness",
+            "integration_id": 15368
+          },
+          {
+            "context": "Editor integrations (compile)",
+            "integration_id": 15368
+          }
+        ],
+        "strict_required_status_checks_policy": true
+      }
+    }
+  ]
+}
