@@ -145,6 +145,10 @@ test("prints an update payload without local manifest metadata", () => {
       "Cargo package witness",
       "IR cross-language round-trip witness",
       "Editor integrations (compile)",
+      "Rust dependency policy",
+      "Dependency review",
+      "CodeQL (rust)",
+      "CodeQL (javascript-typescript)",
     ].map((context) => ({ context, integration_id: 15368 })),
   );
 });
