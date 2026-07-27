@@ -20,9 +20,10 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   adapter with `cargo deny --locked check advisories`. *Oracle:* both scans exit
   zero without a vulnerability, unsoundness, or blanket-ignore exception.
   *Evidence type:* deterministic workspace command wrapper plus the evolving
-  RustSec advisory database. *Evidence:* `scripts/check-rust-advisories.sh`;
-  the regression seeded by `RUSTSEC-2026-0190` is fixed in
-  `editors/zed/Cargo.lock`. *Status:* implemented.
+  RustSec advisory database. *Evidence:* `scripts/check-rust-advisories.sh` and
+  `scripts/check-rust-advisories.test.sh`; the regression seeded by
+  `RUSTSEC-2026-0190` is fixed in `editors/zed/Cargo.lock`. *Status:*
+  implemented.
 
 ## Known gaps
 
