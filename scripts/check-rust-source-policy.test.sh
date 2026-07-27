@@ -186,7 +186,7 @@ set -euo pipefail
 previous=""
 for argument in "$@"; do
   if [[ "$previous" == "--manifest-path" ]]; then
-    printf '%s\n' "$argument" >>"${CARGO_INVOCATION_LOG:?}"
+    printf '%s\t%s\n' "$1" "$argument" >>"${CARGO_INVOCATION_LOG:?}"
     break
   fi
   previous="$argument"
@@ -204,12 +204,27 @@ if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]];
   printf 'protected discovered workspace did not pass\n%s\n' "$output" >&2
   exit 1
 fi
-root_metadata_calls="$(grep -Fxc "$fixture/Cargo.toml" "$cargo_log")"
-member_metadata_calls="$(grep -Fxc "$fixture/crate/Cargo.toml" "$cargo_log")"
-total_metadata_calls="$(wc -l <"$cargo_log" | tr -d ' ')"
-if [[ "$root_metadata_calls" != 2 ||
-  "$member_metadata_calls" != 1 ||
-  "$total_metadata_calls" != 7 ]]; then
+# Four discovered manifests require lightweight workspace-location calls. Their
+# three unique workspace roots then require one metadata call each: seven Cargo
+# calls total, with metadata using the root manifest rather than its member.
+locate_calls="$(awk -F '\t' '$1 == "locate-project" { count++ } END { print count + 0 }' "$cargo_log")"
+metadata_calls="$(awk -F '\t' '$1 == "metadata" { count++ } END { print count + 0 }' "$cargo_log")"
+root_metadata_calls="$(
+  awk -F '\t' -v manifest="$fixture/Cargo.toml" \
+    '$1 == "metadata" && $2 == manifest { count++ } END { print count + 0 }' \
+    "$cargo_log"
+)"
+member_metadata_calls="$(
+  awk -F '\t' -v manifest="$fixture/crate/Cargo.toml" \
+    '$1 == "metadata" && $2 == manifest { count++ } END { print count + 0 }' \
+    "$cargo_log"
+)"
+total_cargo_calls="$(wc -l <"$cargo_log" | tr -d ' ')"
+if [[ "$locate_calls" != 4 ||
+  "$metadata_calls" != 3 ||
+  "$root_metadata_calls" != 1 ||
+  "$member_metadata_calls" != 0 ||
+  "$total_cargo_calls" != 7 ]]; then
   printf 'workspace manifests were not deduplicated before inventory\n' >&2
   sed 's/^/  /' "$cargo_log" >&2
   exit 1
