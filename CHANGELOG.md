@@ -275,6 +275,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Passive-voice suffix false positives.** The lint rule no longer treats
+  every `-ed` word after `be` as a participle. It now requires lexical-class
+  eligibility plus a reviewed participle entry, and ambiguous result-state
+  entries require a classified agentive `by` phrase, excluding temporal
+  `by now` and `by then` constructions. A 15-row reviewed development corpus
+  records 4 true positives, 0 false positives, 11 true
+  negatives, and 0 false negatives without presenting that fixture result as
+  held-out product precision. Shared golden fixtures keep CLI and LSP findings
+  identical for `was red`, `is sacred`, and ambiguous adjective constructions.
+  Passive analysis now joins ordered syntax and token streams with one forward
+  cursor rather than allocating a whole-document lookup.
 - **Documented downstream discovery floor corrected from `0.2.1` to `0.3.0`.**
   `README.md` and the downstream-consumers topic stated Graft/jedit discovery
   requires `colorful --version` to report `0.2.1` or newer. A new executable
