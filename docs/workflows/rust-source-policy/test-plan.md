@@ -61,3 +61,9 @@ Canonical issues:
   is inventoried once. *Evidence type:* deterministic shell fixture.
   *Evidence:* `scripts/check-rust-source-policy.sh` and
   `scripts/check-rust-source-policy.test.sh`. *Status:* implemented.
+- **RSP-4b** — *Requirements:* RSP-2, RSP-7. *Behavior:* a path dependency
+  stored below a pruned directory remains outside the first-party source
+  inventory even when Cargo automatically includes it in workspace metadata.
+  *Oracle:* an unprotected library below `vendor/` does not enter the reported
+  production-root count when a first-party package depends on it. *Evidence
+  type:* deterministic shell fixture. *Status:* planned.
