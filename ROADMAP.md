@@ -88,7 +88,9 @@ observe public-contract regressions before they ship.
   exact primary evidence pins with separately scheduled forward-compatibility
   lanes.
 - **Merge and dependency governance:** required green checks
-  [#150](https://github.com/flyingrobots/colorful-language/issues/150), pinned
+  ([#150](https://github.com/flyingrobots/colorful-language/issues/150);
+  delivered by [#184](https://github.com/flyingrobots/colorful-language/pull/184)),
+  pinned
   actions and grouped updates
   [#151](https://github.com/flyingrobots/colorful-language/issues/151), and
   tested maintenance intake, advisory, license, and dependency review
