@@ -14,10 +14,11 @@ The release train for `colorful-language`. It advances along **three axes**:
 The depth axis has hard ordering. The reach axis floats — a surface can be built
 as soon as the depth it needs exists. The maturity axis cuts across both: it
 hardens what already exists and supplies evidence for the next expansion.
-**Milestones** are phases and **epic issues** track them; the board is the
+Depth and reach **milestones** are phases, and **epic issues** track them; the
+board is the
 [Colorful Language — Roadmap project](https://github.com/users/flyingrobots/projects/17).
-Maturity tracks are an execution order within and between those goalposts, not
-replacement milestones.
+Cross-cutting maturity slices share one umbrella milestone, while M0–M4 remain
+the execution order within and between the phase goalposts.
 
 Governing law of the deep end: *Colorful may describe anything, but it may
 compile only what the target can prove.*
@@ -64,6 +65,13 @@ Each open slice has one primary home below; delivered foundations remain
 visible rather than disappearing from the story. GitHub remains authoritative
 for live issue state. Links in later dependency and architecture tables are
 cross-references, not duplicate ownership.
+
+The
+[Product Maturity — Evidence before expansion](https://github.com/flyingrobots/colorful-language/milestone/10)
+milestone owns cross-cutting and parked slices that do not belong honestly to
+one depth or reach phase. Phase-specific slices remain on their owning depth or
+reach milestones. M0–M4 below preserve the dependency order inside the
+umbrella; they are not competing GitHub milestones.
 
 Track order expresses evidence dependencies, not a ban on parallel work. The
 M0 repository-governance and M2 LSP-capacity tracks may advance together.
