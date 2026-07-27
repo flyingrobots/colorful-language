@@ -36,8 +36,9 @@ Canonical issue:
   and repository-role bypass settings remain unchanged. *Oracle:* a
   deterministic checker compares the governed live fields with the manifest and
   reports the first mismatch using a stable error category. The read-only CI
-  token may redact bypass actors; an explicit mode accepts only that `null`
-  redaction, while the privileged maintainer check remains strict.
+  token may omit bypass actors or return them as `null`; an explicit mode
+  accepts only those redacted representations, while the privileged maintainer
+  check remains strict and visible mismatches still fail.
   *Evidence type:* ruleset manifest, checker self-test, privileged live API
   inspection, and CI execution. *Evidence:*
   `.github/rulesets/mainline.json`,

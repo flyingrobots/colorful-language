@@ -119,7 +119,9 @@ export function validateRuleset(
   }
 
   const bypassIsPermittedRedaction =
-    allowRedactedBypass && actual.bypass_actors === null;
+    allowRedactedBypass &&
+    (actual.bypass_actors === null ||
+      !Object.hasOwn(actual, "bypass_actors"));
   if (
     !bypassIsPermittedRedaction &&
     !same(

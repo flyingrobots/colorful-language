@@ -97,6 +97,17 @@ test("accepts API-redacted bypass actors only in explicit CI mode", () => {
       allowRedactedBypass: true,
     }),
   );
+
+  actual.bypass_actors = [];
+  assert.throws(
+    () =>
+      validateRuleset(actual, loadManifest(), {
+        allowRedactedBypass: true,
+      }),
+    (error) =>
+      error instanceof RulesetContractError &&
+      error.code === "E_RULESET_BYPASS",
+  );
 });
 
 test("preserves merge-only pull requests and thread resolution", () => {
