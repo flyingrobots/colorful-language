@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+checker="$root/scripts/check-rust-advisories.sh"
+fixture="$(mktemp -d)"
+fixture="$(cd "$fixture" && pwd -P)"
+trap 'rm -rf "$fixture"' EXIT
+
+mkdir -p \
+  "$fixture/crate/src" \
+  "$fixture/editors/zed/src" \
+  "$fixture/tools/standalone/src"
+
+cat >"$fixture/Cargo.toml" <<'EOF'
+[workspace]
+members = ["crate"]
+resolver = "2"
+EOF
+
+cat >"$fixture/crate/Cargo.toml" <<'EOF'
+[package]
+name = "advisory-root-member"
+version = "0.0.0"
+edition = "2021"
+EOF
+
+cat >"$fixture/crate/src/lib.rs" <<'EOF'
+pub fn root_member() {}
+EOF
+
+cat >"$fixture/editors/zed/Cargo.toml" <<'EOF'
+[package]
+name = "advisory-zed"
+version = "0.0.0"
+edition = "2021"
+
+[workspace]
+EOF
+
+cat >"$fixture/editors/zed/src/lib.rs" <<'EOF'
+pub fn zed() {}
+EOF
+
+cat >"$fixture/tools/standalone/Cargo.toml" <<'EOF'
+[package]
+name = "advisory-standalone"
+version = "0.0.0"
+edition = "2021"
+
+[workspace]
+EOF
+
+cat >"$fixture/tools/standalone/src/lib.rs" <<'EOF'
+pub fn standalone() {}
+EOF
+
+cargo generate-lockfile --manifest-path "$fixture/Cargo.toml" >/dev/null
+cargo generate-lockfile \
+  --manifest-path "$fixture/editors/zed/Cargo.toml" >/dev/null
+cargo generate-lockfile \
+  --manifest-path "$fixture/tools/standalone/Cargo.toml" >/dev/null
+
+for excluded in .git node_modules target vendor; do
+  mkdir -p "$fixture/$excluded/ignored"
+  cat >"$fixture/$excluded/ignored/Cargo.toml" <<'EOF'
+This is deliberately not a Cargo manifest.
+EOF
+done
+
+mkdir -p "$fixture/test-bin"
+cat >"$fixture/test-bin/cargo-deny" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+previous=""
+manifest=""
+for argument in "$@"; do
+  if [[ "$previous" == "--manifest-path" ]]; then
+    manifest="$argument"
+    break
+  fi
+  previous="$argument"
+done
+
+if [[ -z "$manifest" ]]; then
+  printf 'missing --manifest-path\n' >&2
+  exit 2
+fi
+printf '%s\n' "$manifest" >>"${CARGO_DENY_INVOCATION_LOG:?}"
+if [[ -n "${FAIL_MANIFEST:-}" && "$manifest" == "$FAIL_MANIFEST" ]]; then
+  printf 'fixture advisory failure: %s\n' "$manifest" >&2
+  exit 1
+fi
+EOF
+chmod +x "$fixture/test-bin/cargo-deny"
+
+invocations="$fixture/cargo-deny-invocations.log"
+output="$(
+  PATH="$fixture/test-bin:$PATH" \
+    CARGO_DENY_INVOCATION_LOG="$invocations" \
+    "$checker" --root "$fixture"
+)"
+
+expected="$fixture/expected-workspaces"
+cat >"$expected" <<EOF
+$fixture/Cargo.toml
+$fixture/editors/zed/Cargo.toml
+$fixture/tools/standalone/Cargo.toml
+EOF
+sort -o "$expected" "$expected"
+sort -o "$invocations" "$invocations"
+if ! cmp -s "$expected" "$invocations"; then
+  printf 'advisory workspace inventory did not match\nexpected:\n' >&2
+  sed 's/^/  /' "$expected" >&2
+  printf 'actual:\n' >&2
+  sed 's/^/  /' "$invocations" >&2
+  exit 1
+fi
+if [[ "$output" != *"check-rust-advisories passed: 3 workspace(s)"* ]]; then
+  printf 'advisory checker did not report the discovered workspace count\n%s\n' \
+    "$output" >&2
+  exit 1
+fi
+
+: >"$invocations"
+output=""
+if output="$(
+  PATH="$fixture/test-bin:$PATH" \
+    CARGO_DENY_INVOCATION_LOG="$invocations" \
+    FAIL_MANIFEST="$fixture/editors/zed/Cargo.toml" \
+    "$checker" --root "$fixture" 2>&1
+)"; then
+  printf 'expected a workspace advisory failure\n%s\n' "$output" >&2
+  exit 1
+fi
+if [[ "$output" != *"fixture advisory failure: $fixture/editors/zed/Cargo.toml"* ]]; then
+  printf 'wrong propagated advisory failure\n%s\n' "$output" >&2
+  exit 1
+fi
+
+printf 'check-rust-advisories self-test passed\n'
