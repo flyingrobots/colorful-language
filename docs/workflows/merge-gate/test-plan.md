@@ -60,7 +60,11 @@ Canonical issue:
   pre-existing classic CodeRabbit requirement pass. *Oracle:* GitHub reports
   all effective required checks successful and a clean merge state without an
   administrative override. *Evidence type:* GitHub pull request check rollup
-  and ruleset evaluation. *Status:* planned.
+  and ruleset evaluation. *Evidence:* pull request
+  [#184](https://github.com/flyingrobots/colorful-language/pull/184) at
+  `e6665df`, with all effective requirements passing in Actions run
+  [30250791566](https://github.com/flyingrobots/colorful-language/actions/runs/30250791566)
+  and GitHub reporting `CLEAN` and `MERGEABLE`. *Status:* implemented.
 - **MG-3a** — *Requirement:* MG-5. *Behavior:* the current workflow reference
   gives exact planned-rename and emergency-recovery procedures that preserve
   every unrelated rule and verify the replacement context's source before
