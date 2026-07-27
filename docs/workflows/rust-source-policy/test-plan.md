@@ -68,3 +68,10 @@ Canonical issues:
   production-root count when a first-party package depends on it. *Evidence
   type:* deterministic shell fixture. *Evidence:*
   `scripts/check-rust-source-policy.test.sh`. *Status:* implemented.
+- **RSP-4c** — *Requirements:* RSP-2, RSP-7. *Behavior:* manifest discovery
+  resolves each candidate to its workspace root without dependency resolution,
+  deduplicates those roots, and requests full Cargo metadata once per workspace.
+  *Oracle:* the multi-member fixture records four `locate-project` calls, three
+  metadata calls, no member-manifest metadata call, and one metadata call for
+  the main workspace root. *Evidence type:* deterministic Cargo-wrapper
+  fixture. *Status:* planned.
