@@ -90,15 +90,21 @@ Canonical issues:
   schedules weekly grouped updates for GitHub Actions, the root Cargo
   workspace, the standalone Zed Cargo workspace, root Node evidence
   dependencies, and the VS Code adapter's separate Node graph. Each source has
-  one named group and one cadence. *Oracle:* structural inspection finds the
-  standalone Cargo manifests and exactly the expected
-  ecosystem/directory pairs, weekly schedules, and risk-separated group names
-  with no duplicate pair or extra update source. *Evidence type:* repository
-  configuration and deterministic policy test. *Status:* planned.
+  one named group and one cadence. *Oracle:* structural inspection finds
+  exactly the expected ecosystem/directory pairs, including both Cargo
+  workspaces, weekly schedules, and risk-separated group names with no
+  duplicate pair or extra update source. *Evidence type:* repository
+  configuration and deterministic policy test. *Evidence:*
+  `.github/dependabot.yml` and
+  `scripts/check-dependency-update-policy.test.mjs`. *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite
   removes or changes each protected field independently. *Oracle:* every
   mutation is rejected with its intended stable error category, while the
   reviewed configuration passes. *Evidence type:* executable policy checker,
-  mutation test, CI step, and release-preparation gate. *Status:* planned.
+  mutation test, CI step, and release-preparation gate. *Evidence:*
+  `scripts/check-dependency-update-policy.mjs`,
+  `scripts/check-dependency-update-policy.test.mjs`, the `docs` job in
+  `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*
+  implemented.

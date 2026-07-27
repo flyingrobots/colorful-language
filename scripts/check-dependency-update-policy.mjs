@@ -10,6 +10,7 @@ const FULL_SHA = /^[0-9a-f]{40}$/u;
 const EXPECTED_SOURCES = new Map([
   ["github-actions\u0000/", "github-actions"],
   ["cargo\u0000/", "cargo"],
+  ["cargo\u0000/editors/zed", "zed-cargo"],
   ["npm\u0000/", "root-node"],
   ["npm\u0000/editors/vscode", "vscode"],
 ]);

@@ -73,13 +73,14 @@ it never silently rewrites the reviewed evidence versions.
 
 ## Reviewing dependency updates
 
-Dependabot opens four independent weekly groups from
+Dependabot opens five independent weekly groups from
 `.github/dependabot.yml`:
 
 | Group | Dependency boundary | Rollback boundary |
 | --- | --- | --- |
 | `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
-| `cargo` | The root Cargo workspace and lockfile | Rust dependency revert |
+| `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
+| `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
 | `root-node` | Root evidence tooling and lockfile | Evidence-tooling revert |
 | `vscode` | VS Code adapter packages and lockfile | Editor-adapter revert |
 

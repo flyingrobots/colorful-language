@@ -16,6 +16,14 @@ updates:
       cargo:
         patterns:
           - "*"
+  - package-ecosystem: cargo
+    directory: /editors/zed
+    schedule:
+      interval: weekly
+    groups:
+      zed-cargo:
+        patterns:
+          - "*"
   - package-ecosystem: npm
     directory: /
     schedule:
