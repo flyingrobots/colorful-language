@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { parse as parseYaml } from "yaml";
+
 import {
   validateVscodeDependencyPolicy,
   VscodeDependencyPolicyError,
@@ -53,96 +55,11 @@ const WORKFLOW_AUDIT_COMMAND = "npm audit --audit-level=high";
 const RELEASE_AUDIT_COMMAND =
   "npm --prefix editors/vscode audit --audit-level=high";
 
-function parseYamlScalar(value) {
-  const scalar = value.trim();
-  if (scalar.startsWith('"') && scalar.endsWith('"')) {
-    return JSON.parse(scalar);
-  }
-  if (scalar.startsWith("'") && scalar.endsWith("'")) {
-    return scalar.slice(1, -1).replaceAll("''", "'");
-  }
-  return scalar;
-}
-
-function parseMappingEntry(value) {
-  const match = value.match(/^([A-Za-z0-9_-]+):(?:\s*(.*))?$/u);
-  return match === null
-    ? null
-    : { key: match[1], value: parseYamlScalar(match[2] ?? "") };
-}
-
-function indentation(line) {
-  return line.match(/^ */u)[0].length;
-}
-
-function parseWorkflowJobSteps(workflow, jobName) {
-  const lines = workflow.split(/\r?\n/u);
-  const jobStart = lines.findIndex((line) => {
-    const entry = parseMappingEntry(line.trim());
-    return entry?.key === jobName && entry.value === "";
-  });
-  assert.notEqual(jobStart, -1, `workflow job ${jobName} must exist`);
-
-  const jobIndent = indentation(lines[jobStart]);
-  let jobEnd = lines.length;
-  for (let index = jobStart + 1; index < lines.length; index += 1) {
-    if (
-      lines[index].trim() !== "" &&
-      indentation(lines[index]) <= jobIndent
-    ) {
-      jobEnd = index;
-      break;
-    }
-  }
-
-  let stepsStart = -1;
-  for (let index = jobStart + 1; index < jobEnd; index += 1) {
-    const entry = parseMappingEntry(lines[index].trim());
-    if (entry?.key === "steps" && entry.value === "") {
-      stepsStart = index;
-      break;
-    }
-  }
-  assert.notEqual(stepsStart, -1, `workflow job ${jobName} must have steps`);
-
-  const stepsIndent = indentation(lines[stepsStart]);
-  const steps = [];
-  let currentStep = null;
-  let currentStepIndent = -1;
-  for (let index = stepsStart + 1; index < jobEnd; index += 1) {
-    const line = lines[index];
-    const trimmed = line.trim();
-    if (trimmed === "" || trimmed.startsWith("#")) {
-      continue;
-    }
-    const lineIndent = indentation(line);
-    if (lineIndent <= stepsIndent) {
-      break;
-    }
-    if (trimmed.startsWith("-")) {
-      currentStep = {};
-      currentStepIndent = lineIndent;
-      steps.push(currentStep);
-      const entry = parseMappingEntry(trimmed.slice(1).trim());
-      if (entry !== null) {
-        currentStep[entry.key] = entry.value;
-      }
-      continue;
-    }
-    if (currentStep !== null && lineIndent > currentStepIndent) {
-      const entry = parseMappingEntry(trimmed);
-      if (entry !== null) {
-        currentStep[entry.key] = entry.value;
-      }
-    }
-  }
-  return steps;
-}
-
 function assertWorkflowAuditStep(workflow) {
-  const auditStep = parseWorkflowJobSteps(workflow, "editors").find(
-    (step) => step.run === WORKFLOW_AUDIT_COMMAND,
-  );
+  const document = parseYaml(workflow);
+  const steps = document?.jobs?.editors?.steps;
+  assert.ok(Array.isArray(steps), "workflow job editors must have steps");
+  const auditStep = steps.find((step) => step.run === WORKFLOW_AUDIT_COMMAND);
   assert.ok(auditStep, `editors job must run ${WORKFLOW_AUDIT_COMMAND}`);
   assert.equal(auditStep["working-directory"], EDITOR_DIRECTORY);
 }
