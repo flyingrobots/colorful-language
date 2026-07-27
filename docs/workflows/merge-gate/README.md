@@ -73,7 +73,7 @@ Capture and inspect the current state:
 
 ```bash
 gh api repos/flyingrobots/colorful-language/rulesets/17949589
-git diff -- .github/rulesets/mainline.json
+git diff origin/main...HEAD -- .github/rulesets/mainline.json
 node scripts/check-main-ruleset.test.mjs
 ```
 
@@ -108,13 +108,15 @@ For a planned rename:
 2. Merge that compatibility change through the existing gate.
 3. Confirm a successful replacement check on `main` and verify that its source
    is GitHub Actions application `15368`.
-4. Update the workflow, manifest, and this reference on a new branch.
+4. Update the manifest and this reference on a new branch. Keep both workflow
+   jobs in place during this ruleset-migration pull request.
 5. Review the complete live-ruleset snapshot and manifest diff.
 6. Apply the manifest with the command above.
 7. Run the live checker and wait for all five required contexts on the migration
    pull request.
-8. Merge normally, then remove any temporary compatibility job in a separate
-   pull request.
+8. Merge the ruleset-migration pull request normally.
+9. Remove the old compatibility job in a separate pull request after the new
+   required context has passed on `main`.
 
 For an unplanned missing context:
 

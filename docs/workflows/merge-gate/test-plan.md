@@ -31,12 +31,13 @@ Canonical issue:
   `Docs & whitespace`, `Rust (fmt, clippy, test)`, `Cargo package witness`,
   `IR cross-language round-trip witness`, and
   `Editor integrations (compile)` from GitHub Actions application `15368`,
-  with strict default-branch freshness. The prior deletion, non-fast-forward,
-  signature, pull-request, thread-resolution, and repository-role bypass
-  settings remain unchanged. *Oracle:* a deterministic checker compares the
-  governed live fields with the manifest and reports the first mismatch using a
-  stable error category. *Evidence type:* ruleset manifest, checker self-test,
-  live API inspection, and CI execution. *Evidence:*
+  with strict default-branch freshness and enforcement on branch creation. The
+  prior deletion, non-fast-forward, signature, pull-request, thread-resolution,
+  and repository-role bypass settings remain unchanged. *Oracle:* a
+  deterministic checker compares the governed live fields with the manifest and
+  reports the first mismatch using a stable error category. *Evidence type:*
+  ruleset manifest, checker self-test, live API inspection, and CI execution.
+  *Evidence:*
   `.github/rulesets/mainline.json`,
   `scripts/check-main-ruleset.mjs`,
   `scripts/check-main-ruleset.test.mjs`, and the `docs` job in
@@ -77,4 +78,4 @@ other field.
 | Ref protection | deletion and non-fast-forward protection | unchanged |
 | Commit protection | verified signatures | unchanged |
 | Pull-request policy | merge commits only, stale approvals dismissed, all threads resolved, no required approval count | unchanged |
-| Required checks | none | five named contexts, GitHub Actions application `15368`, strict freshness |
+| Required checks | none | five named contexts, GitHub Actions application `15368`, strict freshness, enforced on creation |

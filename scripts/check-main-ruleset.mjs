@@ -163,6 +163,12 @@ export function validateRuleset(actual, expected = loadManifest()) {
     "required_status_checks",
     "E_RULESET_MANIFEST",
   );
+  if (actualStatus.parameters?.do_not_enforce_on_create !== false) {
+    fail(
+      "E_RULESET_STATUS_CREATE",
+      "required checks must remain enforced when a matching branch is created",
+    );
+  }
   if (actualStatus.parameters?.strict_required_status_checks_policy !== true) {
     fail(
       "E_RULESET_STATUS_STRICT",

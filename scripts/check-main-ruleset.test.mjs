@@ -53,6 +53,13 @@ test("requires strict default-branch freshness", () => {
   expectCode(actual, "E_RULESET_STATUS_STRICT");
 });
 
+test("enforces required checks when a matching branch is created", () => {
+  const actual = liveShape();
+  rule(actual, "required_status_checks").parameters.do_not_enforce_on_create =
+    true;
+  expectCode(actual, "E_RULESET_STATUS_CREATE");
+});
+
 test("pins required context names and their source application", () => {
   const actual = liveShape();
   const [first] = rule(
@@ -95,8 +102,19 @@ test("rejects undeclared live rule types", () => {
 
 test("prints an update payload without local manifest metadata", () => {
   const payload = makeUpdatePayload(loadManifest());
+  const status = rule(payload, "required_status_checks");
   assert.equal("repository" in payload, false);
   assert.equal("ruleset_id" in payload, false);
   assert.equal(payload.name, "mainline");
   assert.equal(payload.rules.length, 5);
+  assert.deepEqual(
+    status.parameters.required_status_checks,
+    [
+      "Docs & whitespace",
+      "Rust (fmt, clippy, test)",
+      "Cargo package witness",
+      "IR cross-language round-trip witness",
+      "Editor integrations (compile)",
+    ].map((context) => ({ context, integration_id: 15368 })),
+  );
 });
