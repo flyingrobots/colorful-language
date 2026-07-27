@@ -174,6 +174,14 @@ Implemented and planned cases are listed below.
   `docs/topics/linting/README.md`. *Tracking:*
   [#138](https://github.com/flyingrobots/colorful-language/issues/138).
   *Status:* implemented.
+- **LINT-11b** — *Requirement:* LINT-11. *Behavior:* temporal `by` phrases do
+  not satisfy the local agent-evidence requirement for ambiguous result-state
+  participles. *Oracle:* `was closed by now` and `was broken by then` remain
+  silent while reviewed agentive `by` phrases still produce their exact
+  passive-voice candidates. *Evidence type:* deterministic reviewed corpus.
+  *Tracking:*
+  [#138](https://github.com/flyingrobots/colorful-language/issues/138).
+  *Status:* planned.
 - **LINT-12a** — *Requirement:* LINT-12. *Behavior:* the chosen quotation policy
   produces deterministic weak-word findings for balanced, nested, and
   unbalanced straight/curly quotes and is identical across CLI and LSP.
