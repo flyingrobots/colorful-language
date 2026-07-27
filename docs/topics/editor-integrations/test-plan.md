@@ -30,6 +30,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-12** The shared LSP server must publish only the newest document
   generation, reuse that generation's cached analysis for diagnostics and
   semantic tokens, and fail predictably beyond its documented size limit.
+- **EDIT-13** The locked VS Code runtime dependency graph must exclude known
+  high- and critical-severity advisory ranges, and the extension's declared
+  VS Code floor must satisfy the language client's runtime requirement.
 
 ## Cases
 
@@ -100,6 +103,20 @@ Verification for editor adapters and the `colorful-lsp` surface.
   behind a workspace-wide suppression. *Oracle:* CI editor job exits zero.
   *Evidence:* `editors/vscode/tsconfig.json`; `npm --prefix editors/vscode run
   compile`; `.github/workflows/ci.yml`. *Status:* implemented.
+- **EDIT-13a** — *Requirement:* EDIT-13. *Behavior:* the VS Code extension uses
+  a stable `vscode-languageclient` release outside the vulnerable
+  `brace-expansion <=5.0.7` dependency chain, and its declared editor floor
+  satisfies the client's declared VS Code engine. *Oracle:* deterministic
+  lockfile-policy mutations reject the vulnerable client and leaf versions or
+  an incompatible editor floor; a pinned-Node `npm audit --audit-level=high`
+  exits zero. *Evidence type:* lockfile policy self-test, editor compile, and
+  network-backed advisory audit. *Evidence:*
+  `scripts/check-vscode-dependency-policy.mjs`,
+  `scripts/check-vscode-dependency-policy.test.mjs`,
+  `editors/vscode/package.json`, `editors/vscode/package-lock.json`, and the
+  editor CI job. *Tracking:*
+  [#185](https://github.com/flyingrobots/colorful-language/issues/185).
+  *Status:* implemented.
 - **EDIT-5a** — *Requirement:* EDIT-5. *Behavior:* recipe docs state that
   marketplace packages are not published and that custom open-class token types
   may need theme rules. *Oracle:* documentation review. *Evidence:*

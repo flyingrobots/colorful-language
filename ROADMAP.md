@@ -169,7 +169,10 @@ was installed, and reach the first useful editor result.
 
 - **Compatibility policy:** define adapter/server version ownership and drift
   checks
-  [#141](https://github.com/flyingrobots/colorful-language/issues/141).
+  [#141](https://github.com/flyingrobots/colorful-language/issues/141), and keep
+  the supported VS Code dependency graph outside known high-severity advisory
+  ranges
+  [#185](https://github.com/flyingrobots/colorful-language/issues/185).
 - **Package evidence:** add clean-install editor and scripted LSP transcript
   tests
   [#136](https://github.com/flyingrobots/colorful-language/issues/136), then
