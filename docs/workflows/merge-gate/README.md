@@ -67,7 +67,11 @@ merge-gate: OK ruleset 17949589 matches the manifest
 
 The `Docs & whitespace` CI job runs both checks. A live policy change that does
 not update the manifest, or a manifest change that has not reached GitHub,
-therefore fails the merge gate.
+makes that job fail while the job remains required. This is an in-band drift
+detector, not an independent enforcement boundary: drift that disables the
+ruleset or removes `Docs & whitespace` from its required contexts can also
+remove the checker's authority to block. Treat any mismatch as a governance
+incident and restore the reviewed contract immediately.
 
 GitHub redacts `bypass_actors` from the read-only workflow token. Depending on
 the API caller, the response omits the field or returns `null`. CI uses the
