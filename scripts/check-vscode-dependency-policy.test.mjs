@@ -61,6 +61,12 @@ test("rejects a vulnerable declared language client", () => {
   expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_RANGE");
 });
 
+test("rejects a prerelease declared language client", () => {
+  const { editorPackage, lockfile } = fixture();
+  editorPackage.dependencies["vscode-languageclient"] = "^10.1.0-next.1";
+  expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_RANGE");
+});
+
 test("rejects a vulnerable locked language client", () => {
   const { editorPackage, lockfile } = fixture();
   lockfile.packages["node_modules/vscode-languageclient"].version = "9.0.1";
@@ -101,6 +107,19 @@ test("rejects a prerelease patched brace-expansion", () => {
 test("rejects an extension floor below the client floor", () => {
   const { editorPackage, lockfile } = fixture();
   editorPackage.engines.vscode = "^1.90.0";
+  expectCode(editorPackage, lockfile, "E_VSCODE_ENGINE");
+});
+
+test("rejects a prerelease extension engine floor", () => {
+  const { editorPackage, lockfile } = fixture();
+  editorPackage.engines.vscode = "^1.91.0-insiders";
+  expectCode(editorPackage, lockfile, "E_VSCODE_ENGINE");
+});
+
+test("rejects a prerelease locked client engine floor", () => {
+  const { editorPackage, lockfile } = fixture();
+  lockfile.packages["node_modules/vscode-languageclient"].engines.vscode =
+    "^1.91.0-next.1";
   expectCode(editorPackage, lockfile, "E_VSCODE_ENGINE");
 });
 
