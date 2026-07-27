@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export LC_ALL=C
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ "${1:-}" == "--root" && $# -eq 2 ]]; then
@@ -14,6 +15,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 inventory="$tmp/inventory"
 exception_roots="$tmp/exception-roots"
+excluded_directories=(.git node_modules target vendor)
 : >"$inventory"
 : >"$exception_roots"
 
@@ -30,6 +32,7 @@ import pathlib
 import sys
 
 repository = pathlib.Path(sys.argv[1]).resolve()
+excluded_directories = set(sys.argv[2:])
 production_kinds = {
     "bin",
     "cdylib",
@@ -45,11 +48,59 @@ for package in metadata["packages"]:
         if production_kinds.intersection(target["kind"]):
             source = pathlib.Path(target["src_path"]).resolve()
             try:
-                print(source.relative_to(repository))
+                relative_source = source.relative_to(repository)
             except ValueError:
                 raise SystemExit(
                     f"first-party target is outside the repository: {source}"
                 )
+            if excluded_directories.isdisjoint(relative_source.parts):
+                print(relative_source)
+' "$root" "${excluded_directories[@]}"
+}
+
+discover_manifests() {
+  python3 - "$root" "${excluded_directories[@]}" <<'PY'
+import os
+import pathlib
+import sys
+
+repository = pathlib.Path(sys.argv[1]).resolve()
+excluded_directories = set(sys.argv[2:])
+
+for directory, child_directories, files in os.walk(repository, topdown=True):
+    child_directories[:] = sorted(
+        child
+        for child in child_directories
+        if child not in excluded_directories
+    )
+    if "Cargo.toml" in files:
+        print(pathlib.Path(directory, "Cargo.toml"))
+PY
+}
+
+workspace_manifest_for() {
+  local manifest="$1"
+  cargo locate-project \
+    --workspace \
+    --manifest-path "$manifest" \
+    --message-format json |
+    python3 -c '
+import json
+import pathlib
+import sys
+
+repository = pathlib.Path(sys.argv[1]).resolve()
+workspace_manifest = pathlib.Path(json.load(sys.stdin)["root"]).resolve()
+try:
+    workspace_manifest.relative_to(repository)
+except ValueError:
+    raise SystemExit(
+        f"first-party workspace manifest is outside the repository: {workspace_manifest}"
+    )
+
+if not workspace_manifest.is_file():
+    raise SystemExit(f"workspace manifest does not exist: {workspace_manifest}")
+print(workspace_manifest)
 ' "$root"
 }
 
@@ -126,8 +177,20 @@ raise SystemExit(0 if candidate.is_file() else 1)
 PY
 }
 
-inventory_manifest "$root/Cargo.toml" >>"$inventory"
-inventory_manifest "$root/editors/zed/Cargo.toml" >>"$inventory"
+manifest_candidates="$tmp/manifest-candidates"
+workspace_manifests="$tmp/workspace-manifests"
+discover_manifests >"$manifest_candidates"
+if [[ ! -s "$manifest_candidates" ]]; then
+  printf 'no first-party Cargo manifests discovered\n' >&2
+  exit 1
+fi
+while IFS= read -r manifest; do
+  workspace_manifest_for "$manifest"
+done <"$manifest_candidates" | sort -u >"$workspace_manifests"
+
+while IFS= read -r manifest; do
+  inventory_manifest "$manifest"
+done <"$workspace_manifests" >>"$inventory"
 sort -u -o "$inventory" "$inventory"
 
 while IFS=$'\t' read -r crate_root design_record extra ||

@@ -3,8 +3,9 @@
 Verification for first-party production crate-root inventory, unsafe-code
 declarations, supported targets, and reviewed exceptions.
 
-Canonical issue:
-[#146](https://github.com/flyingrobots/colorful-language/issues/146).
+Canonical issues:
+[#146](https://github.com/flyingrobots/colorful-language/issues/146) and
+[#170](https://github.com/flyingrobots/colorful-language/issues/170).
 
 ## Requirements
 
@@ -22,6 +23,9 @@ Canonical issue:
   Zed adapter's supported `wasm32-wasip1` target.
 - **RSP-6** Documentation must state that crate-root policy does not constrain
   unsafe code inside third-party dependencies.
+- **RSP-7** The checker must discover every first-party Cargo workspace without
+  requiring a source edit, while pruning only reviewed generated, dependency,
+  and repository-metadata directory names.
 
 ## Cases
 
@@ -46,3 +50,29 @@ Canonical issue:
   *Oracle:* the Rust gate passes and the Zed adapter builds for
   `wasm32-wasip1`. *Evidence type:* compiler execution. *Evidence:* the `rust`
   and `editors` jobs in `.github/workflows/ci.yml`. *Status:* implemented.
+- **RSP-4a** — *Requirements:* RSP-2, RSP-7. *Behavior:* discover Cargo
+  manifests recursively, derive and deduplicate their workspace roots through
+  Cargo metadata, and inventory production targets from every resulting
+  workspace. Prune only `.git`, `node_modules`, `target`, and `vendor`
+  directory components. *Oracle:* an unprotected production root in a third
+  standalone workspace fails without changing the checker; protecting it
+  passes and reports three roots; manifests under each pruned directory remain
+  excluded; and the same workspace reached through multiple member manifests
+  is inventoried once. *Evidence type:* deterministic shell fixture.
+  *Evidence:* `scripts/check-rust-source-policy.sh` and
+  `scripts/check-rust-source-policy.test.sh`. *Status:* implemented.
+- **RSP-4b** — *Requirements:* RSP-2, RSP-7. *Behavior:* a path dependency
+  stored below a pruned directory remains outside the first-party source
+  inventory even when Cargo automatically includes it in workspace metadata.
+  *Oracle:* an unprotected library below `vendor/` does not enter the reported
+  production-root count when a first-party package depends on it. *Evidence
+  type:* deterministic shell fixture. *Evidence:*
+  `scripts/check-rust-source-policy.test.sh`. *Status:* implemented.
+- **RSP-4c** — *Requirements:* RSP-2, RSP-7. *Behavior:* manifest discovery
+  resolves each candidate to its workspace root without dependency resolution,
+  deduplicates those roots, and requests full Cargo metadata once per workspace.
+  *Oracle:* the multi-member fixture records four `locate-project` calls, three
+  metadata calls, no member-manifest metadata call, and one metadata call for
+  the main workspace root. *Evidence type:* deterministic Cargo-wrapper
+  fixture. *Evidence:* `scripts/check-rust-source-policy.test.sh`. *Status:*
+  implemented.

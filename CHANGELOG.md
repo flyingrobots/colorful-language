@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Automatic first-party Cargo workspace source-policy discovery.** The
+  unsafe-code policy gate now discovers every Cargo manifest outside exact
+  repository-metadata, generated-output, installed-dependency, and vendored-
+  dependency directories. Cargo metadata remains authoritative for workspace
+  membership and production targets, so a new standalone workspace cannot
+  silently escape `#![forbid(unsafe_code)]` enforcement. Lightweight workspace
+  location is deduplicated before one full metadata request per workspace.
 - **Reproducible evidence toolchains with separate compatibility signals.**
   Repository and release evidence now pin Rust 1.97.1, Node 22.23.1, and
   TypeScript 5.9.3 through reviewed toolchain files, exact manifests, and

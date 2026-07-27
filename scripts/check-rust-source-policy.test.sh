@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 checker="$root/scripts/check-rust-source-policy.sh"
 fixture="$(mktemp -d)"
+fixture="$(cd "$fixture" && pwd -P)"
 trap 'rm -rf "$fixture"' EXIT
 
 mkdir -p \
@@ -139,6 +140,130 @@ fi
 output="$("$checker" --root "$fixture")"
 if [[ "$output" != *"check-rust-source-policy passed: 2 production root(s)"* ]]; then
   printf 'empty exception registry failed\n%s\n' "$output" >&2
+  exit 1
+fi
+
+mkdir -p "$fixture/tools/standalone/src"
+cat >"$fixture/tools/standalone/Cargo.toml" <<'EOF'
+[package]
+name = "source-policy-standalone-fixture"
+version = "0.0.0"
+edition = "2021"
+
+[workspace]
+
+[lib]
+path = "src/lib.rs"
+EOF
+cat >"$fixture/tools/standalone/src/lib.rs" <<'EOF'
+pub fn unprotected_standalone() {}
+EOF
+cargo generate-lockfile \
+  --manifest-path "$fixture/tools/standalone/Cargo.toml" >/dev/null
+
+output=""
+if output="$("$checker" --root "$fixture" 2>&1)"; then
+  printf 'expected discovered-workspace failure\n%s\n' "$output" >&2
+  exit 1
+fi
+if [[ "$output" != *"missing #![forbid(unsafe_code)]: tools/standalone/src/lib.rs"* ]]; then
+  printf 'wrong discovered-workspace failure\n%s\n' "$output" >&2
+  exit 1
+fi
+
+cat >"$fixture/tools/standalone/src/lib.rs" <<'EOF'
+#![forbid(unsafe_code)]
+
+pub fn protected_standalone() {}
+EOF
+real_cargo="$(command -v cargo)"
+cargo_log="$fixture/cargo-manifests.log"
+mkdir -p "$fixture/test-bin"
+cat >"$fixture/test-bin/cargo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+previous=""
+for argument in "$@"; do
+  if [[ "$previous" == "--manifest-path" ]]; then
+    printf '%s\t%s\n' "$1" "$argument" >>"${CARGO_INVOCATION_LOG:?}"
+    break
+  fi
+  previous="$argument"
+done
+exec "${REAL_CARGO:?}" "$@"
+EOF
+chmod +x "$fixture/test-bin/cargo"
+output="$(
+  PATH="$fixture/test-bin:$PATH" \
+    REAL_CARGO="$real_cargo" \
+    CARGO_INVOCATION_LOG="$cargo_log" \
+    "$checker" --root "$fixture"
+)"
+if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]]; then
+  printf 'protected discovered workspace did not pass\n%s\n' "$output" >&2
+  exit 1
+fi
+# Four discovered manifests require lightweight workspace-location calls. Their
+# three unique workspace roots then require one metadata call each: seven Cargo
+# calls total, with metadata using the root manifest rather than its member.
+locate_calls="$(awk -F '\t' '$1 == "locate-project" { count++ } END { print count + 0 }' "$cargo_log")"
+metadata_calls="$(awk -F '\t' '$1 == "metadata" { count++ } END { print count + 0 }' "$cargo_log")"
+root_metadata_calls="$(
+  awk -F '\t' -v manifest="$fixture/Cargo.toml" \
+    '$1 == "metadata" && $2 == manifest { count++ } END { print count + 0 }' \
+    "$cargo_log"
+)"
+member_metadata_calls="$(
+  awk -F '\t' -v manifest="$fixture/crate/Cargo.toml" \
+    '$1 == "metadata" && $2 == manifest { count++ } END { print count + 0 }' \
+    "$cargo_log"
+)"
+total_cargo_calls="$(wc -l <"$cargo_log" | tr -d ' ')"
+if [[ "$locate_calls" != 4 ||
+  "$metadata_calls" != 3 ||
+  "$root_metadata_calls" != 1 ||
+  "$member_metadata_calls" != 0 ||
+  "$total_cargo_calls" != 7 ]]; then
+  printf 'workspace manifests were not deduplicated before inventory\n' >&2
+  sed 's/^/  /' "$cargo_log" >&2
+  exit 1
+fi
+
+for excluded in .git node_modules target vendor; do
+  mkdir -p "$fixture/$excluded/ignored"
+  cat >"$fixture/$excluded/ignored/Cargo.toml" <<'EOF'
+This is deliberately not a Cargo manifest.
+EOF
+done
+output="$("$checker" --root "$fixture")"
+if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]]; then
+  printf 'excluded manifest directory was not pruned\n%s\n' "$output" >&2
+  exit 1
+fi
+
+mkdir -p "$fixture/vendor/dep/src"
+cat >>"$fixture/crate/Cargo.toml" <<'EOF'
+
+[dependencies]
+source-policy-vendored-fixture = { path = "../vendor/dep" }
+EOF
+cat >"$fixture/vendor/dep/Cargo.toml" <<'EOF'
+[package]
+name = "source-policy-vendored-fixture"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+EOF
+cat >"$fixture/vendor/dep/src/lib.rs" <<'EOF'
+pub fn unprotected_vendored_dependency() {}
+EOF
+cargo generate-lockfile --manifest-path "$fixture/Cargo.toml" >/dev/null
+output="$("$checker" --root "$fixture")"
+if [[ "$output" != *"check-rust-source-policy passed: 3 production root(s)"* ]]; then
+  printf 'vendored path dependency entered the inventory\n%s\n' "$output" >&2
   exit 1
 fi
 
