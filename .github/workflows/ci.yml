@@ -185,6 +185,8 @@ jobs:
       - run: node scripts/check-vscode-dependency-policy.mjs
       - run: npm ci
         working-directory: editors/vscode
+      - run: npm audit --audit-level=high
+        working-directory: editors/vscode
       - run: npm run compile
         working-directory: editors/vscode
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # master

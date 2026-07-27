@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -88,4 +89,24 @@ test("rejects an extension floor below the client floor", () => {
   const { editorPackage, lockfile } = fixture();
   editorPackage.engines.vscode = "^1.90.0";
   expectCode(editorPackage, lockfile, "E_VSCODE_ENGINE");
+});
+
+test("runs the high-severity advisory audit in CI and release preparation", () => {
+  const workflow = readFileSync(
+    new URL("../.github/workflows/ci.yml", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    workflow,
+    /- run: npm audit --audit-level=high\n\s+working-directory: editors\/vscode/u,
+  );
+
+  const releasePrep = readFileSync(
+    new URL("./release-prep.sh", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    releasePrep,
+    /^npm --prefix editors\/vscode audit --audit-level=high$/mu,
+  );
 });
