@@ -142,14 +142,14 @@ EOF
 sort -o "$expected" "$expected"
 sort -o "$invocations" "$invocations"
 if ! cmp -s "$expected" "$invocations"; then
-  printf 'advisory workspace inventory did not match\nexpected:\n' >&2
+  printf 'dependency-policy workspace inventory did not match\nexpected:\n' >&2
   sed 's/^/  /' "$expected" >&2
   printf 'actual:\n' >&2
   sed 's/^/  /' "$invocations" >&2
   exit 1
 fi
 if [[ "$output" != *"check-rust-dependency-policy passed: 3 workspace(s)"* ]]; then
-  printf 'advisory checker did not report the discovered workspace count\n%s\n' \
+  printf 'dependency-policy checker did not report the workspace count\n%s\n' \
     "$output" >&2
   exit 1
 fi

@@ -58,13 +58,6 @@ function requireObject(value, code, path) {
   return value;
 }
 
-function sortedStrings(values, code, path) {
-  if (!Array.isArray(values) || values.some((value) => typeof value !== "string")) {
-    reject(code, path, "expected a string array");
-  }
-  return values.toSorted();
-}
-
 function sameStrings(actual, expected) {
   return (
     actual.length === expected.length &&
