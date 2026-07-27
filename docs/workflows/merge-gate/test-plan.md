@@ -36,13 +36,21 @@ Canonical issue:
   settings remain unchanged. *Oracle:* a deterministic checker compares the
   governed live fields with the manifest and reports the first mismatch using a
   stable error category. *Evidence type:* ruleset manifest, checker self-test,
-  live API inspection, and CI execution. *Status:* planned.
+  live API inspection, and CI execution. *Evidence:*
+  `.github/rulesets/mainline.json`,
+  `scripts/check-main-ruleset.mjs`,
+  `scripts/check-main-ruleset.test.mjs`, and the `docs` job in
+  `.github/workflows/ci.yml`. *Status:* implemented.
 - **MG-2a** — *Requirement:* MG-4. *Behavior:* a disposable pull request whose
   documentation check fails is reported as blocked even after its other
   required checks finish; no bypass merge is attempted. *Oracle:* the pull
   request check rollup names the failing required context and GitHub reports a
   blocked merge state. *Evidence type:* disposable GitHub pull request and
-  ruleset evaluation. *Status:* planned.
+  ruleset evaluation. *Evidence:* closed, unmerged pull request
+  [#183](https://github.com/flyingrobots/colorful-language/pull/183) and Actions
+  run
+  [30249653591](https://github.com/flyingrobots/colorful-language/actions/runs/30249653591);
+  its remote branch was deleted after the proof. *Status:* implemented.
 - **MG-2b** — *Requirement:* MG-4. *Behavior:* the real slice pull request
   remains normally merge-eligible after all five required contexts pass.
   *Oracle:* GitHub reports all required checks successful and a clean merge
@@ -53,4 +61,20 @@ Canonical issue:
   every unrelated rule and verify the replacement context's source before
   changing the live requirement. *Oracle:* documentation inspection and the
   executable live-contract check after recovery. *Evidence type:* current
-  workflow reference and checker. *Status:* planned.
+  workflow reference and checker. *Evidence:*
+  `docs/workflows/merge-gate/README.md` and
+  `scripts/check-main-ruleset.mjs`. *Status:* implemented.
+
+## Ruleset change audit
+
+The live mutation on 2026-07-27 changed one governed rule and preserved every
+other field.
+
+| Field | Before | After |
+| --- | --- | --- |
+| Ruleset identity and scope | `17949589`, `mainline`, active, default branch | unchanged |
+| Bypass actor | repository-role actor `5`, `always` | unchanged |
+| Ref protection | deletion and non-fast-forward protection | unchanged |
+| Commit protection | verified signatures | unchanged |
+| Pull-request policy | merge commits only, stale approvals dismissed, all threads resolved, no required approval count | unchanged |
+| Required checks | none | five named contexts, GitHub Actions application `15368`, strict freshness |

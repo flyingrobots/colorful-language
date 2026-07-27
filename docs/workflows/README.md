@@ -18,5 +18,7 @@ Product and user-facing concepts still belong in [`../topics/`](../topics/).
   publication, verification, and retrospective discipline.
 - [PR size reporting](pr-size-reporting/README.md) — informational line-count diff
   advisory signal and exclusions in CI.
+- [Merge gate](merge-gate/README.md) — default-branch protections, required CI
+  contexts, live drift evidence, and safe context migration.
 - [Rust source policy](rust-source-policy/README.md) — first-party unsafe-code
   declarations, Cargo-target inventory, and reviewed exceptions.
