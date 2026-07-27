@@ -11,4 +11,6 @@ negative	The answer was known.	known is ambiguous without an agent phrase
 negative	The package was lost.	lost is ambiguous without an agent phrase
 negative	The worker was tired.	tired is an adjectival complement
 negative	The manager was concerned.	concerned is an adjectival complement
+negative	The door was closed by now.	by now is temporal rather than agentive evidence
+negative	The window was broken by then.	by then is temporal rather than agentive evidence
 negative	The team reviewed the report.	active voice has no be auxiliary

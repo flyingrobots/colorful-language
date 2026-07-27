@@ -64,7 +64,7 @@ fn reviewed_passive_voice_corpus_has_no_false_positives() {
         Counts {
             true_positives: 4,
             false_positives: 0,
-            true_negatives: 9,
+            true_negatives: 11,
             false_negatives: 0,
         }
     );
