@@ -12,8 +12,11 @@ For `ClosedClassLexicon`, `classify(word) -> PosClass`:
 
 1. If the word is in the closed-class set (matched case-insensitively), return
    `Function(kind)` with its `FunctionKind`.
-2. Otherwise, if the word is numeric — at least one digit and only digits or
-   internal `.`/`,` separators — return `Number`.
+2. Otherwise, if the entire word matches the shared numeric grammar
+   `N+([.,]N+)*` — where `N` is any Unicode numeric character — return
+   `Number`. Separators must be singular and surrounded by numeric characters;
+   mixed decimal/grouping forms such as `1,234.56` and `1.234,56` are accepted,
+   while `1..2`, `.5`, and `3,` are not.
 3. Otherwise return `Content` (open-class, undifferentiated).
 
 `SeedOpenClassLexicon` applies the same first two steps, then maps a small
@@ -44,6 +47,9 @@ the authoritative current size.
   context (is the word capitalized *and* not sentence-initial?), so it is applied
   by `colorful_core::LexicalAnnotator`, not by the lexicon. See the
   [coloring](../coloring/README.md) topic.
+- **One numeric scanner.** `colorful_core::numeric_prefix_len` is the
+  allocation-free source of truth for both parser token formation and lexicon
+  whole-token classification.
 
 ## Known limitations
 

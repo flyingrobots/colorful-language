@@ -102,16 +102,36 @@ lives in `crates/colorful-lexicon/src/lib.rs`.
   *Status:* implemented.
 - **LEX-11a** — *Requirement:* LEX-11. *Behavior:* parser token formation and
   lexicon `is_number` agree for integers, decimals, grouping, Unicode numerics,
-  repeated separators, and leading/trailing separators. *Oracle:* exact parser
-  token spans and lexicon `PosClass` equality for one shared table; malformed
-  forms are rejected by both surfaces. *Evidence type:* cross-crate table-driven
-  parity test. *Tracking:*
+  mixed comma/period forms, repeated separators, and leading/trailing
+  separators. Both consume `colorful_core::numeric_prefix_len`'s
+  `N+([.,]N+)*` contract. *Oracle:* one TSV matrix pins exact parser leaf
+  slices, the scanner's whole-token decision, and lexicon `PosClass` equality;
+  malformed separator placement is never `Number`. *Evidence type:* shared
+  pure scanner and cross-crate table-driven parity test. *Evidence:*
+  `colorful_core::numeric_prefix_len`,
+  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv`, and
+  `crates/colorful-parse/tests/numeric_parity.rs`
+  (`parser_and_lexicon_share_the_numeric_matrix`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
-  *Status:* planned.
+  *Status:* implemented.
+- **LEX-11b** — *Requirement:* LEX-11. *Behavior:* the lexicon and parser
+  recognize every Rust Unicode numeric scalar through one authoritative
+  predicate even when Logos and the pinned compiler carry different Unicode
+  table versions. The cross-crate oracle preserves parser node kinds and
+  includes the Unicode 17 numerics missing from regex-syntax 0.8.11's Unicode
+  16 tables. *Oracle:* exhaustive equality among parser `Word`, scanner
+  whole-token acceptance, and lexicon `Number`, plus typed malformed-token
+  fixtures. *Evidence type:* typed table-driven regression plus deterministic
+  exhaustive Unicode property test. *Evidence:*
+  `crates/colorful-parse/tests/fixtures/numeric_parity.tsv`;
+  `crates/colorful-parse/tests/numeric_parity.rs`
+  (`parser_and_lexicon_share_the_numeric_matrix` and
+  `every_unicode_numeric_scalar_has_parser_lexicon_parity`). *Tracking:*
+  [#143](https://github.com/flyingrobots/colorful-language/issues/143).
+  *Status:* implemented.
 
 ## Known gaps
 
 - No regression fixture yet asserting the full word list; the size floor and
   per-kind samples are the current guard. The duplicate-key check is enforced at
   compile time by `phf`.
-- Numeric-recognition parity remains open in LEX-11a.

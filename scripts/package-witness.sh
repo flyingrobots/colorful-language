@@ -47,8 +47,11 @@ internal_deps_for() {
   case "$1" in
     colorful-core)
       ;;
-    colorful-lexicon | colorful-parse)
+    colorful-lexicon)
       echo "colorful-core"
+      ;;
+    colorful-parse)
+      echo "colorful-core colorful-lexicon"
       ;;
     colorful-ir)
       echo "colorful-core colorful-lexicon colorful-parse"

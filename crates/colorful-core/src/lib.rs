@@ -54,6 +54,61 @@ impl Span {
     }
 }
 
+/// Return the byte length of the numeric-token prefix at the start of `source`.
+///
+/// Numeric tokens follow `N+([.,]N+)*`, where `N` is any Unicode numeric
+/// character. A separator is consumed only when another numeric character
+/// follows it, so malformed separators remain available to the parser as
+/// punctuation. The scan is allocation-free.
+///
+/// ```
+/// use colorful_core::numeric_prefix_len;
+///
+/// assert_eq!(numeric_prefix_len("1,234.56 words"), Some(8));
+/// assert_eq!(numeric_prefix_len("1..2"), Some(1));
+/// assert_eq!(numeric_prefix_len(".5"), None);
+/// ```
+#[must_use]
+pub fn numeric_prefix_len(source: &str) -> Option<usize> {
+    let mut characters = source.char_indices().peekable();
+    let (_, first) = characters.next()?;
+    if !first.is_numeric() {
+        return None;
+    }
+    let mut end = first.len_utf8();
+
+    loop {
+        while let Some(&(index, character)) = characters.peek() {
+            if !character.is_numeric() {
+                break;
+            }
+            characters.next();
+            end = index + character.len_utf8();
+        }
+
+        let Some(&(separator_index, separator)) = characters.peek() else {
+            break;
+        };
+        if !matches!(separator, '.' | ',') {
+            break;
+        }
+
+        let mut lookahead = characters.clone();
+        lookahead.next();
+        if !lookahead
+            .peek()
+            .is_some_and(|(_, character)| character.is_numeric())
+        {
+            break;
+        }
+
+        characters.next();
+        end = separator_index + separator.len_utf8();
+    }
+
+    Some(end)
+}
+
 /// The category of a closed-class ("function") word. These are the finite,
 /// enumerable word classes that behave like programming-language keywords.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

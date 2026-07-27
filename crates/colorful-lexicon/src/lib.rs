@@ -25,7 +25,8 @@
 #![warn(missing_docs)]
 
 use colorful_core::{
-    Annotator, FunctionKind, LexicalAnnotator, Lexicon, OpenClassKind, PassIdentity, PosClass,
+    numeric_prefix_len, Annotator, FunctionKind, LexicalAnnotator, Lexicon, OpenClassKind,
+    PassIdentity, PosClass,
 };
 use colorful_core::{Token, Tree};
 use phf::phf_map;
@@ -674,14 +675,9 @@ fn lookup_open_class(word: &str) -> Option<OpenClassKind> {
     None
 }
 
-/// Whether `word` is a numeric token: it starts and ends with a Unicode numeric
-/// digit (matching the parser's `\p{N}`), and every character is numeric or an
-/// internal `.`/`,` separator (`150`, `3.14`, `1,000`, `\u{0663}`, but not `3.`,
-/// `.5`, or `.`).
+/// Whether `word` exactly matches the shared numeric-token grammar.
 fn is_number(word: &str) -> bool {
-    let first_is_digit = word.chars().next().is_some_and(char::is_numeric);
-    let last_is_digit = word.chars().next_back().is_some_and(char::is_numeric);
-    first_is_digit && last_is_digit && word.chars().all(|c| c.is_numeric() || c == '.' || c == ',')
+    numeric_prefix_len(word) == Some(word.len())
 }
 
 #[cfg(test)]
