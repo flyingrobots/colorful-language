@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scan every committed Cargo workspace against the RustSec advisory database.
+# Scan every Git-tracked Cargo workspace against the RustSec advisory database.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -21,13 +21,16 @@ command -v cargo-deny >/dev/null 2>&1 ||
   fail "cargo-deny is required"
 command -v python3 >/dev/null 2>&1 ||
   fail "python3 is required"
+command -v git >/dev/null 2>&1 ||
+  fail "git is required"
 
 excluded_directories=(.git node_modules target vendor)
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 discover_manifests() {
-  python3 - "$root" "${excluded_directories[@]}" <<'PY'
+  git -C "$root" ls-files -z |
+    python3 -c '
 import os
 import pathlib
 import sys
@@ -35,15 +38,23 @@ import sys
 repository = pathlib.Path(sys.argv[1]).resolve()
 excluded_directories = set(sys.argv[2:])
 
-for directory, child_directories, files in os.walk(repository, topdown=True):
-    child_directories[:] = sorted(
-        child
-        for child in child_directories
-        if child not in excluded_directories
-    )
-    if "Cargo.toml" in files:
-        print(pathlib.Path(directory, "Cargo.toml"))
-PY
+for raw_path in sys.stdin.buffer.read().split(b"\0"):
+    if not raw_path:
+        continue
+    relative = pathlib.PurePosixPath(os.fsdecode(raw_path))
+    if (
+        relative.name == "Cargo.toml"
+        and excluded_directories.isdisjoint(relative.parts)
+    ):
+        manifest = (repository / relative).resolve(strict=True)
+        try:
+            manifest.relative_to(repository)
+        except ValueError:
+            raise SystemExit(
+                f"first-party manifest is outside the repository: {manifest}"
+            )
+        print(manifest)
+' "$root" "${excluded_directories[@]}"
 }
 
 workspace_manifest_for() {
