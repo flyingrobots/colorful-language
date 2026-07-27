@@ -92,10 +92,13 @@ single owner of update sources, grouping, and cadence.
 
 For an action update, inspect the upstream release and source commit, retain the
 full 40-character commit SHA in every `uses:` reference, and keep its release
-or source-version comment on the same line. For Cargo or Node updates, inspect
-the manifest and lockfile diff for unrelated movement, review upstream release
-and advisory notes, and run the affected gate plus the full release-preparation
-gate before merging.
+or source-version comment on the same line. A Docker action is the sole remote
+format exception: use `docker://<image>@sha256:<64 lowercase hex characters>`
+plus the same-line image-version comment; mutable image tags are rejected.
+Local `./` actions remain source-controlled by the repository. For Cargo or
+Node updates, inspect the manifest and lockfile diff for unrelated movement,
+review upstream release and advisory notes, and run the affected gate plus the
+full release-preparation gate before merging.
 
 Changing a primary Rust, Node, or TypeScript evidence release remains a manual
 policy change: update every authority and current reference named above in the
@@ -117,7 +120,8 @@ comment, any missing, duplicate, or unexpected update source, a non-weekly
 cadence, group-name or wildcard-pattern drift, and any attempt to automate one
 side of the shared TypeScript pin. The live check parses the YAML node graph, so
 legal key quoting or whitespace cannot hide a `uses` entry, and scans every
-workflow file, including workflows added later.
+workflow file, including workflows added later. It also rejects a Docker action
+unless an immutable SHA-256 image digest replaces a mutable tag.
 
 The complete requirements and evidence map live in the
 [evidence-toolchain test plan](test-plan.md).

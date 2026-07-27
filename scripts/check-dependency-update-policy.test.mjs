@@ -12,6 +12,8 @@ import {
 } from "./check-dependency-update-policy.mjs";
 
 const ACTION_SHA = "fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+const IMAGE_DIGEST =
+  "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
 function fixture() {
   return {
@@ -68,6 +70,7 @@ updates:
         ".github/workflows/ci.yml",
         `steps:
   - uses: actions/checkout@${ACTION_SHA} # v5
+  - uses: docker://alpine@sha256:${IMAGE_DIGEST} # alpine 3.22
 `,
       ],
     ]),
@@ -149,6 +152,24 @@ test("rejects a missing comment behind a quoted YAML key", () => {
     workflows.set(
       ".github/workflows/ci.yml",
       `steps:\n  - "uses": actions/checkout@${ACTION_SHA}\n`,
+    );
+  }, "E_ACTION_RELEASE_COMMENT");
+});
+
+test("rejects a mutable Docker action tag", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      "steps:\n  - uses: docker://alpine:latest # alpine latest\n",
+    );
+  }, "E_DOCKER_ACTION_DIGEST");
+});
+
+test("rejects a Docker action digest without its version comment", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      `steps:\n  - uses: docker://alpine@sha256:${IMAGE_DIGEST}\n`,
     );
   }, "E_ACTION_RELEASE_COMMENT");
 });

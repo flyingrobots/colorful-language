@@ -12,6 +12,7 @@ import {
 
 const scriptPath = fileURLToPath(import.meta.url);
 const FULL_SHA = /^[0-9a-f]{40}$/u;
+const DOCKER_SHA256 = /^docker:\/\/[^@\s]+@sha256:[0-9a-f]{64}$/u;
 const EXPECTED_SOURCES = new Map([
   [
     "github-actions\u0000/",
@@ -69,17 +70,26 @@ function validateActionPins(workflows) {
           );
         }
         const value = pair.value.value;
-        if (value.startsWith("./") || value.startsWith("docker://")) {
+        if (value.startsWith("./")) {
           return;
         }
         const line =
           workflow.slice(0, pair.value.range[0]).split(/\r?\n/u).length;
-        const action = value.match(/^([^@\s]+)@([^\s]+)$/u);
-        if (action === null || !FULL_SHA.test(action[2])) {
-          reject(
-            "E_ACTION_PIN",
-            `${file}:${line}: third-party actions must use a full commit SHA`,
-          );
+        if (value.startsWith("docker://")) {
+          if (!DOCKER_SHA256.test(value)) {
+            reject(
+              "E_DOCKER_ACTION_DIGEST",
+              `${file}:${line}: Docker actions must use a sha256 image digest`,
+            );
+          }
+        } else {
+          const action = value.match(/^([^@\s]+)@([^\s]+)$/u);
+          if (action === null || !FULL_SHA.test(action[2])) {
+            reject(
+              "E_ACTION_PIN",
+              `${file}:${line}: third-party actions must use a full commit SHA`,
+            );
+          }
         }
         const trailingSource = workflow.slice(
           pair.value.range[1],

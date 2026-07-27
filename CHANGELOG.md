@@ -17,7 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   than source formatting, rejects update-source, cadence, grouping, or manual
   shared-dependency drift, and runs in CI and release preparation. Both npm
   lanes exclude TypeScript so its exact cross-graph evidence pin advances only
-  in one coordinated manual change.
+  in one coordinated manual change. Remote Docker actions must use immutable
+  SHA-256 image digests with same-line image-version comments rather than
+  mutable tags.
 - **Enforced protected-branch CI contract.** The live `mainline` ruleset now
   requires the documentation, Rust, Cargo package, IR round-trip, and editor
   compilation GitHub Actions contexts with strict default-branch freshness.
