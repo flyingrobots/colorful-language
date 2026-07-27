@@ -85,6 +85,7 @@ allow = [
   "Zlib",
 ]
 unused-allowed-license = "allow"
+include-dev = true
 exceptions = []
 
 [sources]
@@ -232,6 +233,15 @@ test("rejects a Discussion route outside the reviewed categories", () => {
 test("rejects a weakened Rust license allowlist", () => {
   expectCode((candidate) => {
     candidate.rustPolicy = candidate.rustPolicy.replace('  "Zlib",\n', "");
+  }, "E_RUST_LICENSES");
+});
+
+test("rejects omitted Rust development-dependency license coverage", () => {
+  expectCode((candidate) => {
+    candidate.rustPolicy = candidate.rustPolicy.replace(
+      "include-dev = true\n",
+      "",
+    );
   }, "E_RUST_LICENSES");
 });
 
