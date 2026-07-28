@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   closingIssueNumbersForRepository,
@@ -152,6 +153,23 @@ test("rejects a missing option value with a stable usage error", () => {
       assert.equal(error.category, "E_ROADMAP_USAGE");
       assert.match(error.message, /arguments/u);
       assert.match(error.message, /--roadmap/u);
+      return true;
+    },
+  );
+});
+
+test("rejects malformed issue JSON with a stable snapshot error", () => {
+  const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
+  const issuePath = fileURLToPath(
+    new URL("invalid-issues.json", fixtureRoot),
+  );
+
+  assert.throws(
+    () => run(["--roadmap", roadmapPath, "--issues", issuePath]),
+    (error) => {
+      assert.ok(error instanceof InventoryError);
+      assert.equal(error.category, "E_ROADMAP_INVALID_ISSUE_SNAPSHOT");
+      assert.match(error.message, /invalid-issues\.json/u);
       return true;
     },
   );
