@@ -14,6 +14,12 @@ const APIS = Object.freeze([
   ["vocabulary", "vocabulary", "pub fn visual_role", "visual_role("],
 ]);
 const DOCTEST_COMMAND = "cargo test --doc --workspace --locked";
+const INPUT_PATHS = Object.freeze({
+  core: "crates/colorful-core/src/lib.rs",
+  projection: "crates/colorful-projection/src/lib.rs",
+  vocabulary: "crates/colorful-ir/src/vocabulary.rs",
+  workflow: ".github/workflows/ci.yml",
+});
 const RUSTDOC_FENCE =
   /^\s*\/\/\/ ```(?<info>[A-Za-z0-9_-]+(?:\s*,\s*[A-Za-z0-9_-]+)*)?\s*$/u;
 const EXECUTABLE_RUSTDOC_ATTRIBUTES = new Set([
@@ -26,6 +32,10 @@ const EXECUTABLE_RUSTDOC_ATTRIBUTES = new Set([
 ]);
 const ASSERTION = /\bassert(?:_eq|_matches|_ne)?!\s*\(/u;
 const DOCTEST_MARKER = /^#\s*\/\/\s*public-api-doctest:/u;
+const repositoryRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 
 export class PublicApiDoctestPolicyError extends Error {
   constructor(code, message) {
@@ -216,27 +226,42 @@ export function validatePublicApiDoctestPolicy(snapshot) {
   }
 }
 
+function readExpectedInput(root, relativePath) {
+  try {
+    return readFileSync(path.join(root, relativePath), "utf8");
+  } catch {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_DOCTEST_INPUT",
+      `${relativePath}: cannot read expected policy input`,
+    );
+  }
+}
+
 function readSnapshot(root) {
-  return {
-    core: readFileSync(
-      path.join(root, "crates/colorful-core/src/lib.rs"),
-      "utf8",
-    ),
-    projection: readFileSync(
-      path.join(root, "crates/colorful-projection/src/lib.rs"),
-      "utf8",
-    ),
-    vocabulary: readFileSync(
-      path.join(root, "crates/colorful-ir/src/vocabulary.rs"),
-      "utf8",
-    ),
-    workflow: readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8"),
-  };
+  return Object.fromEntries(
+    Object.entries(INPUT_PATHS).map(([key, relativePath]) => [
+      key,
+      readExpectedInput(root, relativePath),
+    ]),
+  );
+}
+
+function parseArguments(argv) {
+  if (argv.length === 0) {
+    return repositoryRoot;
+  }
+  if (argv.length === 2 && argv[0] === "--root") {
+    return path.resolve(argv[1]);
+  }
+  throw new PublicApiDoctestPolicyError(
+    "E_API_DOCTEST_USAGE",
+    "usage: scripts/check-public-api-doctests.mjs [--root PATH]",
+  );
 }
 
 function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   try {
+    const root = parseArguments(process.argv.slice(2));
     validatePublicApiDoctestPolicy(readSnapshot(root));
     console.log("check-public-api-doctests: policy satisfied");
   } catch (error) {

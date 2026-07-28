@@ -365,6 +365,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Stable public-API policy input failures.** Missing, moved, or unreadable
+  source and workflow inputs now fail the doctest policy checker with
+  `E_API_DOCTEST_INPUT`, the repository-relative path, empty standard output,
+  and no raw Node stack trace. The entrypoint continues to rethrow unexpected
+  programmer errors.
 - **Parser/lexicon numeric recognition parity.** A single allocation-free
   scanner now implements `N+([.,]N+)*` for parser token formation and lexicon
   classification without a second Logos Unicode-number gate. A 31-row

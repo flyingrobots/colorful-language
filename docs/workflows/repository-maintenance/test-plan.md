@@ -256,6 +256,19 @@ roadmap-to-issue reconciliation is tracked in
   `Analyzer`, `build_document`, and `visual_role` rustdoc examples. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
   *Status:* implemented.
+- **RM-11b — Stable doctest-policy input failures.** *Requirement:* RM-11.
+  *Behavior:* an expected source or workflow input that is missing, moved, or
+  unreadable fails closed with one stable category, the repository-relative
+  input path, empty standard output, and no raw implementation stack.
+  Unexpected programmer errors remain visible rather than being absorbed by a
+  blanket entrypoint catch. *Oracle:* a deterministic process mutation removes
+  one expected source input and requires nonzero status, the exact category and
+  relative path on standard error, empty standard output, and no Node stack
+  frames. *Evidence type:* process-level input mutation.
+  *Evidence:* `scripts/check-public-api-doctests.mjs` and
+  `scripts/check-public-api-doctests.test.mjs`. *Tracking:*
+  [#213](https://github.com/flyingrobots/colorful-language/issues/213).
+  *Status:* implemented.
 - **RM-12a — Pinned workflow-security gate.** *Requirement:* RM-12. *Behavior:*
   one versioned policy selects an exact `zizmor` release and its offline,
   workflow-only invocation; the same first-party wrapper scans every checked-in
