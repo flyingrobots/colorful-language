@@ -83,7 +83,8 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — validate boundaries with fuzzing** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | #134 now builds on delivered #82 with a pinned seeded correctness corpus and four manual fuzz targets; measurement lanes remain advisory until their environments are stable. |
 | **Delivered — prove independent-consumer value** | Mutation, fuzzing, and a standalone consumer exposed real boundary cost without expanding the cathedral. | #156 retains stable v1 under its reviewed correctness/cost rule; delivered #82 and #134 supply the mutation and fuzz baselines. |
 | **Now — make wire generations explicit** | The independent proof exposed two schema/vocabulary generations under one `colorful.syntax/v1` label. | Complete #221 so compatibility is authored rather than inferred from release-tag branches. |
-| **Next — generate portable admission** | Consumers should not hand-maintain structural wire validation after generation compatibility is explicit. | Complete #222 after #221, retaining named semantic checks and measured before/after burden. |
+| **Next — decompose god-files without API drift** | IR and CLI contributors should not cross unrelated responsibilities to change one validator or output adapter. | Complete #223 after #221 with black-box characterization and unchanged public re-exports. |
+| **Then — generate portable admission** | Consumers should not hand-maintain structural wire validation after generation compatibility and module ownership are explicit. | Complete #222 after #221 and #223, retaining named semantic checks and measured before/after burden. |
 | **Then — test analyzer substitution** | An optional external-analyzer adapter tests whether the pure port provides useful substitution without making an external engine mandatory. | Complete #157 with built-in/external CLI and LSP parity. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -139,6 +140,22 @@ observe public-contract regressions before they ship.
   [#213](https://github.com/flyingrobots/colorful-language/issues/213) after
   the workflow-security gate.
   <!-- roadmap-primary: delivered #213 -->
+- **Queued structural decomposition:** split the IR and CLI god-files along
+  existing responsibilities without changing public APIs, canonical bytes, or
+  behavior
+  [#223](https://github.com/flyingrobots/colorful-language/issues/223), after
+  the wire-generation policy and before generated portable admission.
+  <!-- roadmap-primary: parked #223 -->
+- **Parked compatibility diagnostics:** decide how total compatibility wrappers
+  expose classification failures without adding hidden stderr side effects to
+  library calls
+  [#224](https://github.com/flyingrobots/colorful-language/issues/224).
+  <!-- roadmap-primary: parked #224 -->
+- **Parked release provenance:** attach a reviewed SBOM and build-provenance
+  attestation to release artifacts after the distribution and signing
+  authorities are established
+  [#227](https://github.com/flyingrobots/colorful-language/issues/227).
+  <!-- roadmap-primary: parked #227 -->
 - **Queued evidence hygiene:** derive the cross-stage allocation-profiler
   identity from the resolved dependency authority
   [#207](https://github.com/flyingrobots/colorful-language/issues/207) after
@@ -232,6 +249,11 @@ CLI/LSP findings agree without hiding ambiguity.
   weakening the pure port or making an engine mandatory
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   <!-- roadmap-primary: active #157 -->
+- **Parked metrics export:** expose the existing versioned LSP counters through
+  a bounded adapter only when an operator job needs Prometheus or CLI output;
+  do not add a mandatory network listener
+  [#226](https://github.com/flyingrobots/colorful-language/issues/226).
+  <!-- roadmap-primary: parked #226 -->
 
 **Exit signal:** forced stale completions cannot publish; the supported
 five-megabyte case meets its reviewed SLO; overload and invalid input are
@@ -269,6 +291,11 @@ was installed, and reach the first useful editor result.
   destinations exist
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
   <!-- roadmap-primary: active #153 -->
+- **Parked theme accessibility tooling:** lint contrast and color-vision
+  distinguishability only after the shipped theme format and visual oracle are
+  stable
+  [#225](https://github.com/flyingrobots/colorful-language/issues/225).
+  <!-- roadmap-primary: parked #225 -->
 
 **Exit signal:** public URLs, signed or checksummed artifacts, version
 compatibility, clean-install smoke tests, rollback instructions, and measured
@@ -420,8 +447,10 @@ independent proof retains stable v1 under its reviewed cost/correctness rule
 ([#156](https://github.com/flyingrobots/colorful-language/issues/156)). The
 active maturity critical path is explicit wire-generation compatibility
 ([#221](https://github.com/flyingrobots/colorful-language/issues/221)), followed
-by generated portable admission
-([#222](https://github.com/flyingrobots/colorful-language/issues/222)) and then
+by compatibility-preserving IR/CLI decomposition
+([#223](https://github.com/flyingrobots/colorful-language/issues/223)), generated
+portable admission
+([#222](https://github.com/flyingrobots/colorful-language/issues/222)), and then
 the optional external-analyzer comparison
 ([#157](https://github.com/flyingrobots/colorful-language/issues/157)).
 Distribution follows that operational proof; independent product validation
