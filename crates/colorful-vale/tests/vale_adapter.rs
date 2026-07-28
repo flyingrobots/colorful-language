@@ -270,8 +270,7 @@ fn analysis_uses_exact_isolated_stdin_contract() {
 }
 
 #[test]
-#[should_panic(expected = "BoundValeAnalyzer must be used with the source accepted by bind()")]
-fn bound_analyzer_rejects_source_identity_bypass() {
+fn bound_analyzer_rejects_source_identity_bypass_without_exposing_text() {
     let fixture = success_fixture();
     let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");
     let prepared = analyzer
@@ -280,7 +279,25 @@ fn bound_analyzer_rejects_source_identity_bypass() {
     let bound = prepared.bind(SOURCE).expect("bind source identity");
     let classified = classification(SOURCE);
 
-    let _ = bound.analyze("different source", classified.tree(), classified.tokens());
+    let panic = std::panic::catch_unwind(|| {
+        bound.analyze(
+            "different secret source",
+            classified.tree(),
+            classified.tokens(),
+        )
+    })
+    .expect_err("source mismatch must panic");
+    let message = panic
+        .downcast_ref::<String>()
+        .map(String::as_str)
+        .or_else(|| panic.downcast_ref::<&str>().copied())
+        .expect("panic payload must be text");
+    assert_eq!(
+        message,
+        "BoundValeAnalyzer must be used with the source accepted by bind()"
+    );
+    assert!(!message.contains(SOURCE));
+    assert!(!message.contains("different secret source"));
 }
 
 #[test]
