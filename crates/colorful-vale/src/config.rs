@@ -239,26 +239,29 @@ fn parse_version_token(token: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     use super::ValeConfig;
+
+    static FIXTURE_ID: AtomicU64 = AtomicU64::new(0);
 
     #[test]
     fn relative_paths_are_resolved_before_the_process_changes_directory() {
         let current = std::env::current_dir().expect("current directory");
-        let relative_root =
-            std::path::PathBuf::from("target").join(format!("vale-config-{}", std::process::id()));
-        let absolute_root = current.join(&relative_root);
-        fs::create_dir_all(&absolute_root).expect("create test root");
+        let (relative_root, absolute_root) = loop {
+            let id = FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
+            let relative = std::path::PathBuf::from("target")
+                .join(format!("vale-config-{}-{id}", std::process::id()));
+            let absolute = current.join(&relative);
+            match fs::create_dir(&absolute) {
+                Ok(()) => break (relative, absolute),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+                Err(error) => panic!("create test root {}: {error}", absolute.display()),
+            }
+        };
         let executable = relative_root.join("bin/vale");
         let configuration = relative_root.join("config/.vale.ini");
-        fs::create_dir_all(
-            absolute_root
-                .join("config")
-                .parent()
-                .expect("config parent"),
-        )
-        .expect("create config parent");
-        fs::create_dir_all(absolute_root.join("config")).expect("create config directory");
+        fs::create_dir(absolute_root.join("config")).expect("create config directory");
         fs::write(current.join(&configuration), "[*.txt]\n").expect("write config");
 
         let validated = ValeConfig::new(&executable, &configuration)

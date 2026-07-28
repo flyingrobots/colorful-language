@@ -64,10 +64,16 @@ struct FakeVale {
 
 impl FakeVale {
     fn new(version: &str, analysis_body: &str) -> Self {
-        let id = FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
-        let root =
-            std::env::temp_dir().join(format!("colorful-vale-test-{}-{id}", std::process::id()));
-        fs::create_dir_all(&root).expect("create fake Vale root");
+        let root = loop {
+            let id = FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
+            let candidate = std::env::temp_dir()
+                .join(format!("colorful-vale-test-{}-{id}", std::process::id()));
+            match fs::create_dir(&candidate) {
+                Ok(()) => break candidate,
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+                Err(error) => panic!("create fake Vale root {}: {error}", candidate.display()),
+            }
+        };
         let executable = root.join("vale");
         let configuration = root.join(".vale.ini");
         let arguments = root.join("arguments.txt");
