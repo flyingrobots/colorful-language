@@ -293,7 +293,7 @@ test("rejects stale coverage measurements in the maintained reference", () => {
   const renderedPercent = Number.isInteger(measuredPercent)
     ? `${measuredPercent}%`
     : `${measuredPercent.toFixed(2)}%`;
-  const staleReference = COVERAGE_REFERENCE.replace(
+  const staleReference = COVERAGE_REFERENCE.replaceAll(
     renderedPercent,
     `${(measuredPercent - 0.01).toFixed(2)}%`,
   );
