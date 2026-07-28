@@ -171,7 +171,6 @@ write_profile() {
       contractVersion: document.contractVersion,
       schemaHash: document.schemaHash,
       vocabularyHash: document.vocabularyHash,
-      openClassKindField: process.argv[2] === 'v0.3.0',
     };
     writeFileSync(process.argv[4], JSON.stringify(profile, null, 2) + '\\n');
   " "$work/ir-$tag.json" "$tag" "$commit" "$output"

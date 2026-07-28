@@ -28,6 +28,8 @@ node --test scripts/check-property-fuzz-policy.test.mjs
 node scripts/check-property-fuzz-policy.mjs
 node scripts/check-release-publish-order.test.mjs
 node scripts/check-release-publish-order.mjs
+node --test scripts/check-ir-compatibility.test.mjs
+node scripts/check-ir-compatibility.mjs
 
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
@@ -64,6 +66,7 @@ bash scripts/ir-witness.sh
 bash scripts/check-independent-consumer.sh
 bash scripts/check-generated-ir-drift.sh
 bash scripts/check-generated-vocabulary-drift.sh
+bash scripts/version-compat-matrix.sh
 node consumers/graft-projection.test.mjs
 npm --prefix editors/vscode run compile
 cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked

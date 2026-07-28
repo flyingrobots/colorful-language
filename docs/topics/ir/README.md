@@ -250,6 +250,33 @@ v0.3 must handle the `Option` result.
   error a compile-time inventory change; case-count equality then requires a
   corresponding shared mutation. `scripts/ir-witness.sh` runs both legs.
 
+### Explicit wire generations
+
+`colorful.syntax/v1` currently has three supported identity generations:
+`v0.2.1`, `v0.3.0`, and the unreleased workspace `v0.4.0` identity. The
+canonical `contracts/colorful/syntax-compatibility.v1.json` manifest names each
+complete contract/schema/vocabulary tuple, schema-hash mode, predecessor,
+compatibility decision, wire-shape adapter, and migration-evidence path. Tagged
+generations also name the full commit behind their immutable tag; validation
+compares each historical fixture with the contract bytes at that commit. The
+workspace identity uses the description-normalized schema hash and no release
+commit; the two tagged generations retain their raw-SDL hashes.
+
+Compatibility is selected by the complete tuple, never the release label. The
+independent consumer derives whether `openClassKind` exists from the selected
+generation and rejects a self-consistent but unregistered profile before
+artifact admission. Regeneration, package witness, CI, and release preparation
+require the canonical manifest, the `colorful-ir` package copy, and the
+standalone-consumer copy to agree byte-for-byte. Description-only edits preserve
+a generation; nullable-field, vocabulary, and hash-algorithm changes require an
+explicit v1 generation; required-field, removal, reinterpretation, and enum
+changes require a new contract version. The compatibility gate parses the
+repository's deliberately small GraphQL subset and compares each predecessor
+SDL directly, so those classifications are verified against schema shape rather
+than trusted as manifest labels. Migration-evidence paths are accepted only
+from a reviewed executable-oracle registry whose commands appear in both CI and
+release preparation.
+
 ## Known limitations (Stage 1)
 
 - The outline is paragraphs + sentences only; Markdown headings and deeper
@@ -267,11 +294,6 @@ v0.3 must handle the `Option` result.
   implementation cost is reduced through
   [#222](https://github.com/flyingrobots/colorful-language/issues/222) without
   weakening validation or changing v1 bytes.
-- `v0.2.1` and `v0.3.0` carry distinct schema/vocabulary identity tuples under
-  the same `colorful.syntax/v1` label. The independent consumer admits those
-  exact tuples, but [#221](https://github.com/flyingrobots/colorful-language/issues/221)
-  still needs to replace release-tag-specific profiles with one explicit
-  generation-compatibility authority.
 - GraphQL `Int` lowers to `i32`, bounding documents to ~2 GB.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior and the

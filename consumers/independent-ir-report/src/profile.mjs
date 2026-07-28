@@ -3,11 +3,106 @@ import path from "node:path";
 
 import { fail, isRecord, parseJson, sha256 } from "./common.mjs";
 
+const COMPATIBILITY = loadCompatibilityManifest();
+const PROFILE_FIELDS = [
+  "commit",
+  "contractVersion",
+  "profileVersion",
+  "release",
+  "schemaHash",
+  "vocabularyHash",
+];
+
 function requiredString(record, field) {
   if (typeof record[field] !== "string" || record[field].length === 0) {
     fail("E_PROFILE", `profile ${field} must be a non-empty string`);
   }
   return record[field];
+}
+
+function hasExactFields(record, expected) {
+  if (!isRecord(record)) return false;
+  const actual = Object.keys(record).sort();
+  const wanted = [...expected].sort();
+  return (
+    actual.length === wanted.length &&
+    actual.every((field, index) => field === wanted[index])
+  );
+}
+
+function loadCompatibilityManifest() {
+  const manifest = parseJson(
+    readFileSync(
+      new URL("../compatibility.v1.json", import.meta.url),
+      "utf8",
+    ),
+    "E_PROFILE",
+  );
+  if (
+    !isRecord(manifest) ||
+    manifest.version !== "colorful.syntax-compatibility/v1" ||
+    manifest.contractFamily !== "colorful.syntax/v1" ||
+    !Array.isArray(manifest.generations)
+  ) {
+    fail("E_PROFILE", "compatibility manifest has an unsupported shape");
+  }
+  return manifest;
+}
+
+function selectGeneration(metadata, compatibility) {
+  const matches = compatibility.generations.filter((generation) =>
+    isRecord(generation) &&
+    isRecord(generation.identity) &&
+    generation.identity.contractVersion === metadata.contractVersion &&
+    generation.identity.schemaHash === metadata.schemaHash &&
+    generation.identity.vocabularyHash === metadata.vocabularyHash
+  );
+  if (matches.length !== 1) {
+    fail("E_PROFILE", "release profile names an unsupported identity tuple");
+  }
+  const [generation] = matches;
+  if (
+    typeof generation.id !== "string" ||
+    !isRecord(generation.wireShape) ||
+    !Array.isArray(generation.wireShape.optionalFields) ||
+    generation.wireShape.optionalFields.some(
+      (field) =>
+        field !== "Token.openClassKind",
+    ) ||
+    !(
+      generation.schemaHashMode === "raw-sdl-sha256" ||
+      generation.schemaHashMode === "descriptions-stripped-sdl-sha256"
+    )
+  ) {
+    fail("E_PROFILE", "selected compatibility generation is unsupported");
+  }
+  return generation;
+}
+
+function stripGraphqlDescriptions(sdl) {
+  const lines = sdl.split(/\r\n|\n/u);
+  if (
+    lines.length > 0 &&
+    lines[lines.length - 1] === "" &&
+    /(?:\r\n|\n)$/u.test(sdl)
+  ) {
+    lines.pop();
+  }
+  return lines
+    .filter((line) => {
+      const trimmed = line.trim();
+      return !(
+        trimmed.length >= 2 &&
+        trimmed.startsWith('"') &&
+        trimmed.endsWith('"')
+      );
+    })
+    .join("\n");
+}
+
+function profileSchemaHash(syntax, mode) {
+  if (mode === "raw-sdl-sha256") return sha256(syntax);
+  return sha256(stripGraphqlDescriptions(syntax));
 }
 
 function axisKey(tokenKind, lexicalClass, openClassKind) {
@@ -39,6 +134,17 @@ function enumValues(syntax, name, optional = false) {
   return values;
 }
 
+export function validateRoleCoverage(rolesByAxes, projectionsByRole) {
+  for (const [axes, role] of rolesByAxes) {
+    if (!projectionsByRole.has(role)) {
+      fail(
+        "E_PROFILE",
+        `profile class role ${role} for axes ${axes} has no projection`,
+      );
+    }
+  }
+}
+
 export function loadProfile(directory) {
   const metadata = parseJson(
     readFileSync(path.join(directory, "profile.json"), "utf8"),
@@ -52,9 +158,8 @@ export function loadProfile(directory) {
   const vocabulary = parseJson(vocabularyText, "E_PROFILE");
 
   if (
-    !isRecord(metadata) ||
+    !hasExactFields(metadata, PROFILE_FIELDS) ||
     metadata.profileVersion !== "colorful.consumer-profile/v1" ||
-    typeof metadata.openClassKindField !== "boolean" ||
     !isRecord(vocabulary) ||
     vocabulary.version !== "colorful.vocabulary/v1" ||
     !Array.isArray(vocabulary.classRoles) ||
@@ -63,12 +168,27 @@ export function loadProfile(directory) {
     fail("E_PROFILE", "release profile has an unsupported shape");
   }
 
-  const schemaHash = sha256(syntax);
+  const contractVersion = requiredString(metadata, "contractVersion");
+  const declaredSchemaHash = requiredString(metadata, "schemaHash");
+  const declaredVocabularyHash = requiredString(metadata, "vocabularyHash");
+  const generation = selectGeneration(
+    {
+      contractVersion,
+      schemaHash: declaredSchemaHash,
+      vocabularyHash: declaredVocabularyHash,
+    },
+    COMPATIBILITY,
+  );
+  const openClassKindField =
+    generation.wireShape.optionalFields.includes(
+      "Token.openClassKind",
+    );
+  const schemaHash = profileSchemaHash(syntax, generation.schemaHashMode);
   const vocabularyHash = sha256(vocabularyText);
-  if (schemaHash !== metadata.schemaHash) {
+  if (schemaHash !== declaredSchemaHash) {
     fail("E_PROFILE", "profile schema hash does not match its bundled SDL");
   }
-  if (vocabularyHash !== metadata.vocabularyHash) {
+  if (vocabularyHash !== declaredVocabularyHash) {
     fail(
       "E_PROFILE",
       "profile vocabulary hash does not match its bundled manifest",
@@ -137,24 +257,18 @@ export function loadProfile(directory) {
       lspLegend.push(projection.lspTokenType);
     }
   }
-  for (const [axes, role] of rolesByAxes) {
-    if (!projectionsByRole.has(role)) {
-      fail(
-        "E_PROFILE",
-        `profile class role ${role} for axes ${axes} has no projection`,
-      );
-    }
-  }
+  validateRoleCoverage(rolesByAxes, projectionsByRole);
 
   return Object.freeze({
     directory,
     profileVersion: metadata.profileVersion,
+    generationId: generation.id,
     release: requiredString(metadata, "release"),
     commit: requiredString(metadata, "commit"),
-    contractVersion: requiredString(metadata, "contractVersion"),
+    contractVersion,
     schemaHash,
     vocabularyHash,
-    openClassKindField: metadata.openClassKindField,
+    openClassKindField,
     enums: Object.freeze({
       tokenKind: enumValues(syntax, "TokenKind"),
       lexicalClass: enumValues(syntax, "LexicalClass"),
@@ -162,7 +276,7 @@ export function loadProfile(directory) {
       openClassKind: enumValues(
         syntax,
         "OpenClassKind",
-        !metadata.openClassKindField,
+        !openClassKindField,
       ),
       outlineKind: enumValues(syntax, "OutlineKind"),
       diagnosticSeverity: enumValues(syntax, "DiagnosticSeverity"),

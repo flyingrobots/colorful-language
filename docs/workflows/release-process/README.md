@@ -54,6 +54,15 @@ Release-prep validation is executable:
 bash scripts/release-prep.sh
 ```
 
+That gate validates the canonical
+`contracts/colorful/syntax-compatibility.v1.json` authority before packaging.
+For `colorful.syntax/v1`, description-only SDL edits preserve the current
+generation; additive nullable fields, vocabulary changes, and schema-hash
+algorithm changes require a new explicit generation with migration evidence.
+Required fields, removals, reinterpretations, and existing-enum changes require
+a deliberately versioned contract. A release must not infer compatibility from
+its tag or publish an unregistered identity tuple.
+
 Final manual tag preflight is executable from clean, aligned `main`:
 
 ```bash

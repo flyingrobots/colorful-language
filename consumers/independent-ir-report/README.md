@@ -18,6 +18,10 @@ Report cells escape Markdown table delimiters even when the source text or a
 role name contains `|`.
 Derivation admission mirrors the producer validator: at least one step,
 non-empty `passId` and `ruleId`, and unique `passId` values.
+The release label is provenance only. `compatibility.v1.json` selects wire
+behavior from the complete contract-version, schema-hash, and vocabulary-hash
+tuple. A profile-local field-shape switch, a renamed release label, or a
+self-consistent but unregistered tuple cannot reinterpret the contract.
 
 ## Run the proof
 
@@ -44,7 +48,11 @@ The checked-in profiles and artifacts come from the immutable `v0.2.1` and
 `v0.3.0` release tags. Both releases identify their wire contract as
 `colorful.syntax/v1`; they are two real contract generations rather than an
 invented v2 migration. The consumer normalizes the additive `openClassKind`
-generation boundary into one role-span model.
+generation boundary into one role-span model. Its package-local
+`compatibility.v1.json` is byte-identical to the canonical
+`contracts/colorful/syntax-compatibility.v1.json` authority. That authority
+also records the current normalized-schema-hash generation, every predecessor
+edge, the wire-shape adapter decision, and migration evidence.
 
 For the v0.3.0 source, the IR, ANSI, and LSP adapters render byte-identical
 reports. The generated
@@ -62,8 +70,8 @@ ANSI paths share the same trivial process boundary. The IR adapter is larger
 than the alternatives' combined 354 lines but uniquely verifies the contract,
 schema, vocabulary, source length, and source digest and stays below the
 reviewed two-times bound. The resulting decision is to retain stable v1,
-simplify consumer admission cost where possible, make the currently
-hash-selected generation policy explicit in
+simplify consumer admission cost where possible, keep the explicit generation
+policy delivered by
 [#221](https://github.com/flyingrobots/colorful-language/issues/221), generate
 shared portable admission through
 [#222](https://github.com/flyingrobots/colorful-language/issues/222), and avoid
