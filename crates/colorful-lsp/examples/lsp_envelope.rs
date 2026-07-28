@@ -456,6 +456,8 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         incremental_started,
         &incremental_diagnostics,
     ));
+    let incremental_diagnostic_code =
+        diagnostic_code(&incremental_diagnostics.value).map(str::to_owned);
 
     let incremental_tokens_started = Instant::now();
     server.send(json!({
@@ -499,6 +501,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
     });
     let time_to_latest_diagnostics_ms =
         milliseconds(response_duration(overload_started, &latest_diagnostics));
+    let overload_diagnostic_code = diagnostic_code(&latest_diagnostics.value).map(str::to_owned);
 
     let mut semantic_result_ids = Vec::new();
     let mut semantic_token_counts = Vec::new();
@@ -548,9 +551,18 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
             "{stale_publication_count} stale diagnostic publications"
         ));
     }
+    if semantic_result_ids.iter().any(|result_id| result_id != "6") {
+        slo_failures.push("semantic response did not describe version 6".to_string());
+    }
     if supported {
         if outcome_category != "analyzed" {
             slo_failures.push(format!("unexpected outcome {outcome_category}"));
+        }
+        if first_diagnostic_code.is_some()
+            || incremental_diagnostic_code.is_some()
+            || overload_diagnostic_code.is_some()
+        {
+            slo_failures.push("supported document emitted a refusal diagnostic".to_string());
         }
         for (name, duration) in [
             ("open diagnostics", open_diagnostics_ms),
@@ -588,15 +600,26 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         if outcome_category != "document-too-large" {
             slo_failures.push(format!("unexpected outcome {outcome_category}"));
         }
-        if open_token_count != 0 || incremental_token_count != 0 {
+        if first_diagnostic_code.as_deref() != Some("colorful/document-too-large")
+            || incremental_diagnostic_code.as_deref() != Some("colorful/document-too-large")
+            || overload_diagnostic_code.as_deref() != Some("colorful/document-too-large")
+        {
+            slo_failures.push("refusal diagnostic category changed between phases".to_string());
+        }
+        if open_token_count != 0
+            || incremental_token_count != 0
+            || semantic_token_counts.iter().any(|count| *count != 0)
+        {
             slo_failures.push("refused document emitted semantic tokens".to_string());
         }
         for (name, duration) in [
             ("refusal open diagnostics", open_diagnostics_ms),
+            ("refusal open semantic tokens", open_tokens_ms),
             (
                 "refusal incremental diagnostics",
                 incremental_diagnostics_ms,
             ),
+            ("refusal incremental semantic tokens", incremental_tokens_ms),
             (
                 "refusal overload diagnostics",
                 time_to_latest_diagnostics_ms,
@@ -635,6 +658,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         "incremental": {
             "dispatchMs": milliseconds(incremental_dispatch),
             "diagnosticsMs": incremental_diagnostics_ms,
+            "diagnosticCode": incremental_diagnostic_code,
             "semanticTokensMs": incremental_tokens_ms,
             "semanticTokenCount": incremental_token_count
         },
@@ -642,6 +666,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
             "rapidEditCount": RAPID_EDIT_COUNT,
             "concurrentSemanticRequests": CONCURRENT_SEMANTIC_REQUESTS,
             "timeToLatestDiagnosticsMs": time_to_latest_diagnostics_ms,
+            "diagnosticCode": overload_diagnostic_code,
             "slowestSemanticResponseMs": slowest_semantic_response_ms,
             "semanticResponseMs": semantic_response_ms,
             "semanticResultIds": semantic_result_ids,

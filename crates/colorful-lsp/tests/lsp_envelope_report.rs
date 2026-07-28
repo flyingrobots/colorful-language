@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 const SCHEMA_VERSION: &str = "colorful.lsp.envelope/v1";
 const SUPPORTED_LIMIT_BYTES: u64 = 5 * 1024 * 1024;
@@ -19,20 +20,124 @@ fn baseline() -> Value {
         .unwrap_or_else(|error| panic!("decode {}: {error}", path.display()))
 }
 
+fn measurement_at_most(scenario: &Value, section: &str, name: &str, limit: f64) -> bool {
+    scenario[section][name]
+        .as_f64()
+        .is_some_and(|measurement| measurement <= limit)
+}
+
+fn all_counts(scenario: &Value, expected: impl Fn(u64) -> bool) -> bool {
+    scenario["overload"]["semanticTokenCounts"]
+        .as_array()
+        .is_some_and(|counts| {
+            counts.len() == 4
+                && counts
+                    .iter()
+                    .all(|count| count.as_u64().is_some_and(&expected))
+        })
+}
+
+fn semantic_results_are_fresh(scenario: &Value) -> bool {
+    let expected = scenario["finalDocumentVersion"]
+        .as_u64()
+        .map(|version| version.to_string());
+    scenario["overload"]["semanticResultIds"]
+        .as_array()
+        .zip(expected)
+        .is_some_and(|(ids, expected)| {
+            ids.len() == 4 && ids.iter().all(|id| id.as_str() == Some(&expected))
+        })
+}
+
+fn measured_slo_is_met(scenario: &Value) -> bool {
+    let Some(document_bytes) = scenario["documentBytes"].as_u64() else {
+        return false;
+    };
+    let common = scenario["processExitCode"] == 0
+        && scenario["stalePublicationCount"] == 0
+        && scenario["latestDiagnosticVersion"] == scenario["finalDocumentVersion"]
+        && scenario["metrics"]["staleResults"] == 0
+        && scenario["metrics"]["analysisFailures"] == 0
+        && semantic_results_are_fresh(scenario);
+    if !common {
+        return false;
+    }
+
+    if document_bytes <= SUPPORTED_LIMIT_BYTES {
+        scenario["outcomeCategory"] == "analyzed"
+            && scenario["diagnosticCode"].is_null()
+            && scenario["incremental"]["diagnosticCode"].is_null()
+            && scenario["overload"]["diagnosticCode"].is_null()
+            && measurement_at_most(scenario, "open", "diagnosticsMs", 5_000.0)
+            && measurement_at_most(scenario, "incremental", "diagnosticsMs", 5_000.0)
+            && measurement_at_most(scenario, "open", "semanticTokensMs", 2_000.0)
+            && measurement_at_most(scenario, "incremental", "semanticTokensMs", 2_000.0)
+            && measurement_at_most(scenario, "overload", "timeToLatestDiagnosticsMs", 8_000.0)
+            && measurement_at_most(scenario, "overload", "slowestSemanticResponseMs", 8_000.0)
+            && scenario["metrics"]["maxQueueDelayMicros"]
+                .as_u64()
+                .is_some_and(|delay| delay <= 250_000)
+            && scenario["peakRssBytes"]
+                .as_u64()
+                .is_some_and(|bytes| bytes <= 1_536_u64 * 1024 * 1024)
+            && scenario["open"]["semanticTokenCount"]
+                .as_u64()
+                .is_some_and(|count| count > 0)
+            && scenario["incremental"]["semanticTokenCount"]
+                .as_u64()
+                .is_some_and(|count| count > 0)
+            && all_counts(scenario, |count| count > 0)
+    } else {
+        scenario["outcomeCategory"] == "document-too-large"
+            && scenario["diagnosticCode"] == "colorful/document-too-large"
+            && scenario["incremental"]["diagnosticCode"] == "colorful/document-too-large"
+            && scenario["overload"]["diagnosticCode"] == "colorful/document-too-large"
+            && measurement_at_most(scenario, "open", "diagnosticsMs", 1_000.0)
+            && measurement_at_most(scenario, "open", "semanticTokensMs", 1_000.0)
+            && measurement_at_most(scenario, "incremental", "diagnosticsMs", 1_000.0)
+            && measurement_at_most(scenario, "incremental", "semanticTokensMs", 1_000.0)
+            && measurement_at_most(scenario, "overload", "timeToLatestDiagnosticsMs", 1_000.0)
+            && measurement_at_most(scenario, "overload", "slowestSemanticResponseMs", 1_000.0)
+            && scenario["peakRssBytes"]
+                .as_u64()
+                .is_some_and(|bytes| bytes <= 512_u64 * 1024 * 1024)
+            && scenario["open"]["semanticTokenCount"] == 0
+            && scenario["incremental"]["semanticTokenCount"] == 0
+            && all_counts(scenario, |count| count == 0)
+    }
+}
+
 fn claimed_slo_is_consistent(report: &Value) -> bool {
     report["scenarios"].as_array().is_some_and(|scenarios| {
         scenarios.iter().all(|scenario| {
-            scenario["sloMet"] == true && scenario["sloFailures"] == serde_json::json!([])
+            measured_slo_is_met(scenario)
+                && scenario["sloMet"] == true
+                && scenario["sloFailures"] == serde_json::json!([])
         })
     })
 }
 
 fn claimed_corpus_is_consistent(report: &Value) -> bool {
+    let Some(template) = report["corpus"]["template"]
+        .as_str()
+        .filter(|template| !template.is_empty())
+    else {
+        return false;
+    };
     report["scenarios"].as_array().is_some_and(|scenarios| {
         scenarios.iter().all(|scenario| {
-            scenario["corpusSha256"]
-                .as_str()
-                .is_some_and(|hash| hash.len() == 64)
+            let Some(byte_count) = scenario["documentBytes"]
+                .as_u64()
+                .and_then(|count| usize::try_from(count).ok())
+            else {
+                return false;
+            };
+            let repetitions = byte_count.div_ceil(template.len());
+            let mut corpus = template.repeat(repetitions);
+            corpus.truncate(byte_count);
+            let expected = format!("{:x}", Sha256::digest(corpus.as_bytes()));
+            scenario["corpusBytes"].as_u64() == Some(byte_count as u64)
+                && scenario["corpusSha256"].as_str() == Some(&expected)
         })
     })
 }
@@ -44,9 +149,9 @@ fn baseline_covers_the_reviewed_supported_envelope() {
     assert_eq!(baseline["profile"], "release");
     assert_eq!(baseline["corpus"]["id"], "colorful-lsp-repeated-prose/v1");
     assert_eq!(baseline["source"]["workingTreeDirty"], false);
-    assert!(baseline["source"]["gitCommit"]
-        .as_str()
-        .is_some_and(|commit| commit.len() == 40));
+    assert!(baseline["source"]["gitCommit"].as_str().is_some_and(
+        |commit| commit.len() == 40 && commit.bytes().all(|byte| byte.is_ascii_hexdigit())
+    ));
 
     for key in [
         "operatingSystem",
@@ -97,9 +202,6 @@ fn baseline_covers_the_reviewed_supported_envelope() {
 
     for scenario in scenarios {
         assert_eq!(scenario["corpusBytes"], scenario["documentBytes"]);
-        assert!(scenario["corpusSha256"]
-            .as_str()
-            .is_some_and(|hash| hash.len() == 64));
         assert!(scenario["peakRssBytes"].as_u64().is_some());
         assert!(scenario["open"]["dispatchMs"].as_f64().is_some());
         assert!(scenario["open"]["diagnosticsMs"].as_f64().is_some());
@@ -134,6 +236,8 @@ fn baseline_covers_the_reviewed_supported_envelope() {
         assert_eq!(scenario["sloFailures"], serde_json::json!([]));
         assert_eq!(scenario["sloMet"], true);
     }
+    assert!(claimed_corpus_is_consistent(&baseline));
+    assert!(claimed_slo_is_consistent(&baseline));
 
     let accepted = scenarios
         .iter()
