@@ -298,6 +298,7 @@ test("rejects stale coverage measurements in the maintained reference", () => {
     `${(measuredPercent - 0.01).toFixed(2)}%`,
   );
   assert.notEqual(staleReference, COVERAGE_REFERENCE);
+  assert(!staleReference.includes(renderedPercent));
   assert.throws(
     () => validateCoverageReference(staleReference, ACTUAL_POLICY),
     (error) =>
