@@ -149,6 +149,30 @@ fn output_parser_indexes_lines_once_per_response() {
 }
 
 #[test]
+fn process_deadline_precedes_completed_io_acceptance() {
+    let source = adapter_source("process.rs");
+    let loop_start = source
+        .find("let process_result = loop")
+        .expect("process lifecycle loop");
+    let loop_end = source[loop_start..]
+        .find("let input_result")
+        .map(|offset| loop_start + offset)
+        .expect("process lifecycle loop end");
+    let lifecycle = &source[loop_start..loop_end];
+    let deadline = lifecycle
+        .find("if started.elapsed() >= timeout")
+        .expect("deadline check");
+    let completed = lifecycle
+        .find("if let Some(status)")
+        .expect("completed I/O acceptance");
+
+    assert!(
+        deadline < completed,
+        "the global deadline must be checked before completed I/O is accepted"
+    );
+}
+
+#[test]
 fn workspace_dependency_entries_have_actual_consumers() {
     let workspace = manifest("Cargo.toml");
     let workspace_dependencies = workspace["workspace"]["dependencies"]
