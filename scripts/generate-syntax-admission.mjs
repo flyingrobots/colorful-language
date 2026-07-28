@@ -271,15 +271,6 @@ function validateNamed(value, name, schema, path, reject) {
   for (const [field, parsedReference] of definition.fields) {
     const childPath = fieldPath(path, field);
     if (!Object.hasOwn(value, field)) {
-      if (parsedReference.required) {
-        validateReference(
-          undefined,
-          parsedReference,
-          schema,
-          childPath,
-          reject,
-        );
-      }
       rejectWith(reject, childPath, "is required by the contract shape");
     }
     validateReference(value[field], parsedReference, schema, childPath, reject);

@@ -283,9 +283,13 @@ test("a schema edit changes generated required-field and enum behavior", async (
 
   const missingRequired = currentDocument();
   missingRequired.tokens[0].tokenKind = "SYMBOL";
-  assertShapeError(
+  assert.throws(
     () => runtime.validateSyntaxShape(missingRequired, "changed"),
-    /^evidence$/u,
+    (error) =>
+      error?.name === "SyntaxAdmissionError" &&
+      error.path === "evidence" &&
+      error.message ===
+        "evidence is required by the contract shape",
   );
 
   const changed = { ...missingRequired, evidence: "generated once" };
