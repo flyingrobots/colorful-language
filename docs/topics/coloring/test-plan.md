@@ -288,7 +288,7 @@ Requirements:
   *Status:* implemented.
 - **COL-17c** — *Requirement:* COL-17. *Behavior:* the benchmark matrix links
   semantic-token generation to COL-12a, incremental editing and concurrent LSP
-  work to COL-16a, and Graft projection to CONSUMER-3c instead of reimplementing
+  work to COL-16a, and Graft projection to CONSUMER-3d instead of reimplementing
   those authoritative harnesses. *Oracle:* a deterministic matrix-completeness
   test requires exactly one named authority for parsing, annotation, lint, IR
   projection, IR serialization, IR validation, semantic tokens, incremental

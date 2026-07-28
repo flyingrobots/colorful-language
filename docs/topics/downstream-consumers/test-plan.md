@@ -69,7 +69,10 @@ workspace.
   unavailable for the JavaScript runtime. *Evidence type:* informational
   release benchmark plus deterministic report-contract test. *Tracking:*
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
-  *Status:* planned.
+  *Evidence:* `consumers/graft-projection.benchmark.mjs`;
+  `crates/colorful-cli/benchmarks/cross-stage-baseline.json`;
+  `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
+  *Status:* implemented.
 - **CONSUMER-4a** — *Requirement:* CONSUMER-4. *Behavior:* structural keyword,
   proper noun, number, quote, unstyled content, and open-class roles all derive
   their Graft class from the vocabulary manifest. *Oracle:* JavaScript

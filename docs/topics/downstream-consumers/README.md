@@ -48,6 +48,21 @@ integer" — both as part of step 1's shape check.
 Only once an artifact passes admission does `project()` convert UTF-8 byte
 ranges into row/column spans for Graft syntax classes.
 
+The informational release benchmark drives that complete fail-closed
+`project()` boundary over the shared 899-byte and 45-KB committed corpora:
+
+```bash
+node consumers/graft-projection.benchmark.mjs
+```
+
+The cross-stage harness invokes this authority under the recorded Node
+toolchain and publishes its median latency and source-byte throughput in
+[`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).
+Correctness CI checks the corpus identities and report arithmetic but does not
+gate on wall-clock time. Node does not expose a precise allocator-event oracle
+comparable to the Rust probe, so the report marks allocator attribution
+unavailable instead of treating process heap deltas as allocation counts.
+
 jedit receives Colorful prose structure through Graft. Graft discovers Colorful
 by finding a `colorful` CLI on `PATH`, requiring `colorful --version` to report
 `0.3.0` or newer, and running `colorful ir -` for `.txt` buffers.

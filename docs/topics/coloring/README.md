@@ -192,18 +192,19 @@ Run it from a clean worktree so the report can bind itself to the exact source
 commit. Review the temporary report before updating
 [`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).
 
-**2026-07-28, source `0ca1dea1efa066a54e38330fd37fda369cdba2f5`,
-`rustc 1.97.1`, `stats_alloc 0.1.10`, Apple M1 Pro, 16 GiB RAM,
-macOS Darwin 25.3.0 arm64, release profile:**
+**2026-07-28, source `e23b8fece1bd605af0627cb3cc1d6fc2e2e8f1ca`,
+`rustc 1.97.1`, Node 22.23.1, `stats_alloc 0.1.10`, Apple M1 Pro,
+16 GiB RAM, macOS Darwin 25.3.0 arm64, release profile:**
 
 | Stage | 899 B median | 899 B allocations | 45 KB median | 45 KB throughput | 45 KB allocations |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Parsing | 5.3 µs | 43 / 17.8 KiB | 252 µs | 178.4 MB/s | 2,009 / 915.8 KiB |
-| Contextual annotation | 15.5 µs | 136 / 12.7 KiB | 568 µs | 79.2 MB/s | 6,463 / 807.0 KiB |
-| Lint analysis | 7.4 µs | 144 / 9.4 KiB | 311 µs | 144.5 MB/s | 7,059 / 485.6 KiB |
-| Guarded IR projection | 84.2 µs | 1,063 / 75.3 KiB | 1.99 ms | 22.6 MB/s | 49,172 / 3.20 MiB |
-| Canonical IR serialization | 174 µs | 2,342 / 330.7 KiB | 8.54 ms | 5.3 MB/s | 114,264 / 16.87 MiB |
-| Fail-closed IR validation | 61.7 µs | 1,009 / 59.2 KiB | 1.76 ms | 25.6 MB/s | 48,414 / 2.60 MiB |
+| Parsing | 5.0 µs | 43 / 17.8 KiB | 250 µs | 180.1 MB/s | 2,009 / 915.8 KiB |
+| Contextual annotation | 15.4 µs | 136 / 12.7 KiB | 585 µs | 77.0 MB/s | 6,463 / 807.0 KiB |
+| Lint analysis | 7.0 µs | 144 / 9.4 KiB | 300 µs | 150.2 MB/s | 7,059 / 485.6 KiB |
+| Guarded IR projection | 79.3 µs | 1,063 / 75.3 KiB | 1.98 ms | 22.7 MB/s | 49,172 / 3.20 MiB |
+| Canonical IR serialization | 183 µs | 2,342 / 330.7 KiB | 8.87 ms | 5.1 MB/s | 114,264 / 16.87 MiB |
+| Fail-closed IR validation | 58.3 µs | 1,009 / 59.2 KiB | 1.78 ms | 25.3 MB/s | 48,414 / 2.60 MiB |
+| Graft projection | 744 µs | unavailable | 7.47 ms | 6.0 MB/s | unavailable |
 
 Guarded IR projection uses the public `from_validated_classification()` boundary,
 so its number includes the mandatory successful-document validation
@@ -221,9 +222,9 @@ source-equivalent UTF-8 bytes per second for every row, so the stages remain
 comparable even when the prepared IR is larger than its source. Semantic-token
 generation remains owned by the COL-12a Criterion bench, incremental editing
 and concurrency by the COL-16a LSP envelope, and Graft projection by the
-deterministic-cursor plus informational wall-clock evidence in
-`consumers/graft-projection.test.mjs`; the matrix links those authorities rather
-than cloning them.
+complete fixed-corpus `project()` evidence in
+`consumers/graft-projection.benchmark.mjs`; the matrix invokes that authority
+rather than cloning it.
 
 ### Supported LSP envelope
 
@@ -277,9 +278,10 @@ benchmark is not rerun or used as a noisy correctness gate.
 
 - The cross-stage baseline attributes allocations to the six synchronous Rust
   stage boundaries, while peak server RSS remains the process-level memory
-  oracle for scheduling, caching, transport, and concurrent requests. The
-  JavaScript Graft authority reports timing and deterministic cursor work, not
-  allocator-level attribution.
+  oracle for scheduling, caching, transport, and concurrent requests. Node does
+  not expose an allocator-event oracle comparable to `stats_alloc`, so the
+  JavaScript Graft authority explicitly reports allocation attribution as
+  unavailable rather than substituting noisy heap deltas.
 - The supported envelope covers one open document and four concurrent token
   requests on Darwin/Linux hosts with `/usr/bin/time`; it does not claim
   multi-document capacity, editor-adapter latency, or networked transport.
