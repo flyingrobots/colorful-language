@@ -233,6 +233,21 @@ test("accepts the reviewed workspace and transport coverage", () => {
   );
 });
 
+test("resolves repository-relative report paths from the workspace root", () => {
+  const relativeReport = structuredClone(report());
+  for (const file of relativeReport.data[0].files) {
+    file.filename = file.filename.replace(
+      "/checkout/colorful-language/",
+      "",
+    );
+  }
+  assert.doesNotThrow(() =>
+    validateCoveragePolicy(policy(), relativeReport, {
+      workspaceRoot: "/checkout/colorful-language",
+    }),
+  );
+});
+
 test("accepts coverage documentation generated from the machine policy", () => {
   assert.doesNotThrow(() =>
     validateCoverageReference(COVERAGE_REFERENCE, ACTUAL_POLICY),
