@@ -316,7 +316,8 @@ fn server_metrics_use_a_stable_versioned_contract() {
             "oversizedResults": 0,
             "analysisFailures": 0,
             "maxQueueDelayMicros": 0
-        })
+        }),
+        "unexpected metrics response: {metrics}"
     );
 
     server.send(json!({

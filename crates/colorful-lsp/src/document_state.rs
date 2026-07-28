@@ -4,11 +4,12 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc,
 };
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use colorful_lsp::{apply_change, DocumentAnalysis};
 use dashmap::DashMap;
 use ropey::Rope;
+use serde::Serialize;
 use tokio::sync::{watch, Mutex};
 use tower_lsp::lsp_types::{
     Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range, SemanticToken,
@@ -70,6 +71,7 @@ struct WorkItem {
     snapshot: Rope,
     generation: u64,
     version: i32,
+    scheduled_at: Instant,
     cancellation: CancellationHandle,
     publication_gate: Arc<Mutex<()>>,
 }
@@ -120,19 +122,30 @@ impl SemanticTokenSnapshot {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-#[cfg(test)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct DocumentMetricsSnapshot {
+    schema_version: &'static str,
+    analysis_limit_bytes: u64,
+    active_documents: u64,
+    computations_started: u64,
+    accepted_results: u64,
     pub(crate) cancelled_before_compute: u64,
     pub(crate) stale_results: u64,
     pub(crate) oversized_results: u64,
+    analysis_failures: u64,
+    max_queue_delay_micros: u64,
 }
 
 #[derive(Default)]
 struct DocumentMetrics {
+    computations_started: AtomicU64,
+    accepted_results: AtomicU64,
     cancelled_before_compute: AtomicU64,
     stale_results: AtomicU64,
     oversized_results: AtomicU64,
+    analysis_failures: AtomicU64,
+    max_queue_delay_micros: AtomicU64,
 }
 
 #[derive(Clone)]
@@ -191,6 +204,7 @@ impl DocumentStore {
             snapshot: state.rope.clone(),
             generation: state.generation,
             version: state.version,
+            scheduled_at: Instant::now(),
             cancellation,
             publication_gate: Arc::clone(&state.publication_gate),
         };
@@ -238,6 +252,7 @@ impl DocumentStore {
                 snapshot: state.rope.clone(),
                 generation: state.generation,
                 version: state.version,
+                scheduled_at: Instant::now(),
                 cancellation: state.cancellation.clone(),
                 publication_gate: Arc::clone(&state.publication_gate),
             }
@@ -296,15 +311,21 @@ impl DocumentStore {
         })
     }
 
-    #[cfg(test)]
-    fn metrics(&self) -> DocumentMetricsSnapshot {
+    pub(crate) fn metrics(&self) -> DocumentMetricsSnapshot {
         DocumentMetricsSnapshot {
+            schema_version: "colorful.lsp.metrics/v1",
+            analysis_limit_bytes: u64::try_from(self.max_document_bytes).unwrap_or(u64::MAX),
+            active_documents: u64::try_from(self.documents.len()).unwrap_or(u64::MAX),
+            computations_started: self.metrics.computations_started.load(Ordering::Acquire),
+            accepted_results: self.metrics.accepted_results.load(Ordering::Acquire),
             cancelled_before_compute: self
                 .metrics
                 .cancelled_before_compute
                 .load(Ordering::Acquire),
             stale_results: self.metrics.stale_results.load(Ordering::Acquire),
             oversized_results: self.metrics.oversized_results.load(Ordering::Acquire),
+            analysis_failures: self.metrics.analysis_failures.load(Ordering::Acquire),
+            max_queue_delay_micros: self.metrics.max_queue_delay_micros.load(Ordering::Acquire),
         }
     }
 
@@ -322,10 +343,20 @@ impl DocumentStore {
                 return;
             }
 
+            let queue_delay_micros =
+                u64::try_from(work.scheduled_at.elapsed().as_micros()).unwrap_or(u64::MAX);
+            store
+                .metrics
+                .max_queue_delay_micros
+                .fetch_max(queue_delay_micros, Ordering::AcqRel);
             let oversized = work.snapshot.len_bytes() > store.max_document_bytes;
             let analysis = if oversized {
                 oversized_analysis(work.snapshot.len_bytes(), store.max_document_bytes)
             } else {
+                store
+                    .metrics
+                    .computations_started
+                    .fetch_add(1, Ordering::AcqRel);
                 let compute = Arc::clone(&store.compute);
                 let generation = work.generation;
                 let snapshot = work.snapshot;
@@ -333,7 +364,13 @@ impl DocumentStore {
                     .await
                 {
                     Ok(analysis) => analysis,
-                    Err(_) => failed_analysis(),
+                    Err(_) => {
+                        store
+                            .metrics
+                            .analysis_failures
+                            .fetch_add(1, Ordering::AcqRel);
+                        failed_analysis()
+                    }
                 }
             };
             let analysis = Arc::new(analysis);
@@ -359,6 +396,10 @@ impl DocumentStore {
             state.cached = Some(Arc::clone(&cached));
             state.updates.send_replace(Some(Arc::clone(&cached)));
             drop(state);
+            store
+                .metrics
+                .accepted_results
+                .fetch_add(1, Ordering::AcqRel);
 
             if oversized {
                 store
