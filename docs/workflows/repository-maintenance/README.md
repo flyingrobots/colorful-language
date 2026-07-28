@@ -52,6 +52,24 @@ the reviewed reason, and an explicit removal trigger. The policy checker rejects
 missing, duplicate, incomplete, or stale records and any mismatch between the
 two files.
 
+## Workflow security policy
+
+Install the reviewed analyzer release, then run the deterministic fixtures and
+live repository scan:
+
+```bash
+cargo install --locked zizmor --version 1.28.0
+node --test scripts/check-workflow-security.test.mjs
+node scripts/check-workflow-security.mjs
+```
+
+The runner verifies the installed version before invoking it. It generates the
+analyzer configuration from
+[`.github/workflow-security-policy.yml`](../../../.github/workflow-security-policy.yml),
+uses offline workflow-only collection, and rejects every low-or-higher finding.
+Run `actionlint .github/workflows/*.yml` separately for syntax and schema
+validation; the two tools have distinct responsibilities.
+
 ## Hosted security gates
 
 The `Security` workflow runs for pull requests, pushes to `main`, every Monday,
