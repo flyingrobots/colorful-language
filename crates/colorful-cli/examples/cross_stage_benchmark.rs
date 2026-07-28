@@ -157,19 +157,40 @@ fn is_utc_timestamp(value: &str) -> bool {
 
 fn hardware() -> String {
     let architecture = command_output("uname", &["-m"]);
-    let processor = if cfg!(target_os = "macos") {
+    let processor = if let Ok(value) = std::env::var("COLORFUL_BENCHMARK_PROCESSOR") {
+        assert!(
+            !value.trim().is_empty(),
+            "COLORFUL_BENCHMARK_PROCESSOR must not be empty"
+        );
+        value
+    } else if cfg!(target_os = "macos") {
         command_output("sysctl", &["-n", "machdep.cpu.brand_string"])
     } else if cfg!(target_os = "linux") {
-        std::fs::read_to_string("/proc/cpuinfo")
-            .expect("read /proc/cpuinfo")
-            .lines()
-            .find_map(|line| line.strip_prefix("model name\t: "))
-            .unwrap_or("unknown processor")
+        let cpuinfo = std::fs::read_to_string("/proc/cpuinfo").expect("read /proc/cpuinfo");
+        parse_linux_processor(&cpuinfo)
+            .unwrap_or_else(|| {
+                panic!(
+                    "identify the Linux processor from /proc/cpuinfo; \
+                     set COLORFUL_BENCHMARK_PROCESSOR explicitly"
+                )
+            })
             .to_owned()
     } else {
-        "unknown processor".to_owned()
+        panic!("set COLORFUL_BENCHMARK_PROCESSOR on platforms without a built-in processor probe");
     };
     format!("{processor}; {architecture}")
+}
+
+fn parse_linux_processor(cpuinfo: &str) -> Option<&str> {
+    ["model name", "Processor", "Hardware"]
+        .into_iter()
+        .find_map(|wanted_key| {
+            cpuinfo.lines().find_map(|line| {
+                let (key, value) = line.split_once(':')?;
+                let value = value.trim();
+                (key.trim() == wanted_key && !value.is_empty()).then_some(value)
+            })
+        })
 }
 
 fn parse_linux_memory_bytes(meminfo: &str) -> Option<u64> {
