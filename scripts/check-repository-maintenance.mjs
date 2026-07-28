@@ -492,7 +492,12 @@ function containsCredentialExpression(value) {
   return false;
 }
 
-function requireBlockingRun(job, command, path) {
+function requireBlockingRun(
+  job,
+  command,
+  path,
+  code = "E_SECURITY_WORKFLOW",
+) {
   const step = job?.steps?.find(
     (candidate) =>
       typeof candidate?.run === "string" &&
@@ -502,11 +507,7 @@ function requireBlockingRun(job, command, path) {
         .includes(command),
   );
   if (step === undefined) {
-    reject(
-      "E_SECURITY_WORKFLOW",
-      path,
-      `must run ${JSON.stringify(command)}`,
-    );
+    reject(code, path, `must run ${JSON.stringify(command)}`);
   }
   requireBlockingStep(step, path);
 }
@@ -672,22 +673,12 @@ function validateWorkflowSecurityJob(workflow, policy) {
     );
   }
   for (const command of ["npm ci", ...WORKFLOW_SECURITY_COMMANDS]) {
-    if (!hasRun(job, command)) {
-      reject(
-        "E_WORKFLOW_SECURITY_WIRING",
-        `${path}:steps`,
-        `must run ${JSON.stringify(command)}`,
-      );
-    }
-    const step = job.steps.find(
-      (candidate) =>
-        typeof candidate?.run === "string" &&
-        candidate.run
-          .split(/\r?\n/u)
-          .map((line) => line.trim())
-          .includes(command),
+    requireBlockingRun(
+      job,
+      command,
+      `${path}:steps`,
+      "E_WORKFLOW_SECURITY_WIRING",
     );
-    requireBlockingStep(step, `${path}:steps`);
   }
 }
 
