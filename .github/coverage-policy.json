@@ -5,13 +5,13 @@
     "cargoLlvmCov": "0.8.7"
   },
   "measurement": {
-    "sourceCommit": "d55a6d849052f9ff29ba15905e31218119e264cd",
+    "sourceCommit": "f59fa3a4d0ade58b0be56bf5127f96d4d242becd",
     "command": "cargo llvm-cov --workspace --all-features --all-targets --locked"
   },
   "workspace": {
-    "measuredLines": 6440,
-    "measuredCoveredLines": 6026,
-    "measuredLinePercent": 93.57142857142857,
+    "measuredLines": 6444,
+    "measuredCoveredLines": 6030,
+    "measuredLinePercent": 93.57541899441341,
     "minimumLinePercent": 92,
     "maximumUncoveredLines": 414
   },
@@ -82,9 +82,9 @@
     },
     {
       "path": "crates/colorful-vale/src/process.rs",
-      "measuredLines": 162,
-      "measuredCoveredLines": 131,
-      "measuredLinePercent": 80.8641975308642,
+      "measuredLines": 165,
+      "measuredCoveredLines": 134,
+      "measuredLinePercent": 81.21212121212122,
       "minimumLinePercent": 80,
       "maximumUncoveredLines": 31
     }
