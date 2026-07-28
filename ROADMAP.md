@@ -80,7 +80,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — fuzz validated boundaries** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | Advance #134 after delivered #82; keep measurement lanes advisory until their environments are stable. |
+| **Now — validate boundaries with fuzzing** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | Advance #134 after delivered #82; keep measurement lanes advisory until their environments are stable. |
 | **Next — prove validator and consumer value** | Mutation, fuzzing, independent-consumer, and analyzer-adapter evidence expose real gaps without expanding the cathedral. | Complete #134, #156, and #157 in dependency order; delivered #82 supplies the mutation baseline. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
