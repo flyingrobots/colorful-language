@@ -275,11 +275,12 @@ Requirements:
 - **COL-17b** — *Requirement:* COL-17. *Behavior:* the cross-stage benchmark
   baseline identifies its schema version, corpus hashes, benchmark date,
   hardware, operating system, Rust toolchain, profile, sample count, and exact
-  source commit, and carries reviewed advisory latency, throughput, and
-  allocation tolerances. *Oracle:* deterministic tests reject missing,
-  duplicated, stale-corpus, non-finite, or self-inconsistent measurements and
-  assert that tolerance policy remains advisory rather than a correctness-CI
-  timing gate. *Evidence type:* versioned JSON report and report-contract test.
+  source commit, and carries reviewed advisory latency and allocation
+  tolerances; throughput remains deterministically derived from input bytes and
+  latency. *Oracle:* deterministic tests reject missing, duplicated,
+  stale-corpus, non-finite, or self-inconsistent measurements and assert that
+  tolerance policy remains advisory rather than a correctness-CI timing gate.
+  *Evidence type:* versioned JSON report and report-contract test.
   *Evidence:* `colorful-cli` integration test
   `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
   *Tracking:*
