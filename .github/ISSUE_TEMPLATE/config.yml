@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a support question
+    url: https://github.com/flyingrobots/colorful-language/discussions/categories/q-a
+    about: Get help with installation, configuration, or expected behavior.
+  - name: Explore a design idea
+    url: https://github.com/flyingrobots/colorful-language/discussions/categories/ideas
+    about: Discuss an early idea before turning it into an actionable proposal.

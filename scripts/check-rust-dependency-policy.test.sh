@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-checker="$root/scripts/check-rust-advisories.sh"
+checker="$root/scripts/check-rust-dependency-policy.sh"
 fixture="$(mktemp -d)"
 fixture="$(cd "$fixture" && pwd -P)"
 trap 'rm -rf "$fixture"' EXIT
@@ -85,11 +85,15 @@ cat >"$fixture/test-bin/cargo-deny" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -ne 5 ||
+if [[ "$#" -ne 9 ||
   "$1" != "--manifest-path" ||
   "$3" != "--locked" ||
   "$4" != "check" ||
-  "$5" != "advisories" ]]; then
+  "$5" != "--config" ||
+  "$6" != "${FIXTURE_ROOT:?}/deny.toml" ||
+  "$7" != "advisories" ||
+  "$8" != "licenses" ||
+  "$9" != "sources" ]]; then
   printf 'unexpected cargo-deny arguments:' >&2
   printf ' %q' "$@" >&2
   printf '\n' >&2
@@ -116,7 +120,7 @@ if output="$(
   printf 'expected a missing-python3 prerequisite failure\n%s\n' "$output" >&2
   exit 1
 fi
-if [[ "$output" != "Rust advisory check failed: python3 is required" ]]; then
+if [[ "$output" != "Rust dependency policy check failed: python3 is required" ]]; then
   printf 'wrong missing-python3 failure\n%s\n' "$output" >&2
   exit 1
 fi
@@ -125,6 +129,7 @@ invocations="$fixture/cargo-deny-invocations.log"
 output="$(
   PATH="$fixture/test-bin:$PATH" \
     CARGO_DENY_INVOCATION_LOG="$invocations" \
+    FIXTURE_ROOT="$fixture" \
     "$checker" --root "$fixture"
 )"
 
@@ -137,14 +142,14 @@ EOF
 sort -o "$expected" "$expected"
 sort -o "$invocations" "$invocations"
 if ! cmp -s "$expected" "$invocations"; then
-  printf 'advisory workspace inventory did not match\nexpected:\n' >&2
+  printf 'dependency-policy workspace inventory did not match\nexpected:\n' >&2
   sed 's/^/  /' "$expected" >&2
   printf 'actual:\n' >&2
   sed 's/^/  /' "$invocations" >&2
   exit 1
 fi
-if [[ "$output" != *"check-rust-advisories passed: 3 workspace(s)"* ]]; then
-  printf 'advisory checker did not report the discovered workspace count\n%s\n' \
+if [[ "$output" != *"check-rust-dependency-policy passed: 3 workspace(s)"* ]]; then
+  printf 'dependency-policy checker did not report the workspace count\n%s\n' \
     "$output" >&2
   exit 1
 fi
@@ -154,6 +159,7 @@ output=""
 if output="$(
   PATH="$fixture/test-bin:$PATH" \
     CARGO_DENY_INVOCATION_LOG="$invocations" \
+    FIXTURE_ROOT="$fixture" \
     FAIL_MANIFEST="$fixture/editors/zed/Cargo.toml" \
     "$checker" --root "$fixture" 2>&1
 )"; then
@@ -165,7 +171,7 @@ if [[ "$output" != *"fixture advisory failure: $fixture/editors/zed/Cargo.toml"*
   exit 1
 fi
 
-mutated_checker="$fixture/check-rust-advisories-without-locked.sh"
+mutated_checker="$fixture/check-rust-dependency-policy-without-locked.sh"
 sed '/^[[:space:]]*--locked/d' "$checker" >"$mutated_checker"
 chmod +x "$mutated_checker"
 : >"$invocations"
@@ -173,6 +179,7 @@ output=""
 if output="$(
   PATH="$fixture/test-bin:$PATH" \
     CARGO_DENY_INVOCATION_LOG="$invocations" \
+    FIXTURE_ROOT="$fixture" \
     "$mutated_checker" --root "$fixture" 2>&1
 )"; then
   printf 'expected the self-test stub to reject a missing --locked argument\n%s\n' \
@@ -184,4 +191,4 @@ if [[ "$output" != *"unexpected cargo-deny arguments:"* ]]; then
   exit 1
 fi
 
-printf 'check-rust-advisories self-test passed\n'
+printf 'check-rust-dependency-policy self-test passed\n'

@@ -8,9 +8,10 @@ Canonical issue:
 
 ## Requirements
 
-- **MG-1** The active default-branch ruleset must require the five authoritative
+- **MG-1** The active default-branch ruleset must require the nine authoritative
   CI contexts for documentation, Rust, package publication, IR interoperability,
-  and editor compilation.
+  editor compilation, dependency policy, dependency review, and two-language
+  CodeQL.
 - **MG-2** Each required context must come from the GitHub Actions application,
   and pull requests must be tested against the latest default-branch state.
 - **MG-3** Adding required checks must preserve the existing deletion,
@@ -23,6 +24,8 @@ Canonical issue:
   renamed or retired required context without weakening unrelated protections.
 - **MG-6** Repository evidence must detect live ruleset drift with stable failure
   categories and a source-controlled desired-state manifest.
+- **MG-7** A security job that rejects dependency or static-analysis failures
+  must be a required status check rather than an advisory signal.
 
 ## Cases
 
@@ -30,10 +33,12 @@ Canonical issue:
   source-controlled `mainline` manifest and live ruleset require
   `Docs & whitespace`, `Rust (fmt, clippy, test)`, `Cargo package witness`,
   `IR cross-language round-trip witness`, and
-  `Editor integrations (compile)` from GitHub Actions application `15368`,
-  with strict default-branch freshness and enforcement on branch creation. The
-  prior deletion, non-fast-forward, signature, pull-request, thread-resolution,
-  and repository-role bypass settings remain unchanged. *Oracle:* a
+  `Editor integrations (compile)`, plus `Rust dependency policy`,
+  `Dependency review`, `CodeQL (rust)`, and
+  `CodeQL (javascript-typescript)` from GitHub Actions application `15368`, with
+  strict default-branch freshness and enforcement on branch creation. The prior
+  deletion, non-fast-forward, signature, pull-request, thread-resolution, and
+  repository-role bypass settings remain unchanged. *Oracle:* a
   deterministic checker compares the governed live fields with the manifest and
   reports the first mismatch using a stable error category. The read-only CI
   token may omit bypass actors or return them as `null`; an explicit mode
@@ -73,6 +78,17 @@ Canonical issue:
   workflow reference and checker. *Evidence:*
   `docs/workflows/merge-gate/README.md` and
   `scripts/check-main-ruleset.mjs`. *Status:* implemented.
+- **MG-4a** — *Requirement:* MG-7. *Behavior:* the mainline ruleset requires
+  `Rust dependency policy`, `Dependency review`, `CodeQL (rust)`, and
+  `CodeQL (javascript-typescript)` from GitHub Actions application `15368` in
+  addition to the five existing contexts. *Oracle:* the update-payload test
+  rejects omission of any context, and the privileged live checker preserves
+  every non-status rule and the bypass actor while reporting manifest parity.
+  *Evidence type:* deterministic ruleset test, source-controlled manifest, and
+  privileged live API check. *Evidence:*
+  `.github/rulesets/mainline.json`,
+  `scripts/check-main-ruleset.test.mjs`, and
+  `scripts/check-main-ruleset.mjs`. *Status:* implemented.
 
 ## Ruleset change audit
 
@@ -91,3 +107,10 @@ other field.
 The update endpoint for this slice was the repository-ruleset endpoint only. A
 separate classic branch-protection layer requiring CodeRabbit application
 `347564` was not mutated and remains part of GitHub's effective merge gate.
+
+The security expansion on 2026-07-27 added four GitHub Actions contexts to the
+existing five: `Rust dependency policy`, `Dependency review`, `CodeQL (rust)`,
+and `CodeQL (javascript-typescript)`. GitHub reported each context from
+application `15368` on pull request #199 before the update. The ruleset identity,
+scope, bypass actor, ref and signature protections, pull-request policy, strict
+freshness, and classic CodeRabbit layer were unchanged.

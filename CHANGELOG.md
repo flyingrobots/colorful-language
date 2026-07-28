@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Tested repository maintenance governance.** Structured bug and feature
+  intake remains directly actionable while support and exploratory design route
+  to Discussions. A full-SHA-pinned security workflow now runs locked advisory,
+  license, and source policy across every Cargo workspace, reviews new pull-
+  request dependencies, and analyzes Rust plus JavaScript/TypeScript with
+  CodeQL. Mutation-tested policy evidence keeps the issue forms, Discussion
+  routes, exact `cargo-deny` version, security events, dependency thresholds,
+  license allowlists, release-preparation wiring, and solo-safe `CODEOWNERS`
+  posture from drifting.
 - **All-workspace Rust advisory evidence.** A single repository command scans
   the locked dependency graph for both the root Rust workspace and the
   standalone Zed adapter. The first run exposed and removed the Zed lockfile's

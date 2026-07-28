@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible Colorful defect
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting an actionable defect. For usage questions, use the
+        Q&A link on the issue chooser instead.
+  - type: input
+    id: version
+    attributes:
+      label: Colorful version
+      description: Include the exact release, commit, or editor-adapter version.
+      placeholder: v0.3.0
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the operating system, install method, and active surface.
+      placeholder: macOS 15; cargo install; colorful CLI
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest input and exact commands or editor actions.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Observed behavior
+      description: Include exact output, diagnostics, logs, or screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: State the deterministic result you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any related issue, sample file, or regression boundary.
