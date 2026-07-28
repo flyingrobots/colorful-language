@@ -222,6 +222,10 @@ test("the repository wires offline and live reconciliation into distinct lanes",
   assert.match(maintenance, /^\s*schedule:\s*$/mu);
   assert.match(maintenance, /^\s*workflow_dispatch:\s*$/mu);
   assert.doesNotMatch(maintenance, /^\s*pull_request:\s*$/mu);
+  assert.match(
+    maintenance,
+    /^concurrency:\s*\n\s+group:\s*roadmap-issue-reconciliation\s*\n\s+cancel-in-progress:\s*false\s*$/mu,
+  );
   assert.match(maintenance, /^\s*persist-credentials:\s*false\s*$/mu);
   assert.match(
     maintenance,
