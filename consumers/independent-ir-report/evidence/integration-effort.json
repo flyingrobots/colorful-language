@@ -16,7 +16,7 @@
       "sources": [
         "src/ir.mjs"
       ],
-      "nonblankAdapterLines": 278,
+      "nonblankAdapterLines": 284,
       "migrationSpecificLines": 48,
       "stableErrorCategories": [
         "E_JSON",
@@ -37,7 +37,7 @@
         "sourceHash"
       ],
       "fixtureCount": 6,
-      "reviewedAssertions": 24,
+      "reviewedAssertions": 25,
       "runtimeDependencies": 0,
       "processSteps": [
         "emit IR",

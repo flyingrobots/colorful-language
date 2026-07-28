@@ -46,7 +46,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
-  assert.equal(ledger.adapters.ir.reviewedAssertions, 24);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 25);
 });
 
 function releaseFixture(release) {
@@ -222,6 +222,24 @@ test("IR admission enforces enum members from the selected schema", () => {
       }),
     );
   }
+});
+
+test("IR admission enforces the signed GraphQL Int range", () => {
+  const currentFixture = releaseFixture("v0.3.0");
+  const baseline = JSON.parse(currentFixture.ir);
+  const document = {
+    ...baseline,
+    tokens: baseline.tokens.map((token, index) =>
+      index === 0 ? { ...token, occurrenceId: 2 ** 40 } : token,
+    ),
+  };
+  expectConsumerError("E_SHAPE", () =>
+    consumeIr({
+      source: SOURCE,
+      artifactJson: JSON.stringify(document),
+      profiles: [currentFixture.profile],
+    }),
+  );
 });
 
 test("ANSI refusal cases cover every stable adapter category", () => {

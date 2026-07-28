@@ -21,6 +21,9 @@ export const IR_ERROR_CODES = Object.freeze([
   "E_AXES",
 ]);
 
+const WIRE_INT_MIN = -2147483648;
+const WIRE_INT_MAX = 2147483647;
+
 function requireRecord(value, label) {
   if (!isRecord(value)) fail("E_SHAPE", `${label} must be an object`);
   return value;
@@ -39,8 +42,12 @@ function requireString(record, field, label) {
 }
 
 function requireInteger(record, field, label) {
-  if (!Number.isSafeInteger(record[field])) {
-    fail("E_SHAPE", `${label}.${field} must be a safe integer`);
+  if (
+    !Number.isSafeInteger(record[field]) ||
+    record[field] < WIRE_INT_MIN ||
+    record[field] > WIRE_INT_MAX
+  ) {
+    fail("E_SHAPE", `${label}.${field} must be a signed GraphQL Int`);
   }
   return record[field];
 }

@@ -43,7 +43,7 @@ reviewed comparison:
 
 | Adapter | Nonblank adapter lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: |
-| IR | 278 | 9 | 5 |
+| IR | 284 | 9 | 5 |
 | ANSI | 49 | 4 | 1 |
 | LSP | 264 | 5 | 2 |
 
