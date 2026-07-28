@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
+const GRAFT_REPORT_SCHEMA: &str = "colorful.performance.graft-projection/v1";
 const LOCAL_AUTHORITY: &str = "cross-stage-release";
 const LOCAL_STAGES: [&str; 6] = [
     "parsing",
@@ -31,8 +32,8 @@ const LINKED_AUTHORITIES: [(&str, &str, &str); 3] = [
     ),
     (
         "graft-projection",
-        "graft-projection",
-        "consumers/graft-projection.test.mjs",
+        "graft-projection-release",
+        "consumers/graft-projection.benchmark.mjs",
     ),
 ];
 
@@ -113,6 +114,7 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
     for field in [
         "generatedAt",
         "hardware",
+        "node",
         "operatingSystem",
         "rustc",
         "sourceCommit",
@@ -224,6 +226,61 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
             "wrong linked authority for {stage}"
         );
     }
+
+    let linked_measurements = report["linkedMeasurements"]
+        .as_array()
+        .expect("linkedMeasurements must be an array");
+    assert_eq!(linked_measurements.len(), 1);
+    let graft = &linked_measurements[0];
+    assert_eq!(graft["schemaVersion"], GRAFT_REPORT_SCHEMA);
+    assert_eq!(graft["stage"], "graft-projection");
+    assert_eq!(
+        graft["allocationAttribution"],
+        "unavailable-node-runtime",
+        "JavaScript allocation attribution must remain explicit"
+    );
+    let graft_measurements = graft["measurements"]
+        .as_array()
+        .expect("Graft measurements must be an array");
+    assert_eq!(graft_measurements.len(), corpora.len());
+    let mut graft_corpora = BTreeSet::new();
+    for measurement in graft_measurements {
+        let corpus = object_string(measurement, "corpus");
+        let input_bytes = *corpora
+            .get(corpus)
+            .unwrap_or_else(|| panic!("unknown Graft corpus {corpus}"));
+        assert_eq!(
+            measurement["inputBytes"].as_u64(),
+            u64::try_from(input_bytes).ok()
+        );
+        let token_count = measurement["tokenCount"]
+            .as_u64()
+            .expect("Graft tokenCount must be an integer");
+        let span_count = measurement["spanCount"]
+            .as_u64()
+            .expect("Graft spanCount must be an integer");
+        let median_ns = measurement["medianNanoseconds"]
+            .as_u64()
+            .expect("Graft medianNanoseconds must be an integer");
+        let throughput = measurement["throughputBytesPerSecond"]
+            .as_u64()
+            .expect("Graft throughputBytesPerSecond must be an integer");
+        assert!(token_count > 0);
+        assert_eq!(span_count, token_count);
+        assert!(median_ns > 0);
+        let expected_throughput = (u128::try_from(input_bytes).expect("input fits")
+            * 1_000_000_000)
+            / u128::from(median_ns);
+        assert_eq!(u128::from(throughput), expected_throughput);
+        assert!(
+            graft_corpora.insert(corpus),
+            "duplicate Graft measurement for {corpus}"
+        );
+    }
+    assert_eq!(
+        graft_corpora,
+        corpora.keys().copied().collect::<BTreeSet<_>>()
+    );
 
     let measurements = report["measurements"]
         .as_array()
