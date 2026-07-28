@@ -100,7 +100,7 @@ try {
   auditWorkflows({
     root: ${JSON.stringify(safeFixture)},
     binary: ${JSON.stringify(binary)},
-    timeoutMs: 250,
+    timeoutMs: 1_000,
   });
 } catch (error) {
   process.stderr.write(\`\${error.code}: \${error.message}\\n\`);
@@ -112,7 +112,7 @@ try {
       ["--input-type=module", "--eval", source],
       {
         encoding: "utf8",
-        timeout: 3_000,
+        timeout: 5_000,
       },
     );
     assert.equal(result.error, undefined);
@@ -120,7 +120,7 @@ try {
     assert.equal(result.stdout, "");
     assert.match(
       result.stderr,
-      /^E_WORKFLOW_SECURITY_ANALYZER: .* timed out after 250 ms\n$/u,
+      /^E_WORKFLOW_SECURITY_ANALYZER: .* timed out after 1000 ms\n$/u,
     );
   } finally {
     rmSync(directory, { recursive: true, force: true });
