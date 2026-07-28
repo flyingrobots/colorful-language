@@ -3,6 +3,7 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -60,6 +61,7 @@ struct FakeVale {
     arguments: PathBuf,
     captured_input: PathBuf,
     marker: PathBuf,
+    worker_pid: PathBuf,
 }
 
 impl FakeVale {
@@ -79,8 +81,10 @@ impl FakeVale {
         let arguments = root.join("arguments.txt");
         let captured_input = root.join("input.txt");
         let marker = root.join("started");
-        let analysis_body =
-            analysis_body.replace("{FAKE_VALE_MARKER}", &marker.display().to_string());
+        let worker_pid = root.join("worker.pid");
+        let analysis_body = analysis_body
+            .replace("{FAKE_VALE_MARKER}", &marker.display().to_string())
+            .replace("{FAKE_VALE_WORKER_PID}", &worker_pid.display().to_string());
         fs::write(
             &configuration,
             "StylesPath = styles\n[*.txt]\nBasedOnStyles = Test\n",
@@ -123,6 +127,7 @@ cat > '{captured_input}'
             arguments,
             captured_input,
             marker,
+            worker_pid,
         }
     }
 
@@ -327,6 +332,56 @@ fn timeout_and_process_failure_are_distinct() {
             .kind(),
         ValeErrorKind::ProcessFailure
     );
+}
+
+#[test]
+fn timeout_terminates_wrapper_process_group() {
+    let fixture = FakeVale::new(
+        "3.14.2",
+        r#"(
+  trap '' HUP TERM
+  while :; do sleep 1; done
+) >/dev/null 2>&1 &
+printf '%s\n' "$!" > '{FAKE_VALE_WORKER_PID}'
+wait"#,
+    );
+    let analyzer = ValeAnalyzer::discover(fixture.config().with_timeout(Duration::from_millis(50)))
+        .expect("discover wrapper fixture");
+
+    let error = analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect_err("wrapper analysis must time out");
+    assert_eq!(error.kind(), ValeErrorKind::Timeout);
+
+    let worker_pid: u32 = fs::read_to_string(&fixture.worker_pid)
+        .expect("wrapper must record worker PID")
+        .trim()
+        .parse()
+        .expect("worker PID must be numeric");
+    let worker_survived = process_exists(worker_pid);
+    if worker_survived {
+        kill_process(worker_pid);
+    }
+    assert!(
+        !worker_survived,
+        "timed-out analyzer left worker process {worker_pid} alive"
+    );
+}
+
+fn process_exists(pid: u32) -> bool {
+    Command::new("/bin/kill")
+        .args(["-0", &pid.to_string()])
+        .status()
+        .expect("probe worker process")
+        .success()
+}
+
+fn kill_process(pid: u32) {
+    let status = Command::new("/bin/kill")
+        .args(["-KILL", &pid.to_string()])
+        .status()
+        .expect("clean up leaked worker process");
+    assert!(status.success(), "clean up worker process {pid}");
 }
 
 #[test]
