@@ -78,22 +78,31 @@ function assertShapeError(operation, pathPattern) {
 }
 
 test("generation is deterministic and both runtime copies are identical", async (t) => {
-  const outputRoot = mkdtempSync(
-    path.join(tmpdir(), "colorful-syntax-admission-"),
-  );
-  t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
+  const outputRoots = [
+    mkdtempSync(path.join(tmpdir(), "colorful-syntax-admission-a-")),
+    mkdtempSync(path.join(tmpdir(), "colorful-syntax-admission-b-")),
+  ];
+  t.after(() => {
+    for (const outputRoot of outputRoots) {
+      rmSync(outputRoot, { recursive: true, force: true });
+    }
+  });
 
-  const outputs = generateSyntaxAdmission(outputRoot);
-  assert.deepEqual(outputs.sort(), [GRAFT_OUTPUT, INDEPENDENT_OUTPUT].sort());
-  const graft = readFileSync(path.join(outputRoot, GRAFT_OUTPUT), "utf8");
-  const independent = readFileSync(
-    path.join(outputRoot, INDEPENDENT_OUTPUT),
-    "utf8",
-  );
-  assert.equal(graft, independent);
+  const generated = outputRoots.map((outputRoot) => {
+    const outputs = generateSyntaxAdmission(outputRoot);
+    assert.deepEqual(outputs.sort(), [GRAFT_OUTPUT, INDEPENDENT_OUTPUT].sort());
+    const graft = readFileSync(path.join(outputRoot, GRAFT_OUTPUT), "utf8");
+    const independent = readFileSync(
+      path.join(outputRoot, INDEPENDENT_OUTPUT),
+      "utf8",
+    );
+    assert.equal(graft, independent);
+    return graft;
+  });
+  assert.equal(generated[0], generated[1]);
 
   const runtime = await import(
-    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
+    pathToFileURL(path.join(outputRoots[0], GRAFT_OUTPUT)).href
   );
   assert.equal(runtime.CURRENT_SYNTAX_GENERATION, "workspace-v0.4.0");
   assert.deepEqual(runtime.SYNTAX_GENERATION_IDS, [
@@ -101,6 +110,37 @@ test("generation is deterministic and both runtime copies are identical", async 
     "v0.3.0",
     "workspace-v0.4.0",
   ]);
+});
+
+test("syntax envelope rejects unknown and absent identity fields", async (t) => {
+  const outputRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-syntax-envelope-"),
+  );
+  t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
+  generateSyntaxAdmission(outputRoot);
+  const runtime = await import(
+    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
+  );
+
+  const unknown = currentDocument();
+  unknown.unexpected = true;
+  assert.throws(
+    () => runtime.validateSyntaxEnvelope(unknown),
+    (error) =>
+      error?.path === "unexpected" &&
+      error.reasonCode ===
+        runtime.SYNTAX_ADMISSION_REASON_CODES.UNKNOWN_FIELD,
+  );
+
+  const absent = currentDocument();
+  delete absent.schemaHash;
+  assert.throws(
+    () => runtime.validateSyntaxEnvelope(absent),
+    (error) =>
+      error?.path === "schemaHash" &&
+      error.message ===
+        "schemaHash is required by the contract shape",
+  );
 });
 
 test("every compatibility generation admits its exact released shape", async (t) => {
