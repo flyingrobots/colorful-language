@@ -1,0 +1,38 @@
+name: Repository maintenance
+
+on:
+  schedule:
+    - cron: "29 14 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: roadmap-issue-reconciliation
+  cancel-in-progress: false
+
+permissions:
+  contents: read # Repository checkout.
+  issues: read # Live issue snapshot reconciliation.
+
+jobs:
+  roadmap-inventory:
+    name: Roadmap issue reconciliation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: ".node-version"
+      - name: Self-test roadmap inventory reconciliation
+        run: node --test scripts/check-roadmap-inventory.test.mjs
+      - name: Check roadmap inventory structure
+        run: node scripts/check-roadmap-inventory.mjs
+      - name: Reconcile roadmap inventory with live GitHub issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: >-
+          node scripts/check-roadmap-inventory.mjs
+          --live
+          --repo "$REPOSITORY"

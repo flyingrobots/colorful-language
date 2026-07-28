@@ -1,0 +1,26 @@
+[
+  {
+    "number": 101,
+    "state": "OPEN",
+    "title": "Active slice",
+    "labels": ["slice"]
+  },
+  {
+    "number": 102,
+    "state": "OPEN",
+    "title": "Parked slice",
+    "labels": ["slice"]
+  },
+  {
+    "number": 103,
+    "state": "CLOSED",
+    "title": "Delivered slice",
+    "labels": ["slice"]
+  },
+  {
+    "number": 900,
+    "state": "OPEN",
+    "title": "Epic reference",
+    "labels": ["epic"]
+  }
+]

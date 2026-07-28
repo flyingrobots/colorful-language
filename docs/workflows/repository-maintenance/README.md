@@ -88,6 +88,49 @@ metadata, not a second-human gate: the checked-in and live mainline ruleset
 requires zero approvals and does not require code-owner review. Enable either
 requirement only after a second trusted human can satisfy it.
 
+## Roadmap inventory
+
+`ROADMAP.md` gives each open non-epic `slice` issue one invisible primary marker:
+
+```markdown
+<!-- roadmap-primary: active #122 #135 -->
+```
+
+The accepted dispositions are:
+
+- `active` for an execution-track slice;
+- `parked` for an explicit experiment or backlog disposition; and
+- `delivered` for a retained primary reference to a closed slice.
+
+Ordinary issue links remain non-owning cross-references, so historical and epic
+links do not inflate the inventory. Do not delete completed roadmap history:
+change its primary marker to `delivered`. When opening or moving a slice, add or
+move its one marker in the same change. When a pull request closes a slice,
+change that marker to `delivered` before merge.
+
+Run the deterministic structure and fixture gates without network access:
+
+```bash
+node --test scripts/check-roadmap-inventory.test.mjs
+node scripts/check-roadmap-inventory.mjs
+```
+
+To reconcile against current GitHub state, run the authenticated witness:
+
+```bash
+node scripts/check-roadmap-inventory.mjs \
+  --live \
+  --repo flyingrobots/colorful-language
+```
+
+On a branch whose pull request closes an issue, pass `--closing-pr NUMBER`.
+The checker reads GitHub's closing-issue references and evaluates the intended
+post-merge state. The required documentation job does this automatically for
+pull requests. A separate weekly and manually dispatchable repository-
+maintenance workflow checks default-branch state without a pull-request
+transition. GitHub authentication and availability are therefore explicit
+hosted oracles, not hidden prerequisites of the local correctness gate.
+
 ## Evidence
 
 The requirements, exact oracles, and mutation coverage live in the

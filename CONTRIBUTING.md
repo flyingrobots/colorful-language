@@ -117,7 +117,9 @@ For every new slice:
    or design note until it lands.
 5. Link any new durable topic or page from `docs/README.md` in the same change.
 6. Update `ROADMAP.md` when a slice opens, closes, or changes the public posture
-   of a goalpost.
+   of a goalpost. Give every open non-epic slice exactly one
+   `roadmap-primary` marker with an `active` or `parked` disposition; change a
+   retained primary marker to `delivered` when its issue closes.
 
 Do not let durable project lanes live only in chat, issues, or pull request
 comments. If a lane will keep coming back — editor integrations, themes,

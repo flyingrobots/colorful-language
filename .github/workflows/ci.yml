@@ -13,6 +13,10 @@ jobs:
   docs:
     name: Docs & whitespace
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # Repository checkout and policy files.
+      issues: read # Live issue snapshot reconciliation.
+      pull-requests: read # Closing-issue references.
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Check for trailing whitespace / conflict markers
@@ -44,6 +48,21 @@ jobs:
         run: node --test scripts/check-repository-maintenance.test.mjs
       - name: Check repository-maintenance policy
         run: node scripts/check-repository-maintenance.mjs
+      - name: Self-test roadmap inventory reconciliation
+        run: node --test scripts/check-roadmap-inventory.test.mjs
+      - name: Check roadmap inventory structure
+        run: node scripts/check-roadmap-inventory.mjs
+      - name: Reconcile roadmap inventory with live GitHub issues
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PULL_REQUEST: ${{ github.event.pull_request.number }}
+        run: >-
+          node scripts/check-roadmap-inventory.mjs
+          --live
+          --repo "$REPOSITORY"
+          --closing-pr "$PULL_REQUEST"
       - name: Self-test the release publish-order checker
         run: node scripts/check-release-publish-order.test.mjs
       - name: Self-test the internal-link checker

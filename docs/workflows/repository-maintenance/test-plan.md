@@ -4,7 +4,9 @@ This plan defines executable evidence for repository intake, dependency
 governance, ownership, and security maintenance. GitHub issue
 [#152](https://github.com/flyingrobots/colorful-language/issues/152) owns the
 broader workflow; the prerequisite advisory remediation is tracked separately
-in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
+in [#197](https://github.com/flyingrobots/colorful-language/issues/197), and
+roadmap-to-issue reconciliation is tracked in
+[#187](https://github.com/flyingrobots/colorful-language/issues/187).
 
 ## Requirements
 
@@ -35,6 +37,11 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   reaches the hosted workflow.
 - **RM-8 — Enforced security results.** Security jobs that claim to reject a
   pull request must be required default-branch checks, not advisory signals.
+- **RM-9 — Executable roadmap inventory.** Every open non-epic slice must have
+  exactly one explicit primary disposition in the roadmap. Closed slices must
+  not remain active, historical delivered references and epic links must remain
+  legal, and live GitHub state must be reconciled without making network access
+  a hidden prerequisite of the offline correctness gate.
 
 ## Cases
 
@@ -151,10 +158,31 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   deterministic workflow mutation tests. *Evidence:*
   `scripts/check-repository-maintenance.mjs` and
   `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
+- **RM-9a — Deterministic roadmap inventory.** *Requirement:* RM-9. *Behavior:*
+  explicit primary-disposition markers classify each tracked slice as active,
+  parked, or delivered, while ordinary historical and epic links remain
+  non-owning references. *Oracle:* a checked-in mocked issue snapshot passes;
+  one minimal mutation for a missing open slice, duplicate primary home,
+  closed active slice, open delivered slice, and unrecognized marker fails with
+  a stable path-addressed category. *Evidence type:* fixture-backed Node unit
+  tests and an offline repository command. *Evidence:*
+  `scripts/check-roadmap-inventory.test.mjs`, roadmap fixtures, and
+  `scripts/check-roadmap-inventory.mjs`. *Status:* implemented.
+- **RM-9b — Authenticated live reconciliation.** *Requirement:* RM-9.
+  *Behavior:* an explicit maintenance command reads open and closed issue state
+  from GitHub and applies the same deterministic inventory comparison used by
+  the fixture suite. *Oracle:* the command proves every current open non-epic
+  slice has one primary active or parked disposition and no closed issue is
+  presented as pending. *Evidence type:* authenticated GitHub API witness kept
+  outside the ordinary offline documentation gate. *Evidence:*
+  `scripts/check-roadmap-inventory.mjs --live`,
+  `.github/workflows/ci.yml`, and `.github/workflows/maintenance.yml`.
+  *Status:* implemented.
 
 ## Hosted evidence boundary
 
-The mutation suite is deterministic and local. The live RustSec database,
-GitHub dependency snapshot, and CodeQL queries are evolving hosted oracles; a
-new advisory or query can make an unchanged revision fail and requires
-maintainer triage rather than a blanket exception.
+The mutation suites and structural roadmap check are deterministic and local.
+The live RustSec database, GitHub dependency and issue snapshots, and CodeQL
+queries are evolving hosted oracles; a new advisory, query, or issue-state
+transition can make an unchanged revision fail and requires maintainer triage
+rather than a blanket exception.

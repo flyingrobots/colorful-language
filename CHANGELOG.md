@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Executable roadmap-to-issue reconciliation.** Invisible primary-disposition
+  markers give every open non-epic slice one active or parked execution home
+  while preserving delivered history and non-owning cross-references. Fixture-
+  backed mutation tests report stable path-addressed errors for missing,
+  duplicate, stale, or unknown inventory entries. The required documentation
+  job reconciles pull-request state, including issues the PR will close, and a
+  separate weekly maintenance workflow checks live default-branch state without
+  making GitHub access a prerequisite of the offline gate.
 - **Tested repository maintenance governance.** Structured bug and feature
   intake remains directly actionable while support and exploratory design route
   to Discussions. A full-SHA-pinned security workflow now runs locked advisory,
