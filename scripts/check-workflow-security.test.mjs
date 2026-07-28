@@ -7,6 +7,25 @@ import test from "node:test";
 
 const script = resolve("scripts/check-workflow-security.mjs");
 
+function trackedWorkflowCount() {
+  const result = spawnSync(
+    "git",
+    [
+      "ls-files",
+      "-z",
+      "--",
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml",
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stderr);
+  const paths = result.stdout.split("\0").filter(Boolean);
+  assert.ok(paths.length > 0);
+  return paths.length;
+}
+
 function runFixture(name) {
   return spawnSync(
     process.execPath,
@@ -63,8 +82,8 @@ test("the repository passes the pinned workflow-security analysis", () => {
   assert.equal(result.error, undefined);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stderr, "");
-  assert.match(
+  assert.equal(
     result.stdout,
-    /^check-workflow-security: \d+ workflows passed zizmor 1\.28\.0\n$/u,
+    `check-workflow-security: ${trackedWorkflowCount()} workflows passed zizmor 1.28.0\n`,
   );
 });
