@@ -224,7 +224,8 @@ roadmap-to-issue reconciliation is tracked in
 - **RM-10b — Conservative ratcheting floors.** *Requirement:* RM-10.
   *Behavior:* a versioned policy records a freshly measured workspace line
   baseline, a conservative initial floor below it, and separate floors for the
-  CLI and LSP binary transport files. No generated Rust source is excluded.
+  CLI, LSP, and optional Vale process-transport files. No generated Rust source
+  is excluded.
   *Oracle:* a deterministic checker accepts the reviewed report, rejects a
   workspace or transport regression below its floor, rejects missing files and
   malformed/non-finite counters, and requires a policy edit to lower any
