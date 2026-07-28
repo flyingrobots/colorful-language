@@ -464,6 +464,14 @@ test("rejects write-capable analyzer permissions", () => {
   }, "E_WORKFLOW_SECURITY_PERMISSIONS");
 });
 
+test("rejects an explicit credential in the analyzer job", () => {
+  expectCode(({ securityWorkflow }) => {
+    securityWorkflow.jobs["workflow-security"].env = {
+      ADMIN_TOKEN: "${{ secrets.ADMIN_TOKEN }}",
+    };
+  }, "E_WORKFLOW_SECURITY_CREDENTIALS");
+});
+
 test("rejects a missing hosted workflow-security scan", () => {
   expectCode(({ securityWorkflow }) => {
     securityWorkflow.jobs["workflow-security"].steps.pop();

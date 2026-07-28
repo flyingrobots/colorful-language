@@ -477,6 +477,21 @@ function hasRun(job, command) {
   );
 }
 
+function containsCredentialExpression(value) {
+  if (typeof value === "string") {
+    return /\$\{\{[^}]*\b(?:secrets|github\.token)\b[^}]*\}\}/u.test(
+      value,
+    );
+  }
+  if (Array.isArray(value)) {
+    return value.some(containsCredentialExpression);
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.values(value).some(containsCredentialExpression);
+  }
+  return false;
+}
+
 function requireBlockingRun(job, command, path) {
   const step = job?.steps?.find(
     (candidate) =>
@@ -610,6 +625,13 @@ function validateWorkflowSecurityJob(workflow, policy) {
   const job = workflow?.jobs?.["workflow-security"];
   requireObject(job, "E_WORKFLOW_SECURITY_WIRING", path);
   requireBlockingJob(job, path);
+  if (containsCredentialExpression(job)) {
+    reject(
+      "E_WORKFLOW_SECURITY_CREDENTIALS",
+      path,
+      "must not receive an explicit secret or GitHub token expression",
+    );
+  }
   const permissionKeys = Object.keys(job.permissions ?? {}).toSorted();
   if (
     !sameStrings(permissionKeys, ["contents"]) ||
