@@ -13,29 +13,22 @@
 
 #![forbid(unsafe_code)]
 
-use std::hint::black_box;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Instant;
 
-use colorful_core::{Analyzer, Annotator, Parser, ValidatedClassification};
-use colorful_lexicon::ContextualOpenClassAnnotator;
-use colorful_lint::ProseLinter;
-use colorful_parse::ProseParser;
 use serde_json::{json, Value};
 
-const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
-const TIMING_SAMPLES: usize = 9;
-const ALLOCATION_COUNTER: &str = "allocation-counter 0.8.1";
-const THROUGHPUT_BASIS: &str = "source-utf8-bytes";
-const SMALL: &str = include_str!("../fixtures/editor-smoke-prose.txt");
-const MEDIUM: &str = include_str!("../fixtures/bench-corpus.txt");
+mod cross_stage_support;
 
-struct Corpus {
-    id: &'static str,
-    path: &'static str,
-    source: &'static str,
-}
+use cross_stage_support::{Corpus, PreparedStageInput, Stage, CORPORA, STAGES};
+
+const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
+const ALLOCATION_REPORT_SCHEMA: &str = "colorful.performance.allocations/v1";
+const TIMING_SAMPLES: usize = 9;
+const ALLOCATION_COUNTER: &str = "dhat 0.3.3";
+const THROUGHPUT_BASIS: &str = "source-utf8-bytes";
 
 struct StageMeasurement {
     stage: &'static str,
@@ -69,6 +62,62 @@ fn command_output(program: &str, args: &[&str]) -> String {
         .unwrap_or_else(|error| panic!("{program} emitted non-UTF-8 output: {error}"))
         .trim()
         .to_owned()
+}
+
+fn allocation_measurements() -> BTreeMap<(String, String), (u64, u64)> {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let output = Command::new(&cargo)
+        .args([
+            "run",
+            "--quiet",
+            "--locked",
+            "--release",
+            "-p",
+            "colorful-cli",
+            "--example",
+            "cross_stage_allocations",
+        ])
+        .current_dir(workspace_root())
+        .output()
+        .unwrap_or_else(|error| panic!("run allocation probe with {cargo}: {error}"));
+    assert!(
+        output.status.success(),
+        "allocation probe failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value =
+        serde_json::from_slice(&output.stdout).expect("allocation probe must emit JSON");
+    assert_eq!(report["schemaVersion"], ALLOCATION_REPORT_SCHEMA);
+    let values = report["measurements"]
+        .as_array()
+        .expect("allocation measurements must be an array");
+    let mut measurements = BTreeMap::new();
+    for value in values {
+        let stage = value["stage"]
+            .as_str()
+            .expect("allocation stage must be a string")
+            .to_owned();
+        let corpus = value["corpus"]
+            .as_str()
+            .expect("allocation corpus must be a string")
+            .to_owned();
+        let allocation_count = value["allocationCount"]
+            .as_u64()
+            .expect("allocationCount must be a u64");
+        let allocated_bytes = value["allocatedBytes"]
+            .as_u64()
+            .expect("allocatedBytes must be a u64");
+        assert!(
+            measurements
+                .insert(
+                    (stage.clone(), corpus.clone()),
+                    (allocation_count, allocated_bytes)
+                )
+                .is_none(),
+            "duplicate allocation measurement for {stage}/{corpus}"
+        );
+    }
+    measurements
 }
 
 fn generated_at() -> String {
@@ -154,18 +203,14 @@ fn throughput_bytes_per_second(input_bytes: u64, elapsed_nanoseconds: u64) -> u6
     u64::try_from(throughput).expect("throughput fits u64")
 }
 
-fn measure_stage<T, F>(stage: &'static str, corpus: &Corpus, mut operation: F) -> StageMeasurement
-where
-    F: FnMut() -> T,
-{
-    drop(black_box(operation()));
+fn measure_stage(stage: Stage, corpus: &Corpus, prepared: &PreparedStageInput) -> StageMeasurement {
+    prepared.run(stage);
 
     let mut timing_samples = Vec::with_capacity(TIMING_SAMPLES);
     for _ in 0..TIMING_SAMPLES {
         let started = Instant::now();
-        let value = black_box(operation());
+        prepared.run(stage);
         let elapsed = started.elapsed();
-        drop(value);
         timing_samples.push(
             u64::try_from(elapsed.as_nanos())
                 .expect("stage duration fits u64")
@@ -173,20 +218,17 @@ where
         );
     }
 
-    let allocations = allocation_counter::measure(|| {
-        drop(black_box(operation()));
-    });
     let input_bytes = u64::try_from(corpus.source.len()).expect("corpus length fits u64");
     let median_nanoseconds = median_nanoseconds(timing_samples);
 
     StageMeasurement {
-        stage,
+        stage: stage.name(),
         corpus: corpus.id,
         input_bytes,
         median_nanoseconds,
         throughput_bytes_per_second: throughput_bytes_per_second(input_bytes, median_nanoseconds),
-        allocation_count: allocations.count_total,
-        allocated_bytes: allocations.bytes_total,
+        allocation_count: 0,
+        allocated_bytes: 0,
     }
 }
 
@@ -214,84 +256,37 @@ fn main() {
         "cross_stage_benchmark requires a clean worktree so sourceCommit is trustworthy"
     );
 
-    let corpora = [
-        Corpus {
-            id: "small",
-            path: "crates/colorful-cli/fixtures/editor-smoke-prose.txt",
-            source: SMALL,
-        },
-        Corpus {
-            id: "medium",
-            path: "crates/colorful-cli/fixtures/bench-corpus.txt",
-            source: MEDIUM,
-        },
-    ];
-    let parser = ProseParser::new();
-    let annotator = ContextualOpenClassAnnotator::default();
-    let linter = ProseLinter::new();
     let mut measurements = Vec::new();
 
-    for corpus in &corpora {
-        let tree = parser.parse(corpus.source);
-        let tokens = annotator.annotate(corpus.source, &tree);
-        let classification =
-            ValidatedClassification::new(corpus.source, tree.clone(), tokens.clone())
-                .expect("built-in adapters produce a valid classification");
-        let document = colorful_ir::from_validated_classification(
-            corpus.id,
-            &classification,
-            parser.pass_identity(),
-            annotator.pass_identity(),
-        )
-        .expect("built-in adapters project valid IR");
-
-        measurements.push(measurement_json(measure_stage("parsing", corpus, || {
-            parser.parse(black_box(corpus.source))
-        })));
-        measurements.push(measurement_json(measure_stage(
-            "annotation",
-            corpus,
-            || annotator.annotate(black_box(corpus.source), black_box(&tree)),
-        )));
-        measurements.push(measurement_json(measure_stage("lint", corpus, || {
-            linter.analyze(
-                black_box(corpus.source),
-                black_box(&tree),
-                black_box(&tokens),
-            )
-        })));
-        measurements.push(measurement_json(measure_stage(
-            "ir-projection",
-            corpus,
-            || {
-                colorful_ir::from_validated_classification(
-                    corpus.id,
-                    black_box(&classification),
-                    parser.pass_identity(),
-                    annotator.pass_identity(),
-                )
-                .expect("validated classification projects")
-            },
-        )));
-        measurements.push(measurement_json(measure_stage(
-            "ir-serialization",
-            corpus,
-            || colorful_ir::canonical_json(black_box(&document)).expect("serialize canonical IR"),
-        )));
-        measurements.push(measurement_json(measure_stage(
-            "ir-validation",
-            corpus,
-            || {
-                colorful_ir::validate_document(
-                    black_box(&document),
-                    Some(black_box(corpus.source.as_bytes())),
-                )
-                .expect("validate projected IR")
-            },
-        )));
+    for corpus in &CORPORA {
+        let prepared = PreparedStageInput::new(corpus);
+        for stage in STAGES {
+            measurements.push(measure_stage(stage, corpus, &prepared));
+        }
     }
+    let mut allocation_measurements = allocation_measurements();
+    for measurement in &mut measurements {
+        let key = (measurement.stage.to_owned(), measurement.corpus.to_owned());
+        let (allocation_count, allocated_bytes) =
+            allocation_measurements.remove(&key).unwrap_or_else(|| {
+                panic!(
+                    "missing allocation measurement for {}/{}",
+                    measurement.stage, measurement.corpus
+                )
+            });
+        measurement.allocation_count = allocation_count;
+        measurement.allocated_bytes = allocated_bytes;
+    }
+    assert!(
+        allocation_measurements.is_empty(),
+        "allocation probe emitted unexpected measurements"
+    );
+    let measurements = measurements
+        .into_iter()
+        .map(measurement_json)
+        .collect::<Vec<_>>();
 
-    let corpus_metadata = corpora
+    let corpus_metadata = CORPORA
         .iter()
         .map(|corpus| {
             json!({
