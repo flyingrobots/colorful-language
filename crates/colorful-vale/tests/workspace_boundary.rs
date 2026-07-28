@@ -14,6 +14,15 @@ fn manifest(relative: &str) -> toml::Value {
     .unwrap_or_else(|error| panic!("parse {relative}: {error}"))
 }
 
+fn adapter_source(file: &str) -> String {
+    fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join(file),
+    )
+    .unwrap_or_else(|error| panic!("read adapter source {file}: {error}"))
+}
+
 fn production_dependencies(manifest: &toml::Value) -> BTreeSet<String> {
     let mut dependencies: BTreeSet<String> = manifest
         .get("dependencies")
@@ -113,18 +122,33 @@ colorful-vale = { path = "../colorful-vale" }
 
 #[test]
 fn output_parser_has_one_typed_deserialization_owner() {
-    let source = fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("src")
-            .join("output.rs"),
-    )
-    .expect("read Vale output parser");
+    let source = adapter_source("output.rs");
     assert!(!source.contains("serde_json::Value"));
     assert!(!source.contains("serde_json::from_value"));
     assert_eq!(
         source.matches("serde_json::from_str").count(),
         1,
         "Vale output must be deserialized exactly once"
+    );
+}
+
+#[test]
+fn output_parser_indexes_lines_once_per_response() {
+    let source = adapter_source("output.rs");
+    assert_eq!(
+        source
+            .matches("let line_index = LineIndex::new(source);")
+            .count(),
+        1,
+        "the response parser must build exactly one document line index"
+    );
+    assert!(
+        source.contains("normalize_alert(&line_index, alert)"),
+        "every alert must reuse the response line index"
+    );
+    assert!(
+        !source.contains("fn line_bounds(source: &str"),
+        "alert normalization must not retain a source-rescanning helper"
     );
 }
 
