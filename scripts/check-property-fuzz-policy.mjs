@@ -63,7 +63,7 @@ function exactTomlVersion(source, dependency, version) {
 function manifestTargets(source) {
   return [
     ...source.matchAll(
-      /\[\[bin\]\]\s+name\s*=\s*"([^"]+)"\s+path\s*=\s*"fuzz_targets\/([^"]+)\.rs"/gu,
+      /^\[\[bin\]\]\s*\nname\s*=\s*"([^"]+)"\s*\npath\s*=\s*"fuzz_targets\/([^"]+)\.rs"\s*$/gmu,
     ),
   ].map((match) => ({ name: match[1], path: match[2] }));
 }
@@ -199,9 +199,9 @@ export function validatePropertyFuzzPolicy(snapshot) {
     );
   }
   if (
-    !snapshot.propertyTest.includes("cases: PROPERTY_CASES") ||
-    !snapshot.propertyTest.includes(
-      "TestRng::from_seed(RngAlgorithm::ChaCha, &PROPERTY_SEED)",
+    !/^\s*cases:\s*PROPERTY_CASES,\s*$/mu.test(snapshot.propertyTest) ||
+    !/^\s*TestRng::from_seed\(RngAlgorithm::ChaCha,\s*&PROPERTY_SEED\)[,;]\s*$/mu.test(
+      snapshot.propertyTest,
     )
   ) {
     reject(
@@ -244,7 +244,7 @@ export function validatePropertyFuzzPolicy(snapshot) {
     );
   }
   for (const target of FUZZ_TARGETS) {
-    if (!snapshot.fuzzTargets[target].includes("fuzz_target!(")) {
+    if (!/^\s*fuzz_target!\(/mu.test(snapshot.fuzzTargets[target])) {
       reject(
         "E_FUZZ_TARGET",
         `${target} must contain a libFuzzer entry point`,

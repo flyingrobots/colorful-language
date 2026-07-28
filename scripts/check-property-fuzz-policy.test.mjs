@@ -32,7 +32,9 @@ const PROPERTY_SEED: [u8; 32] = [
     0x13, 0x04, 0x13, 0x04, 0x13, 0x04, 0x13, 0x04,
     0x13, 0x04, 0x13, 0x04, 0x13, 0x04, 0x13, 0x04,
 ];
-let config = Config { cases: PROPERTY_CASES };
+let config = Config {
+    cases: PROPERTY_CASES,
+};
 TestRng::from_seed(RngAlgorithm::ChaCha, &PROPERTY_SEED);
 `,
   fuzzManifest: `
@@ -177,6 +179,20 @@ test("rejects a property runner that ignores the reviewed seed", () => {
   );
 });
 
+test("rejects a reviewed runner call that exists only in a comment", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      propertyTest: VALID_SNAPSHOT.propertyTest.replace(
+        "TestRng::from_seed(RngAlgorithm::ChaCha, &PROPERTY_SEED);",
+        `// TestRng::from_seed(RngAlgorithm::ChaCha, &PROPERTY_SEED);
+TestRng::from_entropy();`,
+      ),
+    },
+    "E_PROPERTY_RUNNER",
+  );
+});
+
 test("rejects a floating fuzz runtime dependency", () => {
   expectPolicyError(
     {
@@ -223,6 +239,25 @@ path = "fuzz_targets/coordinates.rs"
   );
 });
 
+test("rejects a manifest target declared only in a comment", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      fuzzManifest: VALID_SNAPSHOT.fuzzManifest.replace(
+        `
+[[bin]]
+name = "coordinates"
+path = "fuzz_targets/coordinates.rs"
+`,
+        `
+# [[bin]] name = "coordinates" path = "fuzz_targets/coordinates.rs"
+`,
+      ),
+    },
+    "E_FUZZ_MANIFEST",
+  );
+});
+
 test("rejects a fuzz target without a libFuzzer entry point", () => {
   expectPolicyError(
     {
@@ -230,6 +265,19 @@ test("rejects a fuzz target without a libFuzzer entry point", () => {
       fuzzTargets: {
         ...VALID_SNAPSHOT.fuzzTargets,
         parser: "#![no_main]\n",
+      },
+    },
+    "E_FUZZ_TARGET",
+  );
+});
+
+test("rejects a fuzz entry point that exists only in a comment", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      fuzzTargets: {
+        ...VALID_SNAPSHOT.fuzzTargets,
+        parser: "#![no_main]\n// fuzz_target!(|source: &str| {});\n",
       },
     },
     "E_FUZZ_TARGET",
