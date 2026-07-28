@@ -64,7 +64,7 @@ and manual recovery:
   moderate-or-higher vulnerabilities across runtime, development, and unknown
   scopes, plus detected licenses outside the reviewed cross-ecosystem allowlist;
   a dependency whose license GitHub cannot identify is reported but cannot be
-  failed by that action; and
+  failed by that action;
 - CodeQL uses its supported build-free analysis for both Rust and
   JavaScript/TypeScript, then uploads one result category per language; and
 - workflow security installs `zizmor` 1.28.0 with the full-SHA-pinned installer,
