@@ -127,3 +127,30 @@ fn output_parser_has_one_typed_deserialization_owner() {
         "Vale output must be deserialized exactly once"
     );
 }
+
+#[test]
+fn workspace_dependency_entries_have_actual_consumers() {
+    let workspace = manifest("Cargo.toml");
+    let workspace_dependencies = workspace["workspace"]["dependencies"]
+        .as_table()
+        .expect("workspace dependencies");
+    assert!(!workspace_dependencies.contains_key("colorful-vale"));
+    for dependency in ["colorful-cli", "colorful-lsp"] {
+        assert!(
+            workspace_dependencies.contains_key(dependency),
+            "{dependency} must be workspace-managed"
+        );
+    }
+
+    let adapter = manifest("crates/colorful-vale/Cargo.toml");
+    let development_dependencies = adapter["dev-dependencies"]
+        .as_table()
+        .expect("adapter development dependencies");
+    for dependency in ["colorful-cli", "colorful-lsp"] {
+        assert_eq!(
+            development_dependencies[dependency]["workspace"].as_bool(),
+            Some(true),
+            "{dependency} must not duplicate the workspace version"
+        );
+    }
+}
