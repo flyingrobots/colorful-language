@@ -31,12 +31,18 @@ serde_json = { workspace = true }
 criterion = { workspace = true }
 stats_alloc = { workspace = true }
 toml = { workspace = true }
+proptest = { workspace = true }
 
 # Test-only: the lint golden-fixture harness cross-checks CLI and LSP
 # diagnostics for the same input. colorful-lsp does not depend on
 # colorful-cli, so this isn't circular.
 colorful-lsp = { path = "../colorful-lsp", version = "0.4.0" }
 tower-lsp = { workspace = true }
+
+[[test]]
+name = "property_boundaries"
+path = "tests/property_boundaries.rs"
+test = false
 
 [[bench]]
 name = "colorize_bench"

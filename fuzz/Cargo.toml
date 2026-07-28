@@ -1,0 +1,51 @@
+[package]
+name = "colorful-language-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+colorful-cli = { path = "../crates/colorful-cli" }
+colorful-core = { path = "../crates/colorful-core" }
+colorful-ir = { path = "../crates/colorful-ir" }
+colorful-lexicon = { path = "../crates/colorful-lexicon" }
+colorful-lsp = { path = "../crates/colorful-lsp" }
+colorful-parse = { path = "../crates/colorful-parse" }
+colorful-projection = { path = "../crates/colorful-projection" }
+libfuzzer-sys = "=0.4.13"
+tower-lsp = "0.20"
+
+[[bin]]
+name = "parser"
+path = "fuzz_targets/parser.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "annotator"
+path = "fuzz_targets/annotator.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ir_projection"
+path = "fuzz_targets/ir_projection.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "coordinates"
+path = "fuzz_targets/coordinates.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

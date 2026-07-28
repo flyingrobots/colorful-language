@@ -46,6 +46,15 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
   ordered with no overlaps.
 - Whitespace is not represented by nodes; it is the gap between spans.
 
+One blocking property corpus drives 256 cases from a reviewed 32-byte seed.
+Every generated source combines arbitrary valid Unicode with an astral scalar,
+a combining sequence, a zero-width character, and `LF`, `CRLF`, and bare `CR`
+line endings. The corpus validates the built-in parser and annotator, then
+requires every gap to contain only the parser's explicitly skipped whitespace
+before reconstructing the exact source from the ordered leaf spans and gaps.
+Time-based parser and annotator fuzz targets use the same public boundaries but
+remain manual evidence rather than a machine-dependent correctness gate.
+
 ## Known limitations (v0)
 
 - Structure is shallow: no clause nesting, no parenthetical grouping.

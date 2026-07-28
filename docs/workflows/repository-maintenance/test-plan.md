@@ -73,11 +73,13 @@ roadmap-to-issue reconciliation is tracked in
   implemented.
 - **RM-2a — Shared Rust license and source policy.** *Requirement:* RM-2.
   *Behavior:* the all-workspace dependency scan accepts only the reviewed SPDX
-  license set already present in the root and Zed lockfiles for production and
-  development dependencies, denies unknown registries and Git sources, and
-  carries no blanket exception. *Oracle:* `cargo deny --locked check licenses
-  sources` exits zero for both workspaces; mutating dev-dependency coverage, the
-  allowlist, or source policy makes the structural checker fail.
+  license set present in the root, Zed, fuzz, and validator-complexity fixture
+  lockfiles for production and development dependencies, including the
+  OSI-approved NCSA terms bundled by the pinned libFuzzer runtime; it denies
+  unknown registries and Git sources and carries no blanket exception.
+  *Oracle:* `cargo deny --locked check licenses sources` exits zero for every
+  discovered workspace; mutating dev-dependency coverage, the allowlist, or
+  source policy makes the structural checker fail.
   *Evidence type:* checked-in `cargo-deny` policy, live dependency scan, and
   deterministic mutation test. *Evidence:* `deny.toml`,
   `scripts/check-rust-dependency-policy.sh`, and
@@ -115,10 +117,12 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
 - **RM-4a — Coordinated weekly updates and pull-request review.**
   *Requirement:* RM-4. *Behavior:* the grouped weekly Dependabot policy from
-  issue #151 remains the sole update scheduler, while a pull-request-only
-  dependency-review job rejects moderate-or-higher vulnerabilities and
-  detected dependency licenses outside the reviewed SPDX allowlist. GitHub
-  reports but cannot fail a dependency whose license it cannot identify.
+  issue #151 remains the sole update scheduler for GitHub Actions, the root,
+  Zed, and fuzz Cargo workspaces, and both Node workspaces, while a
+  pull-request-only dependency-review job rejects moderate-or-higher
+  vulnerabilities and detected dependency licenses outside the reviewed SPDX
+  allowlist. GitHub reports but cannot fail a dependency whose license it
+  cannot identify.
   *Oracle:* the existing dependency-update checker continues to pass; the
   maintenance checker rejects a weakened severity, license, event, or
   action-pin policy. *Evidence type:* deterministic configuration tests and

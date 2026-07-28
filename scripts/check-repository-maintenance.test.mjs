@@ -99,6 +99,7 @@ allow = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
   "MIT",
+  "NCSA",
   "Unicode-3.0",
   "Unlicense",
   "Zlib",
@@ -173,7 +174,7 @@ allow-git = []
                 "license-check": true,
                 "vulnerability-check": true,
                 "allow-licenses":
-                  "0BSD, Apache-2.0, Apache-2.0 WITH LLVM-exception, MIT, Unicode-3.0, Unlicense, Zlib, BlueOak-1.0.0, ISC",
+                  "0BSD, Apache-2.0, Apache-2.0 WITH LLVM-exception, MIT, NCSA, Unicode-3.0, Unlicense, Zlib, BlueOak-1.0.0, ISC",
               },
             },
           ],

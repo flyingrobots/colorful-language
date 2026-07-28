@@ -80,8 +80,8 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — validate boundaries with fuzzing** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | Advance #134 after delivered #82; keep measurement lanes advisory until their environments are stable. |
-| **Next — prove validator and consumer value** | Mutation, fuzzing, independent-consumer, and analyzer-adapter evidence expose real gaps without expanding the cathedral. | Complete #134, #156, and #157 in dependency order; delivered #82 supplies the mutation baseline. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
+| **Delivered — validate boundaries with fuzzing** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | #134 now builds on delivered #82 with a pinned seeded correctness corpus and four manual fuzz targets; measurement lanes remain advisory until their environments are stable. |
+| **Now — prove validator and consumer value** | Mutation, fuzzing, independent-consumer, and analyzer-adapter evidence expose real gaps without expanding the cathedral. | Complete #156 and #157 in dependency order; delivered #82 and #134 supply the mutation and fuzz baselines. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -172,12 +172,11 @@ deterministically and use valid data without reverse-engineering Colorful.
   process-level negative IR witnesses
   ([#148](https://github.com/flyingrobots/colorful-language/issues/148)); and
   preserve the historical v0.2.0 packet with its dated Graft correction
-  ([#149](https://github.com/flyingrobots/colorful-language/issues/149)).
-  <!-- roadmap-primary: delivered #81 #82 -->
-- **Open validator confidence:** fuzz parser, projection, validation, and
-  coordinate invariants
-  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
-  <!-- roadmap-primary: active #134 -->
+  ([#149](https://github.com/flyingrobots/colorful-language/issues/149)); and
+  fuzz parser, projection, validation, and coordinate invariants with one
+  pinned seeded correctness corpus plus manual time-based targets
+  ([#134](https://github.com/flyingrobots/colorful-language/issues/134)).
+  <!-- roadmap-primary: delivered #81 #82 #134 -->
 - **Open consumer honesty:** prove independent consumer value and migration
   across two contract versions
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
@@ -394,11 +393,12 @@ crate, and structured, path-aware `ValidationError`s — each recorded in
 Boundary integrity, stale-result protection, required merge checks, dependency
 governance, executable roadmap reconciliation, conservative coverage
 ratcheting, runnable public-API examples, the measured LSP capacity envelope,
-and cross-stage performance/allocation evidence are now delivered foundations.
-The active maturity critical path is fuzz evidence
-([#134](https://github.com/flyingrobots/colorful-language/issues/134)), now
-grounded by bounded validator mutation evidence rather than more manually
-reasoned coverage.
+cross-stage performance/allocation evidence, and seeded property/fuzz boundary
+evidence are now delivered foundations. The active maturity critical path is
+independent consumer value
+([#156](https://github.com/flyingrobots/colorful-language/issues/156)), followed
+by the optional external-analyzer comparison
+([#157](https://github.com/flyingrobots/colorful-language/issues/157)).
 Distribution follows that operational proof; independent product validation
 follows real distribution. The CNL, Edict, provenance, Ouroboros, and
 semantic-closure phases remain in place behind the explicit deep-end evidence

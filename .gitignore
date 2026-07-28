@@ -3,6 +3,8 @@
 **/target/
 *.pdb
 *.rs.bk
+/fuzz/artifacts/
+/fuzz/corpus/
 
 # We ship binaries (CLI + LSP), so Cargo.lock IS committed — do not ignore it.
 

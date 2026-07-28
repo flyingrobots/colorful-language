@@ -23,6 +23,10 @@ const EXPECTED_SOURCES = new Map([
     "cargo\u0000/editors/zed",
     { group: "zed-cargo", manualDependencies: [] },
   ],
+  [
+    "cargo\u0000/fuzz",
+    { group: "fuzz-cargo", manualDependencies: [] },
+  ],
   ["npm\u0000/", { group: "root-node", manualDependencies: ["typescript"] }],
   [
     "npm\u0000/editors/vscode",

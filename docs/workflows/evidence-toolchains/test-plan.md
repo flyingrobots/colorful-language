@@ -5,7 +5,9 @@ an explicitly separate MSRV policy, and advisory forward-compatibility lanes.
 
 Canonical issues:
 [#147](https://github.com/flyingrobots/colorful-language/issues/147) and
-[#151](https://github.com/flyingrobots/colorful-language/issues/151).
+[#151](https://github.com/flyingrobots/colorful-language/issues/151), with
+bounded property/fuzz evidence tracked by
+[#134](https://github.com/flyingrobots/colorful-language/issues/134).
 
 ## Requirements
 
@@ -36,6 +38,9 @@ Canonical issues:
   references, mutable Docker action tags, missing action-release comments, and
   dependency-update ecosystem, directory, cadence, grouping, or manual
   shared-dependency drift.
+- **ETC-10** Property tests and fuzz targets must pin their dependency/tool
+  versions, seeds, commands, and correctness-CI limits; time-based fuzzing stays
+  an explicit maintainer action outside the deterministic merge gate.
 
 ## Cases
 
@@ -112,3 +117,18 @@ Canonical issues:
   `scripts/check-dependency-update-policy.test.mjs`, the `docs` job in
   `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*
   implemented.
+- **ETC-8a** — *Requirement:* ETC-10. *Behavior:* the workspace lockfile pins
+  the property-test dependency, the standalone fuzz workspace lockfile pins the
+  fuzz runtime, and one repository script owns the exact 32-byte seed,
+  256-case bound, target inventory, and commands. Normal CI runs only the
+  bounded seeded corpus; documented time-based commands run each fuzz target
+  manually and preserve any minimized failure as an ordinary regression.
+  *Oracle:* the policy script rejects version, seed, case-count, target, command,
+  or CI-wiring drift with stable categories, while the live bounded corpus
+  exits zero. *Evidence type:* manifest/lockfiles, executable policy mutation
+  tests, CI step, and operational reference. *Evidence:* root and `fuzz/`
+  Cargo manifest/lock pairs; `scripts/check-property-fuzz-policy.mjs`;
+  its 38-case mutation suite; `.github/workflows/ci.yml`;
+  `scripts/release-prep.sh`; the evidence-toolchain reference. *Tracking:*
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+  *Status:* implemented.

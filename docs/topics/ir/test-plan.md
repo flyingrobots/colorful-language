@@ -69,6 +69,10 @@ Requirements:
 - **IR-20** Public IR projection and vocabulary APIs have concise runnable
   examples that demonstrate their fallible boundaries without duplicating the
   IR reference.
+- **IR-21** Bounded seeded property evidence exercises valid projection and
+  declarative malformed public-tree and received-IR mutations; accepted
+  projections always validate, while malformed inputs fail for the exact
+  invariant and path they violate.
 
 ## Cases
 
@@ -529,6 +533,23 @@ Requirements:
   `colorful-ir` `vocabulary::visual_role` rustdoc and
   `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* implemented.
+- **IR-21a** — *Requirement:* IR-21. *Behavior:* one seeded generator chooses a
+  valid Unicode source plus a declarative public-tree or received-IR mutation.
+  Valid built-in projection must pass `validate_document`; malformed tree
+  shapes and span layouts reach all nine typed `ClassificationError` variants;
+  received-IR mutations are rejected for the selected `ValidationError` code
+  and structured path, not merely for any error. Time-based projection and
+  validation fuzz targets reuse the same public entry points outside the
+  correctness gate. *Oracle:* exact success postcondition or exact error
+  code/path equality for every generated mutation kind, with no panic.
+  *Evidence type:* seeded property test, mutation model, fuzz targets, and
+  minimized ordinary regressions. *Evidence:*
+  `crates/colorful-cli/tests/property_boundaries.rs`
+  `seeded_property_boundaries_hold_for_each_generated_case`;
+  `fuzz/fuzz_targets/ir_projection.rs`;
+  `scripts/check-property-fuzz-policy.mjs`. *Tracking:*
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
   *Status:* implemented.
 
 ## Known gaps / risks

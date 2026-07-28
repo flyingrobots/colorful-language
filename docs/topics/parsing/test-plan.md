@@ -108,13 +108,22 @@ lives in `crates/colorful-parse/src/lib.rs`.
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
   *Status:* implemented.
 - **PAR-8a** — *Requirement:* PAR-8. *Behavior:* a bounded seeded corpus drives
-  arbitrary valid Unicode and known parser regressions through parsing and
-  source reconstruction in normal CI. *Oracle:* no panic; every accepted span
-  is non-empty, ordered, in bounds, and on a character boundary; concatenated
-  spans/gaps reproduce the source. *Evidence type:* property test, fuzz target,
-  and deterministic regression corpus. *Tracking:*
+  256 cases from one checked-in 32-byte seed through a weighted valid-Unicode
+  generator that always includes astral code points, combining marks,
+  zero-width characters, and `LF`, `CR`, or `CRLF` line endings. The same
+  invariant is enforced independently by a time-based parser fuzz target
+  outside the correctness gate. *Oracle:* parsing and annotation do not panic;
+  every accepted tree/token span is non-empty, ordered, in bounds, and on a
+  character boundary; every gap contains only an explicitly skipped whitespace
+  scalar; independently concatenating source gaps and spans reproduces the
+  source byte-for-byte. *Evidence type:* seeded property test, fuzz target, and
+  deterministic regression corpus. *Evidence:*
+  `crates/colorful-cli/tests/property_boundaries.rs`
+  `seeded_property_boundaries_hold_for_each_generated_case`;
+  `fuzz/fuzz_targets/parser.rs`; `fuzz/fuzz_targets/annotator.rs`;
+  `scripts/check-property-fuzz-policy.mjs`. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
-  *Status:* planned.
+  *Status:* implemented.
 - **PAR-9a** — *Requirement:* PAR-9. *Behavior:* a public `Parser` implementation
   parses source into inspectable structure in a compiled rustdoc example.
   *Oracle:* `cargo test --doc --workspace` compiles and runs the example with an
@@ -128,4 +137,3 @@ lives in `crates/colorful-parse/src/lib.rs`.
 
 - No fixtures yet for deeply nested punctuation or clause boundaries; deferred
   until structure deepens beyond `v0`.
-- Bounded deterministic fuzz/property evidence remains open in PAR-8a.
