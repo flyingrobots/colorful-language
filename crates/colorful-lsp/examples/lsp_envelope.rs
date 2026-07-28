@@ -915,11 +915,14 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::mpsc;
+    use std::time::Instant;
+
     use serde_json::json;
 
     use super::{
-        corpus, parse_peak_rss, refusal_diagnostic_code, stale_publication_count, TimeFlavor,
-        CORPUS_LINE,
+        corpus, drain_messages_after_eof, parse_peak_rss, refusal_diagnostic_code,
+        stale_publication_count, TimeFlavor, TimedMessage, CORPUS_LINE,
     };
 
     #[test]
@@ -965,5 +968,24 @@ mod tests {
             refusal_diagnostic_code(&message),
             Some("colorful/document-too-large")
         );
+    }
+
+    #[test]
+    fn post_eof_drain_retains_a_late_diagnostic() {
+        let (sender, receiver) = mpsc::channel();
+        sender
+            .send(Ok(TimedMessage {
+                value: json!({
+                    "method": "textDocument/publishDiagnostics",
+                    "params": {"version": 2}
+                }),
+                received_at: Instant::now(),
+            }))
+            .expect("queue late diagnostic");
+        drop(sender);
+
+        let messages = drain_messages_after_eof(&receiver);
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].value["params"]["version"], 2);
     }
 }
