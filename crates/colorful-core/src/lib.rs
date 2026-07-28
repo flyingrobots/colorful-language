@@ -317,6 +317,9 @@ impl PassIdentity {
 ///
 /// impl Parser for WholeSourceParser {
 ///     fn parse(&self, text: &str) -> Tree {
+///         if text.is_empty() {
+///             return Tree::document(Vec::new());
+///         }
 ///         let span = Span::new(0, text.len());
 ///         Tree::document(vec![Node::Sentence {
 ///             span,
@@ -325,6 +328,7 @@ impl PassIdentity {
 ///     }
 /// }
 ///
+/// assert_eq!(WholeSourceParser.parse(""), Tree::document(Vec::new()));
 /// let source = "colorful";
 /// let tree = WholeSourceParser.parse(source);
 /// assert_eq!(
