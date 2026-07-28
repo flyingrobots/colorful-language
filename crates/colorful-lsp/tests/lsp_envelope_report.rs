@@ -209,6 +209,12 @@ fn claimed_corpus_is_consistent(report: &Value) -> bool {
     })
 }
 
+fn lsp_envelope_example_runs_tests(manifest: &str) -> bool {
+    manifest.contains(
+        "[[example]]\nname = \"lsp_envelope\"\npath = \"examples/lsp_envelope.rs\"\ntest = true",
+    )
+}
+
 #[test]
 fn baseline_covers_the_reviewed_supported_envelope() {
     let baseline = baseline();
@@ -390,11 +396,20 @@ fn ordinary_cargo_test_runs_the_harness_unit_tests() {
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
 
     assert!(
-        manifest.contains(
-            "[[example]]\nname = \"lsp_envelope\"\npath = \"examples/lsp_envelope.rs\"\ntest = true"
-        ),
+        lsp_envelope_example_runs_tests(&manifest),
         "the benchmark harness must run its unit tests under ordinary cargo test"
     );
+}
+
+#[test]
+fn example_manifest_check_is_independent_of_toml_key_order() {
+    let reordered = r#"[[example]]
+test = true
+path = "examples/lsp_envelope.rs"
+name = "lsp_envelope"
+"#;
+
+    assert!(lsp_envelope_example_runs_tests(reordered));
 }
 
 #[test]
