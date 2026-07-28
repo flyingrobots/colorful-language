@@ -472,4 +472,36 @@ mod tests {
         );
         assert_eq!(parse_linux_processor("CPU implementer\t: 0x41\n"), None);
     }
+
+    #[test]
+    fn host_metadata_override_precedes_probe_and_missing_values_fail() {
+        assert_eq!(
+            resolve_metadata_value(
+                Some("reviewed override".to_owned()),
+                Some("native probe".to_owned()),
+                "COLORFUL_BENCHMARK_FIELD",
+            ),
+            Ok("reviewed override".to_owned())
+        );
+        assert_eq!(
+            resolve_metadata_value(
+                None,
+                Some("native probe".to_owned()),
+                "COLORFUL_BENCHMARK_FIELD",
+            ),
+            Ok("native probe".to_owned())
+        );
+        assert!(
+            resolve_metadata_value(
+                Some("  ".to_owned()),
+                Some("native probe".to_owned()),
+                "COLORFUL_BENCHMARK_FIELD",
+            )
+            .is_err()
+        );
+        assert_eq!(
+            resolve_metadata_value(None, None, "COLORFUL_BENCHMARK_FIELD"),
+            Err("set COLORFUL_BENCHMARK_FIELD explicitly on this platform".to_owned())
+        );
+    }
 }
