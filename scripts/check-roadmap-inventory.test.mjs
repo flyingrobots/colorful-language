@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  closingIssueNumbersForRepository,
   InventoryError,
   validateRoadmapInventory,
 } from "./check-roadmap-inventory.mjs";
@@ -105,6 +106,40 @@ test("treats issues closed by the current pull request as delivered", () => {
       issuePath: "fixture/issues.json",
       closingIssueNumbers: new Set([101]),
     }),
+  );
+});
+
+test("ignores closing references to a different repository", () => {
+  const references = [
+    {
+      number: 101,
+      repository: {
+        name: "colorful-language",
+        owner: { login: "flyingrobots" },
+      },
+    },
+    {
+      number: 101,
+      repository: {
+        name: "other-project",
+        owner: { login: "someone-else" },
+      },
+    },
+    {
+      number: 202,
+      repository: {
+        name: "other-project",
+        owner: { login: "someone-else" },
+      },
+    },
+  ];
+
+  assert.deepEqual(
+    closingIssueNumbersForRepository(
+      references,
+      "flyingrobots/colorful-language",
+    ),
+    new Set([101]),
   );
 });
 
