@@ -204,15 +204,15 @@ below 512 MiB RSS.
 
 | Size | Outcome | Open diagnostics | Edit diagnostics | Cached tokens | Four-request burst | Peak RSS |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| 100 KiB | analyzed | 6.4 ms | 65.6 ms | 0.6 ms | 60.4 ms | 10.0 MiB |
-| 1 MiB | analyzed | 49.0 ms | 104.8 ms | 5.2 ms | 119.1 ms | 66.4 MiB |
-| 5 MiB | analyzed | 263.1 ms | 294.8 ms | 27.9 ms | 359.3 ms | 331.7 MiB |
-| 10 MiB | document too large | 20.8 ms | 62.0 ms | 0.1 ms | 83.3 ms | 109.7 MiB |
+| 100 KiB | analyzed | 5.4 ms | 60.6 ms | 0.6 ms | 62.4 ms | 9.4 MiB |
+| 1 MiB | analyzed | 50.5 ms | 106.6 ms | 5.2 ms | 117.1 ms | 66.9 MiB |
+| 5 MiB | analyzed | 262.1 ms | 293.9 ms | 28.8 ms | 365.1 ms | 339.4 MiB |
+| 10 MiB | document too large | 21.4 ms | 61.4 ms | 0.1 ms | 81.6 ms | 111.5 MiB |
 
 Every scenario met its predeclared SLO, returned process status zero, and
 ended on diagnostic version 6 without regressing to an older publication. The
 accepted sizes recorded three cancelled debounced generations, zero stale
-results, zero stale publications, and approximately 56–61 ms maximum queue
+results, zero stale publications, and approximately 54–61 ms maximum queue
 delay. The exact machine-readable evidence, including all four response timings
 and corpus SHA-256 values, is
 [`lsp-envelope-baseline.json`](../../../crates/colorful-lsp/benchmarks/lsp-envelope-baseline.json).
