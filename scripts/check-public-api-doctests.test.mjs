@@ -213,6 +213,35 @@ test("accepts executable rustdoc-hidden lines as oracle evidence", () => {
   assert.doesNotThrow(() => validatePublicApiDoctestPolicy(snapshot));
 });
 
+for (const attributes of [
+  "edition2024",
+  "rust,edition2024,standalone_crate",
+]) {
+  test(`accepts an executable rustdoc fence with ${attributes} attributes`, () => {
+    const snapshot = {
+      ...VALID_SNAPSHOT,
+      core: VALID_SNAPSHOT.core.replace(
+        "/// ```\n/// # // public-api-doctest: parser",
+        `/// \`\`\`${attributes}\n/// # // public-api-doctest: parser`,
+      ),
+    };
+    assert.doesNotThrow(() => validatePublicApiDoctestPolicy(snapshot));
+  });
+}
+
+for (const attributes of ["text", "no_run"]) {
+  test(`rejects a non-executing ${attributes} rustdoc fence`, () => {
+    const snapshot = {
+      ...VALID_SNAPSHOT,
+      core: VALID_SNAPSHOT.core.replace(
+        "/// ```\n/// # // public-api-doctest: parser",
+        `/// \`\`\`${attributes}\n/// # // public-api-doctest: parser`,
+      ),
+    };
+    expectPolicyError(snapshot, "E_API_DOCTEST_MISSING", /fenced parser/);
+  });
+}
+
 test("rejects a marker moved outside its API documentation", () => {
   const snapshot = {
     ...VALID_SNAPSHOT,

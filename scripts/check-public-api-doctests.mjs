@@ -14,7 +14,16 @@ const APIS = Object.freeze([
   ["vocabulary", "vocabulary", "pub fn visual_role", "visual_role("],
 ]);
 const DOCTEST_COMMAND = "cargo test --doc --workspace --locked";
-const RUSTDOC_FENCE = /^\s*\/\/\/ ```(?:rust)?\s*$/u;
+const RUSTDOC_FENCE =
+  /^\s*\/\/\/ ```(?<info>[A-Za-z0-9_-]+(?:\s*,\s*[A-Za-z0-9_-]+)*)?\s*$/u;
+const EXECUTABLE_RUSTDOC_ATTRIBUTES = new Set([
+  "should_panic",
+  "standalone_crate",
+  "edition2015",
+  "edition2018",
+  "edition2021",
+  "edition2024",
+]);
 const ASSERTION = /\bassert(?:_eq|_matches|_ne)?!\s*\(/u;
 const DOCTEST_MARKER = /^#\s*\/\/\s*public-api-doctest:/u;
 
@@ -53,6 +62,21 @@ function rustdocBefore(source, declaration) {
   return doc.join("\n");
 }
 
+function isExecutableRustdocFence(line) {
+  const match = RUSTDOC_FENCE.exec(line);
+  if (match === null || match.groups?.info === undefined) {
+    return match !== null;
+  }
+
+  const attributes = match.groups.info.split(",").map((value) => value.trim());
+  if (attributes[0] === "rust") {
+    attributes.shift();
+  }
+  return attributes.every((attribute) =>
+    EXECUTABLE_RUSTDOC_ATTRIBUTES.has(attribute),
+  );
+}
+
 function fencedExample(doc, marker) {
   const lines = doc.split("\n");
   const markerIndex = lines.findIndex((line) =>
@@ -63,7 +87,7 @@ function fencedExample(doc, marker) {
   }
 
   const fenceIndexes = lines
-    .map((line, index) => (RUSTDOC_FENCE.test(line) ? index : -1))
+    .map((line, index) => (isExecutableRustdocFence(line) ? index : -1))
     .filter((index) => index !== -1);
   const before = fenceIndexes.filter((index) => index < markerIndex);
   const closing = fenceIndexes.find((index) => index > markerIndex);
