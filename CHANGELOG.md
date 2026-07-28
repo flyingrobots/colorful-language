@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bounded IR validator mutation evidence.** A pinned `cargo-mutants` 27.0.0
+  corpus now exercises 80 reviewed mutations across the public validator,
+  seven validation stages, and their range, graph, and token-axis helpers.
+  CI and local release preparation reject inventory drift, survivors, and
+  timeouts; the first run exposed and seeded a regression for a cycle reached
+  through an unvisited DFS child.
 - **Enforced IR validator complexity.** Production `colorful-ir` code now opts
   into Clippy's cognitive-complexity lint at a workspace threshold of 10.
   Refactored structure-graph and token-axis validation helpers remain within the
