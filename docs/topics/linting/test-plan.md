@@ -287,6 +287,14 @@ Implemented and planned cases are listed below.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
+- **LINT-13f** — *Requirement:* LINT-13. *Behavior:* cancelling or timing out a
+  configured wrapper executable terminates every descendant in the spawned
+  analyzer process group before output capture is joined. *Oracle:* a
+  deterministic wrapper starts a long-lived worker with redirected output;
+  timeout returns its exact typed category, and the recorded worker process no
+  longer exists. *Evidence type:* process-tree regression test. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
