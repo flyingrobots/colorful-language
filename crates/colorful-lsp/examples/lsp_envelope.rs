@@ -966,7 +966,8 @@ mod tests {
 
     use super::{
         corpus, drain_messages_after_eof, parse_peak_rss, process_group_signal_target,
-        refusal_diagnostic_code, stale_publication_count, TimeFlavor, TimedMessage, CORPUS_LINE,
+        refusal_diagnostic_code, stale_publication_count, workload_plan, TimeFlavor, TimedMessage,
+        CONCURRENT_SEMANTIC_REQUESTS, CORPUS_LINE, RAPID_EDIT_COUNT,
     };
 
     #[test]
@@ -1036,5 +1037,20 @@ mod tests {
     #[test]
     fn process_group_escalation_targets_the_wrapper_and_server() {
         assert_eq!(process_group_signal_target(42), "-42");
+    }
+
+    #[test]
+    fn workload_plan_owns_counts_versions_and_generations() {
+        let workload = workload_plan();
+        assert_eq!(
+            workload.rapid_edits.len(),
+            usize::try_from(RAPID_EDIT_COUNT).expect("rapid edit count fits usize")
+        );
+        assert_eq!(
+            workload.semantic_request_ids.len(),
+            CONCURRENT_SEMANTIC_REQUESTS
+        );
+        assert_eq!(workload.final_document_version, 6);
+        assert_eq!(workload.final_generation, 6);
     }
 }
