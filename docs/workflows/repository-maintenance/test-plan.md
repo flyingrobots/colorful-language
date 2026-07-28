@@ -142,6 +142,13 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   `scripts/check-repository-maintenance.test.mjs`,
   `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*
   implemented.
+- **RM-7b — Failure-blocking security execution.** *Requirements:* RM-7, RM-8.
+  *Behavior:* mandatory Rust policy, dependency-review, and CodeQL jobs and
+  steps cannot use `continue-on-error` or a disabling `if` expression; the
+  dependency-review job retains only its exact pull-request event guard.
+  *Oracle:* minimal job- and step-level mutations for both suppression
+  mechanisms fail with `E_SECURITY_SUPPRESSION`. *Evidence type:*
+  deterministic workflow mutation tests. *Status:* planned.
 
 ## Hosted evidence boundary
 
