@@ -223,8 +223,11 @@ cargo test --doc --workspace --locked
 guards the five named examples and the visible CI command. Its mutation suite
 rejects a missing or duplicate example marker, a missing or misspelled workspace
 doctest command, execution guards, and non-blocking error handling on the Rust
-job or doctest step. Rustdoc compilation remains the authority for whether the
-examples actually build and run.
+job or doctest step. Expected source or workflow inputs that cannot be read fail
+with `E_API_DOCTEST_INPUT`, their repository-relative path, empty standard
+output, and no raw Node stack; unexpected programmer errors remain uncaught.
+Rustdoc compilation remains the authority for whether the examples actually
+build and run.
 
 ## Evidence
 

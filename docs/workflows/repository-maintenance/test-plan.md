@@ -268,7 +268,7 @@ roadmap-to-issue reconciliation is tracked in
   *Evidence:* `scripts/check-public-api-doctests.mjs` and
   `scripts/check-public-api-doctests.test.mjs`. *Tracking:*
   [#213](https://github.com/flyingrobots/colorful-language/issues/213).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-12a — Pinned workflow-security gate.** *Requirement:* RM-12. *Behavior:*
   one versioned policy selects an exact `zizmor` release and its offline,
   workflow-only invocation; the same first-party wrapper scans every checked-in
