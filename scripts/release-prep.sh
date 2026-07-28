@@ -29,6 +29,7 @@ node scripts/check-release-publish-order.mjs
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --all --locked
+cargo test --doc --workspace --locked
 bash scripts/package-witness.sh
 bash scripts/smoke-test-install-local.sh
 cargo build --release --locked
@@ -38,6 +39,8 @@ node scripts/check-dependency-update-policy.mjs
 node --test scripts/check-repository-maintenance.test.mjs
 node scripts/check-repository-maintenance.mjs
 node --test scripts/check-coverage-policy.test.mjs
+node --test scripts/check-public-api-doctests.test.mjs
+node scripts/check-public-api-doctests.mjs
 node --test scripts/check-roadmap-inventory.test.mjs
 node scripts/check-roadmap-inventory.mjs
 bash scripts/check-rust-dependency-policy.test.sh

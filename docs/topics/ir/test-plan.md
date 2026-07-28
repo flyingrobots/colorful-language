@@ -506,15 +506,18 @@ Requirements:
   projects valid source and demonstrates typed failure handling in a compiled
   rustdoc example. *Oracle:* `cargo test --doc --workspace` runs the success
   assertion and compiles explicit `ProjectionError` handling. *Evidence type:*
-  public API doctest. *Tracking:*
+  public API doctest. *Evidence:* `colorful-projection` `build_document`
+  rustdoc and `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-20b** — *Requirement:* IR-20. *Behavior:* public vocabulary lookups
   demonstrate both an authored mapping and an uncovered caller-supplied
   combination. *Oracle:* `cargo test --doc --workspace` runs exact `Some` and
-  `None` assertions. *Evidence type:* public API doctest. *Tracking:*
+  `None` assertions. *Evidence type:* public API doctest. *Evidence:*
+  `colorful-ir` `vocabulary::visual_role` rustdoc and
+  `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps / risks
 
@@ -529,5 +532,3 @@ Requirements:
 - The independent two-version consumer and
   [product-evidence decision](architecture.md#product-evidence-gate) remains
   open in IR-19a.
-- Public projection and vocabulary doctest evidence remains open in IR-20a and
-  IR-20b.

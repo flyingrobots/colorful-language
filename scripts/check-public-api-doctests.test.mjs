@@ -95,3 +95,25 @@ test("rejects an implicit or misspelled workspace doctest command", () => {
     /cargo test --doc --workspace --locked/,
   );
 });
+
+test("rejects a marker moved outside its API documentation", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    core: VALID_SNAPSHOT.core.replace(
+      "/// # // public-api-doctest: parser",
+      "// # // public-api-doctest: parser",
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_MISSING", /pub trait Parser/);
+});
+
+test("rejects an API marker moved outside a rustdoc code fence", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    core: VALID_SNAPSHOT.core.replace(
+      "/// ```\n/// # // public-api-doctest: parser\n/// ```",
+      "/// ```\n/// ```\n/// # // public-api-doctest: parser",
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_MISSING", /fenced parser/);
+});

@@ -118,13 +118,14 @@ lives in `crates/colorful-parse/src/lib.rs`.
 - **PAR-9a** — *Requirement:* PAR-9. *Behavior:* a public `Parser` implementation
   parses source into inspectable structure in a compiled rustdoc example.
   *Oracle:* `cargo test --doc --workspace` compiles and runs the example with an
-  exact structural assertion. *Evidence type:* public API doctest. *Tracking:*
+  exact structural assertion. *Evidence type:* public API doctest. *Evidence:*
+  `colorful-core` `Parser` rustdoc and
+  `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps
 
 - No fixtures yet for deeply nested punctuation or clause boundaries; deferred
   until structure deepens beyond `v0`.
 - Bounded deterministic fuzz/property evidence remains open in PAR-8a.
-- Public `Parser` doctest evidence remains open in PAR-9a.

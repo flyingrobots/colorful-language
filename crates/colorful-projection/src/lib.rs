@@ -94,6 +94,33 @@ pub struct AnalyzedDocument {
 /// invalid-by-construction empty identity), both claim the same pass id, or
 /// projection violates its wire-contract postcondition. See
 /// [`colorful_ir::from_validated_classification`].
+///
+/// # Examples
+///
+/// ```
+/// # // public-api-doctest: ir-projection
+/// use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
+/// use colorful_parse::ProseParser;
+/// use colorful_projection::{build_document, ProjectionError};
+///
+/// fn project() -> Result<(), ProjectionError> {
+///     let parser = ProseParser::new();
+///     let annotator =
+///         ContextualOpenClassAnnotator::<SeedOpenClassLexicon>::default();
+///     let analysis = build_document("example.txt", "Dogs run.", &parser, &annotator)?;
+///
+///     assert_eq!(analysis.document.source.unit_id, "example.txt");
+///     assert_eq!(analysis.tokens.len(), analysis.document.tokens.len());
+///     Ok(())
+/// }
+///
+/// project()?;
+/// # Ok::<(), ProjectionError>(())
+/// ```
+///
+/// See the [IR topic] for contract identity, validation, and consumer behavior.
+///
+/// [IR topic]: https://github.com/flyingrobots/colorful-language/blob/main/docs/topics/ir/README.md
 pub fn build_document<P, A>(
     unit_id: &str,
     source: &str,

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Runnable public API evidence.** Concise doctests now exercise the public
+  `Parser`, `Annotator`, `Analyzer`, IR producer, and fallible vocabulary
+  boundaries. A deterministic policy test prevents any named example or the
+  explicit `cargo test --doc --workspace` CI step from disappearing silently,
+  and release preparation runs the same gate.
 - **Ratcheted Rust coverage evidence.** A required, full-SHA-pinned CI job now
   measures the workspace with all features and targets, uploads machine-readable
   JSON plus browsable HTML, and enforces a conservative 92% workspace line

@@ -237,13 +237,13 @@ Implemented and planned cases are listed below.
   implementation returns an inspectable finding in a compiled rustdoc example.
   *Oracle:* `cargo test --doc --workspace` compiles and runs the example with
   exact rule, severity, and span assertions. *Evidence type:* public API
-  doctest. *Tracking:*
+  doctest. *Evidence:* `colorful-core` `Analyzer` rustdoc and
+  `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Open verification gaps
 
 - Optional external-analyzer parity remains open in LINT-13a.
 - Product-level comparative evidence remains open in LINT-14a; built-in rule
   fixtures are not a substitute for the held-out oracle.
-- Public `Analyzer` doctest evidence remains open in LINT-15a.

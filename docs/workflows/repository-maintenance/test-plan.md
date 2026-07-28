@@ -240,9 +240,12 @@ roadmap-to-issue reconciliation is tracked in
   visible step after compiling the supported workspace feature set. *Oracle:*
   removing the command or any named public API example fails deterministic
   policy evidence. *Evidence type:* workflow-policy test plus compiled public
-  API doctests. *Tracking:*
+  API doctests. *Evidence:* `.github/workflows/ci.yml`,
+  `scripts/check-public-api-doctests.mjs`,
+  `scripts/check-public-api-doctests.test.mjs`, and the `Parser`, `Annotator`,
+  `Analyzer`, `build_document`, and `visual_role` rustdoc examples. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Hosted evidence boundary
 

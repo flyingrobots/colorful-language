@@ -351,9 +351,11 @@ Requirements:
 - **COL-21a** — *Requirement:* COL-21. *Behavior:* a public `Annotator`
   implementation classifies a parsed tree in a compiled rustdoc example.
   *Oracle:* `cargo test --doc --workspace` compiles and runs the example with an
-  exact token-class assertion. *Evidence type:* public API doctest. *Tracking:*
+  exact token-class assertion. *Evidence type:* public API doctest. *Evidence:*
+  `colorful-core` `Annotator` rustdoc and
+  `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps
 
@@ -377,4 +379,3 @@ Requirements:
   benchmarked, but it is not the `didChange` handler.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.
-- Public `Annotator` doctest evidence remains open in COL-21a.

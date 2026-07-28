@@ -143,6 +143,36 @@ pub fn hash() -> String {
 /// when caller-supplied axes have no authored mapping. This fallible return
 /// type is part of the v0.4 public API: callers decide how an uncovered
 /// combination degrades instead of this boundary panicking on their behalf.
+///
+/// # Examples
+///
+/// Handle the `Option` explicitly because caller-supplied axes may not have an
+/// authored role:
+///
+/// ```
+/// # // public-api-doctest: vocabulary
+/// use colorful_ir::syntax_v1::{LexicalClass, OpenClassKind, TokenKind};
+/// use colorful_ir::vocabulary::visual_role;
+/// use colorful_ir::vocabulary_v1::VisualRole;
+///
+/// let noun = visual_role(
+///     &TokenKind::Word,
+///     Some(&LexicalClass::Content),
+///     Some(&OpenClassKind::Noun),
+/// );
+/// assert_eq!(noun, Some(VisualRole::Noun));
+///
+/// let impossible = visual_role(
+///     &TokenKind::Punctuation,
+///     Some(&LexicalClass::Content),
+///     None,
+/// );
+/// assert_eq!(impossible, None);
+/// ```
+///
+/// See the [IR topic] for the manifest and projection contract.
+///
+/// [IR topic]: https://github.com/flyingrobots/colorful-language/blob/main/docs/topics/ir/README.md
 #[must_use]
 pub fn visual_role(
     token_kind: &TokenKind,
