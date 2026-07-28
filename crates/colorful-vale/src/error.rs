@@ -1,5 +1,7 @@
 use std::fmt;
 
+const STDERR_DETAIL_LIMIT: usize = 4096;
+
 /// Stable categories for Vale adapter failures.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValeErrorKind {
@@ -45,16 +47,32 @@ impl ValeError {
     }
 
     pub(crate) fn process_failure(phase: &str, code: Option<i32>, stderr: &[u8]) -> Self {
-        let stderr = String::from_utf8_lossy(stderr);
-        let stderr = stderr.trim();
-        let detail = if stderr.is_empty() {
+        let captured = &stderr[..stderr.len().min(STDERR_DETAIL_LIMIT)];
+        let decoded = String::from_utf8_lossy(captured);
+        let mut stderr_detail = decoded.trim().to_owned();
+        let mut truncated = stderr.len() > STDERR_DETAIL_LIMIT;
+        if stderr_detail.len() > STDERR_DETAIL_LIMIT {
+            let mut end = STDERR_DETAIL_LIMIT;
+            while !stderr_detail.is_char_boundary(end) {
+                end -= 1;
+            }
+            stderr_detail.truncate(end);
+            truncated = true;
+        }
+        let detail = if stderr_detail.is_empty() {
             "no stderr".to_string()
+        } else if truncated {
+            format!("stderr: {stderr_detail} [truncated]")
         } else {
-            format!("stderr: {stderr}")
+            format!("stderr: {stderr_detail}")
+        };
+        let status = match code {
+            Some(code) => format!("exited with code {code}"),
+            None => "terminated by signal".to_string(),
         };
         Self::new(
             ValeErrorKind::ProcessFailure,
-            format!("{phase} exited with code {code:?}; {detail}"),
+            format!("{phase} {status}; {detail}"),
         )
     }
 
@@ -96,6 +114,10 @@ mod tests {
             "bounded stderr produced {} message bytes",
             numeric.message().len()
         );
+
+        let invalid_utf8 = ValeError::process_failure("Vale analysis", Some(8), &vec![0xff; 8192]);
+        assert!(invalid_utf8.message().contains('\u{fffd}'));
+        assert!(invalid_utf8.message().len() <= 4200);
 
         let signalled = ValeError::process_failure("Vale analysis", None, b"");
         assert_eq!(
