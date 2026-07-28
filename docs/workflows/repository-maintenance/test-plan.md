@@ -148,7 +148,9 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   dependency-review job retains only its exact pull-request event guard.
   *Oracle:* minimal job- and step-level mutations for both suppression
   mechanisms fail with `E_SECURITY_SUPPRESSION`. *Evidence type:*
-  deterministic workflow mutation tests. *Status:* planned.
+  deterministic workflow mutation tests. *Evidence:*
+  `scripts/check-repository-maintenance.mjs` and
+  `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
 
 ## Hosted evidence boundary
 

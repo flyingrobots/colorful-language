@@ -413,6 +413,35 @@ function stepWithUse(job, value) {
   return job?.steps?.find((step) => step?.uses === value);
 }
 
+function requireBlockingStep(step, path) {
+  if (
+    step?.if !== undefined ||
+    (step?.["continue-on-error"] !== undefined &&
+      step["continue-on-error"] !== false)
+  ) {
+    reject(
+      "E_SECURITY_SUPPRESSION",
+      path,
+      "must run without an if guard or continue-on-error",
+    );
+  }
+}
+
+function requireBlockingJob(job, path, allowedIf) {
+  if (
+    (allowedIf === undefined && job.if !== undefined) ||
+    (allowedIf !== undefined && job.if !== allowedIf) ||
+    (job["continue-on-error"] !== undefined &&
+      job["continue-on-error"] !== false)
+  ) {
+    reject(
+      "E_SECURITY_SUPPRESSION",
+      path,
+      "must be failure-blocking with only its reviewed event guard",
+    );
+  }
+}
+
 function requireAction(job, action, path) {
   const step = stepWithUse(job, action);
   if (step === undefined) {
@@ -422,6 +451,7 @@ function requireAction(job, action, path) {
       `must use ${action}`,
     );
   }
+  requireBlockingStep(step, path);
   return step;
 }
 
@@ -439,10 +469,30 @@ function hasRun(job, command) {
   );
 }
 
+function requireBlockingRun(job, command, path) {
+  const step = job?.steps?.find(
+    (candidate) =>
+      typeof candidate?.run === "string" &&
+      candidate.run
+        .split(/\r?\n/u)
+        .map((line) => line.trim())
+        .includes(command),
+  );
+  if (step === undefined) {
+    reject(
+      "E_SECURITY_WORKFLOW",
+      path,
+      `must run ${JSON.stringify(command)}`,
+    );
+  }
+  requireBlockingStep(step, path);
+}
+
 function validateRustSecurityJob(workflow) {
   const path = ".github/workflows/security.yml:jobs.rust-dependency-policy";
   const job = workflow?.jobs?.["rust-dependency-policy"];
   requireObject(job, "E_SECURITY_WORKFLOW", path);
+  requireBlockingJob(job, path);
   requireAction(job, CHECKOUT_ACTION, `${path}:steps`);
   requireAction(job, RUST_TOOLCHAIN_ACTION, `${path}:steps`);
   const install = requireAction(job, CARGO_DENY_ACTION, `${path}:steps`);
@@ -454,13 +504,7 @@ function validateRustSecurityJob(workflow) {
     );
   }
   for (const command of RUST_POLICY_COMMANDS) {
-    if (!hasRun(job, command)) {
-      reject(
-        "E_SECURITY_WORKFLOW",
-        `${path}:steps`,
-        `must run ${JSON.stringify(command)}`,
-      );
-    }
+    requireBlockingRun(job, command, `${path}:steps`);
   }
 }
 
@@ -479,14 +523,8 @@ function validateDependencyReview(workflow) {
   const path = ".github/workflows/security.yml:jobs.dependency-review";
   const job = workflow?.jobs?.["dependency-review"];
   requireObject(job, "E_DEPENDENCY_REVIEW", path);
-  if (job.if !== "github.event_name == 'pull_request'") {
-    reject(
-      "E_DEPENDENCY_REVIEW",
-      `${path}:if`,
-      "must run only for pull requests",
-    );
-  }
-  const step = stepWithUse(job, DEPENDENCY_REVIEW_ACTION);
+  requireBlockingJob(job, path, "github.event_name == 'pull_request'");
+  const step = requireAction(job, DEPENDENCY_REVIEW_ACTION, `${path}:steps`);
   if (
     step?.with?.["fail-on-severity"] !== "moderate" ||
     step.with?.["fail-on-scopes"] !== "runtime, development, unknown" ||
@@ -513,6 +551,7 @@ function validateCodeQl(workflow) {
   const path = ".github/workflows/security.yml:jobs.codeql";
   const job = workflow?.jobs?.codeql;
   requireObject(job, "E_CODEQL_WORKFLOW", path);
+  requireBlockingJob(job, path);
   requireAction(job, CHECKOUT_ACTION, `${path}:steps`);
   if (
     job.permissions?.contents !== "read" ||
@@ -544,12 +583,11 @@ function validateCodeQl(workflow) {
       "must analyze Rust and JavaScript/TypeScript with build-mode none",
     );
   }
-  const init = stepWithUse(job, CODEQL_INIT_ACTION);
-  const analyze = stepWithUse(job, CODEQL_ANALYZE_ACTION);
+  const init = requireAction(job, CODEQL_INIT_ACTION, `${path}:steps`);
+  requireAction(job, CODEQL_ANALYZE_ACTION, `${path}:steps`);
   if (
     init?.with?.languages !== "${{ matrix.language }}" ||
-    init.with?.["build-mode"] !== "${{ matrix.build-mode }}" ||
-    analyze === undefined
+    init.with?.["build-mode"] !== "${{ matrix.build-mode }}"
   ) {
     reject(
       "E_CODEQL_WORKFLOW",
