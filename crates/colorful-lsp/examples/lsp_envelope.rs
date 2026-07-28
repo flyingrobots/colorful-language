@@ -15,6 +15,8 @@
 use std::collections::VecDeque;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, Write};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
@@ -74,16 +76,18 @@ impl LspProcess {
             "linux" => (TimeFlavor::Gnu, "-v"),
             other => panic!("peak-RSS measurement is unsupported on {other}"),
         };
-        let mut child = Command::new("/usr/bin/time")
+        let mut command = Command::new("/usr/bin/time");
+        command
             .arg(time_argument)
             .arg(server)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .unwrap_or_else(|error| {
-                panic!("spawn {} through /usr/bin/time: {error}", server.display())
-            });
+            .stderr(Stdio::piped());
+        #[cfg(unix)]
+        command.process_group(0);
+        let mut child = command.spawn().unwrap_or_else(|error| {
+            panic!("spawn {} through /usr/bin/time: {error}", server.display())
+        });
         let stdin = child.stdin.take().expect("piped colorful-lsp stdin");
         let stdout = child.stdout.take().expect("piped colorful-lsp stdout");
         let stderr = child.stderr.take().expect("piped colorful-lsp stderr");
@@ -225,8 +229,9 @@ impl LspProcess {
 
 impl Drop for LspProcess {
     fn drop(&mut self) {
+        self.stdin.take();
         if self.child.try_wait().ok().flatten().is_none() {
-            let _ = self.child.kill();
+            let _ = terminate_process_group(&mut self.child);
             let _ = self.child.wait();
         }
         if let Some(reader) = self.stdout_reader.take() {
@@ -290,6 +295,28 @@ fn read_message(reader: &mut impl BufRead) -> io::Result<Option<Value>> {
         .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
 }
 
+fn process_group_signal_target(pid: u32) -> String {
+    format!("-{pid}")
+}
+
+fn terminate_process_group(child: &mut Child) -> io::Result<()> {
+    #[cfg(unix)]
+    {
+        let target = process_group_signal_target(child.id());
+        let status = Command::new("/bin/kill")
+            .args(["-KILL", &target])
+            .status()?;
+        if status.success() {
+            return Ok(());
+        }
+        Err(io::Error::other(format!(
+            "/bin/kill failed for process group {target}"
+        )))
+    }
+    #[cfg(not(unix))]
+    child.kill()
+}
+
 fn wait_for_exit(child: &mut Child) -> ExitStatus {
     let deadline = Instant::now() + RESPONSE_TIMEOUT;
     loop {
@@ -297,7 +324,7 @@ fn wait_for_exit(child: &mut Child) -> ExitStatus {
             return status;
         }
         if Instant::now() >= deadline {
-            child.kill().expect("kill hung benchmark server");
+            terminate_process_group(child).expect("kill hung benchmark process group");
             let _ = child.wait();
             panic!("colorful-lsp did not exit after the exit notification");
         }
