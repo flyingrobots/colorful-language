@@ -47,7 +47,7 @@ fn adapter_dependency_direction_preserves_pure_core_and_default_binaries() {
     assert!(!adapter_dependencies.contains("colorful-lsp"));
     assert_eq!(
         adapter_dependencies,
-        ["colorful-core", "serde", "serde_json"]
+        ["colorful-core", "rustix", "serde", "serde_json"]
             .into_iter()
             .map(str::to_string)
             .collect(),

@@ -5,6 +5,9 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
+
 use crate::{CancellationToken, ValeError, ValeErrorKind};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(2);
@@ -65,6 +68,8 @@ pub(crate) fn run_process(
         })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    #[cfg(unix)]
+    command.process_group(0);
     let mut child = command.spawn().map_err(|error| {
         let kind = match error.kind() {
             io::ErrorKind::NotFound | io::ErrorKind::PermissionDenied => ValeErrorKind::Unavailable,
@@ -157,6 +162,16 @@ pub(crate) fn run_process(
     })
 }
 
+#[cfg(unix)]
+fn terminate(child: &mut std::process::Child) {
+    let process_group = rustix::process::Pid::from_child(child);
+    if rustix::process::kill_process_group(process_group, rustix::process::Signal::KILL).is_err() {
+        let _ = child.kill();
+    }
+    let _ = child.wait();
+}
+
+#[cfg(not(unix))]
 fn terminate(child: &mut std::process::Child) {
     let _ = child.kill();
     let _ = child.wait();

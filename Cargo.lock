@@ -272,6 +272,7 @@ dependencies = [
  "colorful-lsp",
  "colorful-parse",
  "colorful-projection",
+ "rustix",
  "serde",
  "serde_json",
  "toml",

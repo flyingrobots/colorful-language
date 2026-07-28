@@ -3,7 +3,7 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -288,7 +288,13 @@ fn analysis_honors_the_explicit_document_extension() {
 fn running_process_can_be_cancelled_after_start() {
     let fixture = Arc::new(FakeVale::new(
         "3.14.2",
-        ": > '{FAKE_VALE_MARKER}'\nwhile :; do :; done",
+        r#": > '{FAKE_VALE_MARKER}'
+(
+  trap '' HUP TERM
+  while :; do :; done
+) >/dev/null 2>&1 &
+printf '%s\n' "$!" > '{FAKE_VALE_WORKER_PID}'
+wait"#,
     ));
     let analyzer =
         Arc::new(ValeAnalyzer::discover(fixture.config()).expect("discover cancellable Vale"));
@@ -308,6 +314,7 @@ fn running_process_can_be_cancelled_after_start() {
         .expect("analysis worker")
         .expect_err("cancelled analysis");
     assert_eq!(error.kind(), ValeErrorKind::Cancelled);
+    assert_worker_terminated(&fixture);
 }
 
 #[test]
@@ -340,7 +347,7 @@ fn timeout_terminates_wrapper_process_group() {
         "3.14.2",
         r#"(
   trap '' HUP TERM
-  while :; do sleep 1; done
+  while :; do :; done
 ) >/dev/null 2>&1 &
 printf '%s\n' "$!" > '{FAKE_VALE_WORKER_PID}'
 wait"#,
@@ -353,11 +360,19 @@ wait"#,
         .expect_err("wrapper analysis must time out");
     assert_eq!(error.kind(), ValeErrorKind::Timeout);
 
+    assert_worker_terminated(&fixture);
+}
+
+fn assert_worker_terminated(fixture: &FakeVale) {
     let worker_pid: u32 = fs::read_to_string(&fixture.worker_pid)
         .expect("wrapper must record worker PID")
         .trim()
         .parse()
         .expect("worker PID must be numeric");
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while process_exists(worker_pid) && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(2));
+    }
     let worker_survived = process_exists(worker_pid);
     if worker_survived {
         kill_process(worker_pid);
@@ -371,6 +386,8 @@ wait"#,
 fn process_exists(pid: u32) -> bool {
     Command::new("/bin/kill")
         .args(["-0", &pid.to_string()])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .status()
         .expect("probe worker process")
         .success()

@@ -38,7 +38,8 @@ Use a two-stage boundary:
 1. process discovery validates an explicit configuration and a supported Vale
    v3 executable;
 2. process execution owns stdin/stdout/stderr, timeout, cancellation, and an
-   output-size limit;
+   output-size limit; on Unix it also owns a dedicated process group so wrapper
+   descendants cannot retain capture pipes after termination;
 3. structural parsing and coordinate validation either return a typed adapter
    error or produce a document-bound normalized snapshot; and
 4. only that successful, I/O-free snapshot implements the existing `Analyzer`
@@ -60,16 +61,18 @@ classification, semantic tokens, or canonical IR.
 ## Prototype result
 
 The implemented comparison boundary has six production source modules and
-three normal dependencies: `colorful-core`, `serde`, and `serde_json`. A
-manifest/source-inventory test makes those maintenance measures reviewed
-changes rather than prose-only counts. The adapter crate is non-publishable and
-is absent from the production dependency tables of the core, CLI, and LSP.
+four production dependencies: `colorful-core`, Unix-only `rustix`, `serde`,
+and `serde_json`. A manifest/source-inventory test makes those maintenance
+measures reviewed changes rather than prose-only counts. The adapter crate is
+non-publishable and is absent from the production dependency tables of the
+core, CLI, and LSP.
 
 The deterministic suite covers version/config discovery, ambient-config
 isolation, stdin arguments, relative-path resolution, pre-start and in-flight
-cancellation, timeout, process failure, output bounds, UTF-8, JSON/alert shape,
-Unicode/CRLF coordinates, source identity, total finding order, CLI/LSP parity,
-and semantic-token/canonical-IR non-interference. A checksum-verified one-off
+cancellation, Unix wrapper-descendant cleanup, timeout, process failure, output
+bounds, UTF-8, JSON/alert shape, Unicode/CRLF coordinates, source identity,
+total finding order, CLI/LSP parity, and semantic-token/canonical-IR
+non-interference. A checksum-verified one-off
 probe against the official Vale 3.14.2 macOS arm64 archive on 2026-07-28
 (`vale_3.14.2_macOS_arm64.tar.gz`, SHA-256
 `14305f4e5e0756351ffd4ff8dd1e561c5d49f6a27360834238d832d9e64ac70f`)

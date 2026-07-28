@@ -67,6 +67,9 @@ explicit `.vale.ini`. Discovery accepts major version 3, and analysis invokes
 Vale with JSON output, stdin using a caller-selected document extension
 (`.txt` by default), no global configuration, a bounded output capture, and a
 caller-cancellable timeout. It never runs `vale sync` or downloads a style.
+On Unix, each invocation owns a dedicated process group so timeout and
+cancellation terminate configured wrappers and their descendants before
+joining captured output. Other targets retain direct-child termination.
 Missing configuration, an unavailable or incompatible engine, timeout,
 cancellation, process failure, excessive output, invalid UTF-8, malformed JSON,
 invalid alert data, and source-identity mismatch are different `ValeErrorKind`
@@ -96,8 +99,9 @@ projection helpers as `ProseLinter`, but they do not alter semantic tokens,
 parser/classifier output, or canonical IR.
 
 The prototype's reviewed maintenance surface is six production source modules
-and exactly three normal dependencies (`colorful-core`, `serde`, and
-`serde_json`); a workspace-boundary test fails if either measure changes.
+and exactly four production dependencies (`colorful-core`, Unix-only `rustix`,
+`serde`, and `serde_json`); a workspace-boundary test fails if either measure
+changes.
 Utility evidence exercises deterministic process, normalization, configuration,
 and boundary tests, including two external findings projected through both
 surfaces with no semantic-token or canonical-IR drift. A one-off 2026-07-28
