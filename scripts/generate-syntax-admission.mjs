@@ -400,6 +400,8 @@ export function syntaxAdmissionInputsFromCompatibility(
     compatibility.currentIdentity,
     "compatibility currentIdentity",
   );
+  const generationIds = new Set();
+  const generationIdentities = new Set();
   for (const [index, generation] of compatibility.generations.entries()) {
     if (
       !isManifestRecord(generation) ||
@@ -415,6 +417,19 @@ export function syntaxAdmissionInputsFromCompatibility(
       generation.identity,
       `compatibility generation ${index} identity`,
     );
+    if (generationIds.has(generation.id)) {
+      fail(`compatibility manifest duplicates generation id ${generation.id}`);
+    }
+    generationIds.add(generation.id);
+    const identityKey = JSON.stringify([
+      generation.identity.contractVersion,
+      generation.identity.schemaHash,
+      generation.identity.vocabularyHash,
+    ]);
+    if (generationIdentities.has(identityKey)) {
+      fail(`compatibility generation ${index} duplicates identity tuple`);
+    }
+    generationIdentities.add(identityKey);
   }
   const current = compatibility.generations.find((generation) =>
     sameIdentity(generation.identity, compatibility.currentIdentity)

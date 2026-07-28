@@ -472,6 +472,41 @@ test("generation rejects malformed compatibility manifests uniformly", () => {
       `malformed manifest ${index}`,
     );
   }
+  const current = manifest.generations.at(-1);
+  assert.throws(
+    () =>
+      syntaxAdmissionInputsFromCompatibility(
+        {
+          ...manifest,
+          generations: [
+            ...manifest.generations,
+            { ...current, id: "duplicate-current-identity" },
+          ],
+        },
+        () => "type DocumentAnalysis {}",
+    ),
+    /duplicates identity tuple/u,
+  );
+  assert.throws(
+    () =>
+      syntaxAdmissionInputsFromCompatibility(
+        {
+          ...manifest,
+          generations: [
+            ...manifest.generations,
+            {
+              ...current,
+              identity: {
+                ...current.identity,
+                schemaHash: "sha256:distinct",
+              },
+            },
+          ],
+        },
+        () => "type DocumentAnalysis {}",
+      ),
+    /duplicates generation id/u,
+  );
 
   const inputs = syntaxAdmissionInputsFromCompatibility(
     manifest,
