@@ -307,3 +307,50 @@ fn ordinary_cargo_test_runs_the_harness_unit_tests() {
         "the benchmark harness must run its unit tests under ordinary cargo test"
     );
 }
+
+#[test]
+fn current_reference_quotes_the_reviewed_measurements() {
+    let baseline = baseline();
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("workspace root")
+        .join("docs")
+        .join("topics")
+        .join("coloring")
+        .join("README.md");
+    let current_reference = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+
+    for scenario in baseline["scenarios"].as_array().expect("scenario array") {
+        let outcome = match scenario["outcomeCategory"].as_str() {
+            Some("document-too-large") => "document too large",
+            Some(outcome) => outcome,
+            None => panic!("scenario outcome category"),
+        };
+        let peak_rss_mib = scenario["peakRssBytes"].as_f64().expect("peak RSS") / (1024.0 * 1024.0);
+        let row = format!(
+            "| {} | {} | {:.1} ms | {:.1} ms | {:.1} ms | {:.1} ms | {:.1} MiB |",
+            scenario["label"].as_str().expect("scenario label"),
+            outcome,
+            scenario["open"]["diagnosticsMs"]
+                .as_f64()
+                .expect("open diagnostics"),
+            scenario["incremental"]["diagnosticsMs"]
+                .as_f64()
+                .expect("incremental diagnostics"),
+            scenario["open"]["semanticTokensMs"]
+                .as_f64()
+                .expect("cached semantic tokens"),
+            scenario["overload"]["slowestSemanticResponseMs"]
+                .as_f64()
+                .expect("overload response"),
+            peak_rss_mib,
+        );
+        assert!(
+            current_reference.contains(&row),
+            "{} does not quote reviewed row: {row}",
+            path.display()
+        );
+    }
+}
