@@ -152,6 +152,17 @@ fn baseline_covers_the_reviewed_supported_envelope() {
     assert!(baseline["source"]["gitCommit"].as_str().is_some_and(
         |commit| commit.len() == 40 && commit.bytes().all(|byte| byte.is_ascii_hexdigit())
     ));
+    assert_eq!(
+        baseline["measurement"]["serverProvenance"],
+        "workspace-release-build"
+    );
+    assert_eq!(
+        baseline["measurement"]["serverSourceGitCommit"],
+        baseline["source"]["gitCommit"]
+    );
+    assert!(baseline["measurement"]["serverSha256"]
+        .as_str()
+        .is_some_and(|hash| hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit())));
 
     for key in [
         "operatingSystem",
