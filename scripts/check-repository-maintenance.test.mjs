@@ -11,6 +11,8 @@ import {
 
 const CHECKOUT_ACTION =
   "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+const RUST_TOOLCHAIN_ACTION =
+  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
 const INSTALL_ACTION =
   "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
 const DEPENDENCY_ACTION =
@@ -104,6 +106,7 @@ allow-git = []
         "rust-dependency-policy": {
           steps: [
             { uses: CHECKOUT_ACTION },
+            { uses: RUST_TOOLCHAIN_ACTION },
             {
               uses: INSTALL_ACTION,
               with: { tool: "cargo-deny@0.18.9" },
@@ -201,6 +204,10 @@ function expectCode(mutate, code) {
   );
 }
 
+function actionStep(job, action) {
+  return job.steps.find((step) => step.uses === action);
+}
+
 test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
 });
@@ -265,9 +272,38 @@ test("rejects an unknown Rust dependency source", () => {
 
 test("rejects a floating cargo-deny tool version", () => {
   expectCode(({ securityWorkflow }) => {
-    securityWorkflow.jobs["rust-dependency-policy"].steps[1].with.tool =
-      "cargo-deny";
+    actionStep(
+      securityWorkflow.jobs["rust-dependency-policy"],
+      INSTALL_ACTION,
+    ).with.tool = "cargo-deny";
   }, "E_CARGO_DENY_PIN");
+});
+
+test("rejects a floating Rust policy checkout action", () => {
+  expectCode(({ securityWorkflow }) => {
+    actionStep(
+      securityWorkflow.jobs["rust-dependency-policy"],
+      CHECKOUT_ACTION,
+    ).uses = "actions/checkout@main";
+  }, "E_SECURITY_ACTION_PIN");
+});
+
+test("rejects a floating Rust toolchain action", () => {
+  expectCode(({ securityWorkflow }) => {
+    actionStep(
+      securityWorkflow.jobs["rust-dependency-policy"],
+      RUST_TOOLCHAIN_ACTION,
+    ).uses = "dtolnay/rust-toolchain@master";
+  }, "E_SECURITY_ACTION_PIN");
+});
+
+test("rejects a floating CodeQL checkout action", () => {
+  expectCode(({ securityWorkflow }) => {
+    actionStep(
+      securityWorkflow.jobs.codeql,
+      CHECKOUT_ACTION,
+    ).uses = "actions/checkout@v5";
+  }, "E_SECURITY_ACTION_PIN");
 });
 
 test("rejects an omitted live Rust dependency scan", () => {
