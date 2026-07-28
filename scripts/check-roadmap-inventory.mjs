@@ -293,6 +293,23 @@ function loadLiveIssues(repo) {
   }
 }
 
+export function closingIssueNumbersForRepository(references, repo) {
+  const normalizedRepository = repo.toLowerCase();
+  return new Set(
+    references
+      .filter((issue) => {
+        const owner = issue?.repository?.owner?.login;
+        const name = issue?.repository?.name;
+        return (
+          typeof owner === "string" &&
+          typeof name === "string" &&
+          `${owner}/${name}`.toLowerCase() === normalizedRepository
+        );
+      })
+      .map((issue) => issue.number),
+  );
+}
+
 function loadClosingIssueNumbers(repo, pullRequest) {
   if (!pullRequest) {
     return new Set();
@@ -311,8 +328,9 @@ function loadClosingIssueNumbers(repo, pullRequest) {
   );
   try {
     const parsed = JSON.parse(output);
-    return new Set(
-      (parsed.closingIssuesReferences ?? []).map((issue) => issue.number),
+    return closingIssueNumbersForRepository(
+      parsed.closingIssuesReferences ?? [],
+      repo,
     );
   } catch {
     fail(
