@@ -27,7 +27,7 @@ use cross_stage_support::{Corpus, PreparedStageInput, Stage, CORPORA, STAGES};
 const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
 const ALLOCATION_REPORT_SCHEMA: &str = "colorful.performance.allocations/v1";
 const TIMING_SAMPLES: usize = 9;
-const ALLOCATION_COUNTER: &str = "dhat 0.3.3";
+const ALLOCATION_COUNTER: &str = "stats_alloc 0.1.10";
 const THROUGHPUT_BASIS: &str = "source-utf8-bytes";
 
 struct StageMeasurement {

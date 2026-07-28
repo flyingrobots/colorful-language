@@ -5,10 +5,13 @@
 
 #![forbid(unsafe_code)]
 
+use std::alloc::System;
+
 #[global_allocator]
-static ALLOCATOR: dhat::Alloc = dhat::Alloc;
+static ALLOCATOR: &stats_alloc::StatsAlloc<System> = &stats_alloc::INSTRUMENTED_SYSTEM;
 
 use serde_json::json;
+use stats_alloc::Region;
 
 mod cross_stage_support;
 
@@ -28,15 +31,24 @@ fn main() {
         let prepared = PreparedStageInput::new(corpus);
         for stage in STAGES {
             prepared.run(stage);
-            let profiler = dhat::Profiler::builder().testing().build();
+            let region = Region::new(ALLOCATOR);
             prepared.run(stage);
-            let stats = dhat::HeapStats::get();
-            drop(profiler);
+            let stats = region.change();
+            let allocation_count = stats
+                .allocations
+                .checked_add(stats.reallocations)
+                .expect("allocation count fits usize");
+            let reallocated_growth = usize::try_from(stats.bytes_reallocated.max(0))
+                .expect("nonnegative reallocation growth fits usize");
+            let allocated_bytes = stats
+                .bytes_allocated
+                .checked_add(reallocated_growth)
+                .expect("allocated bytes fit usize");
             measurements.push(json!({
                 "stage": stage.name(),
                 "corpus": corpus.id,
-                "allocationCount": stats.total_blocks,
-                "allocatedBytes": stats.total_bytes
+                "allocationCount": allocation_count,
+                "allocatedBytes": allocated_bytes
             }));
         }
     }
