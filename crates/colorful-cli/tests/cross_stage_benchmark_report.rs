@@ -170,6 +170,11 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
             readme.contains(source_commit),
             "performance reference must identify the measured source commit"
         );
+        assert_eq!(
+            readme_report_mismatch(&readme, &report),
+            None,
+            "performance reference must render the reviewed report exactly"
+        );
     }
 
     let policy = &report["regressionPolicy"];
@@ -354,4 +359,21 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         .flat_map(|stage| corpora.keys().copied().map(move |corpus| (stage, corpus)))
         .collect::<BTreeSet<_>>();
     assert_eq!(measured_pairs, expected_pairs);
+}
+
+#[test]
+fn a_stale_readme_benchmark_table_is_rejected() {
+    let Some(root) = workspace_root() else {
+        return;
+    };
+    let report = report();
+    let readme =
+        std::fs::read_to_string(root.join("docs/topics/coloring/README.md")).expect("read README");
+    assert_eq!(readme_report_mismatch(&readme, &report), None);
+
+    let stale = readme.replacen("| Parsing |", "| Stale parsing |", 1);
+    assert!(
+        readme_report_mismatch(&stale, &report).is_some(),
+        "a changed display row must not satisfy the report contract"
+    );
 }
