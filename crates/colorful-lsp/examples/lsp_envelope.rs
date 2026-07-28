@@ -307,16 +307,19 @@ fn parse_peak_rss(stderr: &str, flavor: TimeFlavor) -> u64 {
     }
 }
 
-fn benchmark_server_path() -> PathBuf {
+fn benchmark_server_path() -> (PathBuf, bool) {
     if let Some(argument) = std::env::args_os().nth(1) {
-        return PathBuf::from(argument);
+        return (PathBuf::from(argument), true);
     }
     let executable = std::env::current_exe().expect("current benchmark executable");
-    executable
-        .parent()
-        .and_then(Path::parent)
-        .expect("target profile directory")
-        .join(format!("colorful-lsp{}", std::env::consts::EXE_SUFFIX))
+    (
+        executable
+            .parent()
+            .and_then(Path::parent)
+            .expect("target profile directory")
+            .join(format!("colorful-lsp{}", std::env::consts::EXE_SUFFIX)),
+        false,
+    )
 }
 
 fn corpus(byte_count: usize) -> String {
@@ -792,20 +795,58 @@ fn git_output(root: &Path, arguments: &[&str]) -> String {
     command_output("git", &command_arguments)
 }
 
+fn build_workspace_server(root: &Path) {
+    let output = Command::new("cargo")
+        .current_dir(root)
+        .args([
+            "build",
+            "--locked",
+            "--release",
+            "-p",
+            "colorful-lsp",
+            "--bin",
+            "colorful-lsp",
+        ])
+        .output()
+        .expect("build workspace release server");
+    assert!(
+        output.status.success(),
+        "workspace release server build failed:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
 fn main() {
-    let server_path = benchmark_server_path();
+    let root = repository_root();
+    let (server_path, explicit_server_path) = benchmark_server_path();
+    if !explicit_server_path {
+        build_workspace_server(&root);
+    }
     assert!(
         server_path.is_file(),
         "release server does not exist at {}; build it first",
         server_path.display()
     );
-    let root = repository_root();
     let source_commit = git_output(&root, &["rev-parse", "HEAD"]);
     let working_tree_dirty = !git_output(&root, &["status", "--porcelain"]).is_empty();
+    let server_sha256 = sha256(
+        &fs::read(&server_path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", server_path.display())),
+    );
     let server_executable = server_path
         .file_name()
         .and_then(|name| name.to_str())
         .expect("UTF-8 server executable filename");
+    let server_provenance = if explicit_server_path {
+        "explicit-path"
+    } else {
+        "workspace-release-build"
+    };
+    let server_source_git_commit = if explicit_server_path {
+        Value::Null
+    } else {
+        Value::String(source_commit.clone())
+    };
     let scenarios = SCENARIOS
         .into_iter()
         .map(|(label, byte_count)| benchmark_scenario(&server_path, label, byte_count))
@@ -848,6 +889,9 @@ fn main() {
         },
         "measurement": {
             "serverExecutable": server_executable,
+            "serverProvenance": server_provenance,
+            "serverSha256": server_sha256,
+            "serverSourceGitCommit": server_source_git_commit,
             "peakRssTool": "/usr/bin/time",
             "timingClock": "std::time::Instant",
             "wallClockGatesCorrectnessCi": false
