@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -18,6 +19,9 @@ import {
 const MANIFEST_VERSION = "colorful.syntax-compatibility/v1";
 const CONTRACT_FAMILY = "colorful.syntax/v1";
 const HASH_PATTERN = /^sha256:[0-9a-f]{64}$/u;
+const COMMIT_PATTERN = /^[0-9a-f]{40}$/u;
+const RELEASE_GENERATION_PATTERN =
+  /^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/u;
 const OPTIONAL_FIELD_PATTERN =
   /^[_A-Za-z][_0-9A-Za-z]*(?:\[\])?(?:\.[_A-Za-z][_0-9A-Za-z]*(?:\[\])?)*$/u;
 const SCHEMA_HASH_MODES = new Set([
@@ -82,6 +86,7 @@ const GENERATION_FIELDS = [
   "migrationEvidence",
   "predecessor",
   "schemaHashMode",
+  "sourceCommit",
   "wireShape",
 ];
 const IDENTITY_FIELDS = [
@@ -240,6 +245,23 @@ function validateGenerationShape(generation, index) {
     "E_MANIFEST_SHAPE",
     `${context}.id`,
   );
+  if (generation.id.startsWith("workspace-")) {
+    if (generation.sourceCommit !== null) {
+      fail(
+        "E_RELEASE_PROVENANCE",
+        `${context} workspace generation must not claim a release commit`,
+      );
+    }
+  } else if (
+    !RELEASE_GENERATION_PATTERN.test(generation.id) ||
+    typeof generation.sourceCommit !== "string" ||
+    !COMMIT_PATTERN.test(generation.sourceCommit)
+  ) {
+    fail(
+      "E_RELEASE_PROVENANCE",
+      `${context} released generation must name its tag and full source commit`,
+    );
+  }
   validateIdentity(generation.identity, `${context}.identity`);
   if (generation.identity.contractVersion !== CONTRACT_FAMILY) {
     fail(
@@ -444,7 +466,69 @@ function validateGenerationFiles(generation, index, repositoryRoot) {
       );
     }
   }
-  return schemaSdl;
+  return { schemaBytes, schemaSdl, vocabularyBytes };
+}
+
+function gitBytes(repositoryRoot, args, context) {
+  try {
+    return execFileSync("git", args, {
+      cwd: repositoryRoot,
+      maxBuffer: 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch {
+    fail("E_RELEASE_PROVENANCE", `${context} is unavailable from Git history`);
+  }
+}
+
+function validateReleasedGenerationProvenance(
+  generation,
+  artifacts,
+  index,
+  repositoryRoot,
+) {
+  if (generation.sourceCommit === null) return;
+  const context = `generations[${index}]`;
+  const tagCommit = gitBytes(
+    repositoryRoot,
+    [
+      "rev-parse",
+      "--verify",
+      `refs/tags/${generation.id}^{commit}`,
+    ],
+    `${context} tag ${generation.id}`,
+  ).toString("utf8").trim();
+  if (tagCommit !== generation.sourceCommit) {
+    fail(
+      "E_RELEASE_PROVENANCE",
+      `${context} sourceCommit does not match tag ${generation.id}`,
+    );
+  }
+  const historicalArtifacts = [
+    [
+      "schema",
+      "contracts/colorful/syntax.v1.graphql",
+      artifacts.schemaBytes,
+    ],
+    [
+      "vocabulary",
+      "contracts/colorful/vocabulary.v1.json",
+      artifacts.vocabularyBytes,
+    ],
+  ];
+  for (const [label, historicalPath, fixtureBytes] of historicalArtifacts) {
+    const historicalBytes = gitBytes(
+      repositoryRoot,
+      ["show", `${generation.sourceCommit}:${historicalPath}`],
+      `${context} historical ${label}`,
+    );
+    if (!fixtureBytes.equals(historicalBytes)) {
+      fail(
+        "E_RELEASE_PROVENANCE",
+        `${context} ${label} artifact differs from tag ${generation.id}`,
+      );
+    }
+  }
 }
 
 function validateAcyclic(generationsById) {
@@ -572,7 +656,7 @@ export function validateCompatibilityManifest(
 
   const generationsById = new Map();
   const generationsByIdentity = new Map();
-  const generationSchemas = new Map();
+  const generationArtifacts = new Map();
   let roots = 0;
   for (const [index, generation] of manifest.generations.entries()) {
     validateGenerationShape(generation, index);
@@ -593,7 +677,7 @@ export function validateCompatibilityManifest(
     generationsById.set(generation.id, generation);
     generationsByIdentity.set(key, generation.id);
     if (generation.predecessor === null) roots += 1;
-    generationSchemas.set(
+    generationArtifacts.set(
       generation.id,
       validateGenerationFiles(generation, index, repositoryRoot),
     );
@@ -621,11 +705,19 @@ export function validateCompatibilityManifest(
       validateTransition(
         generation,
         generationsById.get(generation.predecessor),
-        generationSchemas.get(generation.id),
-        generationSchemas.get(generation.predecessor),
+        generationArtifacts.get(generation.id).schemaSdl,
+        generationArtifacts.get(generation.predecessor).schemaSdl,
         index,
       );
     }
+  }
+  for (const [index, generation] of manifest.generations.entries()) {
+    validateReleasedGenerationProvenance(
+      generation,
+      generationArtifacts.get(generation.id),
+      index,
+      repositoryRoot,
+    );
   }
 
   const declaredCurrentKey = identityKey(manifest.currentIdentity);

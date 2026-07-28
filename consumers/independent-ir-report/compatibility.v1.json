@@ -19,6 +19,7 @@
   "generations": [
     {
       "id": "v0.2.1",
+      "sourceCommit": "3ff6a1d317cd8df30a8ac86a30077f4282484544",
       "identity": {
         "contractVersion": "colorful.syntax/v1",
         "schemaHash": "sha256:acf86cf0f9d31f5b02df8e546e8b968a6c8e78d94761a5bbe81750f219101a58",
@@ -42,6 +43,7 @@
     },
     {
       "id": "v0.3.0",
+      "sourceCommit": "f97b9f5051de7b846892bd2ecf2576bc2567f1ee",
       "identity": {
         "contractVersion": "colorful.syntax/v1",
         "schemaHash": "sha256:f090e7ee24920d7b8c55e8da34e0f70d863414d8ba0c20b52a5913c3d0884c20",
@@ -70,6 +72,7 @@
     },
     {
       "id": "workspace-v0.4.0",
+      "sourceCommit": null,
       "identity": {
         "contractVersion": "colorful.syntax/v1",
         "schemaHash": "sha256:4404256591b2fbaaf4a7a3fb2ae03fd4256afb4557b605a19c0b966ee287e122",

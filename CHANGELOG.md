@@ -13,9 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   manifest now records the exact `v0.2.1`, `v0.3.0`, and current workspace
   contract/schema/vocabulary tuples, schema-hash modes, predecessors,
   compatibility decisions, sorted optional-field wire shapes, and migration
-  evidence. A deterministic mutation gate rejects duplicate identities, missing
-  predecessors, cycles, unsupported decisions, missing evidence, stale copies,
-  and an unregistered current identity. A strict SDL-delta oracle admits only
+  evidence. Tagged generations are pinned to their immutable tag commits and
+  historical contract bytes; accepted migration evidence is restricted to
+  reviewed oracles invoked by both CI and release preparation. A deterministic
+  mutation gate rejects duplicate identities, missing predecessors, cycles,
+  unsupported decisions, missing evidence, stale copies, and an unregistered
+  current identity. A strict SDL-delta oracle admits only
   additive nullable fields and their newly reachable types inside v1; required
   additions, removals, reinterpretations, existing-enum changes, and unsupported
   GraphQL syntax require review and a new contract version. The standalone

@@ -57,6 +57,7 @@ function manifestFixture() {
     generations: [
       {
         id: "v0.2.1",
+        sourceCommit: "3ff6a1d317cd8df30a8ac86a30077f4282484544",
         identity: identity(HASH_A, HASH_B),
         schemaHashMode: "raw-sdl-sha256",
         artifacts: {
@@ -73,6 +74,7 @@ function manifestFixture() {
       },
       {
         id: "v0.3.0",
+        sourceCommit: "f97b9f5051de7b846892bd2ecf2576bc2567f1ee",
         identity: identity(HASH_C, HASH_D),
         schemaHashMode: "raw-sdl-sha256",
         artifacts: {
@@ -233,7 +235,8 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
       (manifest) => {
         manifest.generations.push({
           ...structuredClone(manifest.generations[1]),
-          id: "duplicate-v0.3.0",
+          id: "workspace-duplicate-v0.3.0",
+          sourceCommit: null,
         });
       },
     ],
@@ -299,6 +302,12 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
       "E_CURRENT_IDENTITY",
       (manifest) => {
         manifest.currentIdentity = identity(HASH_E, HASH_D);
+      },
+    ],
+    [
+      "E_RELEASE_PROVENANCE",
+      (manifest) => {
+        manifest.generations[1].sourceCommit = "e".repeat(40);
       },
     ],
   ];
@@ -414,6 +423,14 @@ test("the canonical manifest records every supported wire generation", () => {
   assert.deepEqual(
     manifest.generations.map((generation) => generation.id),
     ["v0.2.1", "v0.3.0", "workspace-v0.4.0"],
+  );
+  assert.deepEqual(
+    manifest.generations.map((generation) => generation.sourceCommit),
+    [
+      "3ff6a1d317cd8df30a8ac86a30077f4282484544",
+      "f97b9f5051de7b846892bd2ecf2576bc2567f1ee",
+      null,
+    ],
   );
   assert.deepEqual(manifest.currentIdentity, currentIdentity);
   assert.equal(

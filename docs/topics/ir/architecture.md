@@ -144,7 +144,10 @@ shape. The canonical
 generation by the complete contract-version, schema-hash, and vocabulary-hash
 tuple. It records the raw-SDL `v0.2.1` and `v0.3.0` identities plus the current
 description-normalized schema identity, their predecessor edges, the exact hash
-mode, their wire-shape adapter, and executable migration evidence.
+mode, their wire-shape adapter, and executable migration evidence. Each tagged
+generation is pinned to its full tag commit, and its fixture bytes must equal
+the schema and vocabulary at that commit; only the unreleased workspace
+generation may have mutable artifacts without a source commit.
 
 Description-only SDL changes preserve a generation. A nullable field,
 vocabulary identity, or schema-hash algorithm change requires a new explicit
@@ -156,6 +159,8 @@ new definitions reachable from them; field removal, required additions, type
 reinterpretation, existing-enum changes, and unsupported GraphQL syntax fail
 closed. The standalone consumer treats release names as provenance and derives
 `openClassKind` presence only from the matched manifest generation.
+Migration evidence is restricted to reviewed oracles invoked by both CI and
+release preparation, so an unrelated readable file cannot satisfy the gate.
 
 ## Product-evidence gate
 

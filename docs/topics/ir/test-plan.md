@@ -623,15 +623,17 @@ Requirements:
 - **IR-22a** — *Requirement:* IR-22. *Behavior:* one canonical compatibility
   manifest records the exact v0.2.1, v0.3.0, and current identity tuples,
   schema-hash mode, predecessor, compatibility decision, wire-shape adapter,
-  and migration evidence for each generation. The policy permits
+  source commit for tagged generations, and migration evidence for each
+  generation. Tagged fixture bytes must match the immutable Git tag; the policy
+  permits
   description-only edits to preserve identity and requires a new explicit v1
   generation for nullable-field, vocabulary, or hash-algorithm changes; adding
   a required field, removing or reinterpreting a field, or changing an enum
   requires a new contract version. *Oracle:* manifest validation rejects
   duplicate/unknown tuples, missing predecessors, cycles, unsupported policy
-  decisions, empty evidence, and a current workspace identity absent from the
-  manifest. *Evidence type:* declarative manifest plus deterministic Node
-  mutation tests. *Evidence:*
+  decisions, empty or non-executable evidence, rewritten tagged artifacts, and
+  a current workspace identity absent from the manifest. *Evidence type:*
+  declarative manifest plus deterministic Node mutation tests. *Evidence:*
   `contracts/colorful/syntax-compatibility.v1.json`,
   `scripts/check-ir-compatibility.mjs`,
   `scripts/ir-schema-policy.mjs`, and
@@ -661,9 +663,11 @@ Requirements:
   witness, and release preparation require the canonical compatibility
   manifest, packaged Rust copy, and independent-consumer copy to agree
   byte-for-byte, and require every changed current identity to have an explicit
-  decision plus existing migration-evidence paths. *Oracle:* a stale copy or an
-  unregistered schema/vocabulary identity fails before package or release
-  publication. *Evidence type:* drift gate integrated into CI and release
+  decision plus migration evidence from the reviewed executable-oracle registry
+  wired into both CI and release preparation. *Oracle:* a stale copy,
+  unregistered schema/vocabulary identity, rewritten tagged fixture, or
+  unrelated evidence path fails before package or release publication.
+  *Evidence type:* drift gate integrated into CI and release
   scripts. *Evidence:* `scripts/check-ir-compatibility.mjs`,
   `scripts/gen-ir.sh`, `scripts/package-witness.sh`,
   `scripts/release-prep.sh`, `colorful-ir`
