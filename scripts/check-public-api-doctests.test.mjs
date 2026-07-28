@@ -1,0 +1,97 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  PublicApiDoctestPolicyError,
+  validatePublicApiDoctestPolicy,
+} from "./check-public-api-doctests.mjs";
+
+const VALID_SNAPSHOT = Object.freeze({
+  core: `
+/// # Examples
+/// \`\`\`
+/// # // public-api-doctest: parser
+/// \`\`\`
+pub trait Parser {}
+/// # Examples
+/// \`\`\`
+/// # // public-api-doctest: annotator
+/// \`\`\`
+pub trait Annotator {}
+/// # Examples
+/// \`\`\`
+/// # // public-api-doctest: analyzer
+/// \`\`\`
+pub trait Analyzer {}
+`,
+  projection: `
+/// # Examples
+/// \`\`\`
+/// # // public-api-doctest: ir-projection
+/// \`\`\`
+pub fn build_document() {}
+`,
+  vocabulary: `
+/// # Examples
+/// \`\`\`
+/// # // public-api-doctest: vocabulary
+/// \`\`\`
+pub fn visual_role() {}
+`,
+  workflow: "- run: cargo test --doc --workspace --locked\n",
+});
+
+function expectPolicyError(snapshot, code, detail) {
+  assert.throws(
+    () => validatePublicApiDoctestPolicy(snapshot),
+    (error) => {
+      assert.ok(error instanceof PublicApiDoctestPolicyError);
+      assert.equal(error.code, code);
+      assert.match(error.message, detail);
+      return true;
+    },
+  );
+}
+
+test("accepts every named doctest and the explicit CI command", () => {
+  assert.doesNotThrow(() => validatePublicApiDoctestPolicy(VALID_SNAPSHOT));
+});
+
+for (const [file, marker] of [
+  ["core", "parser"],
+  ["core", "annotator"],
+  ["core", "analyzer"],
+  ["projection", "ir-projection"],
+  ["vocabulary", "vocabulary"],
+]) {
+  test(`rejects a missing ${marker} doctest marker`, () => {
+    const snapshot = {
+      ...VALID_SNAPSHOT,
+      [file]: VALID_SNAPSHOT[file].replace(
+        `# // public-api-doctest: ${marker}`,
+        "",
+      ),
+    };
+    expectPolicyError(snapshot, "E_API_DOCTEST_MISSING", new RegExp(marker));
+  });
+
+  test(`rejects a duplicate ${marker} doctest marker`, () => {
+    const snapshot = {
+      ...VALID_SNAPSHOT,
+      [file]: `${VALID_SNAPSHOT[file]}\n# // public-api-doctest: ${marker}\n`,
+    };
+    expectPolicyError(snapshot, "E_API_DOCTEST_DUPLICATE", new RegExp(marker));
+  });
+}
+
+test("rejects an implicit or misspelled workspace doctest command", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: "- run: cargo test --workspace --locked\n",
+  };
+  expectPolicyError(
+    snapshot,
+    "E_API_DOCTEST_CI_MISSING",
+    /cargo test --doc --workspace --locked/,
+  );
+});
