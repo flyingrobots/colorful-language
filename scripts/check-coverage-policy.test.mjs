@@ -35,6 +35,13 @@ const COVERAGE_REFERENCE = readFileSync(
   ),
   "utf8",
 );
+const EXPECTED_CLI_TRANSPORT_PATHS = [
+  "crates/colorful-cli/src/cli/args.rs",
+  "crates/colorful-cli/src/cli/color.rs",
+  "crates/colorful-cli/src/cli/diagnose.rs",
+  "crates/colorful-cli/src/cli/lint.rs",
+  "crates/colorful-cli/src/main.rs",
+];
 
 function lineSummary(count, covered) {
   return {
@@ -274,8 +281,20 @@ test("accepts coverage documentation generated from the machine policy", () => {
   );
 });
 
+test("coverage follows every executable CLI source owner", () => {
+  const cliPaths = ACTUAL_POLICY.files
+    .map((entry) => entry.path)
+    .filter((path) => path.startsWith("crates/colorful-cli/"))
+    .sort();
+  assert.deepEqual(cliPaths, EXPECTED_CLI_TRANSPORT_PATHS);
+  assert.doesNotMatch(
+    cliPaths.join("\n"),
+    /^crates\/colorful-cli\/src\/lib\.rs$/mu,
+  );
+});
+
 test("rejects stale coverage measurements in the maintained reference", () => {
-  const staleReference = COVERAGE_REFERENCE.replace("95.36%", "95.35%");
+  const staleReference = COVERAGE_REFERENCE.replace("95.22%", "95.21%");
   assert.notEqual(staleReference, COVERAGE_REFERENCE);
   assert.throws(
     () => validateCoverageReference(staleReference, ACTUAL_POLICY),
