@@ -78,11 +78,20 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
 
     let report = report();
     assert_eq!(report["schemaVersion"], REPORT_SCHEMA);
+    let root = workspace_root();
 
     let metadata = &report["measurement"];
     assert_eq!(metadata["profile"], "release");
     assert_eq!(metadata["timingSamplesPerStage"].as_u64(), Some(9));
     assert_eq!(metadata["allocationSamplesPerStage"].as_u64(), Some(1));
+    assert_eq!(metadata["allocationCounter"], "allocation-counter 0.8.1");
+    assert_eq!(metadata["throughputBasis"], "source-utf8-bytes");
+    assert!(
+        metadata["totalMemoryBytes"]
+            .as_u64()
+            .is_some_and(|bytes| bytes > 0),
+        "measurement.totalMemoryBytes must be a positive integer"
+    );
     for field in [
         "generatedAt",
         "hardware",
@@ -101,6 +110,33 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         source_commit.bytes().all(|byte| byte.is_ascii_hexdigit()),
         "sourceCommit must be hexadecimal"
     );
+    let generated_at = object_string(metadata, "generatedAt");
+    assert_eq!(
+        generated_at.len(),
+        20,
+        "generatedAt must use YYYY-MM-DDTHH:MM:SSZ"
+    );
+    assert_eq!(&generated_at[4..5], "-");
+    assert_eq!(&generated_at[7..8], "-");
+    assert_eq!(&generated_at[10..11], "T");
+    assert_eq!(&generated_at[13..14], ":");
+    assert_eq!(&generated_at[16..17], ":");
+    assert_eq!(&generated_at[19..20], "Z");
+    for (index, byte) in generated_at.bytes().enumerate() {
+        if ![4, 7, 10, 13, 16, 19].contains(&index) {
+            assert!(
+                byte.is_ascii_digit(),
+                "generatedAt contains a non-digit component"
+            );
+        }
+    }
+
+    let readme =
+        std::fs::read_to_string(root.join("docs/topics/coloring/README.md")).expect("read README");
+    assert!(
+        readme.contains(source_commit),
+        "performance reference must identify the measured source commit"
+    );
 
     let policy = &report["regressionPolicy"];
     assert_eq!(policy["enforcement"], "advisory");
@@ -108,7 +144,6 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
     assert_eq!(policy["allocationTolerancePercent"].as_u64(), Some(10));
     assert_eq!(policy["correctnessCiTimingGate"], false);
 
-    let root = workspace_root();
     let corpus_values = report["corpora"]
         .as_array()
         .expect("corpora must be an array");
