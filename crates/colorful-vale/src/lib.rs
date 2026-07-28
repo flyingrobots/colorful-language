@@ -102,7 +102,7 @@ impl ValeAnalyzer {
             OsString::from("--no-exit"),
             OsString::from("--no-global"),
             configuration_argument(self.config.configuration()),
-            OsString::from("--ext=.txt"),
+            OsString::from(format!("--ext={}", self.config.extension())),
         ];
         let output = run_process(
             self.config.executable(),

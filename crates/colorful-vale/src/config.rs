@@ -14,12 +14,14 @@ pub const SUPPORTED_VALE_MAJOR: u64 = 3;
 pub const DEFAULT_OUTPUT_LIMIT: usize = 8 * 1024 * 1024;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
+const DEFAULT_EXTENSION: &str = ".txt";
 
 /// Explicit process configuration for [`crate::ValeAnalyzer`].
 #[derive(Debug, Clone)]
 pub struct ValeConfig {
     executable: PathBuf,
     configuration: PathBuf,
+    extension: String,
     timeout: Duration,
     output_limit: usize,
 }
@@ -31,6 +33,7 @@ impl ValeConfig {
         Self {
             executable: executable.into(),
             configuration: configuration.into(),
+            extension: DEFAULT_EXTENSION.to_string(),
             timeout: DEFAULT_TIMEOUT,
             output_limit: DEFAULT_OUTPUT_LIMIT,
         }
@@ -47,6 +50,16 @@ impl ValeConfig {
     #[must_use]
     pub fn with_output_limit(mut self, output_limit: usize) -> Self {
         self.output_limit = output_limit;
+        self
+    }
+
+    /// Select the Vale stdin document extension, including its leading dot.
+    ///
+    /// The default is `.txt`. Use `.md`, for example, when the explicit Vale
+    /// configuration should apply Markdown-specific scopes.
+    #[must_use]
+    pub fn with_extension(mut self, extension: impl Into<String>) -> Self {
+        self.extension = extension.into();
         self
     }
 
@@ -67,6 +80,20 @@ impl ValeConfig {
             return Err(ValeError::new(
                 ValeErrorKind::Configuration,
                 "Vale output limit must be greater than zero",
+            ));
+        }
+        let valid_extension = self.extension.strip_prefix('.').is_some_and(|suffix| {
+            !suffix.is_empty()
+                && suffix.len() <= 16
+                && suffix.bytes().all(|byte| byte.is_ascii_alphanumeric())
+        });
+        if !valid_extension {
+            return Err(ValeError::new(
+                ValeErrorKind::Configuration,
+                format!(
+                    "Vale extension must be a dot plus 1–16 ASCII alphanumeric characters: {:?}",
+                    self.extension
+                ),
             ));
         }
         let current_directory = std::env::current_dir().map_err(|error| {
@@ -118,6 +145,10 @@ impl ValeConfig {
 
     pub(crate) fn timeout(&self) -> Duration {
         self.timeout
+    }
+
+    pub(crate) fn extension(&self) -> &str {
+        &self.extension
     }
 
     pub(crate) fn output_limit(&self) -> usize {

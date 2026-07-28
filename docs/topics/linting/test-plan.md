@@ -241,7 +241,8 @@ Implemented and planned cases are listed below.
   adapter test. *Evidence:* `colorful-vale`
   `vale_adapter::{discovery_is_explicit_versioned_and_ambient_config_free,
   discovery_rejects_missing_config_executable_and_major,
-  analysis_uses_exact_isolated_stdin_contract}`,
+  analysis_uses_exact_isolated_stdin_contract,
+  analysis_honors_the_explicit_document_extension}`,
   `config::tests::relative_paths_are_resolved_before_the_process_changes_directory`,
   and the checksum-verified official Vale 3.14.2 output retained at
   `crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json` and admitted by

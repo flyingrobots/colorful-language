@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Optional Vale v3 analyzer comparison.** A non-publishable
   `colorful-vale` outer crate now discovers an explicitly configured Vale v3
   executable, isolates ambient global configuration, bounds and cancels the
-  process, validates its JSON/Unicode coordinates, and prepares deterministic
-  namespaced Colorful findings for the existing pure `Analyzer` port. Missing
+  process, selects an explicit stdin document extension, validates its
+  JSON/Unicode coordinates, and prepares deterministic namespaced Colorful
+  findings for the existing pure `Analyzer` port. Missing
   configuration, unavailable/incompatible engines, timeout, cancellation,
   process failure, excessive output, invalid UTF-8, malformed alerts, and
   source mismatch remain distinct typed failures with no silent built-in

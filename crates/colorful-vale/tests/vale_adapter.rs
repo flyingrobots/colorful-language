@@ -217,6 +217,25 @@ fn analysis_uses_exact_isolated_stdin_contract() {
 }
 
 #[test]
+fn analysis_honors_the_explicit_document_extension() {
+    let fixture = success_fixture();
+    let analyzer = ValeAnalyzer::discover(fixture.config().with_extension(".md"))
+        .expect("discover Markdown-configured Vale");
+    analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect("analyze Markdown fixture");
+    let args = fs::read_to_string(&fixture.arguments).expect("read arguments");
+    assert_eq!(args.lines().nth(4), Some("--ext=.md"));
+
+    assert_eq!(
+        error_kind(ValeAnalyzer::discover(
+            fixture.config().with_extension("md")
+        )),
+        ValeErrorKind::Configuration
+    );
+}
+
+#[test]
 fn running_process_can_be_cancelled_after_start() {
     let fixture = Arc::new(FakeVale::new(
         "3.14.2",

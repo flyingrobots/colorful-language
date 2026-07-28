@@ -64,20 +64,22 @@ or configuration exists.
 
 The prototype requires the caller to provide both a Vale executable and an
 explicit `.vale.ini`. Discovery accepts major version 3, and analysis invokes
-Vale with JSON output, stdin as plain text, no global configuration, a bounded
-output capture, and a caller-cancellable timeout. It never runs `vale sync` or
-downloads a style. Missing configuration, an unavailable or incompatible
-engine, timeout, cancellation, process failure, excessive output, invalid
-UTF-8, malformed JSON, invalid alert data, and source-identity mismatch are
-different `ValeErrorKind` values; none silently becomes an empty result or a
-fallback to the built-in rules.
+Vale with JSON output, stdin using a caller-selected document extension
+(`.txt` by default), no global configuration, a bounded output capture, and a
+caller-cancellable timeout. It never runs `vale sync` or downloads a style.
+Missing configuration, an unavailable or incompatible engine, timeout,
+cancellation, process failure, excessive output, invalid UTF-8, malformed JSON,
+invalid alert data, and source-identity mismatch are different `ValeErrorKind`
+values; none silently becomes an empty result or a fallback to the built-in
+rules.
 
 ```rust
 use colorful_vale::{CancellationToken, ValeAnalyzer, ValeConfig};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source = "This is very clear.";
-    let adapter = ValeAnalyzer::discover(ValeConfig::new("vale", ".vale.ini"))?;
+    let config = ValeConfig::new("vale", ".vale.ini").with_extension(".md");
+    let adapter = ValeAnalyzer::discover(config)?;
     let cancellation = CancellationToken::new();
     let prepared = adapter.analyze(source, &cancellation)?;
     let _analyzer = prepared.bind(source)?;
