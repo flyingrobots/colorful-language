@@ -25,6 +25,7 @@ fn baseline_covers_the_reviewed_supported_envelope() {
     assert_eq!(baseline["schemaVersion"], SCHEMA_VERSION);
     assert_eq!(baseline["profile"], "release");
     assert_eq!(baseline["corpus"]["id"], "colorful-lsp-repeated-prose/v1");
+    assert_eq!(baseline["source"]["workingTreeDirty"], false);
     assert!(baseline["source"]["gitCommit"]
         .as_str()
         .is_some_and(|commit| commit.len() == 40));
@@ -102,9 +103,15 @@ fn baseline_covers_the_reviewed_supported_envelope() {
             .as_u64()
             .is_some());
         assert_eq!(
+            scenario["metrics"]["schemaVersion"],
+            "colorful.lsp.metrics/v1"
+        );
+        assert!(scenario["metrics"]["staleResults"].as_u64().is_some());
+        assert_eq!(
             scenario["latestDiagnosticVersion"],
             scenario["finalDocumentVersion"]
         );
+        assert_eq!(scenario["processExitCode"], 0);
         assert_eq!(scenario["stalePublicationCount"], 0);
         assert_eq!(scenario["sloFailures"], serde_json::json!([]));
         assert_eq!(scenario["sloMet"], true);
@@ -120,7 +127,15 @@ fn baseline_covers_the_reviewed_supported_envelope() {
             .is_some_and(|count| count > 0));
         assert!(scenario["overload"]["semanticResultIds"]
             .as_array()
-            .is_some_and(|ids| ids.len() == 4));
+            .is_some_and(|ids| ids.len() == 4 && ids.iter().all(|id| id == "6")));
+        assert!(scenario["overload"]["semanticTokenCounts"]
+            .as_array()
+            .is_some_and(|counts| {
+                counts.len() == 4
+                    && counts
+                        .iter()
+                        .all(|count| count.as_u64().is_some_and(|count| count > 0))
+            }));
     }
 
     let refused = scenarios.last().expect("10 MiB scenario");
@@ -128,4 +143,7 @@ fn baseline_covers_the_reviewed_supported_envelope() {
     assert_eq!(refused["diagnosticCode"], "colorful/document-too-large");
     assert_eq!(refused["open"]["semanticTokenCount"], 0);
     assert_eq!(refused["incremental"]["semanticTokenCount"], 0);
+    assert!(refused["overload"]["semanticTokenCounts"]
+        .as_array()
+        .is_some_and(|counts| { counts.len() == 4 && counts.iter().all(|count| count == 0) }));
 }

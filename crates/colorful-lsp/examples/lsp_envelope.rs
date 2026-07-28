@@ -501,12 +501,15 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         milliseconds(response_duration(overload_started, &latest_diagnostics));
 
     let mut semantic_result_ids = Vec::new();
+    let mut semantic_token_counts = Vec::new();
     let mut semantic_response_ms = Vec::new();
     for id in request_ids {
         let response = server.receive("overload semantic-token response", |message| {
             message["id"] == id
         });
         semantic_response_ms.push(milliseconds(response_duration(overload_started, &response)));
+        let token_count = semantic_token_count(&response.value);
+        semantic_token_counts.push(token_count);
         semantic_result_ids.push(
             response.value["result"]["resultId"]
                 .as_str()
@@ -514,7 +517,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
                 .to_string(),
         );
         if !supported {
-            assert_eq!(semantic_token_count(&response.value), 0);
+            assert_eq!(token_count, 0);
         }
     }
     let slowest_semantic_response_ms = semantic_response_ms.iter().copied().fold(0.0_f64, f64::max);
@@ -641,9 +644,11 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
             "timeToLatestDiagnosticsMs": time_to_latest_diagnostics_ms,
             "slowestSemanticResponseMs": slowest_semantic_response_ms,
             "semanticResponseMs": semantic_response_ms,
-            "semanticResultIds": semantic_result_ids
+            "semanticResultIds": semantic_result_ids,
+            "semanticTokenCounts": semantic_token_counts
         },
         "peakRssBytes": process.peak_rss_bytes,
+        "processExitCode": process.status.code(),
         "metrics": metrics,
         "finalDocumentVersion": 6,
         "latestDiagnosticVersion": 6,
@@ -704,6 +709,35 @@ fn cpu_name() -> String {
     }
 }
 
+fn operating_system() -> String {
+    match std::env::consts::OS {
+        "macos" => format!(
+            "{} {} ({})",
+            command_output("sw_vers", &["-productName"]),
+            command_output("sw_vers", &["-productVersion"]),
+            command_output("uname", &["-m"])
+        ),
+        "linux" => {
+            let distribution = fs::read_to_string("/etc/os-release")
+                .ok()
+                .and_then(|source| {
+                    source.lines().find_map(|line| {
+                        line.strip_prefix("PRETTY_NAME=")
+                            .map(|value| value.trim_matches('"').to_string())
+                    })
+                })
+                .unwrap_or_else(|| "Linux".to_string());
+            format!(
+                "{} {} ({})",
+                distribution,
+                command_output("uname", &["-r"]),
+                command_output("uname", &["-m"])
+            )
+        }
+        other => format!("{other} ({})", command_output("uname", &["-m"])),
+    }
+}
+
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -742,7 +776,7 @@ fn main() {
             "workingTreeDirty": working_tree_dirty
         },
         "environment": {
-            "operatingSystem": command_output("uname", &["-a"]),
+            "operatingSystem": operating_system(),
             "cpu": cpu_name(),
             "memoryBytes": memory_bytes(),
             "rustc": command_output("rustc", &["-Vv"]),
@@ -770,7 +804,9 @@ fn main() {
             "rapidEditCount": RAPID_EDIT_COUNT
         },
         "measurement": {
-            "server": server_path,
+            "serverExecutable": server_path
+                .file_name()
+                .expect("server executable filename"),
             "peakRssTool": "/usr/bin/time",
             "timingClock": "std::time::Instant",
             "wallClockGatesCorrectnessCi": false
