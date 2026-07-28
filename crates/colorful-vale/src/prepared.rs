@@ -41,6 +41,16 @@ impl PreparedValeAnalysis {
 }
 
 /// An I/O-free, document-bound implementation of Colorful's [`Analyzer`] port.
+///
+/// Callers obtain this adapter through [`PreparedValeAnalysis::bind`], which
+/// checks that the prepared findings belong to the surface's source snapshot.
+///
+/// # Panics
+///
+/// [`Analyzer::analyze`] panics if it is later invoked with source text other
+/// than the snapshot accepted by [`PreparedValeAnalysis::bind`]. This assertion
+/// prevents a surface from silently attaching prepared findings to a different
+/// document.
 #[derive(Debug, Clone, Copy)]
 pub struct BoundValeAnalyzer<'a> {
     prepared: &'a PreparedValeAnalysis,

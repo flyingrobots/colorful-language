@@ -236,6 +236,20 @@ fn analysis_uses_exact_isolated_stdin_contract() {
 }
 
 #[test]
+#[should_panic(expected = "BoundValeAnalyzer must be used with the source accepted by bind()")]
+fn bound_analyzer_rejects_source_identity_bypass() {
+    let fixture = success_fixture();
+    let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");
+    let prepared = analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect("analyze fixture");
+    let bound = prepared.bind(SOURCE).expect("bind source identity");
+    let classified = classification(SOURCE);
+
+    let _ = bound.analyze("different source", classified.tree(), classified.tokens());
+}
+
+#[test]
 fn analysis_honors_the_explicit_document_extension() {
     let fixture = success_fixture();
     let analyzer = ValeAnalyzer::discover(fixture.config().with_extension(".md"))
