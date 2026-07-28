@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -228,6 +233,16 @@ test("compatibility copies fail closed on byte drift", () => {
     validateCompatibilityCopies("canonical\n", [
       { label: "stale copy", text: "stale\n" },
     ]),
+  );
+});
+
+test("workspace identity reports missing authority files by stable category", (t) => {
+  const emptyRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-missing-compatibility-authority-"),
+  );
+  t.after(() => rmSync(emptyRoot, { recursive: true, force: true }));
+  expectCompatibilityError("E_CURRENT_IDENTITY", () =>
+    workspaceIdentity(emptyRoot)
   );
 });
 

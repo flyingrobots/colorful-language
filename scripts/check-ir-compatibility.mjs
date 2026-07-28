@@ -178,10 +178,15 @@ function readRepositoryFile(repositoryRoot, relativePath, code, context) {
   ) {
     fail(code, `${context} must remain inside the repository`);
   }
-  if (!existsSync(absolutePath) || !statSync(absolutePath).isFile()) {
-    fail(code, `${context} does not name an existing file: ${relativePath}`);
+  try {
+    if (!existsSync(absolutePath) || !statSync(absolutePath).isFile()) {
+      fail(code, `${context} does not name an existing file: ${relativePath}`);
+    }
+    return readFileSync(absolutePath);
+  } catch (error) {
+    if (error instanceof IrCompatibilityError) throw error;
+    fail(code, `${context} could not be read: ${relativePath}`);
   }
-  return readFileSync(absolutePath);
 }
 
 function validatePolicy(policy) {
@@ -568,12 +573,17 @@ export function validateCompatibilityCopies(canonicalText, copies) {
 }
 
 export function workspaceIdentity(repositoryRoot) {
-  const syntax = readFileSync(
-    path.join(repositoryRoot, "contracts", "colorful", "syntax.v1.graphql"),
-    "utf8",
-  );
-  const vocabulary = readFileSync(
-    path.join(repositoryRoot, "contracts", "colorful", "vocabulary.v1.json"),
+  const syntax = readRepositoryFile(
+    repositoryRoot,
+    "contracts/colorful/syntax.v1.graphql",
+    "E_CURRENT_IDENTITY",
+    "workspace syntax artifact",
+  ).toString("utf8");
+  const vocabulary = readRepositoryFile(
+    repositoryRoot,
+    "contracts/colorful/vocabulary.v1.json",
+    "E_CURRENT_IDENTITY",
+    "workspace vocabulary artifact",
   );
   return {
     contractVersion: CONTRACT_FAMILY,
@@ -584,13 +594,12 @@ export function workspaceIdentity(repositoryRoot) {
 
 function run() {
   const repositoryRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-  const canonicalPath = path.join(
+  const canonicalText = readRepositoryFile(
     repositoryRoot,
-    "contracts",
-    "colorful",
-    "syntax-compatibility.v1.json",
-  );
-  const canonicalText = readFileSync(canonicalPath, "utf8");
+    "contracts/colorful/syntax-compatibility.v1.json",
+    "E_MANIFEST_SHAPE",
+    "canonical compatibility manifest",
+  ).toString("utf8");
   let manifest;
   try {
     manifest = JSON.parse(canonicalText);
