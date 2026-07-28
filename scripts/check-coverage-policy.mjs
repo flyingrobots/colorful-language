@@ -32,6 +32,7 @@ const SUMMARY_PATH = "target/llvm-cov/coverage-summary.json";
 const REPORT_DIRECTORY = "target/llvm-cov";
 const HTML_PATH = "target/llvm-cov/html";
 const PREPARE_OUTPUT_COMMAND = `mkdir -p ${REPORT_DIRECTORY}`;
+const ARTIFACT_RETENTION_DAYS = 14;
 const CHECKOUT_ACTION =
   "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
 const RUST_TOOLCHAIN_ACTION =
@@ -349,7 +350,7 @@ export function validateCoverageReference(reference, policy) {
     `CI pins Rust ${checked.toolchain.rust}`,
     `\`cargo-llvm-cov\` ${checked.toolchain.cargoLlvmCov}`,
     `\`${checked.sourceCommit}\``,
-    "as the `rust-coverage` artifact for 14 days",
+    `as the \`rust-coverage\` artifact for ${ARTIFACT_RETENTION_DAYS} days`,
     "policy has no exclusions",
     ...expectedRows,
   ];
@@ -673,12 +674,13 @@ export function validateCoverageWorkflow(workflow, policy) {
     !artifactPaths.includes(HTML_PATH) ||
     !Number.isSafeInteger(retention) ||
     retention < 1 ||
-    retention > 30
+    retention > 30 ||
+    retention !== ARTIFACT_RETENTION_DAYS
   ) {
     reject(
       "E_COVERAGE_ARTIFACT",
       "CI workflow.jobs.coverage.steps",
-      "artifact must retain both reports for one to thirty days even after a floor failure",
+      `artifact must retain both reports for exactly ${ARTIFACT_RETENTION_DAYS} days even after a floor failure`,
     );
   }
 }
