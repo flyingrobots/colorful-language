@@ -184,14 +184,16 @@ workspace.
   before repeating the job with CLI text and LSP tokens.
   *Oracle:*
   exact rejection/rendering/migration results plus a reviewed integration-effort
-  ledger; the contract is simplified rather than expanded if it does not reduce
-  downstream cost. *Evidence type:* independent executable consumer and
-  measured migration report. *Evidence:*
+  ledger; exact record admission rejects both missing and unknown fields; the
+  contract is simplified rather than expanded if it does not reduce downstream
+  cost. *Evidence type:* independent executable consumer and measured migration
+  report. *Evidence:*
   `consumers/independent-ir-report/`,
   `consumers/independent-ir-report/evidence/integration-effort.json`,
   `scripts/version-compat-matrix.sh`, and
   `scripts/check-independent-consumer.sh`; `consumer.test.mjs`
-  `the IR process rejects invalid UTF-8 before source identity trust`.
+  `the IR process rejects invalid UTF-8 before source identity trust`,
+  `IR admission rejects unknown fields in every document record`.
   *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* implemented.
@@ -204,7 +206,7 @@ workspace.
   repository keeps only the reference consumer witness.
 - The independent proof retains stable v1 because the IR uniquely verifies five
   identities within its reviewed two-times adapter-size bound. The remaining
-  risk is implementation cost: its 357-line adapter is larger than the
+  risk is implementation cost: its 412-line adapter is larger than the
   264-line LSP protocol and decoding adapter, so contract expansion stays
   frozen while
   [#222](https://github.com/flyingrobots/colorful-language/issues/222)

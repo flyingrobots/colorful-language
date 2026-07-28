@@ -47,7 +47,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
-  assert.equal(ledger.adapters.ir.reviewedAssertions, 32);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 39);
 });
 
 function releaseFixture(release) {
@@ -264,6 +264,61 @@ test("IR admission rejects malformed structure graphs", () => {
       consumeIr({
         source: SOURCE,
         artifactJson: JSON.stringify({ ...baseline, structure }),
+        profiles: [currentFixture.profile],
+      }),
+    );
+  }
+});
+
+test("IR admission rejects unknown fields in every document record", () => {
+  const currentFixture = releaseFixture("v0.3.0");
+  const baseline = JSON.parse(currentFixture.ir);
+  const diagnostic = {
+    byteRange: baseline.tokens[0].byteRange,
+    severity: "INFO",
+    code: "test",
+    message: "test",
+  };
+  const cases = [
+    { ...baseline, unexpected: true },
+    { ...baseline, source: { ...baseline.source, unexpected: true } },
+    {
+      ...baseline,
+      tokens: baseline.tokens.map((token, index) =>
+        index === 0 ? { ...token, unexpected: true } : token,
+      ),
+    },
+    {
+      ...baseline,
+      tokens: baseline.tokens.map((token, index) =>
+        index === 0
+          ? {
+              ...token,
+              byteRange: { ...token.byteRange, unexpected: true },
+            }
+          : token,
+      ),
+    },
+    {
+      ...baseline,
+      structure: baseline.structure.map((node, index) =>
+        index === 0 ? { ...node, unexpected: true } : node,
+      ),
+    },
+    { ...baseline, diagnostics: [{ ...diagnostic, unexpected: true }] },
+    {
+      ...baseline,
+      derivation: [
+        { ...baseline.derivation[0], unexpected: true },
+        ...baseline.derivation.slice(1),
+      ],
+    },
+  ];
+  for (const document of cases) {
+    expectConsumerError("E_SHAPE", () =>
+      consumeIr({
+        source: SOURCE,
+        artifactJson: JSON.stringify(document),
         profiles: [currentFixture.profile],
       }),
     );

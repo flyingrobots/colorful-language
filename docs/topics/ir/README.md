@@ -235,7 +235,7 @@ v0.3 must handle the `Option` result.
   witness proves the package needs no repository build artifacts or ambient
   `node_modules`.
 
-  The generated burden ledger measures 357 nonblank IR adapter lines, including
+  The generated burden ledger measures 412 nonblank IR adapter lines, including
   48 migration-specific lines, versus 49 for ANSI and 264 for LSP including its
   JSON-RPC acquisition client. Because the IR alone authenticates all five wire
   identities and remains below the reviewed two-times limit against the

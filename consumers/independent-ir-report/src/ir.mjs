@@ -25,9 +25,56 @@ export const IR_ERROR_CODES = Object.freeze([
 
 const WIRE_INT_MIN = -2147483648;
 const WIRE_INT_MAX = 2147483647;
+const DOCUMENT_FIELDS = new Set([
+  "contractVersion",
+  "schemaHash",
+  "vocabularyHash",
+  "source",
+  "tokens",
+  "structure",
+  "diagnostics",
+  "derivation",
+]);
+const SOURCE_FIELDS = new Set(["unitId", "contentHash", "utf8ByteLength"]);
+const RANGE_FIELDS = new Set(["startUtf8", "endUtf8"]);
+const TOKEN_FIELDS = new Set([
+  "occurrenceId",
+  "byteRange",
+  "tokenKind",
+  "lexicalClass",
+  "functionKind",
+]);
+const TOKEN_WITH_OPEN_CLASS_FIELDS = new Set([
+  ...TOKEN_FIELDS,
+  "openClassKind",
+]);
+const STRUCTURE_FIELDS = new Set([
+  "nodeId",
+  "kind",
+  "byteRange",
+  "depth",
+  "childNodeIds",
+]);
+const DIAGNOSTIC_FIELDS = new Set([
+  "byteRange",
+  "severity",
+  "code",
+  "message",
+]);
+const DERIVATION_FIELDS = new Set([
+  "passId",
+  "ruleId",
+  "sourceRanges",
+  "compilerBuildHash",
+]);
 
-function requireRecord(value, label) {
+function requireRecord(value, label, allowedFields) {
   if (!isRecord(value)) fail("E_SHAPE", `${label} must be an object`);
+  for (const field of Object.keys(value)) {
+    if (!allowedFields.has(field)) {
+      fail("E_SHAPE", `${label}.${field} is not part of the contract`);
+    }
+  }
   return value;
 }
 
@@ -82,7 +129,7 @@ function requireNullableEnum(record, field, label, values) {
 }
 
 function requireRange(value, label, sourceLength, boundaries) {
-  const range = requireRecord(value, label);
+  const range = requireRecord(value, label, RANGE_FIELDS);
   const startUtf8 = requireInteger(range, "startUtf8", label);
   const endUtf8 = requireInteger(range, "endUtf8", label);
   if (
@@ -142,7 +189,7 @@ function validateStructure(document, sourceLength, boundaries, profile) {
   const nodes = [];
   for (const [index, nodeValue] of structure.entries()) {
     const label = `structure[${index}]`;
-    const node = requireRecord(nodeValue, label);
+    const node = requireRecord(nodeValue, label, STRUCTURE_FIELDS);
     const nodeId = requireInteger(node, "nodeId", label);
     if (nodeIndices.has(nodeId)) {
       fail("E_SHAPE", `${label}.nodeId must be unique`);
@@ -229,7 +276,11 @@ function validateAuxiliaryShape(document, sourceLength, boundaries, profile) {
     "diagnostics",
   ).entries()) {
     const label = `diagnostics[${index}]`;
-    const diagnostic = requireRecord(diagnosticValue, label);
+    const diagnostic = requireRecord(
+      diagnosticValue,
+      label,
+      DIAGNOSTIC_FIELDS,
+    );
     requireRange(
       diagnostic.byteRange,
       `${label}.byteRange`,
@@ -251,7 +302,7 @@ function validateAuxiliaryShape(document, sourceLength, boundaries, profile) {
     "derivation",
   ).entries()) {
     const label = `derivation[${index}]`;
-    const step = requireRecord(stepValue, label);
+    const step = requireRecord(stepValue, label, DERIVATION_FIELDS);
     requireString(step, "passId", label);
     requireString(step, "ruleId", label);
     requireString(step, "compilerBuildHash", label);
@@ -271,7 +322,7 @@ function validateAuxiliaryShape(document, sourceLength, boundaries, profile) {
 
 export function consumeIr({ source, artifactJson, profiles }) {
   const document = parseJson(artifactJson);
-  if (!isRecord(document)) fail("E_SHAPE", "artifact must be an object");
+  requireRecord(document, "artifact", DOCUMENT_FIELDS);
   const profile = selectProfile(document, profiles);
   const sourceBytes =
     typeof source === "string" ? Buffer.from(source, "utf8") : source;
@@ -279,7 +330,7 @@ export function consumeIr({ source, artifactJson, profiles }) {
     fail("E_SOURCE_UTF8", "source must be UTF-8 bytes or text");
   }
   const sourceText = decodeUtf8(sourceBytes);
-  const sourceRecord = requireRecord(document.source, "source");
+  const sourceRecord = requireRecord(document.source, "source", SOURCE_FIELDS);
   requireString(sourceRecord, "unitId", "source");
   const declaredLength = requireInteger(
     sourceRecord,
@@ -308,7 +359,11 @@ export function consumeIr({ source, artifactJson, profiles }) {
     "tokens",
   ).entries()) {
     const label = `tokens[${index}]`;
-    const token = requireRecord(tokenValue, label);
+    const token = requireRecord(
+      tokenValue,
+      label,
+      profile.openClassKindField ? TOKEN_WITH_OPEN_CLASS_FIELDS : TOKEN_FIELDS,
+    );
     const occurrenceId = requireInteger(token, "occurrenceId", label);
     if (seenIds.has(occurrenceId)) {
       fail("E_SHAPE", `${label}.occurrenceId must be unique`);

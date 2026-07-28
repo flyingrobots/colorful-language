@@ -516,8 +516,8 @@ Requirements:
   contract generation, schema and vocabulary identities, raw-source UTF-8,
   source length and digest, and token ranges, then renders a deterministic
   role-span report. Invalid JSON, invalid UTF-8, unsupported generations, wrong
-  identities, malformed fields, and mismatched source fail with stable error
-  codes and no report on stdout.
+  identities, missing or unknown fields, and mismatched source fail with stable
+  error codes and no report on stdout.
   *Oracle:* exact report bytes for valid input; exact process status, error
   code, and empty stdout for every refusal. *Evidence type:* process-level
   consumer tests. *Evidence:*
@@ -525,7 +525,8 @@ Requirements:
   `consumers/independent-ir-report/bin/report.mjs`, and
   `consumer.test.mjs`
   `the IR process refuses every stable category without output`,
-  `the IR process rejects invalid UTF-8 before source identity trust`.
+  `the IR process rejects invalid UTF-8 before source identity trust`,
+  `IR admission rejects unknown fields in every document record`.
   *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* implemented.
@@ -617,7 +618,7 @@ Requirements:
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
-  correctness rule. Its 357-line IR adapter is larger than the 264-line
+  correctness rule. Its 412-line IR adapter is larger than the 264-line
   LSP protocol and decoding adapter, so reducing duplicate consumer admission
   code is deliberate follow-up debt in
   [#222](https://github.com/flyingrobots/colorful-language/issues/222); the

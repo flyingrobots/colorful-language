@@ -8,7 +8,8 @@ It validates the selected release profile, contract version, schema hash,
 vocabulary hash, raw-source UTF-8 validity, source byte length, source digest,
 required document shape, token axes, and UTF-8 ranges before rendering. Invalid
 input exits with status 1, writes a stable error category to stderr, and leaves
-stdout empty.
+stdout empty. Shape admission is exact: unknown fields are rejected at the
+document root and in every nested contract record.
 
 ## Run the proof
 
@@ -44,7 +45,7 @@ reviewed comparison:
 
 | Adapter | Nonblank adapter lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: |
-| IR | 357 | 10 | 5 |
+| IR | 412 | 10 | 5 |
 | ANSI | 49 | 4 | 1 |
 | LSP | 264 | 5 | 2 |
 
