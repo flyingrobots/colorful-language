@@ -369,12 +369,12 @@ fn analysis_honors_the_explicit_document_extension() {
 fn running_process_can_be_cancelled_after_start() {
     let fixture = Arc::new(FakeVale::new(
         "3.14.2",
-        r#": > '{FAKE_VALE_MARKER}'
-(
+        r#"(
   trap '' HUP TERM
   while :; do :; done
 ) >/dev/null 2>&1 &
 printf '%s\n' "$!" > '{FAKE_VALE_WORKER_PID}'
+: > '{FAKE_VALE_MARKER}'
 wait"#,
     ));
     let analyzer =
