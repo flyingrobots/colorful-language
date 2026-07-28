@@ -16,7 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   evidence. A
   deterministic mutation gate rejects duplicate identities, missing
   predecessors, cycles, unsupported decisions, missing evidence, stale copies,
-  and an unregistered current identity. The standalone consumer no longer
+  and an unregistered current identity. A strict SDL-delta oracle admits only
+  additive nullable fields and their newly reachable types inside v1; required
+  additions, removals, reinterpretations, existing-enum changes, and unsupported
+  GraphQL syntax require review and a new contract version. The standalone
+  consumer no longer
   trusts a release label or profile-local `openClassKindField` switch; it
   derives wire behavior from the full tuple and rejects self-consistent unknown
   generations. Regeneration, CI, Cargo packaging, and release preparation

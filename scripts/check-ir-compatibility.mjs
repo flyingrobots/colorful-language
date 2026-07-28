@@ -9,6 +9,11 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  classifySyntaxTransition,
+  SchemaPolicyError,
+} from "./ir-schema-policy.mjs";
+
 const MANIFEST_VERSION = "colorful.syntax-compatibility/v1";
 const CONTRACT_FAMILY = "colorful.syntax/v1";
 const HASH_PATTERN = /^sha256:[0-9a-f]{64}$/u;
@@ -167,6 +172,17 @@ function schemaHash(sdl, mode) {
     return sha256(stripGraphqlDescriptions(sdl));
   }
   fail("E_MANIFEST_SHAPE", `unsupported schema hash mode ${mode}`);
+}
+
+export function classifySchemaTransition(predecessorSdl, currentSdl) {
+  try {
+    return classifySyntaxTransition(predecessorSdl, currentSdl);
+  } catch (error) {
+    if (error instanceof SchemaPolicyError) {
+      fail("E_SCHEMA_POLICY", error.message);
+    }
+    throw error;
+  }
 }
 
 function readRepositoryFile(repositoryRoot, relativePath, code, context) {
@@ -362,10 +378,8 @@ function validateGenerationFiles(generation, index, repositoryRoot) {
     "E_EVIDENCE",
     `${context}.artifacts.vocabulary`,
   );
-  const actualSchemaHash = schemaHash(
-    schemaBytes.toString("utf8"),
-    generation.schemaHashMode,
-  );
+  const schemaSdl = schemaBytes.toString("utf8");
+  const actualSchemaHash = schemaHash(schemaSdl, generation.schemaHashMode);
   if (actualSchemaHash !== generation.identity.schemaHash) {
     fail(
       "E_ARTIFACT_HASH",
@@ -388,6 +402,7 @@ function validateGenerationFiles(generation, index, repositoryRoot) {
       `${context}.migrationEvidence[${evidenceIndex}]`,
     );
   }
+  return schemaSdl;
 }
 
 function validateAcyclic(generationsById) {
@@ -407,29 +422,41 @@ function validateAcyclic(generationsById) {
   }
 }
 
-function validateTransition(generation, predecessor, index) {
+function validateTransition(
+  generation,
+  predecessor,
+  generationSchema,
+  predecessorSchema,
+  index,
+) {
   const context = `generations[${index}]`;
   const changes = new Set(generation.changeKinds);
-  const predecessorOptionalFields = new Set(
-    predecessor.wireShape.optionalFields,
+  const addedOptionalFields = classifySchemaTransition(
+    predecessorSchema,
+    generationSchema,
   );
-  const optionalFieldsRemoved =
-    predecessor.wireShape.optionalFields.some(
-      (field) => !generation.wireShape.optionalFields.includes(field),
-    );
-  if (optionalFieldsRemoved) {
+  const expectedOptionalFields = [
+    ...new Set([
+      ...predecessor.wireShape.optionalFields,
+      ...addedOptionalFields,
+    ]),
+  ].sort();
+  if (
+    generation.wireShape.optionalFields.length !==
+      expectedOptionalFields.length ||
+    generation.wireShape.optionalFields.some(
+      (field, fieldIndex) => field !== expectedOptionalFields[fieldIndex],
+    )
+  ) {
     fail(
       "E_TRANSITION",
-      `${context} removes an optional field and therefore requires a new contract version`,
+      `${context} wireShape.optionalFields must match the additive SDL delta`,
     );
   }
-  const optionalFieldsAdded = generation.wireShape.optionalFields.some(
-    (field) => !predecessorOptionalFields.has(field),
-  );
   const checks = [
     [
       "nullable-field",
-      optionalFieldsAdded,
+      addedOptionalFields.length > 0,
       "wireShape.optionalFields",
     ],
     [
@@ -456,7 +483,7 @@ function validateTransition(generation, predecessor, index) {
   const schemaIdentityChanged =
     generation.identity.schemaHash !== predecessor.identity.schemaHash;
   const declaredSchemaChange =
-    changes.has("nullable-field") ||
+    addedOptionalFields.length > 0 ||
     changes.has("schema-hash-algorithm");
   if (schemaIdentityChanged !== declaredSchemaChange) {
     fail(
@@ -503,6 +530,7 @@ export function validateCompatibilityManifest(
 
   const generationsById = new Map();
   const generationsByIdentity = new Map();
+  const generationSchemas = new Map();
   let roots = 0;
   for (const [index, generation] of manifest.generations.entries()) {
     validateGenerationShape(generation, index);
@@ -523,7 +551,10 @@ export function validateCompatibilityManifest(
     generationsById.set(generation.id, generation);
     generationsByIdentity.set(key, generation.id);
     if (generation.predecessor === null) roots += 1;
-    validateGenerationFiles(generation, index, repositoryRoot);
+    generationSchemas.set(
+      generation.id,
+      validateGenerationFiles(generation, index, repositoryRoot),
+    );
   }
   for (const generation of manifest.generations) {
     if (
@@ -548,6 +579,8 @@ export function validateCompatibilityManifest(
       validateTransition(
         generation,
         generationsById.get(generation.predecessor),
+        generationSchemas.get(generation.id),
+        generationSchemas.get(generation.predecessor),
         index,
       );
     }

@@ -150,9 +150,12 @@ Description-only SDL changes preserve a generation. A nullable field,
 vocabulary identity, or schema-hash algorithm change requires a new explicit
 generation inside v1. A required field, field removal or reinterpretation, or
 enum change requires a new contract version. This makes compatibility a
-reviewed decision instead of an inference from a release tag. The standalone
-consumer treats release names as provenance and derives `openClassKind`
-presence only from the matched manifest generation.
+reviewed decision instead of an inference from a release tag. A strict
+dependency-free SDL comparator permits only additive nullable fields and the
+new definitions reachable from them; field removal, required additions, type
+reinterpretation, existing-enum changes, and unsupported GraphQL syntax fail
+closed. The standalone consumer treats release names as provenance and derives
+`openClassKind` presence only from the matched manifest generation.
 
 ## Product-evidence gate
 

@@ -10,6 +10,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  classifySchemaTransition,
   IrCompatibilityError,
   selectCompatibilityGeneration,
   validateCompatibilityCopies,
@@ -82,7 +83,7 @@ function manifestFixture() {
         predecessor: "v0.2.1",
         compatibilityDecision: "adapter-required",
         changeKinds: ["nullable-field", "vocabulary"],
-        wireShape: { optionalFields: ["tokens[].openClassKind"] },
+        wireShape: { optionalFields: ["Token.openClassKind"] },
         migrationEvidence: [EVIDENCE],
       },
     ],
@@ -122,6 +123,69 @@ test("wire shape represents nullable fields without a field-specific schema", ()
     currentIdentity: manifest.currentIdentity,
     repositoryRoot: ROOT,
   });
+});
+
+test("only additive nullable SDL changes remain inside the contract family", () => {
+  const baseline = `
+"Description one."
+type DocumentAnalysis {
+  token: Token!
+}
+
+type Token {
+  text: String!
+  role: Role
+}
+
+enum Role {
+  WORD
+}
+`;
+  const nullableAddition = `
+"Description two."
+type DocumentAnalysis {
+  token: Token!
+}
+
+type Token {
+  text: String!
+  role: Role
+  openKind: OpenKind
+}
+
+enum Role {
+  WORD
+}
+
+enum OpenKind {
+  NOUN
+  VERB
+}
+`;
+  assert.deepEqual(
+    classifySchemaTransition(baseline, nullableAddition),
+    ["Token.openKind"],
+  );
+  assert.deepEqual(
+    classifySchemaTransition(
+      baseline,
+      baseline.replace("Description one.", "Edited description."),
+    ),
+    [],
+  );
+
+  const incompatible = [
+    baseline.replace("  role: Role", "  role: Role\n  required: String!"),
+    baseline.replace("  text: String!\n", ""),
+    baseline.replace("  text: String!", "  text: Int!"),
+    baseline.replace("  WORD\n", "  WORD\n  NUMBER\n"),
+    `${baseline}\ntype Unreachable {\n  value: String!\n}\n`,
+  ];
+  for (const current of incompatible) {
+    expectCompatibilityError("E_SCHEMA_POLICY", () =>
+      classifySchemaTransition(baseline, current)
+    );
+  }
 });
 
 test("manifest validation rejects each compatibility-authority mutation", () => {
@@ -209,7 +273,7 @@ test("transition decisions must match their predecessor deltas", () => {
     },
     (manifest) => {
       manifest.generations[0].wireShape.optionalFields = [
-        "tokens[].openClassKind",
+        "Token.openClassKind",
       ];
       manifest.generations[1].changeKinds = ["vocabulary"];
     },

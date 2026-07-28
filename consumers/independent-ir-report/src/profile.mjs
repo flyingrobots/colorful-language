@@ -67,7 +67,7 @@ function selectGeneration(metadata, compatibility) {
     !Array.isArray(generation.wireShape.optionalFields) ||
     generation.wireShape.optionalFields.some(
       (field) =>
-        field !== "tokens[].openClassKind",
+        field !== "Token.openClassKind",
     ) ||
     !(
       generation.schemaHashMode === "raw-sdl-sha256" ||
@@ -181,7 +181,7 @@ export function loadProfile(directory) {
   );
   const openClassKindField =
     generation.wireShape.optionalFields.includes(
-      "tokens[].openClassKind",
+      "Token.openClassKind",
     );
   const schemaHash = profileSchemaHash(syntax, generation.schemaHashMode);
   const vocabularyHash = sha256(vocabularyText);

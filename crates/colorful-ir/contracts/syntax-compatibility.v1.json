@@ -60,7 +60,7 @@
       ],
       "wireShape": {
         "optionalFields": [
-          "tokens[].openClassKind"
+          "Token.openClassKind"
         ]
       },
       "migrationEvidence": [
@@ -87,7 +87,7 @@
       ],
       "wireShape": {
         "optionalFields": [
-          "tokens[].openClassKind"
+          "Token.openClassKind"
         ]
       },
       "migrationEvidence": [

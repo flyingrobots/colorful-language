@@ -633,8 +633,10 @@ Requirements:
   manifest. *Evidence type:* declarative manifest plus deterministic Node
   mutation tests. *Evidence:*
   `contracts/colorful/syntax-compatibility.v1.json`,
-  `scripts/check-ir-compatibility.mjs`, and
+  `scripts/check-ir-compatibility.mjs`,
+  `scripts/ir-schema-policy.mjs`, and
   `scripts/check-ir-compatibility.test.mjs`
+  `only additive nullable SDL changes remain inside the contract family` /
   `manifest validation rejects each compatibility-authority mutation` /
   `the canonical manifest records every supported wire generation`. *Tracking:*
   [#221](https://github.com/flyingrobots/colorful-language/issues/221).

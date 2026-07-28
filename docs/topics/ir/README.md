@@ -268,7 +268,10 @@ require the canonical manifest, the `colorful-ir` package copy, and the
 standalone-consumer copy to agree byte-for-byte. Description-only edits preserve
 a generation; nullable-field, vocabulary, and hash-algorithm changes require an
 explicit v1 generation; required-field, removal, reinterpretation, and enum
-changes require a new contract version.
+changes require a new contract version. The compatibility gate parses the
+repository's deliberately small GraphQL subset and compares each predecessor
+SDL directly, so those classifications are verified against schema shape rather
+than trusted as manifest labels.
 
 ## Known limitations (Stage 1)
 
