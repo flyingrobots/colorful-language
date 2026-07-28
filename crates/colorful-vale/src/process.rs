@@ -165,9 +165,8 @@ pub(crate) fn run_process(
 #[cfg(unix)]
 fn terminate(child: &mut std::process::Child) {
     let process_group = rustix::process::Pid::from_child(child);
-    if rustix::process::kill_process_group(process_group, rustix::process::Signal::KILL).is_err() {
-        let _ = child.kill();
-    }
+    let _ = rustix::process::kill_process_group(process_group, rustix::process::Signal::KILL);
+    let _ = child.kill();
     let _ = child.wait();
 }
 
