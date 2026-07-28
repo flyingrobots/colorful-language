@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Measured LSP service envelope.** A release-mode process harness drives the
+  real server at 100 KiB, 1 MiB, 5 MiB, and 10 MiB through open, diagnostics,
+  cached tokens, single-character changes, rapid versioned edits, and four
+  concurrent full-token requests. A versioned `colorful/metrics` request exposes
+  queue, cancellation, stale-result, limit, accepted-result, and failure
+  counters. The reviewed baseline records exact corpus hashes, timings,
+  throughput, peak server RSS, hardware, operating system, and Rust/Node
+  toolchains; all supported 5 MiB legs meet the declared SLO, while 10 MiB
+  fails fast with `colorful/document-too-large` and empty tokens. Deterministic
+  CI validates the report contract without gating on noisy wall-clock reruns.
 - **Executable roadmap-to-issue reconciliation.** Invisible primary-disposition
   markers give every open non-epic slice one active or parked execution home
   while preserving delivered history and non-owning cross-references. Fixture-

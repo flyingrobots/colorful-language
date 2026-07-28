@@ -252,13 +252,13 @@ Requirements:
   tests validate the report shape and supported-envelope verdict without
   rerunning its wall-clock measurements in CI. *Evidence type:* release
   benchmark, process metrics report, and deterministic report-contract test.
-  *Planned evidence:* `colorful-lsp` example `lsp_envelope`,
+  *Evidence:* `colorful-lsp` example `lsp_envelope`,
   `crates/colorful-lsp/benchmarks/lsp-envelope-baseline.json`, and integration
   tests `stdio_contract::server_metrics_use_a_stable_versioned_contract` and
   `lsp_envelope_report::baseline_covers_the_reviewed_supported_envelope`.
   *Tracking:*
   [#122](https://github.com/flyingrobots/colorful-language/issues/122).
-  *Status:* planned.
+  *Status:* implemented.
 - **COL-17a** — *Requirement:* COL-17. *Behavior:* parsing, annotation, lint,
   IR serialization/validation, semantic-token generation, incremental edits,
   and Graft projection run over fixed corpora and sizes in release mode.
@@ -318,14 +318,12 @@ Requirements:
   into CI once a run of stable baselines exists. The guarded canonical IR path
   used by `colorful ir` and `colorful diagnose --json` is outside COL-12's two
   measured functions; its projection plus fail-closed `validate_document`
-  postcondition remains unmeasured. The production `analyze_document()` plus
-  `DocumentStore` scheduling, queueing, caching, publication, and JSON-RPC path
-  is also unmeasured, as are memory and allocation. The standalone
-  `compute_diagnostics()` helper is not benchmarked either, but it is not the
-  `didChange` handler. COL-16a, tracked by
-  [#122](https://github.com/flyingrobots/colorful-language/issues/122), owns the
-  production supported-envelope evidence; COL-17a and
+  postcondition remains unmeasured. COL-16a measures the production
+  `analyze_document()` plus `DocumentStore` scheduling, queueing, caching,
+  publication, JSON-RPC, and peak-RSS path. The standalone
+  `compute_diagnostics()` helper is not benchmarked, but it is not the
+  `didChange` handler. COL-17a and
   [#135](https://github.com/flyingrobots/colorful-language/issues/135) own
-  broader cross-stage evidence.
+  broader stage-specific throughput and allocation evidence.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.
