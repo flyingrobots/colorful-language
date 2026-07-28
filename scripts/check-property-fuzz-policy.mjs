@@ -105,6 +105,12 @@ function sameNumbers(actual, expected) {
   );
 }
 
+function exactActiveLineCount(source, line) {
+  const escaped = line.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return [...source.matchAll(new RegExp(`^[ \\t]*${escaped}[ \\t]*$`, "gmu"))]
+    .length;
+}
+
 function exactLine(source, line) {
   const escaped = line.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
   return new RegExp(`^\\s*${escaped}\\s*$`, "mu").test(source);
@@ -183,6 +189,16 @@ export function validatePropertyFuzzPolicy(snapshot) {
       "colorful-cli must consume the workspace proptest dependency",
     );
   }
+  if (
+    !/^\[\[test\]\][ \t]*\nname[ \t]*=[ \t]*"property_boundaries"[ \t]*\npath[ \t]*=[ \t]*"tests\/property_boundaries\.rs"[ \t]*\ntest[ \t]*=[ \t]*false[ \t]*$/mu.test(
+      snapshot.cliManifest,
+    )
+  ) {
+    reject(
+      "E_PROPERTY_DEFAULT",
+      "the bounded property target must run only through its explicit gate",
+    );
+  }
 
   const cases = Number(
     snapshot.propertyTest.match(
@@ -208,7 +224,8 @@ export function validatePropertyFuzzPolicy(snapshot) {
     ) ||
     !/^[ \t]*TestRng::from_seed\(RngAlgorithm::ChaCha,[ \t]*&PROPERTY_SEED\)[,;][ \t]*$/mu.test(
       snapshot.propertyTest,
-    )
+    ) ||
+    exactActiveLineCount(snapshot.propertyTest, "runner()") !== 1
   ) {
     reject(
       "E_PROPERTY_RUNNER",

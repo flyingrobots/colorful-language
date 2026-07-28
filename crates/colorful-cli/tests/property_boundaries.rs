@@ -301,116 +301,106 @@ fn report_position(report: &str) -> Result<(usize, usize), TestCaseError> {
     Ok((line, column))
 }
 
-#[test]
-fn seeded_unicode_parser_and_annotator_ranges_are_legal_and_round_trip() {
-    runner()
-        .run(&unicode_source(), |source| {
-            let classification = ValidatedClassification::from_ports(
-                &source,
-                &ProseParser::new(),
-                &ContextualOpenClassAnnotator::default(),
-            )
-            .map_err(|error| TestCaseError::fail(error.to_string()))?;
-            assert_legal_spans_and_round_trip(
-                &source,
-                classification.tree(),
-                classification.tokens(),
-            )
-        })
-        .expect("seeded parser and annotator property");
+fn assert_parser_and_annotator_property(source: &str) -> Result<(), TestCaseError> {
+    let classification = ValidatedClassification::from_ports(
+        source,
+        &ProseParser::new(),
+        &ContextualOpenClassAnnotator::default(),
+    )
+    .map_err(|error| TestCaseError::fail(error.to_string()))?;
+    assert_legal_spans_and_round_trip(source, classification.tree(), classification.tokens())
+}
+
+fn assert_public_tree_mutation(source: &str, mutation: u8) -> Result<(), TestCaseError> {
+    let (tree, tokens, expected_variant, expected_path) =
+        malformed_classification(source, mutation);
+    let error = ValidatedClassification::new(source, tree, tokens)
+        .expect_err("selected malformed classification must fail");
+    prop_assert_eq!(classification_variant(&error), expected_variant);
+    prop_assert_eq!(error.path().to_string(), expected_path);
+    Ok(())
+}
+
+fn assert_projection_and_ir_mutation(source: &str, mutation: u8) -> Result<(), TestCaseError> {
+    let mut document = build_document(
+        "property",
+        source,
+        &ProseParser::new(),
+        &ContextualOpenClassAnnotator::default(),
+    )
+    .map_err(|error| TestCaseError::fail(error.to_string()))?;
+    validate_document(&document.document, Some(source.as_bytes()))
+        .map_err(|errors| TestCaseError::fail(errors.to_string()))?;
+    let canonical = colorful_ir::canonical_json(&document.document)
+        .map_err(|error| TestCaseError::fail(error.to_string()))?;
+    let decoded: colorful_ir::syntax_v1::DocumentAnalysis =
+        serde_json::from_str(&canonical).map_err(|error| TestCaseError::fail(error.to_string()))?;
+    let recanonical = colorful_ir::canonical_json(&decoded)
+        .map_err(|error| TestCaseError::fail(error.to_string()))?;
+    prop_assert_eq!(recanonical, canonical);
+
+    let (expected_code, expected_path) = mutate_ir(&mut document.document, mutation);
+    let errors = validate_document(&document.document, Some(source.as_bytes()))
+        .expect_err("selected malformed IR mutation must fail");
+    let first = errors
+        .0
+        .first()
+        .ok_or_else(|| TestCaseError::fail("IR mutation returned no error"))?;
+    prop_assert_eq!(first.code(), expected_code);
+    prop_assert_eq!(first.path().to_string(), expected_path);
+    Ok(())
+}
+
+fn assert_cli_and_lsp_coordinate_property(prefix: &str) -> Result<(), TestCaseError> {
+    let start = prefix.len();
+    let source = format!("{prefix}target");
+    let span = Span::new(start, source.len());
+    let finding = Finding {
+        span,
+        rule: Rule::WeakWord,
+        severity: Severity::Info,
+        message: "property finding".to_string(),
+    };
+
+    let cli = report_position(&lint_report("property", &source, &[finding]))?;
+    let diagnostics = compute_diagnostics(
+        &source,
+        &ProseParser::new(),
+        &ContextualOpenClassAnnotator::default(),
+        &FixedFinding { span },
+    )
+    .map_err(|error| TestCaseError::fail(error.to_string()))?;
+    let diagnostic = diagnostics
+        .first()
+        .ok_or_else(|| TestCaseError::fail("LSP omitted the property finding"))?;
+
+    let (start_line, start_scalar, start_utf16) = oracle_position(&source, span.start);
+    let (end_line, _end_scalar, end_utf16) = oracle_position(&source, span.end);
+    prop_assert_eq!(
+        line_col(&source, span.start),
+        (start_line + 1, start_scalar + 1)
+    );
+    prop_assert_eq!(cli, (start_line + 1, start_scalar + 1));
+    prop_assert_eq!(diagnostic.range.start.line as usize, start_line);
+    prop_assert_eq!(diagnostic.range.start.character, start_utf16);
+    prop_assert_eq!(diagnostic.range.end.line as usize, end_line);
+    prop_assert_eq!(diagnostic.range.end.character, end_utf16);
+    Ok(())
 }
 
 #[test]
-fn seeded_public_tree_mutations_fail_for_the_selected_invariant() {
+fn seeded_property_boundaries_hold_for_each_generated_case() {
     runner()
-        .run(&(unicode_source(), 0u8..5), |(source, mutation)| {
-            let (tree, tokens, expected_variant, expected_path) =
-                malformed_classification(&source, mutation);
-            let error = ValidatedClassification::new(&source, tree, tokens)
-                .expect_err("selected malformed classification must fail");
-            prop_assert_eq!(classification_variant(&error), expected_variant);
-            prop_assert_eq!(error.path().to_string(), expected_path);
-            Ok(())
-        })
-        .expect("seeded public-tree mutation property");
-}
-
-#[test]
-fn seeded_projection_and_ir_mutations_preserve_exact_validation_outcomes() {
-    runner()
-        .run(&(unicode_source(), 0u8..6), |(source, mutation)| {
-            let mut document = build_document(
-                "property",
-                &source,
-                &ProseParser::new(),
-                &ContextualOpenClassAnnotator::default(),
-            )
-            .map_err(|error| TestCaseError::fail(error.to_string()))?;
-            validate_document(&document.document, Some(source.as_bytes()))
-                .map_err(|errors| TestCaseError::fail(errors.to_string()))?;
-            let canonical = colorful_ir::canonical_json(&document.document)
-                .map_err(|error| TestCaseError::fail(error.to_string()))?;
-            let decoded: colorful_ir::syntax_v1::DocumentAnalysis =
-                serde_json::from_str(&canonical)
-                    .map_err(|error| TestCaseError::fail(error.to_string()))?;
-            let recanonical = colorful_ir::canonical_json(&decoded)
-                .map_err(|error| TestCaseError::fail(error.to_string()))?;
-            prop_assert_eq!(recanonical, canonical);
-
-            let (expected_code, expected_path) = mutate_ir(&mut document.document, mutation);
-            let errors = validate_document(&document.document, Some(source.as_bytes()))
-                .expect_err("selected malformed IR mutation must fail");
-            let first = errors
-                .0
-                .first()
-                .ok_or_else(|| TestCaseError::fail("IR mutation returned no error"))?;
-            prop_assert_eq!(first.code(), expected_code);
-            prop_assert_eq!(first.path().to_string(), expected_path);
-            Ok(())
-        })
-        .expect("seeded projection and IR mutation property");
-}
-
-#[test]
-fn seeded_cli_and_lsp_coordinates_identify_the_same_finding() {
-    runner()
-        .run(&unicode_source(), |prefix| {
-            let start = prefix.len();
-            let source = format!("{prefix}target");
-            let span = Span::new(start, source.len());
-            let finding = Finding {
-                span,
-                rule: Rule::WeakWord,
-                severity: Severity::Info,
-                message: "property finding".to_string(),
-            };
-
-            let cli = report_position(&lint_report("property", &source, &[finding]))?;
-            let diagnostics = compute_diagnostics(
-                &source,
-                &ProseParser::new(),
-                &ContextualOpenClassAnnotator::default(),
-                &FixedFinding { span },
-            )
-            .map_err(|error| TestCaseError::fail(error.to_string()))?;
-            let diagnostic = diagnostics
-                .first()
-                .ok_or_else(|| TestCaseError::fail("LSP omitted the property finding"))?;
-
-            let (start_line, start_scalar, start_utf16) = oracle_position(&source, span.start);
-            let (end_line, _end_scalar, end_utf16) = oracle_position(&source, span.end);
-            prop_assert_eq!(
-                line_col(&source, span.start),
-                (start_line + 1, start_scalar + 1)
-            );
-            prop_assert_eq!(cli, (start_line + 1, start_scalar + 1));
-            prop_assert_eq!(diagnostic.range.start.line as usize, start_line);
-            prop_assert_eq!(diagnostic.range.start.character, start_utf16);
-            prop_assert_eq!(diagnostic.range.end.line as usize, end_line);
-            prop_assert_eq!(diagnostic.range.end.character, end_utf16);
-            Ok(())
-        })
-        .expect("seeded CLI/LSP coordinate property");
+        .run(
+            &(unicode_source(), 0u8..5, 0u8..6),
+            |(source, classification_mutation, ir_mutation)| {
+                assert_parser_and_annotator_property(&source)?;
+                assert_public_tree_mutation(&source, classification_mutation)?;
+                assert_projection_and_ir_mutation(&source, ir_mutation)?;
+                assert_cli_and_lsp_coordinate_property(&source)
+            },
+        )
+        .expect("seeded property boundary corpus");
 }
 
 #[test]

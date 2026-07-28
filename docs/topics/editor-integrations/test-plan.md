@@ -131,7 +131,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
   code-unit counts. *Evidence type:* cross-surface seeded property test and
   coordinate fuzz target. *Evidence:*
   `crates/colorful-cli/tests/property_boundaries.rs`
-  `seeded_cli_and_lsp_coordinates_identify_the_same_finding` and
+  `seeded_property_boundaries_hold_for_each_generated_case` and
   `fuzz/fuzz_targets/coordinates.rs`. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
   *Status:* implemented.

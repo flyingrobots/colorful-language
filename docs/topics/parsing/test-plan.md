@@ -119,7 +119,7 @@ lives in `crates/colorful-parse/src/lib.rs`.
   source byte-for-byte. *Evidence type:* seeded property test, fuzz target, and
   deterministic regression corpus. *Evidence:*
   `crates/colorful-cli/tests/property_boundaries.rs`
-  `seeded_unicode_parser_and_annotator_ranges_are_legal_and_round_trip`;
+  `seeded_property_boundaries_hold_for_each_generated_case`;
   `fuzz/fuzz_targets/parser.rs`; `fuzz/fuzz_targets/annotator.rs`;
   `scripts/check-property-fuzz-policy.mjs`. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).

@@ -546,8 +546,7 @@ Requirements:
   *Evidence type:* seeded property test, mutation model, fuzz targets, and
   minimized ordinary regressions. *Evidence:*
   `crates/colorful-cli/tests/property_boundaries.rs`
-  `seeded_public_tree_mutations_fail_for_the_selected_invariant` and
-  `seeded_projection_and_ir_mutations_preserve_exact_validation_outcomes`;
+  `seeded_property_boundaries_hold_for_each_generated_case`;
   `fuzz/fuzz_targets/ir_projection.rs`;
   `scripts/check-property-fuzz-policy.mjs`. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).

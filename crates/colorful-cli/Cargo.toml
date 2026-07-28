@@ -39,6 +39,11 @@ proptest = { workspace = true }
 colorful-lsp = { path = "../colorful-lsp", version = "0.4.0" }
 tower-lsp = { workspace = true }
 
+[[test]]
+name = "property_boundaries"
+path = "tests/property_boundaries.rs"
+test = false
+
 [[bench]]
 name = "colorize_bench"
 harness = false

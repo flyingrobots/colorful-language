@@ -39,10 +39,11 @@ preparation:
 cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads=1
 ```
 
-`cargo test --all --locked` also discovers the integration test. The explicit
-command is retained so the bounded corpus remains visible and policy-checkable
-as a first-class gate. CI and release preparation format, lint, and compile
-every standalone fuzz binary without executing a time-based session:
+The target is marked `test = false`, so `cargo test --all --locked` does not
+execute it a second time. The explicit command is the sole bounded-corpus gate
+and keeps the exact case budget visible and policy-checkable. CI and release
+preparation format, lint, and compile every standalone fuzz binary without
+executing a time-based session:
 
 ```bash
 cargo fmt --manifest-path fuzz/Cargo.toml --all -- --check

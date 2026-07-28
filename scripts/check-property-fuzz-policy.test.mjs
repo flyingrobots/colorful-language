@@ -27,6 +27,11 @@ version = "1.11.0"
   cliManifest: `
 [dev-dependencies]
 proptest = { workspace = true }
+
+[[test]]
+name = "property_boundaries"
+path = "tests/property_boundaries.rs"
+test = false
 `,
   propertyTest: `
 const PROPERTY_CASES: u32 = 256;
@@ -40,6 +45,7 @@ let config = Config {
     cases: PROPERTY_CASES,
 };
 TestRng::from_seed(RngAlgorithm::ChaCha, &PROPERTY_SEED);
+runner()
 `,
   fuzzManifest: `
 [dependencies]
@@ -138,6 +144,16 @@ test("rejects a missing CLI property-test dependency", () => {
   );
 });
 
+test("rejects default aggregate discovery of the bounded property target", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      cliManifest: VALID_SNAPSHOT.cliManifest.replace("test = false", ""),
+    },
+    "E_PROPERTY_DEFAULT",
+  );
+});
+
 test("rejects property lockfile drift", () => {
   expectPolicyError(
     { ...VALID_SNAPSHOT, rootLock: "" },
@@ -229,6 +245,19 @@ test("rejects a reviewed runner call that exists only in a comment", () => {
         "TestRng::from_seed(RngAlgorithm::ChaCha, &PROPERTY_SEED);",
         `// TestRng::from_seed(RngAlgorithm::ChaCha, &PROPERTY_SEED);
 TestRng::from_entropy();`,
+      ),
+    },
+    "E_PROPERTY_RUNNER",
+  );
+});
+
+test("rejects multiple bounded property runner invocations", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      propertyTest: VALID_SNAPSHOT.propertyTest.replace(
+        "runner()\n",
+        "runner()\nrunner()\n",
       ),
     },
     "E_PROPERTY_RUNNER",
