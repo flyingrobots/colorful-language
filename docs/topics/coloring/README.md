@@ -200,20 +200,20 @@ Run it from a clean worktree so the report can bind itself to the exact source
 commit. Review the temporary report before updating
 [`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).
 
-**2026-07-28, source `d3613fc2a9c5dfcb41fadceb56bf7b1319636541`,
+**2026-07-28, source `7067cb6da5eebf8f6fd79008cf9842c8da134f9d`,
 `rustc 1.97.1`, Node 22.23.1, `stats_alloc 0.1.10`, Apple M1 Pro,
 16 GiB RAM, macOS Darwin 25.3.0 arm64, release profile:**
 
 | Stage | 899 B median | 899 B allocations | 45 KB median | 45 KB throughput | 45 KB allocations |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Parsing | 5.4 µs | 43 / 17.8 KiB | 250 µs | 179.7 MB/s | 2,009 / 915.8 KiB |
-| Contextual annotation | 14.8 µs | 136 / 12.7 KiB | 562 µs | 80.1 MB/s | 6,463 / 807.0 KiB |
-| Classification validation | 28.9 µs | 753 / 75.0 KiB | 1.08 ms | 41.8 MB/s | 37,215 / 3.94 MiB |
-| Lint analysis | 7.8 µs | 144 / 9.4 KiB | 328 µs | 137.0 MB/s | 7,059 / 485.6 KiB |
-| Guarded IR projection | 82.6 µs | 1,063 / 75.3 KiB | 1.96 ms | 22.9 MB/s | 49,172 / 3.20 MiB |
-| Canonical IR serialization | 163 µs | 2,342 / 330.7 KiB | 8.26 ms | 5.4 MB/s | 114,264 / 16.87 MiB |
-| Fail-closed IR validation | 56.7 µs | 1,009 / 59.2 KiB | 1.76 ms | 25.6 MB/s | 48,414 / 2.60 MiB |
-| Graft projection | 653 µs | unavailable | 7.13 ms | 6.3 MB/s | unavailable |
+| Parsing | 5.3 µs | 43 / 17.8 KiB | 248 µs | 181.1 MB/s | 2,009 / 915.8 KiB |
+| Contextual annotation | 15.0 µs | 136 / 12.7 KiB | 595 µs | 75.7 MB/s | 6,463 / 807.0 KiB |
+| Classification validation | 28.2 µs | 753 / 75.0 KiB | 1.06 ms | 42.3 MB/s | 37,215 / 3.94 MiB |
+| Lint analysis | 7.5 µs | 144 / 9.4 KiB | 294 µs | 152.9 MB/s | 7,059 / 485.6 KiB |
+| Guarded IR projection | 84.0 µs | 1,063 / 75.3 KiB | 1.96 ms | 22.9 MB/s | 49,172 / 3.20 MiB |
+| Canonical IR serialization | 170 µs | 2,342 / 330.7 KiB | 8.37 ms | 5.4 MB/s | 114,264 / 16.87 MiB |
+| Fail-closed IR validation | 59.8 µs | 1,009 / 59.2 KiB | 1.77 ms | 25.4 MB/s | 48,414 / 2.60 MiB |
+| Graft projection | 656 µs | unavailable | 7.63 ms | 5.9 MB/s | unavailable |
 
 Guarded IR projection uses the public `from_validated_classification()` boundary,
 so its number includes the mandatory successful-document validation
