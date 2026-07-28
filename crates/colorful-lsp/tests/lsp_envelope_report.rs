@@ -38,7 +38,7 @@ fn all_counts(scenario: &Value, expected: impl Fn(u64) -> bool) -> bool {
 }
 
 fn semantic_results_are_fresh(scenario: &Value) -> bool {
-    let expected = scenario["finalDocumentVersion"]
+    let expected = scenario["finalGeneration"]
         .as_u64()
         .map(|version| version.to_string());
     scenario["overload"]["semanticResultIds"]
@@ -242,6 +242,7 @@ fn baseline_covers_the_reviewed_supported_envelope() {
             scenario["latestDiagnosticVersion"],
             scenario["finalDocumentVersion"]
         );
+        assert!(scenario["finalGeneration"].as_u64().is_some());
         assert_eq!(scenario["processExitCode"], 0);
         assert_eq!(scenario["stalePublicationCount"], 0);
         assert_eq!(scenario["sloFailures"], serde_json::json!([]));
@@ -260,7 +261,11 @@ fn baseline_covers_the_reviewed_supported_envelope() {
             .is_some_and(|count| count > 0));
         assert!(scenario["overload"]["semanticResultIds"]
             .as_array()
-            .is_some_and(|ids| ids.len() == 4 && ids.iter().all(|id| id == "6")));
+            .zip(scenario["finalGeneration"].as_u64())
+            .is_some_and(|(ids, generation)| {
+                let expected = generation.to_string();
+                ids.len() == 4 && ids.iter().all(|id| id.as_str() == Some(&expected))
+            }));
         assert!(scenario["overload"]["semanticTokenCounts"]
             .as_array()
             .is_some_and(|counts| {

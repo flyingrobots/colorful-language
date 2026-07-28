@@ -46,6 +46,35 @@ const REFUSAL_PEAK_RSS_BYTES: u64 = 512 * 1024 * 1024;
 const CONCURRENT_SEMANTIC_REQUESTS: usize = 4;
 const RAPID_EDIT_COUNT: i64 = 4;
 
+struct WorkloadPlan {
+    rapid_edits: Vec<(i64, char)>,
+    semantic_request_ids: Vec<i64>,
+    final_document_version: i64,
+    final_generation: u64,
+}
+
+fn workload_plan() -> WorkloadPlan {
+    let rapid_edits = (0..RAPID_EDIT_COUNT)
+        .map(|offset| {
+            let letter_offset = u8::try_from(offset).expect("rapid edit offset fits u8");
+            let replacement = char::from(
+                b'B'.checked_add(letter_offset)
+                    .expect("rapid edit replacement remains ASCII"),
+            );
+            (3 + offset, replacement)
+        })
+        .collect::<Vec<_>>();
+    let semantic_request_ids = (0..CONCURRENT_SEMANTIC_REQUESTS)
+        .map(|offset| 10 + i64::try_from(offset).expect("semantic request offset fits i64"))
+        .collect::<Vec<_>>();
+    WorkloadPlan {
+        rapid_edits,
+        semantic_request_ids,
+        final_document_version: 2 + RAPID_EDIT_COUNT,
+        final_generation: 2 + u64::try_from(RAPID_EDIT_COUNT).expect("rapid edit count fits u64"),
+    }
+}
+
 #[derive(Debug)]
 struct TimedMessage {
     value: Value,
@@ -542,13 +571,12 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
     ));
     let incremental_token_count = semantic_token_count(&incremental_tokens.value);
 
+    let workload = workload_plan();
     let overload_started = Instant::now();
-    for (offset, replacement) in ['B', 'C', 'D', 'E'].into_iter().enumerate() {
-        let version = 3 + i64::try_from(offset).expect("rapid edit offset fits i64");
+    for &(version, replacement) in &workload.rapid_edits {
         server.send(replace_first_character(version, replacement));
     }
-    let request_ids = [10_i64, 11, 12, 13];
-    for id in request_ids {
+    for &id in &workload.semantic_request_ids {
         server.send(json!({
             "jsonrpc": "2.0",
             "id": id,
@@ -561,7 +589,8 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         }));
     }
     let latest_diagnostics = server.receive("latest overload diagnostics", |message| {
-        message["method"] == "textDocument/publishDiagnostics" && message["params"]["version"] == 6
+        message["method"] == "textDocument/publishDiagnostics"
+            && message["params"]["version"] == workload.final_document_version
     });
     let time_to_latest_diagnostics_ms =
         milliseconds(response_duration(overload_started, &latest_diagnostics));
@@ -571,7 +600,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
     let mut semantic_result_ids = Vec::new();
     let mut semantic_token_counts = Vec::new();
     let mut semantic_response_ms = Vec::new();
-    for id in request_ids {
+    for &id in &workload.semantic_request_ids {
         let response = server.receive("overload semantic-token response", |message| {
             message["id"] == id
         });
@@ -612,8 +641,15 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
             "{stale_publication_count} stale diagnostic publications"
         ));
     }
-    if semantic_result_ids.iter().any(|result_id| result_id != "6") {
-        slo_failures.push("semantic response did not describe version 6".to_string());
+    let final_generation = workload.final_generation.to_string();
+    if semantic_result_ids
+        .iter()
+        .any(|result_id| result_id != &final_generation)
+    {
+        slo_failures.push(format!(
+            "semantic response did not describe generation {}",
+            workload.final_generation
+        ));
     }
     if supported {
         if outcome_category != "analyzed" {
@@ -724,8 +760,8 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
             "semanticTokenCount": incremental_token_count
         },
         "overload": {
-            "rapidEditCount": RAPID_EDIT_COUNT,
-            "concurrentSemanticRequests": CONCURRENT_SEMANTIC_REQUESTS,
+            "rapidEditCount": workload.rapid_edits.len(),
+            "concurrentSemanticRequests": workload.semantic_request_ids.len(),
             "timeToLatestDiagnosticsMs": time_to_latest_diagnostics_ms,
             "diagnosticCode": overload_diagnostic_code,
             "slowestSemanticResponseMs": slowest_semantic_response_ms,
@@ -736,8 +772,9 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         "peakRssBytes": process.peak_rss_bytes,
         "processExitCode": process.status.code(),
         "metrics": metrics,
-        "finalDocumentVersion": 6,
-        "latestDiagnosticVersion": 6,
+        "finalDocumentVersion": workload.final_document_version,
+        "finalGeneration": workload.final_generation,
+        "latestDiagnosticVersion": latest_diagnostics.value["params"]["version"],
         "stalePublicationCount": stale_publication_count,
         "sloMet": slo_failures.is_empty(),
         "sloFailures": slo_failures
