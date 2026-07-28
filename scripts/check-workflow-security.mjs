@@ -21,7 +21,7 @@ import {
 } from "./workflow-security-policy.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
-const repositoryRoot = resolve(new URL("..", import.meta.url).pathname);
+const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 const policyPath = join(
   repositoryRoot,
   ".github",
