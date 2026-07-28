@@ -180,11 +180,11 @@ CLI/LSP findings agree without hiding ambiguity.
   ([#138](https://github.com/flyingrobots/colorful-language/issues/138),
   [#139](https://github.com/flyingrobots/colorful-language/issues/139),
   [#143](https://github.com/flyingrobots/colorful-language/issues/143)).
+  <!-- roadmap-primary: delivered #122 -->
 - **Open capacity evidence:** complete cross-stage parsing, annotation, lint,
   IR, semantic-token,
   incremental-edit, and Graft benchmarks
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
-  <!-- roadmap-primary: delivered #122 -->
   <!-- roadmap-primary: active #135 -->
 - **Open comparison adapter:** prototype an external `Analyzer` without
   weakening the pure port or making an engine mandatory
