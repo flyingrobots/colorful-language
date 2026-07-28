@@ -229,8 +229,7 @@ function expectPolicyError(code, mutatePolicy, mutateReport = () => {}) {
       validateCoveragePolicy(candidatePolicy, candidateReport, {
         workspaceRoot: "/checkout/colorful-language",
       }),
-    (error) =>
-      error instanceof CoveragePolicyError && error.code === code,
+    (error) => error instanceof CoveragePolicyError && error.code === code,
   );
 }
 
@@ -239,8 +238,7 @@ function expectWorkflowError(code, mutate) {
   mutate(candidate);
   assert.throws(
     () => validateCoverageWorkflow(candidate, policy()),
-    (error) =>
-      error instanceof CoveragePolicyError && error.code === code,
+    (error) => error instanceof CoveragePolicyError && error.code === code,
   );
 }
 
@@ -263,10 +261,7 @@ test("accepts the reviewed workspace and transport coverage", () => {
 test("resolves repository-relative report paths from the workspace root", () => {
   const relativeReport = structuredClone(report());
   for (const file of relativeReport.data[0].files) {
-    file.filename = file.filename.replace(
-      "/checkout/colorful-language/",
-      "",
-    );
+    file.filename = file.filename.replace("/checkout/colorful-language/", "");
   }
   assert.doesNotThrow(() =>
     validateCoveragePolicy(policy(), relativeReport, {
@@ -294,7 +289,14 @@ test("coverage follows every executable CLI source owner", () => {
 });
 
 test("rejects stale coverage measurements in the maintained reference", () => {
-  const staleReference = COVERAGE_REFERENCE.replace("95.22%", "95.21%");
+  const measuredPercent = ACTUAL_POLICY.workspace.measuredLinePercent;
+  const renderedPercent = Number.isInteger(measuredPercent)
+    ? `${measuredPercent}%`
+    : `${measuredPercent.toFixed(2)}%`;
+  const staleReference = COVERAGE_REFERENCE.replace(
+    renderedPercent,
+    `${(measuredPercent - 0.01).toFixed(2)}%`,
+  );
   assert.notEqual(staleReference, COVERAGE_REFERENCE);
   assert.throws(
     () => validateCoverageReference(staleReference, ACTUAL_POLICY),
@@ -401,10 +403,9 @@ test("rejects checkout credential persistence in the coverage job", () => {
 
 test("rejects a workflow that omits clean-checkout output preparation", () => {
   expectWorkflowError("E_COVERAGE_COMMAND", (candidate) => {
-    candidate.jobs.coverage.steps =
-      candidate.jobs.coverage.steps.filter(
-        (step) => step.name !== "Prepare coverage output",
-      );
+    candidate.jobs.coverage.steps = candidate.jobs.coverage.steps.filter(
+      (step) => step.name !== "Prepare coverage output",
+    );
   });
 });
 
