@@ -765,6 +765,18 @@ export function validateCompatibilityCopies(canonicalText, copies) {
   }
 }
 
+export function loadCompatibilityCopies(repositoryRoot, copyPaths) {
+  return copyPaths.map((copyPath) => ({
+    label: copyPath,
+    text: readRepositoryFile(
+      repositoryRoot,
+      copyPath,
+      "E_COPY_DRIFT",
+      copyPath,
+    ).toString("utf8"),
+  }));
+}
+
 export function workspaceIdentity(repositoryRoot) {
   const syntax = readRepositoryFile(
     repositoryRoot,
@@ -805,30 +817,10 @@ function run() {
   });
 
   const copyPaths = [
-    path.join(
-      repositoryRoot,
-      "crates",
-      "colorful-ir",
-      "contracts",
-      "syntax-compatibility.v1.json",
-    ),
-    path.join(
-      repositoryRoot,
-      "consumers",
-      "independent-ir-report",
-      "compatibility.v1.json",
-    ),
+    "crates/colorful-ir/contracts/syntax-compatibility.v1.json",
+    "consumers/independent-ir-report/compatibility.v1.json",
   ];
-  const copies = copyPaths.map((copy) => {
-    const label = path.relative(repositoryRoot, copy);
-    if (!existsSync(copy)) {
-      fail(
-        "E_COPY_DRIFT",
-        `${label} differs from the canonical manifest`,
-      );
-    }
-    return { label, text: readFileSync(copy, "utf8") };
-  });
+  const copies = loadCompatibilityCopies(repositoryRoot, copyPaths);
   validateCompatibilityCopies(canonicalText, copies);
   process.stdout.write(
     `IR compatibility passed: ${manifest.generations.length} explicit ${manifest.contractFamily} generations\n`,

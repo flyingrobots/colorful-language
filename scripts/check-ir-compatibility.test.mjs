@@ -9,6 +9,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import * as compatibilityChecker from "./check-ir-compatibility.mjs";
 import {
   classifySchemaTransition,
   IrCompatibilityError,
@@ -392,6 +393,22 @@ test("compatibility copies fail closed on byte drift", () => {
     validateCompatibilityCopies("canonical\n", [
       { label: "stale copy", text: "stale\n" },
     ]),
+  );
+});
+
+test("a missing compatibility copy fails through the production loader", (t) => {
+  const emptyRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-missing-compatibility-copy-"),
+  );
+  t.after(() => rmSync(emptyRoot, { recursive: true, force: true }));
+  assert.equal(
+    typeof compatibilityChecker.loadCompatibilityCopies,
+    "function",
+  );
+  expectCompatibilityError("E_COPY_DRIFT", () =>
+    compatibilityChecker.loadCompatibilityCopies(emptyRoot, [
+      "missing-copy.json",
+    ])
   );
 });
 
