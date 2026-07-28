@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
@@ -13,27 +14,43 @@ fn manifest(relative: &str) -> toml::Value {
     .unwrap_or_else(|error| panic!("parse {relative}: {error}"))
 }
 
-fn normal_dependency(manifest: &toml::Value, dependency: &str) -> bool {
-    manifest
+fn production_dependencies(manifest: &toml::Value) -> BTreeSet<String> {
+    let mut dependencies: BTreeSet<String> = manifest
         .get("dependencies")
         .and_then(toml::Value::as_table)
-        .is_some_and(|dependencies| dependencies.contains_key(dependency))
+        .into_iter()
+        .flat_map(|dependencies| dependencies.keys().cloned())
+        .collect();
+    for target in manifest
+        .get("target")
+        .and_then(toml::Value::as_table)
+        .into_iter()
+        .flat_map(|targets| targets.values())
+    {
+        dependencies.extend(
+            target
+                .get("dependencies")
+                .and_then(toml::Value::as_table)
+                .into_iter()
+                .flat_map(|target_dependencies| target_dependencies.keys().cloned()),
+        );
+    }
+    dependencies
 }
 
 #[test]
 fn adapter_dependency_direction_preserves_pure_core_and_default_binaries() {
     let adapter = manifest("crates/colorful-vale/Cargo.toml");
-    assert!(normal_dependency(&adapter, "colorful-core"));
-    assert!(!normal_dependency(&adapter, "colorful-cli"));
-    assert!(!normal_dependency(&adapter, "colorful-lsp"));
-    let dependencies = adapter["dependencies"]
-        .as_table()
-        .expect("adapter dependencies");
-    let mut dependency_names: Vec<_> = dependencies.keys().map(String::as_str).collect();
-    dependency_names.sort_unstable();
+    let adapter_dependencies = production_dependencies(&adapter);
+    assert!(adapter_dependencies.contains("colorful-core"));
+    assert!(!adapter_dependencies.contains("colorful-cli"));
+    assert!(!adapter_dependencies.contains("colorful-lsp"));
     assert_eq!(
-        dependency_names,
-        ["colorful-core", "serde", "serde_json"],
+        adapter_dependencies,
+        ["colorful-core", "serde", "serde_json"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
         "prototype maintenance cost changed: review the adapter decision"
     );
     assert_eq!(
@@ -73,8 +90,23 @@ fn adapter_dependency_direction_preserves_pure_core_and_default_binaries() {
         "crates/colorful-lsp/Cargo.toml",
     ] {
         assert!(
-            !normal_dependency(&manifest(consumer), "colorful-vale"),
+            !production_dependencies(&manifest(consumer)).contains("colorful-vale"),
             "{consumer} must not acquire a production Vale dependency"
         );
     }
+}
+
+#[test]
+fn boundary_inventory_includes_target_specific_production_dependencies() {
+    let manifest: toml::Value = toml::from_str(
+        r#"
+[target.'cfg(unix)'.dependencies]
+colorful-vale = { path = "../colorful-vale" }
+"#,
+    )
+    .expect("parse target-specific dependency");
+    assert!(
+        production_dependencies(&manifest).contains("colorful-vale"),
+        "target-specific dependencies must not bypass the production boundary"
+    );
 }
