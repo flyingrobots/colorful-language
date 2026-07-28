@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
   CoveragePolicyError,
   validateCoveragePolicy,
+  validateCoverageReference,
   validateCoverageRuleset,
   validateCoverageWorkflow,
 } from "./check-coverage-policy.mjs";
@@ -20,6 +22,19 @@ const RUST_CACHE_ACTION =
   "Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32";
 const UPLOAD_ACTION =
   "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f";
+const ACTUAL_POLICY = JSON.parse(
+  readFileSync(
+    new URL("../.github/coverage-policy.json", import.meta.url),
+    "utf8",
+  ),
+);
+const COVERAGE_REFERENCE = readFileSync(
+  new URL(
+    "../docs/workflows/repository-maintenance/README.md",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function lineSummary(count, covered) {
   return {
@@ -215,6 +230,23 @@ test("accepts the reviewed workspace and transport coverage", () => {
     validateCoveragePolicy(policy(), report(), {
       workspaceRoot: "/checkout/colorful-language",
     }),
+  );
+});
+
+test("accepts coverage documentation generated from the machine policy", () => {
+  assert.doesNotThrow(() =>
+    validateCoverageReference(COVERAGE_REFERENCE, ACTUAL_POLICY),
+  );
+});
+
+test("rejects stale coverage measurements in the maintained reference", () => {
+  const staleReference = COVERAGE_REFERENCE.replace("95.36%", "95.35%");
+  assert.notEqual(staleReference, COVERAGE_REFERENCE);
+  assert.throws(
+    () => validateCoverageReference(staleReference, ACTUAL_POLICY),
+    (error) =>
+      error instanceof CoveragePolicyError &&
+      error.code === "E_COVERAGE_REFERENCE",
   );
 });
 
