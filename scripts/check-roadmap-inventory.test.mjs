@@ -111,6 +111,15 @@ test("treats issues closed by the current pull request as delivered", () => {
   );
 });
 
+test("requires a delivered marker for a slice closed by the pull request", () => {
+  expectCategory(
+    "E_ROADMAP_MISSING_DELIVERED",
+    (source) =>
+      source.replace("  <!-- roadmap-primary: active #101 -->\n", ""),
+    { closingIssueNumbers: new Set([101]) },
+  );
+});
+
 test("ignores closing references to a different repository", () => {
   const references = [
     {
