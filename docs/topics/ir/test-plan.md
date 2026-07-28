@@ -82,6 +82,10 @@ Requirements:
 - **IR-23** The `colorful-ir` crate root remains a stable public facade while
   hashing, projection, path addressing, and received-document validation live
   in separate implementation modules.
+- **IR-24** Every registered `colorful.syntax/v1` generation derives portable
+  JavaScript structural admission from its compatibility-selected GraphQL SDL,
+  while non-SDL semantic invariants retain named validators, stable categories,
+  and deterministic precedence.
 
 ## Cases
 
@@ -706,6 +710,42 @@ Requirements:
   `scripts/check-generated-ir-drift.sh`. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
   *Status:* implemented.
+- **IR-24a** — *Requirement:* IR-24. *Behavior:* one deterministic generator
+  parses every compatibility-manifest SDL and emits dependency-free JavaScript
+  admission for exact fields, presence, primitives, lists, nullability, enums,
+  and signed GraphQL `Int` values. *Oracle:* schema mutations change generated
+  behavior, malformed/unsupported SDL fails closed, and both committed runtime
+  copies are byte-identical to fresh output. *Evidence type:* generator unit
+  tests plus regeneration drift gate. *Evidence:* planned in
+  `scripts/generate-syntax-admission.test.mjs` and
+  `scripts/check-generated-syntax-admission-drift.sh`. *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* planned.
+- **IR-24b** — *Requirement:* IR-24. *Behavior:* the Graft reference consumer
+  admits the workspace generation through generated structural validation, and
+  the independent package admits the `v0.2.1` and `v0.3.0` fixtures through
+  their matched generated generations. Existing semantic mutation cases retain
+  their stable error categories and no consumer emits partial trusted output.
+  *Oracle:* the shared Rust/JavaScript mutation matrix, process-negative
+  witness, Graft suite, and clean-room independent suite remain green; generated
+  missing/unknown/type/enum mutations fail under the existing shape category.
+  *Evidence type:* cross-language and process-level consumer tests. *Evidence:*
+  planned in `consumers/graft-projection.test.mjs`,
+  `consumers/independent-ir-report/test/consumer.test.mjs`,
+  and `scripts/ir-witness.sh`. *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* planned.
+- **IR-24c** — *Requirement:* IR-24. *Behavior:* the independent-consumer ledger
+  separates remaining authored adapter lines from generated admission lines and
+  does not claim that moving code into generation alone lowers total
+  maintenance cost. *Oracle:* measurement regeneration and documentation parity
+  reject a stale line count or decision input. *Evidence type:* deterministic
+  burden ledger. *Evidence:* planned in
+  `consumers/independent-ir-report/src/measure.mjs` and
+  `consumers/independent-ir-report/evidence/integration-effort.json`.
+  *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* planned.
 
 ## Known gaps / risks
 

@@ -63,6 +63,9 @@ not pose as the current reference.
   `Parser`/`Lexicon`/`Annotator` seam.
 - [ADR-0003](design/0003-pure-rust-parser.md) — a pure-Rust parser; tree-sitter
   declined for the core.
+- [ADR-0004](design/0004-portable-ir-admission.md) — GraphQL/compatibility
+  authority generates portable structural admission while semantic invariants
+  remain named in each consumer.
 
 ## Audits
 

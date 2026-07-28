@@ -30,6 +30,9 @@ workspace.
 - **CONSUMER-10** An independent consumer proves validation, rendering,
   incompatible-version rejection, and migration across two released contract
   generations, then compares that effort with CLI text and LSP tokens.
+- **CONSUMER-11** Graft and the independent consumer use structural admission
+  generated from the compatibility-selected GraphQL schemas; they retain
+  explicit semantic checks and their existing stable public error categories.
 
 ## Cases
 
@@ -203,6 +206,38 @@ workspace.
   *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* implemented.
+- **CONSUMER-11a** — *Requirement:* CONSUMER-11. *Behavior:* Graft and the
+  independent package contain byte-identical generated admission runtimes
+  covering every manifest generation, and neither consumer keeps a private
+  structural field or enum table. *Oracle:* fresh generation matches both
+  committed copies and a source-policy test rejects reintroduced handwritten
+  structural authorities. *Evidence type:* generation drift and source-policy
+  tests. *Evidence:* planned in
+  `scripts/check-generated-syntax-admission-drift.sh` and
+  `scripts/generate-syntax-admission.test.mjs`. *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* planned.
+- **CONSUMER-11b** — *Requirement:* CONSUMER-11. *Behavior:* generated
+  structural failures map to `E_ARTIFACT_SHAPE` in Graft and `E_SHAPE` in the
+  independent consumer, while source, range, axes, graph, and derivation
+  failures keep their named semantic categories and order. *Oracle:* existing
+  mutation matrices remain unchanged and new missing-field/enum tests assert
+  adapter error instances and codes. *Evidence type:* consumer unit and parity
+  tests. *Evidence:* planned in
+  `consumers/graft-projection.test.mjs` and
+  `consumers/independent-ir-report/test/consumer.test.mjs`. *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* planned.
+- **CONSUMER-11c** — *Requirement:* CONSUMER-11. *Behavior:* the clean-room
+  package ships its generated runtime with no dependency or repository escape,
+  migrates both released fixtures, and reports authored and generated burden
+  separately. *Oracle:* isolated copy `npm ci && npm run check` and exact ledger
+  regeneration. *Evidence type:* clean-room process witness and measured
+  report. *Evidence:* planned in `scripts/check-independent-consumer.sh` and
+  `consumers/independent-ir-report/evidence/integration-effort.json`.
+  *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* planned.
 
 ## Open verification gaps
 
