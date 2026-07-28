@@ -17,6 +17,8 @@ if [[ "$#" -ne 0 ]]; then
   fail "usage: scripts/check-ir-validator-mutants.sh"
 fi
 
+node --test scripts/check-ir-validator-mutants.test.mjs
+
 command -v cargo-mutants >/dev/null 2>&1 ||
   fail "cargo-mutants $required_version is required"
 actual_version="$(cargo mutants --version | awk '{print $2}')"
@@ -39,6 +41,7 @@ cargo mutants \
   --no-shuffle \
   --jobs 1 \
   --timeout 60 \
+  --build-timeout 60 \
   --no-times \
   --colors=never \
   --output "$output"
