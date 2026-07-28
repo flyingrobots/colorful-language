@@ -15,12 +15,8 @@ fn manifest(relative: &str) -> toml::Value {
 }
 
 fn adapter_source(file: &str) -> String {
-    fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("src")
-            .join(file),
-    )
-    .unwrap_or_else(|error| panic!("read adapter source {file}: {error}"))
+    fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join(file))
+        .unwrap_or_else(|error| panic!("read adapter source {file}: {error}"))
 }
 
 fn production_dependencies(manifest: &toml::Value) -> BTreeSet<String> {

@@ -357,12 +357,13 @@ Implemented and planned cases are listed below.
   lookups do not rescan the source prefix. *Oracle:* a structural test requires
   one `LineIndex` construction in the response parser, passes that index into
   alert normalization, and forbids the former source-rescanning helper.
-  *Evidence type:* source-architecture regression test. *Evidence:* planned in
-  `colorful-vale`
-  `workspace_boundary::output_parser_indexes_lines_once_per_response`.
+  *Evidence type:* source-architecture and line-boundary regression tests.
+  *Evidence:* `colorful-vale`
+  `workspace_boundary::output_parser_indexes_lines_once_per_response` and
+  `output::tests::line_index_preserves_crlf_and_terminal_empty_lines`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered

@@ -103,11 +103,13 @@ Vale error deliberately maps to the highest available tier rather than being
 dropped. Vale v3 reports
 [one-based, inclusive rune columns](https://github.com/vale-cli/vale/blob/v3.14.2/internal/core/file.go#L181-L220);
 the adapter converts those endpoints to Rust byte ranges and validates the
-reported `Match` against the exact source slice. Check names become validated
-`vale/<check>` rule codes. Findings are sorted by complete range, rule code,
-severity, and message. The external findings can then use the same CLI-report
-and LSP-diagnostic projection helpers as `ProseLinter`, but they do not alter
-semantic tokens, parser/classifier output, or canonical IR.
+reported `Match` against the exact source slice. Each response indexes document
+line boundaries once before normalizing its alerts; individual findings do not
+rescan the source prefix. Check names become validated `vale/<check>` rule
+codes. Findings are sorted by complete range, rule code, severity, and message.
+The external findings can then use the same CLI-report and LSP-diagnostic
+projection helpers as `ProseLinter`, but they do not alter semantic tokens,
+parser/classifier output, or canonical IR.
 
 The prototype's reviewed maintenance surface is six production source modules
 and exactly four production dependencies (`colorful-core`, Unix-only `rustix`,

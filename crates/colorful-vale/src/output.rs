@@ -39,6 +39,42 @@ struct ValeAlert {
     line: i64,
 }
 
+struct LineIndex<'source> {
+    source: &'source str,
+    bounds: Vec<(usize, usize)>,
+}
+
+impl<'source> LineIndex<'source> {
+    fn new(source: &'source str) -> Self {
+        let mut bounds = Vec::new();
+        let mut start = 0usize;
+        for (index, byte) in source.bytes().enumerate() {
+            if byte != b'\n' {
+                continue;
+            }
+            let end = index
+                .checked_sub(1)
+                .filter(|previous| source.as_bytes()[*previous] == b'\r')
+                .unwrap_or(index);
+            bounds.push((start, end));
+            start = index + 1;
+        }
+        bounds.push((start, source.len()));
+        Self { source, bounds }
+    }
+
+    fn source(&self) -> &'source str {
+        self.source
+    }
+
+    fn bounds(&self, requested_line: usize) -> Option<(usize, usize)> {
+        requested_line
+            .checked_sub(1)
+            .and_then(|index| self.bounds.get(index))
+            .copied()
+    }
+}
+
 pub(crate) fn parse_findings(
     source: &str,
     expected_source: &str,
@@ -81,9 +117,10 @@ pub(crate) fn parse_findings(
         }
     }
 
+    let line_index = LineIndex::new(source);
     let mut findings = Vec::new();
     for alert in files.into_values().flatten() {
-        findings.push(normalize_alert(source, alert)?);
+        findings.push(normalize_alert(&line_index, alert)?);
     }
     findings.sort_by(|left, right| {
         left.span
@@ -97,7 +134,8 @@ pub(crate) fn parse_findings(
     Ok(findings)
 }
 
-fn normalize_alert(source: &str, alert: ValeAlert) -> Result<Finding, ValeError> {
+fn normalize_alert(line_index: &LineIndex<'_>, alert: ValeAlert) -> Result<Finding, ValeError> {
+    let source = line_index.source();
     if alert.check.is_empty() {
         return Err(invalid_alert("Vale alert check is empty"));
     }
@@ -133,7 +171,7 @@ fn normalize_alert(source: &str, alert: ValeAlert) -> Result<Finding, ValeError>
             )))
         }
     };
-    let (line_start, line_end) = line_bounds(source, line).ok_or_else(|| {
+    let (line_start, line_end) = line_index.bounds(line).ok_or_else(|| {
         invalid_alert(format!(
             "{} line {} is outside the source",
             alert.check, alert.line
@@ -188,26 +226,6 @@ fn normalize_alert(source: &str, alert: ValeAlert) -> Result<Finding, ValeError>
     })
 }
 
-fn line_bounds(source: &str, requested_line: usize) -> Option<(usize, usize)> {
-    let mut line = 1usize;
-    let mut start = 0usize;
-    for (index, byte) in source.bytes().enumerate() {
-        if byte != b'\n' {
-            continue;
-        }
-        if line == requested_line {
-            let end = index
-                .checked_sub(1)
-                .filter(|previous| source.as_bytes()[*previous] == b'\r')
-                .unwrap_or(index);
-            return Some((start, end));
-        }
-        line += 1;
-        start = index + 1;
-    }
-    (line == requested_line).then_some((start, source.len()))
-}
-
 fn scalar_boundary(source: &str, scalar_index: usize) -> Option<usize> {
     if scalar_index == source.chars().count() {
         return Some(source.len());
@@ -227,4 +245,21 @@ fn severity_rank(severity: Severity) -> u8 {
 
 fn invalid_alert(message: impl Into<String>) -> ValeError {
     ValeError::new(ValeErrorKind::InvalidAlert, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LineIndex;
+
+    #[test]
+    fn line_index_preserves_crlf_and_terminal_empty_lines() {
+        let source = "one\r\ntwo\n";
+        let index = LineIndex::new(source);
+
+        assert_eq!(index.bounds(0), None);
+        assert_eq!(index.bounds(1), Some((0, 3)));
+        assert_eq!(index.bounds(2), Some((5, 8)));
+        assert_eq!(index.bounds(3), Some((9, 9)));
+        assert_eq!(index.bounds(4), None);
+    }
 }
