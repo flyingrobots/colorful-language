@@ -205,15 +205,15 @@ Darwin/aarch64, not a cross-platform variance study.
 
 | Size | Outcome | Open diagnostics | Edit diagnostics | Cached tokens | Four-request burst | Peak RSS |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| 100 KiB | analyzed | 5.5 ms | 59.7 ms | 0.7 ms | 61.9 ms | 9.5 MiB |
-| 1 MiB | analyzed | 48.3 ms | 100.5 ms | 4.9 ms | 108.2 ms | 64.4 MiB |
-| 5 MiB | analyzed | 247.7 ms | 282.4 ms | 25.3 ms | 356.2 ms | 339.4 MiB |
-| 10 MiB | document too large | 19.7 ms | 61.0 ms | 0.1 ms | 81.1 ms | 110.2 MiB |
+| 100 KiB | analyzed | 5.2 ms | 59.7 ms | 0.6 ms | 62.3 ms | 9.6 MiB |
+| 1 MiB | analyzed | 49.0 ms | 99.8 ms | 5.0 ms | 110.9 ms | 63.5 MiB |
+| 5 MiB | analyzed | 246.3 ms | 285.2 ms | 25.2 ms | 356.1 ms | 339.0 MiB |
+| 10 MiB | document too large | 19.8 ms | 60.6 ms | 0.1 ms | 79.8 ms | 109.7 MiB |
 
 Every scenario met its predeclared SLO, returned process status zero, and
 ended on diagnostic version 6 without regressing to an older publication. The
 accepted sizes recorded three cancelled debounced generations, zero stale
-results, zero stale publications, and approximately 1.8–6.5 ms maximum queue
+results, zero stale publications, and approximately 2.6–6.3 ms maximum queue
 delay. The exact machine-readable evidence, including all four response timings
 and corpus SHA-256 values, is
 [`lsp-envelope-baseline.json`](../../../crates/colorful-lsp/benchmarks/lsp-envelope-baseline.json).

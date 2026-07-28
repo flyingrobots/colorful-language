@@ -18,13 +18,15 @@
     "pinnedNode": "22.23.1",
     "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6"
   },
-  "generatedAt": "2026-07-28T08:40:55Z",
+  "generatedAt": "2026-07-28T08:42:50Z",
   "measurement": {
+    "measuredPlatform": "darwin-aarch64",
     "peakRssTool": "/usr/bin/time",
+    "runsPerScenario": 1,
     "serverExecutable": "colorful-lsp",
     "serverProvenance": "workspace-release-build",
     "serverSha256": "57e3727a8771a37c6c424978c98fe8416028f993eb85d83674487dae7ecd944b",
-    "serverSourceGitCommit": "4553600aa5eefc84005837978f1a2d01a57971ca",
+    "serverSourceGitCommit": "93b15d8885692eae99bf963b0d0070935ee4d055",
     "timingClock": "std::time::Instant",
     "wallClockGatesCorrectnessCi": false
   },
@@ -39,10 +41,10 @@
       "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 59.725,
-        "dispatchMs": 0.003,
+        "diagnosticsMs": 59.678,
+        "dispatchMs": 0.004,
         "semanticTokenCount": 4178,
-        "semanticTokensMs": 0.508
+        "semanticTokensMs": 0.521
       },
       "label": "100 KiB",
       "latestDiagnosticVersion": 6,
@@ -53,17 +55,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 6037,
+        "maxQueueDelayMicros": 6024,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 5.457,
-        "dispatchMs": 0.163,
+        "diagnosticsMs": 5.226,
+        "dispatchMs": 0.155,
         "semanticTokenCount": 4179,
-        "semanticTokensMs": 0.668,
-        "throughputBytesPerSecond": 18764889.0
+        "semanticTokensMs": 0.645,
+        "throughputBytesPerSecond": 19594336.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -71,10 +73,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          61.867,
-          61.636,
-          61.396,
-          61.119
+          61.479,
+          62.074,
+          62.291,
+          61.714
         ],
         "semanticResultIds": [
           "6",
@@ -88,10 +90,10 @@
           4178,
           4178
         ],
-        "slowestSemanticResponseMs": 61.867,
-        "timeToLatestDiagnosticsMs": 60.833
+        "slowestSemanticResponseMs": 62.291,
+        "timeToLatestDiagnosticsMs": 61.233
       },
-      "peakRssBytes": 9912320,
+      "peakRssBytes": 10027008,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -106,10 +108,10 @@
       "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 100.535,
-        "dispatchMs": 0.005,
+        "diagnosticsMs": 99.799,
+        "dispatchMs": 0.006,
         "semanticTokenCount": 42798,
-        "semanticTokensMs": 4.901
+        "semanticTokensMs": 4.704
       },
       "label": "1 MiB",
       "latestDiagnosticVersion": 6,
@@ -120,17 +122,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 6543,
+        "maxQueueDelayMicros": 6320,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 48.28,
-        "dispatchMs": 1.034,
+        "diagnosticsMs": 49.032,
+        "dispatchMs": 1.127,
         "semanticTokenCount": 42799,
-        "semanticTokensMs": 4.924,
-        "throughputBytesPerSecond": 21718641.0
+        "semanticTokensMs": 4.98,
+        "throughputBytesPerSecond": 21385544.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -138,10 +140,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          100.954,
-          103.357,
-          105.835,
-          108.171
+          105.879,
+          110.861,
+          103.328,
+          108.455
         ],
         "semanticResultIds": [
           "6",
@@ -155,10 +157,10 @@
           42798,
           42798
         ],
-        "slowestSemanticResponseMs": 108.171,
-        "timeToLatestDiagnosticsMs": 98.513
+        "slowestSemanticResponseMs": 110.861,
+        "timeToLatestDiagnosticsMs": 100.783
       },
-      "peakRssBytes": 67534848,
+      "peakRssBytes": 66535424,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -173,10 +175,10 @@
       "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 282.37,
-        "dispatchMs": 0.009,
+        "diagnosticsMs": 285.217,
+        "dispatchMs": 0.008,
         "semanticTokenCount": 213995,
-        "semanticTokensMs": 26.905
+        "semanticTokensMs": 27.461
       },
       "label": "5 MiB",
       "latestDiagnosticVersion": 6,
@@ -187,17 +189,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 1831,
+        "maxQueueDelayMicros": 2603,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 247.704,
-        "dispatchMs": 4.707,
+        "diagnosticsMs": 246.255,
+        "dispatchMs": 4.743,
         "semanticTokenCount": 213996,
-        "semanticTokensMs": 25.27,
-        "throughputBytesPerSecond": 21165908.0
+        "semanticTokensMs": 25.25,
+        "throughputBytesPerSecond": 21290451.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -205,10 +207,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          343.141,
-          330.746,
-          316.744,
-          356.232
+          342.861,
+          356.116,
+          316.511,
+          329.627
         ],
         "semanticResultIds": [
           "6",
@@ -222,10 +224,10 @@
           213995,
           213995
         ],
-        "slowestSemanticResponseMs": 356.232,
-        "timeToLatestDiagnosticsMs": 302.976
+        "slowestSemanticResponseMs": 356.116,
+        "timeToLatestDiagnosticsMs": 302.715
       },
-      "peakRssBytes": 355860480,
+      "peakRssBytes": 355450880,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -240,10 +242,10 @@
       "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": "colorful/document-too-large",
-        "diagnosticsMs": 61.016,
-        "dispatchMs": 0.003,
+        "diagnosticsMs": 60.562,
+        "dispatchMs": 0.006,
         "semanticTokenCount": 0,
-        "semanticTokensMs": 0.064
+        "semanticTokensMs": 0.066
       },
       "label": "10 MiB",
       "latestDiagnosticVersion": 6,
@@ -254,16 +256,16 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 0,
-        "maxQueueDelayMicros": 3910,
+        "maxQueueDelayMicros": 3349,
         "oversizedResults": 3,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 19.729,
-        "dispatchMs": 9.014,
+        "diagnosticsMs": 19.762,
+        "dispatchMs": 9.194,
         "semanticTokenCount": 0,
-        "semanticTokensMs": 0.063,
+        "semanticTokensMs": 0.067,
         "throughputBytesPerSecond": null
       },
       "outcomeCategory": "document-too-large",
@@ -272,10 +274,10 @@
         "diagnosticCode": "colorful/document-too-large",
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          81.057,
-          81.056,
-          81.074,
-          81.055
+          79.831,
+          79.806,
+          79.843,
+          79.83
         ],
         "semanticResultIds": [
           "6",
@@ -289,10 +291,10 @@
           0,
           0
         ],
-        "slowestSemanticResponseMs": 81.074,
-        "timeToLatestDiagnosticsMs": 81.05
+        "slowestSemanticResponseMs": 79.843,
+        "timeToLatestDiagnosticsMs": 79.828
       },
-      "peakRssBytes": 115556352,
+      "peakRssBytes": 114982912,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -313,7 +315,7 @@
     "supportedPeakRssBytes": 1610612736
   },
   "source": {
-    "gitCommit": "4553600aa5eefc84005837978f1a2d01a57971ca",
+    "gitCommit": "93b15d8885692eae99bf963b0d0070935ee4d055",
     "workingTreeDirty": false
   }
 }
