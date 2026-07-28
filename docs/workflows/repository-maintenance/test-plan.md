@@ -178,6 +178,15 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/check-roadmap-inventory.mjs --live`,
   `.github/workflows/ci.yml`, and `.github/workflows/maintenance.yml`.
   *Status:* implemented.
+- **RM-9c — Honest malformed-fixture type.** *Requirement:* RM-9. *Behavior:*
+  malformed issue-snapshot bytes used to prove JSON refusal must not carry a
+  `.json` extension that invites general repository tooling to parse them as a
+  valid document. *Oracle:* the regression fixture retains its malformed bytes
+  and still produces `E_ROADMAP_INVALID_ISSUE_SNAPSHOT`, while its path uses an
+  explicit non-JSON fixture extension. *Evidence type:* deterministic Node test
+  and malformed text fixture. *Planned evidence:*
+  `scripts/check-roadmap-inventory.test.mjs` and
+  `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:* planned.
 
 ## Hosted evidence boundary
 
