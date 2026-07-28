@@ -155,11 +155,13 @@ fn measurement_json(measurement: StageMeasurement) -> Value {
     })
 }
 
+fn require_release_profile() {
+    #[cfg(debug_assertions)]
+    panic!("cross_stage_benchmark must run with --release");
+}
+
 fn main() {
-    assert!(
-        !cfg!(debug_assertions),
-        "cross_stage_benchmark must run with --release"
-    );
+    require_release_profile();
     assert!(
         command_output("git", &["status", "--porcelain"]).is_empty(),
         "cross_stage_benchmark requires a clean worktree so sourceCommit is trustworthy"
