@@ -61,20 +61,20 @@ reviewed comparison:
 
 | Adapter | Nonblank adapter lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: |
-| IR | 424 | 11 | 5 |
+| IR | 249 | 11 | 5 |
 | ANSI | 49 | 4 | 1 |
 | LSP | 305 | 5 | 2 |
 
 The LSP count includes its JSON-RPC acquisition client; the CLI-backed IR and
-ANSI paths share the same trivial process boundary. The IR adapter is larger
-than the alternatives' combined 354 lines but uniquely verifies the contract,
-schema, vocabulary, source length, and source digest and stays below the
-reviewed two-times bound. The resulting decision is to retain stable v1,
-simplify consumer admission cost where possible, keep the explicit generation
-policy delivered by
-[#221](https://github.com/flyingrobots/colorful-language/issues/221), generate
-shared portable admission through
-[#222](https://github.com/flyingrobots/colorful-language/issues/222), and avoid
+ANSI paths share the same trivial process boundary. The IR adapter uniquely
+verifies the contract, schema, vocabulary, source length, and source digest and
+is now smaller than the alternatives' combined 354 lines. Its structural
+admission is generated from the compatibility-selected SDL and reported
+separately: 826 unique nonblank lines and 1,652 lines across the two
+byte-identical committed copies. The generated total is not counted as authored
+adapter improvement. The resulting decision is to retain stable v1, keep the
+explicit generation policy delivered by
+[#221](https://github.com/flyingrobots/colorful-language/issues/221), and avoid
 adding contract fields without new evidence.
 The executable decision records both policy branches explicitly: the IR may be
 retained for its bounded correctness advantage or because it is the smallest

@@ -68,6 +68,17 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
+  assert.deepEqual(ledger.portableAdmission.sources, [
+    "consumers/generated/syntax-admission-v1.mjs",
+    "consumers/independent-ir-report/generated/syntax-admission-v1.mjs",
+  ]);
+  assert.equal(ledger.portableAdmission.generatedCopies, 2);
+  assert.equal(ledger.portableAdmission.reviewedGeneratorCases, 6);
+  assert.equal(ledger.portableAdmission.countedAsAuthoredAdapter, false);
+  assert.equal(
+    ledger.portableAdmission.committedGeneratedNonblankLines,
+    ledger.portableAdmission.uniqueGeneratedNonblankLines * 2,
+  );
   assert.equal(ledger.adapters.ir.reviewedAssertions, 45);
   assert.equal(ledger.result.smallestAdapter, false);
   assert.equal(ledger.result.decision, "retain-stable-v1");

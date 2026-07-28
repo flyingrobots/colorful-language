@@ -71,7 +71,7 @@ function namedType(reference) {
   return reference.replaceAll(/[\[\]!]/gu, "");
 }
 
-function parseSchema(sdl) {
+export function parseSyntaxSchema(sdl) {
   const definitions = new Map();
   let active = null;
   for (const [lineIndex, rawLine] of
@@ -203,8 +203,8 @@ function reachableNewDefinitions(current, predecessor, additions) {
 }
 
 export function classifySyntaxTransition(predecessorSdl, currentSdl) {
-  const predecessor = parseSchema(predecessorSdl);
-  const current = parseSchema(currentSdl);
+  const predecessor = parseSyntaxSchema(predecessorSdl);
+  const current = parseSyntaxSchema(currentSdl);
   const additions = [];
   for (const [name, definition] of predecessor) {
     compareExistingDefinition(name, definition, current.get(name), additions);

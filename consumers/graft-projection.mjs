@@ -22,11 +22,12 @@ import { pathToFileURL } from "node:url";
 import {
   classRoleKey,
   EXPECTED_CLASS_KEYS,
-  LEXICAL_CLASSES,
-  OPEN_CLASS_KINDS,
-  TOKEN_KINDS,
   VISUAL_ROLES,
 } from "./generated/vocabulary-validator-v1.mjs";
+import {
+  CURRENT_SYNTAX_GENERATION,
+  validateSyntaxShape,
+} from "./generated/syntax-admission-v1.mjs";
 
 // The colorful.vocabulary/v1 manifest is the single source of presentation
 // intent, shared with the CLI and the LSP. We load it once (and remember its
@@ -41,53 +42,6 @@ const MANIFEST_VERSION = "colorful.vocabulary/v1";
 // `schemaHash` instead of trusting an artifact's self-reported value.
 const SYNTAX_SDL_URL = new URL("../contracts/colorful/syntax.v1.graphql", import.meta.url);
 const CONTRACT_VERSION = "colorful.syntax/v1";
-const FUNCTION_KINDS = new Set([
-  "ARTICLE",
-  "PREPOSITION",
-  "CONJUNCTION",
-  "PRONOUN",
-  "AUXILIARY",
-  "DETERMINER",
-  "NEGATOR",
-]);
-const OUTLINE_KINDS = new Set(["PARAGRAPH", "SENTENCE"]);
-const DIAGNOSTIC_SEVERITIES = new Set(["ERROR", "WARNING", "INFO"]);
-// The complete `colorful.syntax/v1` DocumentAnalysis field set (matches
-// crates/colorful-ir/ts/syntax_v1.ts's generated `DocumentAnalysis`
-// interface). A key outside this set is not a wire field at all -- an
-// artifact carrying one is malformed the same way a missing or wrongly
-// typed field is, so it is rejected here rather than silently ignored.
-const DOCUMENT_ANALYSIS_FIELDS = new Set([
-  "contractVersion",
-  "schemaHash",
-  "vocabularyHash",
-  "source",
-  "tokens",
-  "structure",
-  "diagnostics",
-  "derivation",
-]);
-// The complete field set for every *other* generated DTO
-// (crates/colorful-ir/ts/syntax_v1.ts), so an unknown field nested anywhere
-// in the document -- not just at the top level -- is rejected the same way.
-const BYTE_RANGE_FIELDS = new Set(["startUtf8", "endUtf8"]);
-const SOURCE_ARTIFACT_FIELDS = new Set(["unitId", "contentHash", "utf8ByteLength"]);
-const TOKEN_FIELDS = new Set([
-  "occurrenceId",
-  "byteRange",
-  "tokenKind",
-  "lexicalClass",
-  "functionKind",
-  "openClassKind",
-]);
-const OUTLINE_NODE_FIELDS = new Set(["nodeId", "kind", "byteRange", "depth", "childNodeIds"]);
-const DIAGNOSTIC_FIELDS = new Set(["byteRange", "severity", "code", "message"]);
-const DERIVATION_STEP_FIELDS = new Set(["passId", "ruleId", "sourceRanges", "compilerBuildHash"]);
-// Every GraphQL `Int` in colorful.syntax/v1 lowers to a signed 32-bit Rust
-// `i32`, not an arbitrary JS safe integer -- a value the generated Rust DTO
-// cannot represent is exactly the kind of artifact admission must reject.
-const WIRE_INT_MIN = -2147483648;
-const WIRE_INT_MAX = 2147483647;
 function loadVocabulary() {
   const bytes = readFileSync(MANIFEST_URL); // raw bytes, so the hash matches the producer
   const manifest = JSON.parse(bytes.toString("utf8"));
@@ -149,26 +103,6 @@ export class GraftProjectionError extends Error {
 
 function fail(code, message, context) {
   throw new GraftProjectionError(code, message, context);
-}
-
-function isPlainObject(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-// Reject a field outside `allowed` the same way a missing or wrongly typed
-// field is rejected: an artifact carrying one is malformed, not a forward-
-// compatible extension. Call sites pass the field set for whichever
-// generated DTO shape `object` is meant to be (ByteRange, SourceArtifact,
-// Token, OutlineNode, Diagnostic, or DerivationStep), so nested shape drift
-// is caught the same way top-level drift is, not just at the document root.
-function rejectUnknownFields(object, allowed, label) {
-  for (const key of Object.keys(object)) {
-    if (!allowed.has(key)) fail("E_ARTIFACT_SHAPE", `unknown field: ${label}.${key}`);
-  }
-}
-
-function isSafeInteger(value) {
-  return Number.isSafeInteger(value);
 }
 
 function requireKeys(object, keys, label) {
@@ -404,125 +338,58 @@ export function verifyContentHash(buffer, ir) {
 // A serialized DocumentAnalysis crosses a process/language boundary and may
 // lie about its own shape. validateArtifact() is the admission gate every
 // artifact passes through before project() interprets it. Checks run cheapest
-// first, expensive hashes last, so a malformed artifact fails fast: (1) shape,
-// (2) contract version, (3) byte length, (4) source UTF-8 validity, (5) token
-// range/scalar shape, char-boundary, non-emptiness, order, and non-overlap, (6)
-// occurrence id uniqueness, (7) token axis legality, (8) structure graph
-// (kind-depth pairs, ids, references, ownership, containment, acyclicity), (9)
-// schemaHash, vocabularyHash, contentHash.
-function requireIntegerField(value, label) {
-  if (!isSafeInteger(value)) fail("E_ARTIFACT_SHAPE", `${label} must be a safe integer`);
-  if (value < WIRE_INT_MIN || value > WIRE_INT_MAX) {
-    fail("E_ARTIFACT_SHAPE", `${label} (${value}) exceeds the colorful.syntax/v1 i32 range`, {
-      label,
-      value,
-    });
+// first, expensive hashes last: generated structural shape, nonnegative wire
+// offsets, contract version, byte length, UTF-8, semantic ranges, ids, axes,
+// structure, then identity hashes.
+function validateGeneratedShape(ir) {
+  validateSyntaxShape(
+    ir,
+    CURRENT_SYNTAX_GENERATION,
+    (path, reason) => {
+      if (reason === "is not part of the contract") {
+        const nested = path.includes(".") || path.includes("[");
+        const message = nested
+          ? `unknown field: ${path}`
+          : `unknown top-level field: ${path}`;
+        fail("E_ARTIFACT_SHAPE", message, { path });
+      }
+      const label = path.length === 0 ? "artifact" : path;
+      fail("E_ARTIFACT_SHAPE", `${label} ${reason}`, { path });
+    },
+  );
+}
+
+function validateNonnegativeRange(range, label) {
+  if (range.startUtf8 < 0) {
+    fail("E_ARTIFACT_SHAPE", `${label}.startUtf8 must not be negative`);
+  }
+  if (range.endUtf8 < 0) {
+    fail("E_ARTIFACT_SHAPE", `${label}.endUtf8 must not be negative`);
   }
 }
 
-function requireByteRangeShape(range, label) {
-  if (!isPlainObject(range)) fail("E_ARTIFACT_SHAPE", `${label} must be an object`);
-  rejectUnknownFields(range, BYTE_RANGE_FIELDS, label);
-  requireIntegerField(range.startUtf8, `${label}.startUtf8`);
-  requireIntegerField(range.endUtf8, `${label}.endUtf8`);
-  if (range.startUtf8 < 0) fail("E_ARTIFACT_SHAPE", `${label}.startUtf8 must not be negative`);
-  if (range.endUtf8 < 0) fail("E_ARTIFACT_SHAPE", `${label}.endUtf8 must not be negative`);
-}
-
-function requireStringField(value, label) {
-  if (typeof value !== "string") fail("E_ARTIFACT_SHAPE", `${label} must be a string`);
-}
-
-// Reject a value that isn't a member of `allowed` (a Set of wire enum
-// strings) -- a stricter, honest replacement for "is this a string", so an
-// unknown enum value fails admission instead of later throwing an ordinary
-// Error from deep inside projection.
-function requireEnumField(value, allowed, label) {
-  if (!allowed.has(value)) {
-    fail("E_ARTIFACT_SHAPE", `${label} must be one of ${[...allowed].join(", ")}; got ${JSON.stringify(value)}`, {
-      label,
-      value,
-    });
+function validateNonnegativeWireOffsets(ir) {
+  if (ir.source.utf8ByteLength < 0) {
+    fail("E_ARTIFACT_SHAPE", "source.utf8ByteLength must not be negative");
   }
-}
-
-function requireEnumOrNullField(value, allowed, label) {
-  if (value !== null) requireEnumField(value, allowed, label);
-}
-
-// 1. Top-level shape: every field validation past this point dereferences
-// must exist with the right primitive type, so a malformed artifact fails
-// with a stable code here instead of a raw "Cannot read properties of
-// undefined" a few checks later.
-function validateShape(ir) {
-  if (!isPlainObject(ir)) fail("E_ARTIFACT_SHAPE", "artifact must be an object");
-  for (const key of Object.keys(ir)) {
-    if (!DOCUMENT_ANALYSIS_FIELDS.has(key)) {
-      fail("E_ARTIFACT_SHAPE", `unknown top-level field: ${key}`);
-    }
-  }
-  if (typeof ir.contractVersion !== "string") fail("E_ARTIFACT_SHAPE", "contractVersion must be a string");
-  if (typeof ir.schemaHash !== "string") fail("E_ARTIFACT_SHAPE", "schemaHash must be a string");
-  if (typeof ir.vocabularyHash !== "string") fail("E_ARTIFACT_SHAPE", "vocabularyHash must be a string");
-  if (!isPlainObject(ir.source)) fail("E_ARTIFACT_SHAPE", "source must be an object");
-  rejectUnknownFields(ir.source, SOURCE_ARTIFACT_FIELDS, "source");
-  if (typeof ir.source.unitId !== "string") fail("E_ARTIFACT_SHAPE", "source.unitId must be a string");
-  if (typeof ir.source.contentHash !== "string") {
-    fail("E_ARTIFACT_SHAPE", "source.contentHash must be a string");
-  }
-  requireIntegerField(ir.source.utf8ByteLength, "source.utf8ByteLength");
-  if (ir.source.utf8ByteLength < 0) fail("E_ARTIFACT_SHAPE", "source.utf8ByteLength must not be negative");
-  if (!Array.isArray(ir.tokens)) fail("E_ARTIFACT_SHAPE", "tokens must be an array");
-  if (!Array.isArray(ir.structure)) fail("E_ARTIFACT_SHAPE", "structure must be an array");
-  if (!Array.isArray(ir.diagnostics)) fail("E_ARTIFACT_SHAPE", "diagnostics must be an array");
-  if (!Array.isArray(ir.derivation)) fail("E_ARTIFACT_SHAPE", "derivation must be an array");
-
   for (const [index, token] of ir.tokens.entries()) {
-    if (!isPlainObject(token)) fail("E_ARTIFACT_SHAPE", `tokens[${index}] must be an object`);
-    rejectUnknownFields(token, TOKEN_FIELDS, `tokens[${index}]`);
-    requireIntegerField(token.occurrenceId, `tokens[${index}].occurrenceId`);
-    requireByteRangeShape(token.byteRange, `tokens[${index}].byteRange`);
-    requireEnumField(token.tokenKind, TOKEN_KINDS, `tokens[${index}].tokenKind`);
-    requireEnumOrNullField(token.lexicalClass ?? null, LEXICAL_CLASSES, `tokens[${index}].lexicalClass`);
-    requireEnumOrNullField(token.functionKind ?? null, FUNCTION_KINDS, `tokens[${index}].functionKind`);
-    requireEnumOrNullField(token.openClassKind ?? null, OPEN_CLASS_KINDS, `tokens[${index}].openClassKind`);
+    validateNonnegativeRange(token.byteRange, `tokens[${index}].byteRange`);
   }
-
   for (const [index, node] of ir.structure.entries()) {
-    if (!isPlainObject(node)) fail("E_ARTIFACT_SHAPE", `structure[${index}] must be an object`);
-    rejectUnknownFields(node, OUTLINE_NODE_FIELDS, `structure[${index}]`);
-    requireIntegerField(node.nodeId, `structure[${index}].nodeId`);
-    requireByteRangeShape(node.byteRange, `structure[${index}].byteRange`);
-    requireEnumField(node.kind, OUTLINE_KINDS, `structure[${index}].kind`);
-    requireIntegerField(node.depth, `structure[${index}].depth`);
-    if (!Array.isArray(node.childNodeIds)) {
-      fail("E_ARTIFACT_SHAPE", `structure[${index}].childNodeIds must be an array`);
-    }
-    for (const [childIndex, child] of node.childNodeIds.entries()) {
-      requireIntegerField(child, `structure[${index}].childNodeIds[${childIndex}]`);
-    }
+    validateNonnegativeRange(node.byteRange, `structure[${index}].byteRange`);
   }
-
   for (const [index, diagnostic] of ir.diagnostics.entries()) {
-    if (!isPlainObject(diagnostic)) fail("E_ARTIFACT_SHAPE", `diagnostics[${index}] must be an object`);
-    rejectUnknownFields(diagnostic, DIAGNOSTIC_FIELDS, `diagnostics[${index}]`);
-    requireByteRangeShape(diagnostic.byteRange, `diagnostics[${index}].byteRange`);
-    requireEnumField(diagnostic.severity, DIAGNOSTIC_SEVERITIES, `diagnostics[${index}].severity`);
-    requireStringField(diagnostic.code, `diagnostics[${index}].code`);
-    requireStringField(diagnostic.message, `diagnostics[${index}].message`);
+    validateNonnegativeRange(
+      diagnostic.byteRange,
+      `diagnostics[${index}].byteRange`,
+    );
   }
-
-  for (const [index, step] of ir.derivation.entries()) {
-    if (!isPlainObject(step)) fail("E_ARTIFACT_SHAPE", `derivation[${index}] must be an object`);
-    rejectUnknownFields(step, DERIVATION_STEP_FIELDS, `derivation[${index}]`);
-    requireStringField(step.passId, `derivation[${index}].passId`);
-    requireStringField(step.ruleId, `derivation[${index}].ruleId`);
-    requireStringField(step.compilerBuildHash, `derivation[${index}].compilerBuildHash`);
-    if (!Array.isArray(step.sourceRanges)) {
-      fail("E_ARTIFACT_SHAPE", `derivation[${index}].sourceRanges must be an array`);
-    }
+  for (const [stepIndex, step] of ir.derivation.entries()) {
     for (const [rangeIndex, range] of step.sourceRanges.entries()) {
-      requireByteRangeShape(range, `derivation[${index}].sourceRanges[${rangeIndex}]`);
+      validateNonnegativeRange(
+        range,
+        `derivation[${stepIndex}].sourceRanges[${rangeIndex}]`,
+      );
     }
   }
 }
@@ -816,7 +683,8 @@ export function validateArtifact(buffer, ir) {
 // intentionally equivalent product-facing name; the witness calls this name
 // directly to make the shared Rust/JavaScript boundary explicit.
 export function validateWireContract(buffer, ir) {
-  validateShape(ir);
+  validateGeneratedShape(ir);
+  validateNonnegativeWireOffsets(ir);
   validateContractVersion(ir);
   validateByteLength(buffer, ir);
   validateSourceUtf8(buffer);

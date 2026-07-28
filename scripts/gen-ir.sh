@@ -38,5 +38,6 @@ cp "$contracts/vocabulary.v1.json" "$crate_contracts/vocabulary.v1.json"
 cp "$contracts/syntax-compatibility.v1.json" \
   "$root/consumers/independent-ir-report/compatibility.v1.json"
 node "$root/scripts/generate-vocabulary-validators.mjs"
+node "$root/scripts/generate-syntax-admission.mjs"
 
-echo "Regenerated DTOs, compatibility copies, and vocabulary validators (wesley $required_wesley_version). Review the diff and commit."
+echo "Regenerated DTOs, compatibility copies, vocabulary validators, and portable syntax admission (wesley $required_wesley_version). Review the diff and commit."

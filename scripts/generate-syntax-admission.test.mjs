@@ -226,6 +226,35 @@ test("a schema edit changes generated required-field and enum behavior", async (
   );
 });
 
+test("generation fails closed on unsupported or dangling SDL", () => {
+  assert.throws(
+    () =>
+      renderSyntaxAdmission({
+        currentGenerationId: "unsupported",
+        generations: [
+          {
+            id: "unsupported",
+            sdl: "scalar Surprise\n",
+          },
+        ],
+      }),
+    /unsupported top-level GraphQL syntax/u,
+  );
+  assert.throws(
+    () =>
+      renderSyntaxAdmission({
+        currentGenerationId: "dangling",
+        generations: [
+          {
+            id: "dangling",
+            sdl: "type DocumentAnalysis {\n  missing: Missing!\n}\n",
+          },
+        ],
+      }),
+    /refers to missing type Missing/u,
+  );
+});
+
 test("consumers do not retain handwritten structural field or enum tables", () => {
   for (const relativePath of [
     "consumers/graft-projection.mjs",

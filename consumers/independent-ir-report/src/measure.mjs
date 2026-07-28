@@ -15,6 +15,11 @@ const packageJson = JSON.parse(
   readFileSync(path.join(ROOT, "package.json"), "utf8"),
 );
 const runtimeDependencyCount = Object.keys(packageJson.dependencies ?? {}).length;
+const portableAdmissionSource = "generated/syntax-admission-v1.mjs";
+const portableAdmissionSources = [
+  "consumers/generated/syntax-admission-v1.mjs",
+  "consumers/independent-ir-report/generated/syntax-admission-v1.mjs",
+];
 
 function sourceLines(relativePath) {
   return readFileSync(path.join(ROOT, relativePath), "utf8").split("\n");
@@ -137,6 +142,22 @@ const adapters = Object.fromEntries(
     measureAdapter(definition),
   ]),
 );
+const portableAdmissionLines = nonblankSourceLines(portableAdmissionSource);
+const portableAdmission = {
+  authority:
+    "contracts/colorful/syntax-compatibility.v1.json and its generation SDLs",
+  sources: portableAdmissionSources,
+  generatedCopies: portableAdmissionSources.length,
+  uniqueGeneratedNonblankLines: portableAdmissionLines,
+  committedGeneratedNonblankLines:
+    portableAdmissionLines * portableAdmissionSources.length,
+  copyIdentityEvidence: "scripts/check-generated-syntax-admission-drift.sh",
+  reviewedGeneratorCases: 6,
+  countedAsAuthoredAdapter: false,
+  rationale:
+    "generated structural admission is reported separately; only authored " +
+    "adapter lines participate in the retain-or-simplify decision",
+};
 const correctnessAdvantage =
   adapters.ir.verifiedIdentities.length === 5 &&
   adapters.ansi.verifiedIdentities.length < 5 &&
@@ -162,11 +183,15 @@ const report = {
     migration: "nonblank lines between effort:migration markers",
     dependencies: "runtime package dependencies required by an adapter",
     processSteps: "distinct external or decoding stages for the same job",
+    generated:
+      "generated structural admission is reported as unique logical lines " +
+      "and total committed copy lines, never as authored adapter code",
   },
   sharedNonblankLines:
     nonblankSourceLines("src/common.mjs") +
     nonblankSourceLines("src/profile.mjs"),
   adapters,
+  portableAdmission,
   decisionRule: {
     retain:
       "retain stable v1 when IR uniquely verifies all five wire identities " +
