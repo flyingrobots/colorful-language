@@ -322,9 +322,12 @@ Requirements:
   ordered ranges and source round-trip for accepted data; exact typed
   rejection for malformed data; CLI/LSP line parity and their documented
   scalar-versus-UTF-16 column relationship. *Evidence type:* seeded property
-  tests, fuzz targets, and a 256-case deterministic CI corpus. *Tracking:*
+  tests, fuzz targets, and a 256-case deterministic CI corpus. *Evidence:*
+  `crates/colorful-cli/tests/property_boundaries.rs`; all four targets under
+  `fuzz/fuzz_targets/`; `scripts/check-property-fuzz-policy.mjs`; the explicit
+  `property_boundaries` command in `.github/workflows/ci.yml`. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
-  *Status:* planned.
+  *Status:* implemented.
 - **COL-20a** — *Requirement:* COL-20. *Behavior:* the pure core constructs a
   `ValidatedClassification` only when the tree has the documented shape; every
   tree and token span is ordered, in bounds, on a UTF-8 character boundary,
@@ -380,5 +383,3 @@ Requirements:
   `DocumentStore` scheduling, queueing, caching, publication, JSON-RPC, and
   peak-RSS path. The standalone `compute_diagnostics()` helper is not
   benchmarked, but it is not the `didChange` handler.
-- Parser, projection, validation, and coordinate invariants do not yet have a
-  bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.

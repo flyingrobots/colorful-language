@@ -24,6 +24,8 @@ bash scripts/check-node-version.sh
 bash scripts/release-profile-check.sh
 node scripts/check-evidence-toolchains.mjs --self-test
 node scripts/check-evidence-toolchains.mjs
+node --test scripts/check-property-fuzz-policy.test.mjs
+node scripts/check-property-fuzz-policy.mjs
 node scripts/check-release-publish-order.test.mjs
 node scripts/check-release-publish-order.mjs
 
@@ -31,6 +33,8 @@ cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 bash scripts/check-validator-complexity.sh
 cargo test --all --locked
+cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads=1
+cargo check --manifest-path fuzz/Cargo.toml --locked --bins
 cargo test --doc --workspace --locked
 bash scripts/check-ir-validator-mutants.sh
 bash scripts/package-witness.sh

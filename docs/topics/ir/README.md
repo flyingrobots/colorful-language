@@ -214,6 +214,15 @@ v0.3 must handle the `Option` result.
   `integration::rejects_a_cycle_reached_through_an_unvisited_child`, which
   proves iterative DFS descends before detecting a back edge. The blocking Rust
   CI job and local release preparation run the same check.
+- **Seeded property and fuzz boundaries.** One 256-case property corpus starts
+  from a reviewed 32-byte seed and combines arbitrary valid Unicode with
+  declarative public-tree and received-IR mutations. Successful built-in
+  projection must pass `validate_document`, survive canonical JSON
+  deserialize/recanonicalize byte-for-byte, and preserve legal ordered source
+  spans. Each malformed mutation must return its selected classification or IR
+  validation code and structured path. Manual parser, annotator, projection,
+  and coordinate fuzz targets complement that deterministic gate without
+  adding time-based fuzzing to correctness CI.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust

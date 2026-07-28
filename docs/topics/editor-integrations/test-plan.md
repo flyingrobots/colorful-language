@@ -128,9 +128,12 @@ Verification for editor adapters and the `colorful-lsp` surface.
   coverage. *Oracle:* both surfaces identify the same zero-based line and byte
   span; CLI columns equal Unicode scalar counts plus one, while LSP columns
   equal UTF-16 code-unit counts. *Evidence type:* cross-surface seeded property
-  test and coordinate fuzz target. *Tracking:*
+  test and coordinate fuzz target. *Evidence:*
+  `crates/colorful-cli/tests/property_boundaries.rs`
+  `seeded_cli_and_lsp_coordinates_identify_the_same_finding` and
+  `fuzz/fuzz_targets/coordinates.rs`. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
-  *Status:* planned.
+  *Status:* implemented.
 - **EDIT-5a** — *Requirement:* EDIT-5. *Behavior:* recipe docs state that
   marketplace packages are not published and that custom open-class token types
   may need theme rules. *Oracle:* documentation review. *Evidence:*

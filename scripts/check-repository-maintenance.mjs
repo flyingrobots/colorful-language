@@ -33,6 +33,7 @@ const RUST_LICENSES = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
   "MIT",
+  "NCSA",
   "Unicode-3.0",
   "Unlicense",
   "Zlib",

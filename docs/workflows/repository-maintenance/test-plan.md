@@ -73,11 +73,13 @@ roadmap-to-issue reconciliation is tracked in
   implemented.
 - **RM-2a — Shared Rust license and source policy.** *Requirement:* RM-2.
   *Behavior:* the all-workspace dependency scan accepts only the reviewed SPDX
-  license set already present in the root and Zed lockfiles for production and
-  development dependencies, denies unknown registries and Git sources, and
-  carries no blanket exception. *Oracle:* `cargo deny --locked check licenses
-  sources` exits zero for both workspaces; mutating dev-dependency coverage, the
-  allowlist, or source policy makes the structural checker fail.
+  license set present in the root, Zed, fuzz, and validator-complexity fixture
+  lockfiles for production and development dependencies, including the
+  OSI-approved NCSA terms bundled by the pinned libFuzzer runtime; it denies
+  unknown registries and Git sources and carries no blanket exception.
+  *Oracle:* `cargo deny --locked check licenses sources` exits zero for every
+  discovered workspace; mutating dev-dependency coverage, the allowlist, or
+  source policy makes the structural checker fail.
   *Evidence type:* checked-in `cargo-deny` policy, live dependency scan, and
   deterministic mutation test. *Evidence:* `deny.toml`,
   `scripts/check-rust-dependency-policy.sh`, and

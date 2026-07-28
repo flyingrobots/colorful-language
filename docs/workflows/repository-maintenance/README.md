@@ -32,15 +32,21 @@ do not affect the policy inventory. One checked-in `deny.toml` applies to the
 current inventory:
 
 - the root Rust workspace at `Cargo.toml`; and
-- the standalone Zed adapter at `editors/zed/Cargo.toml`.
+- the standalone Zed adapter at `editors/zed/Cargo.toml`; and
+- the standalone fuzz workspace at `fuzz/Cargo.toml`; and
+- the validator-complexity policy fixture workspace at
+  `scripts/fixtures/validator-complexity/Cargo.toml`.
 
-Both checks use their workspace lockfile. Vulnerability and unsoundness
+Every check uses its workspace lockfile. Vulnerability and unsoundness
 advisories fail through the evolving RustSec database. Production and
 development dependencies with licenses outside the reviewed SPDX allowlist
 fail, as do Git dependencies and registries other than the public crates.io
-index. There are no active advisory or per-crate license exceptions. The
-checker self-test adds a third standalone workspace to prove that a future
-workspace cannot silently escape the inventory.
+index. The NCSA license is allowed because the pinned `libfuzzer-sys` runtime
+bundles LLVM's libFuzzer under that OSI-approved license; this is a shared SPDX
+allowance, not a per-crate exception. There are no active advisory or
+per-crate license exceptions. The checker self-test adds another standalone
+workspace to prove that a future workspace cannot silently escape the
+inventory.
 
 The RustSec database is an external, evolving oracle. A newly published
 advisory can therefore make an unchanged lockfile fail. The maintainer owns

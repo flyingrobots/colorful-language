@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Seeded property and fuzz boundary evidence.** One pinned 256-case corpus now
+  exercises valid Unicode, parser/annotator range legality and source
+  reconstruction, declarative malformed public trees, successful IR projection
+  plus canonical JSON round-trip, exact received-IR mutation failures, and
+  CLI/LSP coordinate parity. Four checked-in fuzz targets remain manual,
+  time-based evidence; a deterministic policy suite locks both dependency
+  graphs, the seed, runner, target inventory, commands, and blocking CI/release
+  wiring.
 - **Bounded IR validator mutation evidence.** A pinned `cargo-mutants` 27.0.0
   corpus now exercises 80 reviewed mutations across the public validator,
   seven validation stages, and their range, graph, and token-axis helpers.

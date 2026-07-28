@@ -14,6 +14,9 @@ These checked-in versions are the reproducibility oracle:
 | Node | 22.23.1 | `.node-version` |
 | TypeScript | 5.9.3 | root and VS Code `package.json` / `package-lock.json` pairs |
 | cargo-mutants | 27.0.0 | `scripts/check-ir-validator-mutants.sh` |
+| proptest | 1.11.0 | root `Cargo.toml` / `Cargo.lock` pair |
+| libfuzzer-sys | 0.4.13 | `fuzz/Cargo.toml` / `fuzz/Cargo.lock` pair |
+| cargo-fuzz | 0.13.2 | `scripts/check-property-fuzz-policy.mjs` |
 
 `rust-toolchain.toml` selects the compiler, `rustfmt`, `clippy`, and the
 `wasm32-wasip1` target for a rustup-enabled source checkout. Primary CI and the
@@ -24,6 +27,50 @@ The blocking IR validator mutation gate installs the exact `cargo-mutants`
 release named above and rejects any other version before generating or running
 the reviewed corpus. Its scope and exclusions live in `.cargo/mutants.toml`;
 the IR topic owns the behavioral evidence.
+
+## Property and fuzz evidence
+
+The blocking correctness corpus is deterministic: one checked-in 32-byte seed
+drives exactly 256 cases through parser, annotator, projection/validation, and
+CLI/LSP coordinate properties. Run the same command used by CI and release
+preparation:
+
+```bash
+cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads=1
+```
+
+`cargo test --all --locked` also discovers the integration test. The explicit
+command is retained so the bounded corpus remains visible and policy-checkable
+as a first-class gate. CI and release preparation also compile every standalone
+fuzz binary without executing a time-based session:
+
+```bash
+cargo check --manifest-path fuzz/Cargo.toml --locked --bins
+```
+
+Time-based fuzzing is a maintainer action, never a correctness-CI step. Install
+the reviewed driver, then run each checked-in target for a bounded session:
+
+```bash
+cargo install cargo-fuzz --version 0.13.2 --locked
+cargo +nightly fuzz run parser -- -max_total_time=60
+cargo +nightly fuzz run annotator -- -max_total_time=60
+cargo +nightly fuzz run ir_projection -- -max_total_time=60
+cargo +nightly fuzz run coordinates -- -max_total_time=60
+```
+
+The fuzz runtime is pinned independently in `fuzz/Cargo.lock`. Increase a
+session's time only for deliberate local investigation. When shrinking exposes
+a regression, turn the minimized input into an ordinary deterministic Rust
+test before closing the issue; do not make a time budget or machine-dependent
+fuzz throughput a merge oracle.
+
+Run the configuration contract directly with:
+
+```bash
+node --test scripts/check-property-fuzz-policy.test.mjs
+node scripts/check-property-fuzz-policy.mjs
+```
 
 Run the root install before the IR witness so it uses the repository compiler
 rather than an ambient `tsc`:

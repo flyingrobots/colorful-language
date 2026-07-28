@@ -544,9 +544,14 @@ Requirements:
   correctness gate. *Oracle:* exact success postcondition or exact error
   code/path equality for every generated mutation kind, with no panic.
   *Evidence type:* seeded property test, mutation model, fuzz targets, and
-  minimized ordinary regressions. *Tracking:*
+  minimized ordinary regressions. *Evidence:*
+  `crates/colorful-cli/tests/property_boundaries.rs`
+  `seeded_public_tree_mutations_fail_for_the_selected_invariant` and
+  `seeded_projection_and_ir_mutations_preserve_exact_validation_outcomes`;
+  `fuzz/fuzz_targets/ir_projection.rs`;
+  `scripts/check-property-fuzz-policy.mjs`. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps / risks
 

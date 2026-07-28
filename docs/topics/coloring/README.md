@@ -138,6 +138,25 @@ and stale work from `colorful/invalid-classification`,
 `colorful/analysis-failed`, and the stable `colorful/document-too-large` limit
 diagnostic.
 
+## Deterministic boundary corpus
+
+The blocking Rust gate explicitly runs a 256-case property corpus from one
+reviewed 32-byte seed. Generated valid-Unicode documents contain astral code
+points, combining marks, zero-width characters, and all supported line-ending
+forms. The corpus requires built-in parser/annotator output to cross
+`ValidatedClassification`, successful IR projection to pass
+`validate_document`, canonical JSON to round-trip byte-for-byte, and each
+declarative malformed tree or IR mutation to fail with its selected typed code
+and path.
+
+For an equivalent generated finding, the corpus independently counts both
+human-facing Unicode-scalar columns and LSP UTF-16 code units. It then requires
+the CLI report and LSP diagnostic to identify the same line and span under
+their documented 1-based and 0-based coordinate conventions. Four separate
+parser, annotator, IR-projection, and coordinate fuzz targets are available for
+manual time-based investigation; CI never substitutes a timing budget for the
+seeded correctness oracle.
+
 ## Performance
 
 Measured, not asserted: `cargo bench -p colorful-cli` and

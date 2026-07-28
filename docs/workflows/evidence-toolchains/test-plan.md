@@ -126,6 +126,9 @@ bounded property/fuzz evidence tracked by
   *Oracle:* the policy script rejects version, seed, case-count, target, command,
   or CI-wiring drift with stable categories, while the live bounded corpus
   exits zero. *Evidence type:* manifest/lockfiles, executable policy mutation
-  tests, CI step, and operational reference. *Tracking:*
+  tests, CI step, and operational reference. *Evidence:* root and `fuzz/`
+  Cargo manifest/lock pairs; `scripts/check-property-fuzz-policy.mjs`;
+  its 23-case mutation suite; `.github/workflows/ci.yml`;
+  `scripts/release-prep.sh`; the evidence-toolchain reference. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
-  *Status:* planned.
+  *Status:* implemented.

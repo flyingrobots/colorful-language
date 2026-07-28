@@ -32,6 +32,14 @@ The repository currently ships source integrations and recipes:
 The source integrations build in CI. They are not yet published to editor
 marketplaces or registries.
 
+A blocking 256-case property corpus checks the coordinate seam beneath every
+adapter. Each generated finding crosses astral code points, combining marks,
+zero-width characters, and mixed `LF`/`CRLF`/bare-`CR` input. The CLI's
+1-based Unicode-scalar location and the LSP diagnostic's 0-based UTF-16 range
+must resolve to the same source line and byte span. A separate manual
+`coordinates` fuzz target exercises the same public CLI/LSP entry points
+without making time-dependent fuzzing part of the merge gate.
+
 ## Token and theme behavior
 
 Highlighting uses LSP semantic tokens. The default skeleton highlighter uses
