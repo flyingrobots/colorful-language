@@ -48,6 +48,8 @@ jobs:
         run: node --test scripts/check-repository-maintenance.test.mjs
       - name: Check repository-maintenance policy
         run: node scripts/check-repository-maintenance.mjs
+      - name: Self-test coverage policy
+        run: node --test scripts/check-coverage-policy.test.mjs
       - name: Self-test roadmap inventory reconciliation
         run: node --test scripts/check-roadmap-inventory.test.mjs
       - name: Check roadmap inventory structure
@@ -99,6 +101,61 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - run: cargo test --all --locked
+
+  coverage:
+    name: Rust coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # master
+        with:
+          toolchain: "1.97.1"
+          components: llvm-tools-preview
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: ".node-version"
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf # v2.85.2
+        with:
+          tool: cargo-llvm-cov@0.8.7
+          fallback: none
+      - name: Install coverage policy dependencies
+        run: npm ci
+      - name: Prepare coverage output
+        run: mkdir -p target/llvm-cov
+      - name: Measure workspace coverage
+        run: >-
+          cargo llvm-cov
+          --workspace
+          --all-features
+          --all-targets
+          --locked
+          --json
+          --summary-only
+          --output-path target/llvm-cov/coverage-summary.json
+      - name: Render browsable coverage
+        run: >-
+          cargo llvm-cov report
+          --html
+          --output-dir target/llvm-cov
+      - name: Enforce coverage policy
+        run: >-
+          node scripts/check-coverage-policy.mjs
+          --report target/llvm-cov/coverage-summary.json
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: rust-coverage
+          path: |
+            target/llvm-cov/coverage-summary.json
+            target/llvm-cov/html
+          retention-days: 14
+          if-no-files-found: error
 
   package:
     name: Cargo package witness

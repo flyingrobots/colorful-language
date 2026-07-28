@@ -42,6 +42,12 @@ roadmap-to-issue reconciliation is tracked in
   not remain active, historical delivered references and epic links must remain
   legal, and live GitHub state must be reconciled without making network access
   a hidden prerequisite of the offline correctness gate.
+- **RM-10 — Ratcheted Rust coverage.** The same Rust workspace, feature, and
+  target surface exercised by the normal CI gate must produce a browsable and
+  machine-readable coverage report. A reviewed policy must enforce a
+  conservative workspace line floor and explicit binary-transport floors
+  without excluding generated source silently or treating a historical
+  percentage as current evidence.
 
 ## Cases
 
@@ -188,6 +194,45 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/check-roadmap-inventory.test.mjs` and
   `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:*
   implemented.
+- **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
+  *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
+  all features and all targets, emits HTML plus machine-readable JSON, and
+  uploads both from a dedicated pull-request and mainline CI job. *Oracle:* the
+  workflow uses the reviewed Rust toolchain and a full-SHA-pinned installer and
+  upload action; the coverage command names `--workspace`, `--all-features`,
+  and `--all-targets`; the report artifact has an explicit retention period.
+  *Evidence type:* workflow/configuration mutation tests and hosted artifact.
+  *Evidence:* `.github/workflows/ci.yml`,
+  `.github/coverage-policy.json`, and
+  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
+  [#137](https://github.com/flyingrobots/colorful-language/issues/137).
+  *Status:* implemented.
+- **RM-10b — Conservative ratcheting floors.** *Requirement:* RM-10.
+  *Behavior:* a versioned policy records a freshly measured workspace line
+  baseline, a conservative initial floor below it, and separate floors for the
+  CLI and LSP binary transport files. No generated Rust source is excluded.
+  *Oracle:* a deterministic checker accepts the reviewed report, rejects a
+  workspace or transport regression below its floor, rejects missing files and
+  malformed/non-finite counters, and requires a policy edit to lower any
+  accepted floor. *Evidence type:* checked-in policy, report-summary parser,
+  and one minimal mutation per invariant. *Evidence:*
+  `.github/coverage-policy.json`, `scripts/check-coverage-policy.mjs`, and
+  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
+  [#137](https://github.com/flyingrobots/colorful-language/issues/137).
+  *Status:* implemented.
+- **RM-10c — Honest baseline and ratchet reference.** *Requirement:* RM-10.
+  *Behavior:* the maintenance reference records the exact toolchain, command,
+  source commit, observed workspace and transport percentages, floor-selection
+  rule, artifact contents, and the reviewed procedure for raising or lowering a
+  floor. *Oracle:* policy tests reject stale or incomplete reference values,
+  while lowering a floor remains a visible source-controlled change rather
+  than an automatic side effect of adding uncovered code. *Evidence type:*
+  deterministic documentation-policy parity test. *Evidence:*
+  `docs/workflows/repository-maintenance/README.md`,
+  `.github/coverage-policy.json`, and
+  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
+  [#137](https://github.com/flyingrobots/colorful-language/issues/137).
+  *Status:* implemented.
 
 ## Hosted evidence boundary
 

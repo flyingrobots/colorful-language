@@ -57,6 +57,10 @@
             "integration_id": 15368
           },
           {
+            "context": "Rust coverage",
+            "integration_id": 15368
+          },
+          {
             "context": "Cargo package witness",
             "integration_id": 15368
           },

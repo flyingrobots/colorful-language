@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "colorful.coverage-policy/v1",
+  "toolchain": {
+    "rust": "1.97.1",
+    "cargoLlvmCov": "0.8.7"
+  },
+  "measurement": {
+    "sourceCommit": "da766e7f5dc6ceacf0141bf048594af4d6b87999",
+    "command": "cargo llvm-cov --workspace --all-features --all-targets --locked"
+  },
+  "workspace": {
+    "measuredLines": 6037,
+    "measuredCoveredLines": 5757,
+    "measuredLinePercent": 95.36193473579593,
+    "minimumLinePercent": 92,
+    "maximumUncoveredLines": 280
+  },
+  "files": [
+    {
+      "path": "crates/colorful-cli/src/lib.rs",
+      "measuredLines": 716,
+      "measuredCoveredLines": 651,
+      "measuredLinePercent": 90.9217877094972,
+      "minimumLinePercent": 90,
+      "maximumUncoveredLines": 65
+    },
+    {
+      "path": "crates/colorful-cli/src/main.rs",
+      "measuredLines": 7,
+      "measuredCoveredLines": 7,
+      "measuredLinePercent": 100,
+      "minimumLinePercent": 100,
+      "maximumUncoveredLines": 0
+    },
+    {
+      "path": "crates/colorful-lsp/src/lib.rs",
+      "measuredLines": 500,
+      "measuredCoveredLines": 499,
+      "measuredLinePercent": 99.8,
+      "minimumLinePercent": 99,
+      "maximumUncoveredLines": 1
+    },
+    {
+      "path": "crates/colorful-lsp/src/main.rs",
+      "measuredLines": 64,
+      "measuredCoveredLines": 61,
+      "measuredLinePercent": 95.3125,
+      "minimumLinePercent": 94,
+      "maximumUncoveredLines": 3
+    }
+  ],
+  "exclusions": []
+}
