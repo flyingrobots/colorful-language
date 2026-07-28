@@ -26,6 +26,46 @@ fn adapter_dependency_direction_preserves_pure_core_and_default_binaries() {
     assert!(normal_dependency(&adapter, "colorful-core"));
     assert!(!normal_dependency(&adapter, "colorful-cli"));
     assert!(!normal_dependency(&adapter, "colorful-lsp"));
+    let dependencies = adapter["dependencies"]
+        .as_table()
+        .expect("adapter dependencies");
+    let mut dependency_names: Vec<_> = dependencies.keys().map(String::as_str).collect();
+    dependency_names.sort_unstable();
+    assert_eq!(
+        dependency_names,
+        ["colorful-core", "serde", "serde_json"],
+        "prototype maintenance cost changed: review the adapter decision"
+    );
+    assert_eq!(
+        adapter["package"]["publish"].as_bool(),
+        Some(false),
+        "the prototype must not silently become a release surface"
+    );
+
+    let source_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut source_modules: Vec<_> = fs::read_dir(source_root)
+        .expect("read adapter source directory")
+        .map(|entry| {
+            entry
+                .expect("source entry")
+                .file_name()
+                .into_string()
+                .expect("UTF-8 source name")
+        })
+        .collect();
+    source_modules.sort_unstable();
+    assert_eq!(
+        source_modules,
+        [
+            "config.rs",
+            "error.rs",
+            "lib.rs",
+            "output.rs",
+            "prepared.rs",
+            "process.rs",
+        ],
+        "prototype maintenance surface changed: review the adapter decision"
+    );
 
     for consumer in [
         "crates/colorful-core/Cargo.toml",

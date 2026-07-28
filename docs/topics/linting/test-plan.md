@@ -224,35 +224,54 @@ Implemented and planned cases are listed below.
   dependency graph has the required direction; default CLI/LSP analysis stays
   built-in and succeeds with no `vale` executable; and the prepared snapshot
   implements `Analyzer`. *Evidence type:* manifest-boundary test and analyzer
-  contract test. *Tracking:*
+  contract test. *Evidence:*
+  `colorful-vale`
+  `workspace_boundary::adapter_dependency_direction_preserves_pure_core_and_default_binaries`
+  and
+  `vale_adapter::built_in_and_vale_findings_have_cli_lsp_parity_without_ir_drift`.
+  *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13b** — *Requirement:* LINT-13. *Behavior:* explicit configuration and
   capability discovery admit supported Vale v3 JSON/stdin behavior, isolate
   ambient global configuration, and reject a missing configuration,
   unavailable executable, or incompatible major version before analysis.
   *Oracle:* exact typed error categories and exact spawned argument/environment
   witnesses from a deterministic mock process. *Evidence type:* process-level
-  adapter test. *Tracking:*
+  adapter test. *Evidence:* `colorful-vale`
+  `vale_adapter::{discovery_is_explicit_versioned_and_ambient_config_free,
+  discovery_rejects_missing_config_executable_and_major,
+  analysis_uses_exact_isolated_stdin_contract}`,
+  `config::tests::relative_paths_are_resolved_before_the_process_changes_directory`,
+  and the checksum-verified official Vale 3.14.2 output retained at
+  `crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json` and admitted by
+  `vale_adapter::pinned_real_vale_v3_smoke_shape_remains_admitted`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13c** — *Requirement:* LINT-13. *Behavior:* timeout, cancellation,
   non-zero process failure, oversized output, invalid UTF-8, malformed JSON,
   and invalid Vale alert fields fail explicitly without fallback findings or a
   panic. *Oracle:* one exact typed error category per fault; a synchronized
   cancellation witness proves an already-started child is terminated.
-  *Evidence type:* deterministic process and parser fault matrix. *Tracking:*
+  *Evidence type:* deterministic process and parser fault matrix. *Evidence:*
+  `colorful-vale`
+  `vale_adapter::{pre_cancelled_analysis_does_not_start_a_process,
+  running_process_can_be_cancelled_after_start,
+  timeout_and_process_failure_are_distinct,
+  malformed_outputs_fail_closed_by_category}`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13d** — *Requirement:* LINT-13. *Behavior:* Vale alert line/column
   coordinates, severities, check identities, and messages normalize into
   Colorful `Finding`s with legal byte spans and a total deterministic order.
   The coordinate corpus includes ASCII, an astral scalar, a combining mark, and
   CRLF. *Oracle:* exact span, external rule code, severity, message, and order
   vectors; malformed, reversed, or out-of-range coordinates are rejected.
-  *Evidence type:* normalization contract test. *Tracking:*
+  *Evidence type:* normalization contract test. *Evidence:* `colorful-vale`
+  `vale_adapter::{alerts_normalize_to_legal_ordered_colorful_findings,
+  invalid_coordinate_matrix_is_rejected_without_panicking}`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13e** — *Requirement:* LINT-13. *Behavior:* the built-in
   `ProseLinter` and a prepared Vale analyzer each project the same ordered
   findings through CLI text and LSP diagnostics without turning external
@@ -260,9 +279,11 @@ Implemented and planned cases are listed below.
   for each analyzer, exact code/severity/message/order equality and equivalent
   CLI scalar versus LSP UTF-16 ranges; semantic tokens and canonical IR remain
   unchanged when the analyzer changes. *Evidence type:* cross-surface
-  integration test. *Tracking:*
+  integration test. *Evidence:* `colorful-vale`
+  `vale_adapter::built_in_and_vale_findings_have_cli_lsp_parity_without_ir_drift`.
+  *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
@@ -283,6 +304,5 @@ Implemented and planned cases are listed below.
 
 ## Open verification gaps
 
-- Optional external-analyzer parity remains open in LINT-13a through LINT-13e.
 - Product-level comparative evidence remains open in LINT-14a; built-in rule
   fixtures are not a substitute for the held-out oracle.

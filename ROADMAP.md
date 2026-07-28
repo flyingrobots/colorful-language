@@ -85,8 +85,8 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — explicit wire generations** | The independent proof exposed two schema/vocabulary generations under one `colorful.syntax/v1` label. | #221 authors three exact identity generations, migration evidence, and fail-closed tuple selection. |
 | **Delivered — decompose god-files without API drift** | IR and CLI contributors no longer cross unrelated responsibilities to change one validator or output adapter. | #223 preserves the public facades and assigns hashing, projection, path, validation, argument, color, diagnosis, and lint behavior one source owner each. |
 | **Delivered — generate portable admission** | Consumers no longer hand-maintain structural wire validation after generation compatibility and module ownership became explicit. | #222 derives both JavaScript runtimes from generation SDLs, retains named semantic checks, and reports generated burden separately. |
-| **Now — test analyzer substitution** | An optional external-analyzer adapter tests whether the pure port provides useful substitution without making an external engine mandatory. | Complete #157 with built-in/external CLI and LSP parity. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
-| **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
+| **Delivered — test analyzer substitution** | An optional external-analyzer adapter proves that the pure port can provide useful substitution without making an external engine mandatory. | #157 keeps Vale v3 process failures outside the pure port, proves built-in/external CLI/LSP parity, and leaves both production binaries Vale-free. |
+| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | Start M3 with #141's adapter/server compatibility policy, then execute #136's packaged smoke oracles before #154 publishes artifacts. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
 
@@ -255,10 +255,12 @@ CLI/LSP findings agree without hiding ambiguity.
   [#139](https://github.com/flyingrobots/colorful-language/issues/139),
   [#143](https://github.com/flyingrobots/colorful-language/issues/143)).
   <!-- roadmap-primary: delivered #122 #135 -->
-- **Open comparison adapter:** prototype an external `Analyzer` without
-  weakening the pure port or making an engine mandatory
+- **Delivered comparison adapter:** a non-publishable Vale v3 process boundary
+  prepares a document-bound pure `Analyzer`, reports operational failures
+  explicitly, preserves built-in/default independence, and proves CLI/LSP
+  parity without syntax-token or canonical-IR interference
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  <!-- roadmap-primary: active #157 -->
+  <!-- roadmap-primary: delivered #157 -->
 - **Parked metrics export:** expose the existing versioned LSP counters through
   a bounded adapter only when an operator job needs Prometheus or CLI output;
   do not add a mandatory network listener
@@ -458,13 +460,15 @@ compatibility
 IR/CLI decomposition
 ([#223](https://github.com/flyingrobots/colorful-language/issues/223)), and
 generated portable admission
-([#222](https://github.com/flyingrobots/colorful-language/issues/222)) are now
+([#222](https://github.com/flyingrobots/colorful-language/issues/222)), and the
+optional Vale analyzer comparison
+([#157](https://github.com/flyingrobots/colorful-language/issues/157)) are now
 delivered foundations. The
 independent proof retains stable v1 under its reviewed cost/correctness rule
 ([#156](https://github.com/flyingrobots/colorful-language/issues/156)). The
-active maturity critical path is the optional external-analyzer comparison
-([#157](https://github.com/flyingrobots/colorful-language/issues/157)).
-Distribution follows that operational proof; independent product validation
-follows real distribution. The CNL, Edict, provenance, Ouroboros, and
-semantic-closure phases remain in place behind the explicit deep-end evidence
-gate.
+active maturity critical path now moves to the editor/server compatibility
+policy ([#141](https://github.com/flyingrobots/colorful-language/issues/141)),
+then packaged smoke evidence and public distribution. Independent product
+validation follows real distribution. The CNL, Edict, provenance, Ouroboros,
+and semantic-closure phases remain in place behind the explicit deep-end
+evidence gate.

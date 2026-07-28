@@ -54,6 +54,60 @@ reproducible regardless of rule evaluation order.
 Passive analysis joins the ordered syntax leaves and classified tokens with one
 forward cursor; it does not allocate a whole-document token lookup.
 
+## Optional Vale comparison adapter
+
+`colorful-vale` is a non-publishable prototype outer crate for Vale v3. It is
+not a dependency of `colorful-core`, `colorful-cli`, or `colorful-lsp`, and
+neither production binary selects or invokes it. The built-in `ProseLinter`
+therefore remains the default, offline analyzer even when no `vale` executable
+or configuration exists.
+
+The prototype requires the caller to provide both a Vale executable and an
+explicit `.vale.ini`. Discovery accepts major version 3, and analysis invokes
+Vale with JSON output, stdin as plain text, no global configuration, a bounded
+output capture, and a caller-cancellable timeout. It never runs `vale sync` or
+downloads a style. Missing configuration, an unavailable or incompatible
+engine, timeout, cancellation, process failure, excessive output, invalid
+UTF-8, malformed JSON, invalid alert data, and source-identity mismatch are
+different `ValeErrorKind` values; none silently becomes an empty result or a
+fallback to the built-in rules.
+
+```rust
+use colorful_vale::{CancellationToken, ValeAnalyzer, ValeConfig};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let source = "This is very clear.";
+    let adapter = ValeAnalyzer::discover(ValeConfig::new("vale", ".vale.ini"))?;
+    let cancellation = CancellationToken::new();
+    let prepared = adapter.analyze(source, &cancellation)?;
+    let _analyzer = prepared.bind(source)?;
+    Ok(())
+}
+```
+
+Only the successful, document-bound value returned by `bind` implements the
+pure `Analyzer` port. Vale suggestions become Colorful `Info`; Vale warnings
+and errors become `Warning`; check names become validated `vale/<check>` rule
+codes. Findings are sorted by complete range, rule code, severity, and message.
+The external findings can then use the same CLI-report and LSP-diagnostic
+projection helpers as `ProseLinter`, but they do not alter semantic tokens,
+parser/classifier output, or canonical IR.
+
+The prototype's reviewed maintenance surface is six production source modules
+and exactly three normal dependencies (`colorful-core`, `serde`, and
+`serde_json`); a workspace-boundary test fails if either measure changes.
+Utility evidence exercises deterministic process, normalization, configuration,
+and boundary tests, including two external findings projected through both
+surfaces with no semantic-token or canonical-IR drift. A one-off 2026-07-28
+compatibility probe used the checksum-verified official Vale 3.14.2 macOS arm64
+archive
+(`vale_3.14.2_macOS_arm64.tar.gz`, SHA-256
+`14305f4e5e0756351ffd4ff8dd1e561c5d49f6a27360834238d832d9e64ac70f`);
+the exact JSON output is retained at
+[`crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json`](../../../crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json)
+and remains admitted by the normal test suite. This proves the comparison seam,
+not enough product utility to make Vale a supported or mandatory surface.
+
 ### Quotation policy
 
 Weak-word findings are evaluated inside quoted text. Straight and curly quote

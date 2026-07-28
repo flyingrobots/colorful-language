@@ -8,6 +8,7 @@ repository.workspace = true
 authors.workspace = true
 keywords = ["prose", "english", "linter", "vale", "adapter"]
 categories = ["text-processing"]
+publish = false
 
 [dependencies]
 colorful-core = { workspace = true }

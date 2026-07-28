@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Optional Vale v3 analyzer comparison.** A non-publishable
+  `colorful-vale` outer crate now discovers an explicitly configured Vale v3
+  executable, isolates ambient global configuration, bounds and cancels the
+  process, validates its JSON/Unicode coordinates, and prepares deterministic
+  namespaced Colorful findings for the existing pure `Analyzer` port. Missing
+  configuration, unavailable/incompatible engines, timeout, cancellation,
+  process failure, excessive output, invalid UTF-8, malformed alerts, and
+  source mismatch remain distinct typed failures with no silent built-in
+  fallback. Process fixtures prove CLI/LSP parity and semantic-token/canonical-
+  IR non-interference; a retained checksum-verified Vale 3.14.2 smoke output
+  anchors the mock contract. The default CLI/LSP dependency graphs remain
+  offline and Vale-free.
 - **Schema-generated portable IR admission.** Every registered
   `colorful.syntax/v1` generation now derives a dependency-free JavaScript
   structural validator from its compatibility-selected GraphQL SDL. Graft and
@@ -365,6 +377,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking diagnostic-rule API queued for v0.4.0.** `Rule` can now carry a
+  validated owned external diagnostic code via `Rule::external`, and
+  `Rule::code` returns a borrow tied to `&self`. Consequently `Rule` is no
+  longer `Copy`; callers must borrow or clone a rule when retaining it. Built-in
+  codes and CLI/LSP rendering remain unchanged.
 - **Product maturity is now an explicit third roadmap axis.** The preserved
   moonshot phases now sit alongside M0–M4 evidence tracks that organize the
   34-issue non-epic intake snapshot around reproducibility, boundary integrity,

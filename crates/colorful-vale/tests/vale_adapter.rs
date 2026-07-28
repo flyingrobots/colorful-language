@@ -51,6 +51,7 @@ const SUCCESS_JSON: &str = r#"{
     }
   ]
 }"#;
+const VALE_3_14_2_SMOKE_JSON: &str = include_str!("fixtures/vale-3.14.2-smoke.json");
 
 struct FakeVale {
     root: PathBuf,
@@ -72,6 +73,8 @@ impl FakeVale {
         let arguments = root.join("arguments.txt");
         let captured_input = root.join("input.txt");
         let marker = root.join("started");
+        let analysis_body =
+            analysis_body.replace("{FAKE_VALE_MARKER}", &marker.display().to_string());
         fs::write(
             &configuration,
             "StylesPath = styles\n[*.txt]\nBasedOnStyles = Test\n",
@@ -131,7 +134,7 @@ fn success_fixture() -> FakeVale {
     )
 }
 
-fn classification(source: &str) -> ValidatedClassification {
+fn classification(source: &str) -> ValidatedClassification<'_> {
     ValidatedClassification::from_ports(
         source,
         &ProseParser::new(),
@@ -217,14 +220,7 @@ fn analysis_uses_exact_isolated_stdin_contract() {
 fn running_process_can_be_cancelled_after_start() {
     let fixture = Arc::new(FakeVale::new(
         "3.14.2",
-        &format!(": > '{}'\nwhile :; do :; done", {
-            let marker = std::env::temp_dir().join(format!(
-                "colorful-vale-test-{}-{}",
-                std::process::id(),
-                FIXTURE_ID.load(Ordering::Relaxed)
-            ));
-            marker.join("started").display().to_string()
-        }),
+        ": > '{FAKE_VALE_MARKER}'\nwhile :; do :; done",
     ));
     let analyzer =
         Arc::new(ValeAnalyzer::discover(fixture.config()).expect("discover cancellable Vale"));
@@ -290,7 +286,7 @@ fn malformed_outputs_fail_closed_by_category() {
         ),
         (
             "printf '%s' '0123456789abcdef0123456789abcdef'",
-            16,
+            24,
             ValeErrorKind::OutputTooLarge,
         ),
     ];
@@ -336,9 +332,35 @@ fn alerts_normalize_to_legal_ordered_colorful_findings() {
         Rule::external("vale/Style.Safe").unwrap().code(),
         "vale/Style.Safe"
     );
-    for invalid in ["", "vale/has space", "vale/has\nnewline"] {
+    for invalid in [
+        "",
+        "weak-word",
+        "vale/",
+        "vale/has space",
+        "vale/has\nnewline",
+    ] {
         assert!(Rule::external(invalid).is_err(), "{invalid:?}");
     }
+}
+
+#[test]
+fn pinned_real_vale_v3_smoke_shape_remains_admitted() {
+    let fixture = FakeVale::new(
+        "3.14.2",
+        &format!(
+            "printf '%s\\n' '{}'",
+            VALE_3_14_2_SMOKE_JSON.replace('\'', "'\\''")
+        ),
+    );
+    let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");
+    let prepared = analyzer
+        .analyze("This is very clear.\n", &CancellationToken::new())
+        .expect("admit pinned Vale output");
+    assert_eq!(prepared.findings().len(), 1);
+    assert_eq!(prepared.findings()[0].rule.code(), "vale/Test.Very");
+    assert_eq!(prepared.findings()[0].span.start, 8);
+    assert_eq!(prepared.findings()[0].span.end, 12);
+    assert_eq!(prepared.findings()[0].severity, Severity::Warning);
 }
 
 #[test]

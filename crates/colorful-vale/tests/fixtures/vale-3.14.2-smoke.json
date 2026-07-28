@@ -1,0 +1,21 @@
+{
+  "stdin.txt": [
+    {
+      "Action": {
+        "Name": "",
+        "Params": null
+      },
+      "Span": [
+        9,
+        12
+      ],
+      "Check": "Test.Very",
+      "Description": "",
+      "Link": "",
+      "Message": "Consider replacing 'very'.",
+      "Severity": "warning",
+      "Match": "very",
+      "Line": 1
+    }
+  ]
+}

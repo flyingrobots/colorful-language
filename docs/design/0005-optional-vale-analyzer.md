@@ -57,6 +57,31 @@ and message, independent of Vale's object or alert order. Vale findings remain
 editorial diagnostics only: they do not alter parser output, token
 classification, semantic tokens, or canonical IR.
 
+## Prototype result
+
+The implemented comparison boundary has six production source modules and
+three normal dependencies: `colorful-core`, `serde`, and `serde_json`. A
+manifest/source-inventory test makes those maintenance measures reviewed
+changes rather than prose-only counts. The adapter crate is non-publishable and
+is absent from the production dependency tables of the core, CLI, and LSP.
+
+The deterministic suite covers version/config discovery, ambient-config
+isolation, stdin arguments, relative-path resolution, pre-start and in-flight
+cancellation, timeout, process failure, output bounds, UTF-8, JSON/alert shape,
+Unicode/CRLF coordinates, source identity, total finding order, CLI/LSP parity,
+and semantic-token/canonical-IR non-interference. A checksum-verified one-off
+probe against the official Vale 3.14.2 macOS arm64 archive on 2026-07-28
+(`vale_3.14.2_macOS_arm64.tar.gz`, SHA-256
+`14305f4e5e0756351ffd4ff8dd1e561c5d49f6a27360834238d832d9e64ac70f`)
+confirmed the real CLI accepts the selected flags and emits the modeled JSON
+shape; that output is retained as an executable fixture.
+
+This is useful substitution evidence, but it does not yet justify making Vale a
+supported user-facing engine. Configuration/style ownership, external binary
+installation, and process latency remain costs the built-in analyzer does not
+have. The prototype therefore stays optional and outside both production
+binaries.
+
 ## Consequences
 
 - The built-in analyzer remains deterministic, offline, and self-contained.
