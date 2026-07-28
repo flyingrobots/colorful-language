@@ -10,6 +10,7 @@ export const SYNTAX_ADMISSION_REASON_CODES = Object.freeze({
 });
 
 const ROOT_FIELDS = new Set(["contractVersion","schemaHash","vocabularyHash","source","tokens","structure","diagnostics","derivation"]);
+const ENVELOPE_FIELDS = Object.freeze(["contractVersion","schemaHash","vocabularyHash"]);
 const GENERATIONS = {
   "v0.2.1": {
     "ByteRange": {
@@ -849,7 +850,7 @@ export function validateSyntaxEnvelope(value, reject = defaultReject) {
       );
     }
   }
-  for (const field of ["contractVersion", "schemaHash", "vocabularyHash"]) {
+  for (const field of ENVELOPE_FIELDS) {
     if (!Object.hasOwn(value, field)) {
       rejectWith(reject, field, "is required by the contract shape");
     }

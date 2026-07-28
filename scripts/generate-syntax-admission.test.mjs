@@ -319,12 +319,52 @@ test("generation fails closed on unsupported or dangling SDL", () => {
         generations: [
           {
             id: "dangling",
-            sdl: "type DocumentAnalysis {\n  missing: Missing!\n}\n",
+            sdl:
+              "type DocumentAnalysis {\n" +
+              "  contractVersion: String!\n" +
+              "  schemaHash: String!\n" +
+              "  vocabularyHash: String!\n" +
+              "  missing: Missing!\n" +
+              "}\n",
           },
         ],
       }),
     /refers to missing type Missing/u,
   );
+});
+
+test("generation fails closed when envelope fields drift from String", () => {
+  const currentSchema = readFileSync(
+    path.join(ROOT, "contracts/colorful/syntax.v1.graphql"),
+    "utf8",
+  );
+  for (const [label, changedSchema] of [
+    [
+      "missing",
+      currentSchema.replace(
+        "  contractVersion: String!\n",
+        "  contractRevision: String!\n",
+      ),
+    ],
+    [
+      "retyped",
+      currentSchema.replace(
+        "  schemaHash: String!\n",
+        "  schemaHash: Int!\n",
+      ),
+    ],
+  ]) {
+    assert.notEqual(changedSchema, currentSchema, label);
+    assert.throws(
+      () =>
+        renderSyntaxAdmission({
+          currentGenerationId: label,
+          generations: [{ id: label, sdl: changedSchema }],
+        }),
+      /DocumentAnalysis\.(?:contractVersion|schemaHash) as String!/u,
+      label,
+    );
+  }
 });
 
 test("schema references compile once instead of once per admitted value", () => {

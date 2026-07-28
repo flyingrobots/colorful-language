@@ -17,6 +17,11 @@ const OUTPUT_PATHS = Object.freeze([
   "consumers/independent-ir-report/generated/syntax-admission-v1.mjs",
 ]);
 const BUILT_INS = new Set(["Boolean", "Float", "ID", "Int", "String"]);
+const ENVELOPE_FIELDS = Object.freeze([
+  "contractVersion",
+  "schemaHash",
+  "vocabularyHash",
+]);
 
 function fail(message) {
   throw new Error(`generate-syntax-admission: ${message}`);
@@ -34,6 +39,13 @@ function compileSchema(id, sdl) {
   const root = parsed.get("DocumentAnalysis");
   if (root?.kind !== "type") {
     fail(`generation ${id} has no DocumentAnalysis object`);
+  }
+  for (const field of ENVELOPE_FIELDS) {
+    if (root.fields.get(field) !== "String!") {
+      fail(
+        `generation ${id} must declare DocumentAnalysis.${field} as String!`,
+      );
+    }
   }
   const definitions = {};
   for (const [name, definition] of parsed) {
@@ -113,6 +125,7 @@ export const SYNTAX_ADMISSION_REASON_CODES = Object.freeze({
 });
 
 const ROOT_FIELDS = new Set(${JSON.stringify(rootFields)});
+const ENVELOPE_FIELDS = Object.freeze(${JSON.stringify(ENVELOPE_FIELDS)});
 const GENERATIONS = ${JSON.stringify(definitions, null, 2)};
 const GRAPHQL_INT_MIN = -2147483648;
 const GRAPHQL_INT_MAX = 2147483647;
@@ -310,7 +323,7 @@ export function validateSyntaxEnvelope(value, reject = defaultReject) {
       );
     }
   }
-  for (const field of ["contractVersion", "schemaHash", "vocabularyHash"]) {
+  for (const field of ENVELOPE_FIELDS) {
     if (!Object.hasOwn(value, field)) {
       rejectWith(reject, field, "is required by the contract shape");
     }
