@@ -193,11 +193,11 @@ by [`check-coverage-policy.mjs`](../../../scripts/check-coverage-policy.mjs)
 before the required job can pass.
 
 The current workspace baseline was measured at source commit
-`cd460986a8819f9b4c18daef294c311bcc85e041` with the pinned command above:
+`b8f163c17c22777e0beb3b3db306dfe2feaa6f1f` with the pinned command above:
 
 | Surface | Measured lines | Measured coverage | Minimum | Maximum uncovered |
 | --- | ---: | ---: | ---: | ---: |
-| Workspace | 6,106 / 6,495 | 94.01% | 92% | 389 |
+| Workspace | 6,139 / 6,528 | 94.04% | 92% | 389 |
 | `crates/colorful-cli/src/cli/args.rs` | 74 / 83 | 89.16% | 88% | 9 |
 | `crates/colorful-cli/src/cli/color.rs` | 65 / 71 | 91.55% | 90% | 6 |
 | `crates/colorful-cli/src/cli/diagnose.rs` | 129 / 169 | 76.33% | 75% | 40 |
@@ -205,22 +205,22 @@ The current workspace baseline was measured at source commit
 | `crates/colorful-cli/src/main.rs` | 7 / 7 | 100% | 100% | 0 |
 | `crates/colorful-lsp/src/lib.rs` | 499 / 500 | 99.80% | 99% | 1 |
 | `crates/colorful-lsp/src/main.rs` | 61 / 64 | 95.31% | 94% | 3 |
-| `crates/colorful-vale/src/output.rs` | 142 / 183 | 77.60% | 68% | 41 |
-| `crates/colorful-vale/src/process.rs` | 137 / 168 | 81.55% | 80% | 31 |
+| `crates/colorful-vale/src/output.rs` | 161 / 202 | 79.70% | 68% | 41 |
+| `crates/colorful-vale/src/process.rs` | 151 / 182 | 82.97% | 80% | 31 |
 
 The 92% workspace percentage is deliberately below the earlier 92.16%
-observation and the fresh 94.01% measurement. The uncovered-line ceilings are
+observation and the fresh 94.04% measurement. The uncovered-line ceilings are
 the ratchet: adding an uncovered workspace or monitored transport line fails
 even while the percentage remains above its conservative floor. All authored
 and generated Rust source remains in the report; the policy has no exclusions.
 
 This measurement raises the workspace uncovered-line ceiling from 274 to 389
 through an explicit reviewed policy change. Since the prior baseline, the
-workspace added 764 measured lines and 649 covered lines. The optional Vale
-adapter accounts for 715 measured lines, 608 of them covered, while its JSON
+workspace added 797 measured lines and 682 covered lines. The optional Vale
+adapter accounts for 748 measured lines, 641 of them covered, while its JSON
 normalization and child-process owners now have their own per-file floors and
-uncovered-line ceilings. The 92% acceptance floor did not move; the new 94.01%
-measurement remains 2.01 percentage points above it.
+uncovered-line ceilings. The 92% acceptance floor did not move; the new 94.04%
+measurement remains 2.04 percentage points above it.
 
 The CLI crate root is a declarative facade and therefore has no executable lines
 in LLVM's report. Its per-file transport floors follow the four private
