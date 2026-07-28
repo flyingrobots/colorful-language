@@ -15,6 +15,7 @@ mod prepared;
 mod process;
 
 use std::ffi::OsString;
+use std::path::Path;
 
 pub use config::{
     CancellationToken, ValeCapabilities, ValeConfig, DEFAULT_OUTPUT_LIMIT, SUPPORTED_VALE_MAJOR,
@@ -100,10 +101,7 @@ impl ValeAnalyzer {
             OsString::from("--output=JSON"),
             OsString::from("--no-exit"),
             OsString::from("--no-global"),
-            OsString::from(format!(
-                "--config={}",
-                self.config.configuration().display()
-            )),
+            configuration_argument(self.config.configuration()),
             OsString::from("--ext=.txt"),
         ];
         let output = run_process(
@@ -125,5 +123,29 @@ impl ValeAnalyzer {
         let json = output.stdout_text()?;
         let findings = parse_findings(source, json)?;
         Ok(PreparedValeAnalysis::new(source, findings))
+    }
+}
+
+fn configuration_argument(configuration: &Path) -> OsString {
+    let mut argument = OsString::from("--config=");
+    argument.push(configuration.as_os_str());
+    argument
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+    use std::path::Path;
+
+    use super::configuration_argument;
+
+    #[test]
+    fn configuration_argument_preserves_non_utf8_path_bytes() {
+        let path = Path::new(std::ffi::OsStr::from_bytes(b"/tmp/.vale-\xff.ini"));
+        let argument = configuration_argument(path);
+        assert_eq!(
+            argument,
+            std::ffi::OsString::from_vec(b"--config=/tmp/.vale-\xff.ini".to_vec())
+        );
     }
 }
