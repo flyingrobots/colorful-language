@@ -20,6 +20,10 @@ const defaultRulesetPath = resolve(
   repositoryRoot,
   ".github/rulesets/mainline.json",
 );
+const defaultReferencePath = resolve(
+  repositoryRoot,
+  "docs/workflows/repository-maintenance/README.md",
+);
 
 const COVERAGE_SCHEMA = "colorful.coverage-policy/v1";
 const COVERAGE_COMMAND =
@@ -304,6 +308,67 @@ function checkedPolicy(policy) {
     workspace,
     files,
   };
+}
+
+function formatCount(value) {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/gu, ",");
+}
+
+function formatPercent(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function coverageReferenceRow(surface, baseline) {
+  return [
+    `| ${surface}`,
+    `${formatCount(baseline.covered)} / ${formatCount(baseline.count)}`,
+    `${formatPercent(baseline.percent)}%`,
+    `${formatPercent(baseline.minimumPercent)}%`,
+    `${formatCount(baseline.maximumUncovered)} |`,
+  ].join(" | ");
+}
+
+export function validateCoverageReference(reference, policy) {
+  const checked = checkedPolicy(policy);
+  const text = requireString(
+    reference,
+    "E_COVERAGE_REFERENCE",
+    "coverage reference",
+  );
+  const expectedRows = [
+    coverageReferenceRow("Workspace", checked.workspace),
+    ...[...checked.files].map(([path, baseline]) =>
+      coverageReferenceRow(
+        `\`${path.replace(/^crates\//u, "")}\``,
+        baseline,
+      ),
+    ),
+  ];
+  const expectedFragments = [
+    `CI pins Rust ${checked.toolchain.rust}`,
+    `\`cargo-llvm-cov\` ${checked.toolchain.cargoLlvmCov}`,
+    `\`${checked.sourceCommit}\``,
+    "as the `rust-coverage` artifact for 14 days",
+    "policy has no exclusions",
+    ...expectedRows,
+  ];
+  for (const fragment of expectedFragments) {
+    if (!text.includes(fragment)) {
+      reject(
+        "E_COVERAGE_REFERENCE",
+        "docs/workflows/repository-maintenance/README.md",
+        `missing policy-derived text ${JSON.stringify(fragment)}`,
+      );
+    }
+  }
+  const documentedCommand = normalizedCommand(text.replace(/\\\s+/gu, " "));
+  if (!documentedCommand.includes(COVERAGE_COMMAND)) {
+    reject(
+      "E_COVERAGE_REFERENCE",
+      "docs/workflows/repository-maintenance/README.md",
+      `missing measurement command ${JSON.stringify(COVERAGE_COMMAND)}`,
+    );
+  }
 }
 
 function reportRelativePath(filename, workspaceRoot) {
@@ -634,6 +699,7 @@ function parseArguments(args) {
     reportPath: undefined,
     workflowPath: defaultWorkflowPath,
     rulesetPath: defaultRulesetPath,
+    referencePath: defaultReferencePath,
   };
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
@@ -657,6 +723,8 @@ function parseArguments(args) {
       options.workflowPath = value();
     } else if (argument === "--ruleset") {
       options.rulesetPath = value();
+    } else if (argument === "--reference") {
+      options.referencePath = value();
     } else {
       reject(
         "E_COVERAGE_USAGE",
@@ -687,15 +755,32 @@ function readJson(path, description) {
   }
 }
 
+function readText(path, description) {
+  try {
+    return readFileSync(path, "utf8");
+  } catch (error) {
+    reject(
+      "E_COVERAGE_INPUT",
+      path,
+      `could not read ${description}: ${error.message}`,
+    );
+  }
+}
+
 export function run(args = process.argv.slice(2)) {
   const options = parseArguments(args);
   const policy = readJson(options.policyPath, "coverage policy");
   const report = readJson(options.reportPath, "coverage report");
-  const workflow = parseYaml(readFileSync(options.workflowPath, "utf8"));
+  const workflow = parseYaml(readText(options.workflowPath, "CI workflow"));
   const ruleset = readJson(options.rulesetPath, "mainline ruleset");
+  const reference = readText(
+    options.referencePath,
+    "repository-maintenance reference",
+  );
 
   validateCoverageWorkflow(workflow, policy);
   validateCoverageRuleset(ruleset);
+  validateCoverageReference(reference, policy);
   const result = validateCoveragePolicy(policy, report, {
     workspaceRoot: repositoryRoot,
   });
