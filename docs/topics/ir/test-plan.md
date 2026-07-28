@@ -616,8 +616,9 @@ Requirements:
 - The independent consumer retains stable v1 under the reviewed cost and
   correctness rule. Its 239-line IR adapter is nearly as large as the 264-line
   LSP protocol and decoding adapter, so reducing duplicate consumer admission
-  code is deliberate follow-up debt; the measured correctness advantage does
-  not justify expanding the wire contract.
+  code is deliberate follow-up debt in
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222); the
+  measured correctness advantage does not justify expanding the wire contract.
 - The `v0.2.1` and `v0.3.0` schema generations share one
   `colorful.syntax/v1` label. IR-19 uses their full identity tuples to fail
   closed, but the compatibility meaning of an intra-v1 schema change remains

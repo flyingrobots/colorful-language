@@ -203,4 +203,6 @@ workspace.
   identities within its reviewed two-times adapter-size bound. The remaining
   risk is implementation cost: its 239-line adapter is nearly as large as the
   264-line LSP protocol and decoding adapter, so contract expansion stays
-  frozen while consumer admission is simplified.
+  frozen while
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222)
+  simplifies consumer admission.

@@ -83,7 +83,8 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — validate boundaries with fuzzing** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | #134 now builds on delivered #82 with a pinned seeded correctness corpus and four manual fuzz targets; measurement lanes remain advisory until their environments are stable. |
 | **Delivered — prove independent-consumer value** | Mutation, fuzzing, and a standalone consumer exposed real boundary cost without expanding the cathedral. | #156 retains stable v1 under its reviewed correctness/cost rule; delivered #82 and #134 supply the mutation and fuzz baselines. |
 | **Now — make wire generations explicit** | The independent proof exposed two schema/vocabulary generations under one `colorful.syntax/v1` label. | Complete #221 so compatibility is authored rather than inferred from release-tag branches. |
-| **Next — test analyzer substitution** | An optional external-analyzer adapter tests whether the pure port provides useful substitution without making an external engine mandatory. | Complete #157 with built-in/external CLI and LSP parity. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
+| **Next — generate portable admission** | Consumers should not hand-maintain structural wire validation after generation compatibility is explicit. | Complete #222 after #221, retaining named semantic checks and measured before/after burden. |
+| **Then — test analyzer substitution** | An optional external-analyzer adapter tests whether the pure port provides useful substitution without making an external engine mandatory. | Complete #157 with built-in/external CLI and LSP parity. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -194,6 +195,11 @@ deterministically and use valid data without reverse-engineering Colorful.
   [#221](https://github.com/flyingrobots/colorful-language/issues/221), after
   the independent proof and before any new contract fields.
   <!-- roadmap-primary: active #221 -->
+- **Queued portable admission:** generate structural runtime validation from
+  one contract authority, preserving named semantic checks and the stable
+  refusal boundary, after the compatibility policy
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  <!-- roadmap-primary: parked #222 -->
 
 **Exit signal:** invalid spans, graphs, identities, hashes, versions, vocabulary,
 and source relationships fail closed with stable categories; successful
@@ -414,7 +420,9 @@ independent proof retains stable v1 under its reviewed cost/correctness rule
 ([#156](https://github.com/flyingrobots/colorful-language/issues/156)). The
 active maturity critical path is explicit wire-generation compatibility
 ([#221](https://github.com/flyingrobots/colorful-language/issues/221)), followed
-by the optional external-analyzer comparison
+by generated portable admission
+([#222](https://github.com/flyingrobots/colorful-language/issues/222)) and then
+the optional external-analyzer comparison
 ([#157](https://github.com/flyingrobots/colorful-language/issues/157)).
 Distribution follows that operational proof; independent product validation
 follows real distribution. The CNL, Edict, provenance, Ouroboros, and

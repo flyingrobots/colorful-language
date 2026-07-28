@@ -262,8 +262,9 @@ v0.3 must handle the `Option` result.
 - Independent admission is deliberately strict but not yet compact: the
   measured IR adapter is nearly as large as the complete LSP protocol and
   decoding adapter. Further contract expansion remains frozen while that
-  implementation cost is reduced without weakening validation or changing v1
-  bytes.
+  implementation cost is reduced through
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222) without
+  weakening validation or changing v1 bytes.
 - `v0.2.1` and `v0.3.0` carry distinct schema/vocabulary identity tuples under
   the same `colorful.syntax/v1` label. The independent consumer admits those
   exact tuples, but [#221](https://github.com/flyingrobots/colorful-language/issues/221)

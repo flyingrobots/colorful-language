@@ -176,9 +176,12 @@ Consumer admission remains the cost to reduce; replayable provenance, CNL, and
 Edict fields remain frozen until new evidence justifies them. The fact that two
 schema generations share the `colorful.syntax/v1` label is tracked explicitly
 in [#221](https://github.com/flyingrobots/colorful-language/issues/221), which
-must replace release-tag branching with an authored compatibility policy. A
-worthwhile simplification that cannot preserve v1 bytes still requires a
-deliberately versioned contract and fresh migration evidence.
+must replace release-tag branching with an authored compatibility policy.
+[#222](https://github.com/flyingrobots/colorful-language/issues/222) then owns
+replacing duplicated hand-written structural admission with generated portable
+validation while preserving explicitly semantic checks. A worthwhile
+simplification that cannot preserve v1 bytes still requires a deliberately
+versioned contract and fresh migration evidence.
 
 The broader [deep-end evidence gate](../../../ROADMAP.md#deep-end-evidence-gate)
 controls when new provenance, CNL, and Edict surface area resumes. It preserves

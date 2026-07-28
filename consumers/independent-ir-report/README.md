@@ -53,7 +53,9 @@ than the alternatives' combined 313 lines and uniquely verifies the contract,
 schema, vocabulary, source length, and source digest. The resulting decision is
 to retain stable v1, simplify consumer admission cost where possible, make the
 currently hash-selected generation policy explicit in
-[#221](https://github.com/flyingrobots/colorful-language/issues/221), and avoid
+[#221](https://github.com/flyingrobots/colorful-language/issues/221), generate
+shared portable admission through
+[#222](https://github.com/flyingrobots/colorful-language/issues/222), and avoid
 adding contract fields without new evidence.
 
 Refresh the tagged fixtures only by building the real releases:
