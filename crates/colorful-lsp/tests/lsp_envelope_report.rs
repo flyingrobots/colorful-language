@@ -19,6 +19,24 @@ fn baseline() -> Value {
         .unwrap_or_else(|error| panic!("decode {}: {error}", path.display()))
 }
 
+fn claimed_slo_is_consistent(report: &Value) -> bool {
+    report["scenarios"].as_array().is_some_and(|scenarios| {
+        scenarios.iter().all(|scenario| {
+            scenario["sloMet"] == true && scenario["sloFailures"] == serde_json::json!([])
+        })
+    })
+}
+
+fn claimed_corpus_is_consistent(report: &Value) -> bool {
+    report["scenarios"].as_array().is_some_and(|scenarios| {
+        scenarios.iter().all(|scenario| {
+            scenario["corpusSha256"]
+                .as_str()
+                .is_some_and(|hash| hash.len() == 64)
+        })
+    })
+}
+
 #[test]
 fn baseline_covers_the_reviewed_supported_envelope() {
     let baseline = baseline();
@@ -141,9 +159,47 @@ fn baseline_covers_the_reviewed_supported_envelope() {
     let refused = scenarios.last().expect("10 MiB scenario");
     assert_eq!(refused["outcomeCategory"], "document-too-large");
     assert_eq!(refused["diagnosticCode"], "colorful/document-too-large");
+    assert_eq!(
+        refused["incremental"]["diagnosticCode"],
+        "colorful/document-too-large"
+    );
+    assert_eq!(
+        refused["overload"]["diagnosticCode"],
+        "colorful/document-too-large"
+    );
     assert_eq!(refused["open"]["semanticTokenCount"], 0);
     assert_eq!(refused["incremental"]["semanticTokenCount"], 0);
     assert!(refused["overload"]["semanticTokenCounts"]
         .as_array()
         .is_some_and(|counts| { counts.len() == 4 && counts.iter().all(|count| count == 0) }));
+}
+
+#[test]
+fn false_green_slo_claim_is_rejected() {
+    let mut report = baseline();
+    report["scenarios"][2]["open"]["diagnosticsMs"] = serde_json::json!(5_001.0);
+
+    assert!(!claimed_slo_is_consistent(&report));
+}
+
+#[test]
+fn false_corpus_hash_is_rejected() {
+    let mut report = baseline();
+    report["scenarios"][2]["corpusSha256"] = serde_json::json!("0".repeat(64));
+
+    assert!(!claimed_corpus_is_consistent(&report));
+}
+
+#[test]
+fn ordinary_cargo_test_runs_the_harness_unit_tests() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+    let manifest = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+
+    assert!(
+        manifest.contains(
+            "[[example]]\nname = \"lsp_envelope\"\npath = \"examples/lsp_envelope.rs\"\ntest = true"
+        ),
+        "the benchmark harness must run its unit tests under ordinary cargo test"
+    );
 }
