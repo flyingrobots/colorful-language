@@ -34,6 +34,21 @@ function requiredField(id) {
 }
 
 function fixture() {
+  const releaseWorkflow = {
+    jobs: {
+      release: {
+        steps: [
+          {
+            name: "Publish to crates.io",
+            env: {
+              CARGO_REGISTRY_TOKEN:
+                "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+            },
+          },
+        ],
+      },
+    },
+  };
   return {
     bugForm: {
       name: "Bug report",
@@ -215,20 +230,8 @@ allow-git = []
         },
       },
     },
-    releaseWorkflow: {
-      jobs: {
-        release: {
-          steps: [
-            {
-              name: "Publish to crates.io",
-              env: {
-                CARGO_REGISTRY_TOKEN:
-                  "${{ secrets.CARGO_REGISTRY_TOKEN }}",
-              },
-            },
-          ],
-        },
-      },
+    workflowFiles: {
+      ".github/workflows/release.yml": releaseWorkflow,
     },
     ciWorkflow: {
       jobs: {
@@ -406,6 +409,25 @@ test("rejects a broadened workflow-security exception", () => {
   expectCode(({ workflowSecurityPolicy }) => {
     workflowSecurityPolicy.exceptions[0].path =
       ".github/workflows/release.yml";
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects a second use of an excepted workflow secret", () => {
+  expectCode(({ workflowFiles }) => {
+    workflowFiles[".github/workflows/other.yml"] = {
+      jobs: {
+        other: {
+          steps: [
+            {
+              env: {
+                CARGO_REGISTRY_TOKEN:
+                  "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+              },
+            },
+          ],
+        },
+      },
+    };
   }, "E_WORKFLOW_SECURITY_EXCEPTION");
 });
 

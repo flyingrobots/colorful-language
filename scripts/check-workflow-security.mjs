@@ -50,11 +50,13 @@ function readYaml(path, code) {
 
 function loadPolicy() {
   const policy = readYaml(policyPath, "E_WORKFLOW_SECURITY_POLICY");
-  const releaseWorkflow = readYaml(
-    join(repositoryRoot, ".github", "workflows", "release.yml"),
-    "E_WORKFLOW_SECURITY_EXCEPTION",
+  const workflowFiles = Object.fromEntries(
+    workflowPaths(repositoryRoot).map((path) => [
+      relative(repositoryRoot, path).split(sep).join("/"),
+      readYaml(path, "E_WORKFLOW_SECURITY_EXCEPTION"),
+    ]),
   );
-  return validateWorkflowSecurityPolicy(policy, releaseWorkflow);
+  return validateWorkflowSecurityPolicy(policy, workflowFiles);
 }
 
 function workflowPaths(root) {

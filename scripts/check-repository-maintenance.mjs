@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { parse as parseYaml } from "yaml";
@@ -766,7 +766,7 @@ export function validateRepositoryMaintenance(candidate) {
   try {
     workflowSecurityPolicy = validateWorkflowSecurityPolicy(
       candidate.workflowSecurityPolicy,
-      candidate.releaseWorkflow,
+      candidate.workflowFiles,
     );
   } catch (error) {
     if (error instanceof WorkflowSecurityPolicyError) {
@@ -807,7 +807,28 @@ function parseOptionalJson(path) {
   return source === undefined ? undefined : JSON.parse(source);
 }
 
+function parseWorkflowFiles() {
+  const directory = new URL("../.github/workflows/", import.meta.url);
+  if (!existsSync(directory)) {
+    return undefined;
+  }
+  const names = readdirSync(directory, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isFile() && /\.(?:yaml|yml)$/u.test(entry.name),
+    )
+    .map((entry) => entry.name)
+    .toSorted();
+  return Object.fromEntries(
+    names.map((name) => [
+      `.github/workflows/${name}`,
+      parseOptionalYaml(`.github/workflows/${name}`),
+    ]),
+  );
+}
+
 export function repositoryCandidate() {
+  const workflowFiles = parseWorkflowFiles();
   return {
     bugForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/bug.yml"),
     featureForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/feature.yml"),
@@ -819,8 +840,8 @@ export function repositoryCandidate() {
     workflowSecurityPolicy: parseOptionalYaml(
       ".github/workflow-security-policy.yml",
     ),
-    securityWorkflow: parseOptionalYaml(".github/workflows/security.yml"),
-    releaseWorkflow: parseOptionalYaml(".github/workflows/release.yml"),
+    workflowFiles,
+    securityWorkflow: workflowFiles?.[".github/workflows/security.yml"],
     ciWorkflow: parseOptionalYaml(".github/workflows/ci.yml"),
     releasePrep: readOptional("scripts/release-prep.sh"),
     codeowners: readOptional(".github/CODEOWNERS"),

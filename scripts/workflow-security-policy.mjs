@@ -50,7 +50,26 @@ function requireText(value, code, path, description) {
   }
 }
 
-function validateException(exception, releaseWorkflow) {
+function countSubstring(value, needle) {
+  if (typeof value === "string") {
+    return value.split(needle).length - 1;
+  }
+  if (Array.isArray(value)) {
+    return value.reduce(
+      (count, child) => count + countSubstring(child, needle),
+      0,
+    );
+  }
+  if (isObject(value)) {
+    return Object.values(value).reduce(
+      (count, child) => count + countSubstring(child, needle),
+      0,
+    );
+  }
+  return 0;
+}
+
+function validateException(exception, workflowFiles) {
   const code = "E_WORKFLOW_SECURITY_EXCEPTION";
   const path = `${POLICY_PATH}:exceptions[0]`;
   requireExactKeys(
@@ -85,23 +104,26 @@ function validateException(exception, releaseWorkflow) {
     );
   }
 
+  const releaseWorkflow =
+    workflowFiles?.[".github/workflows/release.yml"];
   const publishSteps = releaseWorkflow?.jobs?.release?.steps?.filter(
     (step) => step?.name === "Publish to crates.io",
   );
   if (
     !Array.isArray(publishSteps) ||
     publishSteps.length !== 1 ||
-    publishSteps[0]?.env?.CARGO_REGISTRY_TOKEN !== RELEASE_SECRET
+    publishSteps[0]?.env?.CARGO_REGISTRY_TOKEN !== RELEASE_SECRET ||
+    countSubstring(workflowFiles, RELEASE_SECRET) !== 1
   ) {
     reject(
       code,
       exception.path,
-      "must resolve to the one reviewed crates.io token use",
+      "must resolve to the only use of the reviewed crates.io token",
     );
   }
 }
 
-export function validateWorkflowSecurityPolicy(policy, releaseWorkflow) {
+export function validateWorkflowSecurityPolicy(policy, workflowFiles) {
   const code = "E_WORKFLOW_SECURITY_POLICY";
   requireExactKeys(
     policy,
@@ -169,7 +191,7 @@ export function validateWorkflowSecurityPolicy(policy, releaseWorkflow) {
       "must contain exactly the reviewed release-token exception",
     );
   }
-  validateException(policy.exceptions[0], releaseWorkflow);
+  validateException(policy.exceptions[0], workflowFiles);
   return policy;
 }
 
