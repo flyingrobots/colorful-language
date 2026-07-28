@@ -113,7 +113,7 @@ function validateException(exception, workflowFiles) {
     !Array.isArray(publishSteps) ||
     publishSteps.length !== 1 ||
     publishSteps[0]?.env?.CARGO_REGISTRY_TOKEN !== RELEASE_SECRET ||
-    countSubstring(workflowFiles, RELEASE_SECRET) !== 1
+    countSubstring(workflowFiles, exception.selector) !== 1
   ) {
     reject(
       code,

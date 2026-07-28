@@ -431,6 +431,24 @@ test("rejects a second use of an excepted workflow secret", () => {
   }, "E_WORKFLOW_SECURITY_EXCEPTION");
 });
 
+test("rejects an alternate expression spelling of an excepted secret", () => {
+  expectCode(({ workflowFiles }) => {
+    workflowFiles[".github/workflows/other.yml"] = {
+      jobs: {
+        other: {
+          steps: [
+            {
+              env: {
+                TOKEN: "${{secrets.CARGO_REGISTRY_TOKEN}}",
+              },
+            },
+          ],
+        },
+      },
+    };
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
 test("rejects persisted analyzer checkout credentials", () => {
   expectCode(({ securityWorkflow }) => {
     actionStep(
