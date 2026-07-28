@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 
 use colorful_core::{Finding, Rule, Severity, Span};
 use serde::Deserialize;
-use serde_json::Value;
 
 use crate::{ValeError, ValeErrorKind};
 
@@ -45,25 +44,25 @@ pub(crate) fn parse_findings(
     expected_source: &str,
     json: &str,
 ) -> Result<Vec<Finding>, ValeError> {
-    let value: Value = serde_json::from_str(json).map_err(|error| {
-        ValeError::new(
-            ValeErrorKind::MalformedOutput,
-            format!("Vale output is not valid JSON: {error}"),
-        )
-    })?;
-    if !value.is_object() {
+    if !json.trim_start().starts_with('{') {
         return Err(ValeError::new(
             ValeErrorKind::MalformedOutput,
             "Vale JSON output must be an object keyed by one stdin source",
         ));
     }
-    let files: BTreeMap<String, Vec<ValeAlert>> =
-        serde_json::from_value(value).map_err(|error| {
-            ValeError::new(
+    let files: BTreeMap<String, Vec<ValeAlert>> = serde_json::from_str(json).map_err(|error| {
+        let (kind, context) = match error.classify() {
+            serde_json::error::Category::Data => (
                 ValeErrorKind::InvalidAlert,
-                format!("Vale JSON alert shape is invalid: {error}"),
-            )
-        })?;
+                "Vale JSON alert shape is invalid",
+            ),
+            _ => (
+                ValeErrorKind::MalformedOutput,
+                "Vale output is not valid JSON",
+            ),
+        };
+        ValeError::new(kind, format!("{context}: {error}"))
+    })?;
     if files.len() > 1 {
         return Err(ValeError::new(
             ValeErrorKind::MalformedOutput,

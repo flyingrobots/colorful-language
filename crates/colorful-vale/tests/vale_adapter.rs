@@ -450,6 +450,16 @@ fn malformed_outputs_fail_closed_by_category() {
             ValeErrorKind::MalformedOutput,
         ),
         (
+            "printf '%s' '[]'",
+            ValeConfig::default_output_limit(),
+            ValeErrorKind::MalformedOutput,
+        ),
+        (
+            "printf '%s' '{\"stdin.txt\":[{\"Span\":[1,1]}]}'",
+            ValeConfig::default_output_limit(),
+            ValeErrorKind::InvalidAlert,
+        ),
+        (
             "printf '%s\\n' '{\"stdin.txt\":[{\"Action\":{\"Name\":\"\",\"Params\":null},\"Span\":[7,3],\"Check\":\"Style.Bad\",\"Description\":\"\",\"Link\":\"\",\"Message\":\"bad\",\"Severity\":\"warning\",\"Match\":\"bad\",\"Line\":1}]}'",
             ValeConfig::default_output_limit(),
             ValeErrorKind::InvalidAlert,
