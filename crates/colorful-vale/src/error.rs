@@ -78,3 +78,29 @@ impl fmt::Display for ValeError {
 }
 
 impl std::error::Error for ValeError {}
+
+#[cfg(test)]
+mod tests {
+    use super::ValeError;
+
+    #[test]
+    fn process_failure_bounds_stderr_and_formats_exit_status() {
+        let numeric = ValeError::process_failure("Vale analysis", Some(7), &vec![b'x'; 8192]);
+        assert!(numeric
+            .message()
+            .starts_with("Vale analysis exited with code 7;"));
+        assert!(!numeric.message().contains("Some("));
+        assert!(numeric.message().contains("[truncated]"));
+        assert!(
+            numeric.message().len() <= 4200,
+            "bounded stderr produced {} message bytes",
+            numeric.message().len()
+        );
+
+        let signalled = ValeError::process_failure("Vale analysis", None, b"");
+        assert_eq!(
+            signalled.message(),
+            "Vale analysis terminated by signal; no stderr"
+        );
+    }
+}
