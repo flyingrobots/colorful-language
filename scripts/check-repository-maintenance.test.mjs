@@ -96,6 +96,10 @@ unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = []
 `,
+    advisoryExceptions: {
+      version: 1,
+      exceptions: [],
+    },
     securityWorkflow: {
       on: {
         push: { branches: ["main"] },
@@ -208,6 +212,19 @@ function actionStep(job, action) {
   return job.steps.find((step) => step.uses === action);
 }
 
+function addAdvisoryException(candidate) {
+  candidate.rustPolicy = candidate.rustPolicy.replace(
+    "ignore = []",
+    'ignore = ["RUSTSEC-2099-0001"]',
+  );
+  candidate.advisoryExceptions.exceptions.push({
+    id: "RUSTSEC-2099-0001",
+    owner: "@flyingrobots",
+    reason: "No compatible upstream release is available.",
+    remove_when: "Upgrade when upstream publishes the fixed release.",
+  });
+}
+
 test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
 });
@@ -258,6 +275,30 @@ test("rejects a blanket Rust advisory exception", () => {
       "ignore = []",
       'ignore = ["RUSTSEC-2000-0001"]',
     );
+  }, "E_RUST_ADVISORY_EXCEPTION");
+});
+
+test("accepts a complete narrow Rust advisory exception", () => {
+  const candidate = fixture();
+  addAdvisoryException(candidate);
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
+});
+
+test("rejects an advisory exception without a removal trigger", () => {
+  expectCode((candidate) => {
+    addAdvisoryException(candidate);
+    delete candidate.advisoryExceptions.exceptions[0].remove_when;
+  }, "E_RUST_ADVISORY_EXCEPTION");
+});
+
+test("rejects stale advisory exception metadata", () => {
+  expectCode(({ advisoryExceptions }) => {
+    advisoryExceptions.exceptions.push({
+      id: "RUSTSEC-2099-0001",
+      owner: "@flyingrobots",
+      reason: "The advisory is no longer ignored.",
+      remove_when: "Remove this stale metadata immediately.",
+    });
   }, "E_RUST_ADVISORY_EXCEPTION");
 });
 
