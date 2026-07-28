@@ -32,12 +32,27 @@ if [[ "$#" -eq 1 ]]; then
 fi
 
 cleanup() {
+  local original_status=$?
+  local cleanup_status=0
+  trap - EXIT
+  set +e
   for tag in v0.2.1 v0.3.0; do
     if [[ -d "$work/$tag" ]]; then
-      git -C "$root" worktree remove "$work/$tag" >/dev/null
+      if ! git -C "$root" worktree remove "$work/$tag" >/dev/null; then
+        echo "version-compat-matrix cleanup left $work/$tag registered" >&2
+        cleanup_status=1
+      fi
     fi
   done
-  rm -rf "$work"
+  if [[ "$cleanup_status" -eq 0 ]]; then
+    rm -rf "$work" || cleanup_status=$?
+  else
+    echo "version-compat-matrix cleanup retained $work for inspection" >&2
+  fi
+  if [[ "$original_status" -ne 0 ]]; then
+    exit "$original_status"
+  fi
+  exit "$cleanup_status"
 }
 trap cleanup EXIT
 
