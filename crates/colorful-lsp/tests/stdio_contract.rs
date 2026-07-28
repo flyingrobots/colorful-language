@@ -322,11 +322,43 @@ fn server_metrics_use_a_stable_versioned_contract() {
 
     server.send(json!({
         "jsonrpc": "2.0",
+        "method": "textDocument/didOpen",
+        "params": {
+            "textDocument": {
+                "uri": "file:///metrics.txt",
+                "languageId": "plaintext",
+                "version": 1,
+                "text": "The clear sentence works."
+            }
+        }
+    }));
+    server.receive("version 1 diagnostics", |message| {
+        message["method"] == "textDocument/publishDiagnostics" && message["params"]["version"] == 1
+    });
+    server.send(json!({
+        "jsonrpc": "2.0",
         "id": 3,
+        "method": "colorful/metrics",
+        "params": null
+    }));
+    let active_metrics = server.receive("active server metrics response", |message| {
+        message["id"] == 3
+    });
+    assert_eq!(active_metrics["result"]["activeDocuments"], 1);
+    assert!(active_metrics["result"]["computationsStarted"]
+        .as_u64()
+        .is_some_and(|count| count >= 1));
+    assert!(active_metrics["result"]["acceptedResults"]
+        .as_u64()
+        .is_some_and(|count| count >= 1));
+
+    server.send(json!({
+        "jsonrpc": "2.0",
+        "id": 4,
         "method": "shutdown",
         "params": null
     }));
-    server.receive("shutdown response", |message| message["id"] == 3);
+    server.receive("shutdown response", |message| message["id"] == 4);
     server.send(json!({
         "jsonrpc": "2.0",
         "method": "exit",
