@@ -9,6 +9,10 @@ on:
     - cron: "17 14 * * 1"
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -18,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # master
         with:
           toolchain: "1.97.1"
@@ -51,10 +57,10 @@ jobs:
     name: CodeQL (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
-      actions: read
+      actions: read # Read workflow metadata for analysis.
       contents: read
-      packages: read
-      security-events: write
+      packages: read # Resolve packages referenced by the analyzed source.
+      security-events: write # Upload code-scanning results.
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +71,8 @@ jobs:
             build-mode: none
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4
         with:
           languages: ${{ matrix.language }}
@@ -72,3 +80,26 @@ jobs:
       - uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4
         with:
           category: "/language:${{ matrix.language }}"
+
+  workflow-security:
+    name: Workflow security
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: ".node-version"
+      - name: Install repository policy dependencies
+        run: npm ci
+      - uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf # v2.85.2
+        with:
+          tool: zizmor@1.28.0
+          fallback: none
+      - name: Self-test workflow-security analysis
+        run: node --test scripts/check-workflow-security.test.mjs
+      - name: Analyze checked-in workflows
+        run: node scripts/check-workflow-security.mjs

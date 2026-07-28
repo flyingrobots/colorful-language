@@ -1,0 +1,16 @@
+name: Unsafe workflow permissions
+
+on: push
+
+concurrency:
+  group: unsafe-permissions
+  cancel-in-progress: true
+
+permissions:
+  contents: write # Deliberately overbroad regression fixture.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cargo test

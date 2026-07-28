@@ -150,6 +150,7 @@ test("prints an update payload without local manifest metadata", () => {
       "Dependency review",
       "CodeQL (rust)",
       "CodeQL (javascript-typescript)",
+      "Workflow security",
     ].map((context) => ({ context, integration_id: 15368 })),
   );
 });

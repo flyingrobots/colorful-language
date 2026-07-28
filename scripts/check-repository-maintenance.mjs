@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { parse as parseYaml } from "yaml";
+
+import {
+  WorkflowSecurityPolicyError,
+  WORKFLOW_SECURITY_COMMANDS,
+  validateWorkflowSecurityPolicy,
+} from "./workflow-security-policy.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const REPOSITORY_URL = "https://github.com/flyingrobots/colorful-language";
@@ -11,8 +17,10 @@ const CHECKOUT_ACTION =
   "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
 const RUST_TOOLCHAIN_ACTION =
   "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
-const CARGO_DENY_ACTION =
+const INSTALL_ACTION =
   "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
+const SETUP_NODE_ACTION =
+  "actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444";
 const DEPENDENCY_REVIEW_ACTION =
   "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294";
 const CODEQL_INIT_ACTION =
@@ -469,7 +477,27 @@ function hasRun(job, command) {
   );
 }
 
-function requireBlockingRun(job, command, path) {
+function containsCredentialExpression(value) {
+  if (typeof value === "string") {
+    return /\$\{\{[^}]*\b(?:secrets|github\.token)\b[^}]*\}\}/u.test(
+      value,
+    );
+  }
+  if (Array.isArray(value)) {
+    return value.some(containsCredentialExpression);
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.values(value).some(containsCredentialExpression);
+  }
+  return false;
+}
+
+function requireBlockingRun(
+  job,
+  command,
+  path,
+  code = "E_SECURITY_WORKFLOW",
+) {
   const step = job?.steps?.find(
     (candidate) =>
       typeof candidate?.run === "string" &&
@@ -479,11 +507,7 @@ function requireBlockingRun(job, command, path) {
         .includes(command),
   );
   if (step === undefined) {
-    reject(
-      "E_SECURITY_WORKFLOW",
-      path,
-      `must run ${JSON.stringify(command)}`,
-    );
+    reject(code, path, `must run ${JSON.stringify(command)}`);
   }
   requireBlockingStep(step, path);
 }
@@ -495,7 +519,7 @@ function validateRustSecurityJob(workflow) {
   requireBlockingJob(job, path);
   requireAction(job, CHECKOUT_ACTION, `${path}:steps`);
   requireAction(job, RUST_TOOLCHAIN_ACTION, `${path}:steps`);
-  const install = requireAction(job, CARGO_DENY_ACTION, `${path}:steps`);
+  const install = requireAction(job, INSTALL_ACTION, `${path}:steps`);
   if (install?.with?.tool !== CARGO_DENY_VERSION) {
     reject(
       "E_CARGO_DENY_PIN",
@@ -597,6 +621,67 @@ function validateCodeQl(workflow) {
   }
 }
 
+function validateWorkflowSecurityJob(workflow, policy) {
+  const path = ".github/workflows/security.yml:jobs.workflow-security";
+  const job = workflow?.jobs?.["workflow-security"];
+  requireObject(job, "E_WORKFLOW_SECURITY_WIRING", path);
+  requireBlockingJob(job, path);
+  if (containsCredentialExpression(job)) {
+    reject(
+      "E_WORKFLOW_SECURITY_CREDENTIALS",
+      path,
+      "must not receive an explicit secret or GitHub token expression",
+    );
+  }
+  const permissionKeys = Object.keys(job.permissions ?? {}).toSorted();
+  if (
+    !sameStrings(permissionKeys, ["contents"]) ||
+    job.permissions.contents !== "read"
+  ) {
+    reject(
+      "E_WORKFLOW_SECURITY_PERMISSIONS",
+      `${path}:permissions`,
+      "must grant only read access to repository contents",
+    );
+  }
+
+  const checkout = requireAction(job, CHECKOUT_ACTION, `${path}:steps`);
+  if (checkout?.with?.["persist-credentials"] !== false) {
+    reject(
+      "E_WORKFLOW_SECURITY_CREDENTIALS",
+      `${path}:steps`,
+      "checkout must set persist-credentials to false",
+    );
+  }
+  const setupNode = requireAction(job, SETUP_NODE_ACTION, `${path}:steps`);
+  if (setupNode?.with?.["node-version-file"] !== ".node-version") {
+    reject(
+      "E_WORKFLOW_SECURITY_WIRING",
+      `${path}:steps`,
+      "must use the reviewed Node version file",
+    );
+  }
+  const install = requireAction(job, INSTALL_ACTION, `${path}:steps`);
+  if (
+    install?.with?.tool !== `zizmor@${policy.analyzer.version}` ||
+    install.with?.fallback !== "none"
+  ) {
+    reject(
+      "E_WORKFLOW_SECURITY_POLICY",
+      `${path}:steps`,
+      "installed analyzer must equal the versioned policy with no fallback",
+    );
+  }
+  for (const command of ["npm ci", ...WORKFLOW_SECURITY_COMMANDS]) {
+    requireBlockingRun(
+      job,
+      command,
+      `${path}:steps`,
+      "E_WORKFLOW_SECURITY_WIRING",
+    );
+  }
+}
+
 function validateCommandWiring(ciWorkflow, releasePrep) {
   const docsJob = ciWorkflow?.jobs?.docs;
   for (const command of REQUIRED_COMMANDS) {
@@ -625,6 +710,18 @@ function validateCommandWiring(ciWorkflow, releasePrep) {
     ) {
       reject(
         "E_RELEASE_PREP",
+        "scripts/release-prep.sh",
+        `must run ${JSON.stringify(command)}`,
+      );
+    }
+  }
+  for (const command of WORKFLOW_SECURITY_COMMANDS) {
+    if (
+      typeof releasePrep !== "string" ||
+      !releasePrep.split(/\r?\n/u).includes(command)
+    ) {
+      reject(
+        "E_WORKFLOW_SECURITY_WIRING",
         "scripts/release-prep.sh",
         `must run ${JSON.stringify(command)}`,
       );
@@ -678,6 +775,18 @@ export function validateRepositoryMaintenance(candidate) {
   });
   validateIssueConfig(candidate.issueConfig);
   validateRustPolicy(candidate.rustPolicy, candidate.advisoryExceptions);
+  let workflowSecurityPolicy;
+  try {
+    workflowSecurityPolicy = validateWorkflowSecurityPolicy(
+      candidate.workflowSecurityPolicy,
+      candidate.workflowFiles,
+    );
+  } catch (error) {
+    if (error instanceof WorkflowSecurityPolicyError) {
+      reject(error.code, error.path, error.detail);
+    }
+    throw error;
+  }
 
   requireObject(
     candidate.securityWorkflow,
@@ -688,6 +797,10 @@ export function validateRepositoryMaintenance(candidate) {
   validateRustSecurityJob(candidate.securityWorkflow);
   validateDependencyReview(candidate.securityWorkflow);
   validateCodeQl(candidate.securityWorkflow);
+  validateWorkflowSecurityJob(
+    candidate.securityWorkflow,
+    workflowSecurityPolicy,
+  );
   validateCommandWiring(candidate.ciWorkflow, candidate.releasePrep);
   validateOwnership(candidate.codeowners, candidate.ruleset);
 }
@@ -707,7 +820,28 @@ function parseOptionalJson(path) {
   return source === undefined ? undefined : JSON.parse(source);
 }
 
+function parseWorkflowFiles() {
+  const directory = new URL("../.github/workflows/", import.meta.url);
+  if (!existsSync(directory)) {
+    return undefined;
+  }
+  const names = readdirSync(directory, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isFile() && /\.(?:yaml|yml)$/u.test(entry.name),
+    )
+    .map((entry) => entry.name)
+    .toSorted();
+  return Object.fromEntries(
+    names.map((name) => [
+      `.github/workflows/${name}`,
+      parseOptionalYaml(`.github/workflows/${name}`),
+    ]),
+  );
+}
+
 export function repositoryCandidate() {
+  const workflowFiles = parseWorkflowFiles();
   return {
     bugForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/bug.yml"),
     featureForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/feature.yml"),
@@ -716,7 +850,11 @@ export function repositoryCandidate() {
     advisoryExceptions: parseOptionalYaml(
       ".github/rust-advisory-exceptions.yml",
     ),
-    securityWorkflow: parseOptionalYaml(".github/workflows/security.yml"),
+    workflowSecurityPolicy: parseOptionalYaml(
+      ".github/workflow-security-policy.yml",
+    ),
+    workflowFiles,
+    securityWorkflow: workflowFiles?.[".github/workflows/security.yml"],
     ciWorkflow: parseOptionalYaml(".github/workflows/ci.yml"),
     releasePrep: readOptional("scripts/release-prep.sh"),
     codeowners: readOptional(".github/CODEOWNERS"),

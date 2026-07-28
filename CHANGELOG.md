@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Pinned workflow-security analysis.** Local release preparation and a
+  read-only required security job now run `zizmor` 1.28.0 offline across every
+  checked-in GitHub Actions workflow while retaining `actionlint` for syntax
+  and schema validation. Deterministic fixtures reject persisted checkout
+  credentials and workflow-level write permissions with stable categories.
+  The versioned policy binds the analyzer identity, invocation, and sole
+  crates.io release-token exception; all workflow checkouts now disable
+  credential persistence, template expressions enter shell steps through the
+  environment, hung analyzer subprocesses fail closed after 60 seconds,
+  superseded CI runs cancel, and tag releases no longer restore a shared build
+  cache.
 - **Runnable public API evidence.** Concise doctests now exercise the public
   `Parser`, `Annotator`, `Analyzer`, IR producer, and fallible vocabulary
   boundaries. A deterministic policy test prevents any named example or the

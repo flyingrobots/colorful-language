@@ -17,6 +17,7 @@ fi
 
 command -v markdownlint-cli2 >/dev/null 2>&1 || fail "markdownlint-cli2 is required"
 command -v actionlint >/dev/null 2>&1 || fail "actionlint is required"
+command -v zizmor >/dev/null 2>&1 || fail "zizmor is required"
 
 bash scripts/check-node-version.test.sh
 bash scripts/check-node-version.sh
@@ -38,6 +39,8 @@ node --test scripts/check-dependency-update-policy.test.mjs
 node scripts/check-dependency-update-policy.mjs
 node --test scripts/check-repository-maintenance.test.mjs
 node scripts/check-repository-maintenance.mjs
+node --test scripts/check-workflow-security.test.mjs
+node scripts/check-workflow-security.mjs
 node --test scripts/check-coverage-policy.test.mjs
 node --test scripts/check-public-api-doctests.test.mjs
 node scripts/check-public-api-doctests.mjs

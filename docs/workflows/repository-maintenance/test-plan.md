@@ -51,6 +51,12 @@ roadmap-to-issue reconciliation is tracked in
 - **RM-11 — Public API doctest gate.** Runnable examples for the primary public
   Rust APIs must compile and execute in one visible, unconditional, blocking
   workspace CI step.
+- **RM-12 — Workflow security analysis.** Every checked-in GitHub Actions
+  workflow must pass one exact, offline workflow-security analyzer in local
+  evidence, hosted CI, and release preparation. The analyzer must reject
+  persisted checkout credentials and overbroad permissions, run without
+  write-capable repository permissions, and derive its identity, invocation,
+  and narrow exception configuration from one reviewed policy.
 
 ## Cases
 
@@ -122,12 +128,13 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
 - **RM-4b — Required security contexts.** *Requirements:* RM-4, RM-5, RM-8.
   *Behavior:* the live and checked-in mainline rulesets require Rust dependency
-  policy, dependency review, and both CodeQL language jobs from GitHub Actions
-  application `15368`. *Oracle:* the exact ruleset-payload test rejects an
-  omitted or renamed context, and the privileged live checker reports full
-  parity without changing the bypass actor. *Evidence type:* deterministic
-  ruleset test, source-controlled manifest, and privileged live API check.
-  *Evidence:* `.github/rulesets/mainline.json`,
+  policy, dependency review, both CodeQL language jobs, and pinned workflow-
+  security analysis from GitHub Actions application `15368`. *Oracle:* the
+  exact ruleset-payload test rejects an omitted or renamed context, and the
+  privileged live checker reports full parity without changing the bypass
+  actor. *Evidence type:* deterministic ruleset test, source-controlled
+  manifest, and privileged live API check. *Evidence:*
+  `.github/rulesets/mainline.json`,
   `scripts/check-main-ruleset.test.mjs`, and
   `scripts/check-main-ruleset.mjs`. *Status:* implemented.
 - **RM-5a — Useful CodeQL coverage.** *Requirement:* RM-5. *Behavior:* one
@@ -249,6 +256,28 @@ roadmap-to-issue reconciliation is tracked in
   `Analyzer`, `build_document`, and `visual_role` rustdoc examples. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
   *Status:* implemented.
+- **RM-12a — Pinned workflow-security gate.** *Requirement:* RM-12. *Behavior:*
+  one versioned policy selects an exact `zizmor` release and its offline,
+  workflow-only invocation; the same first-party wrapper scans every checked-in
+  workflow in local evidence, a read-only hosted security job, and release
+  preparation while `actionlint` remains the syntax and schema oracle. Any
+  analyzer exception names one exact rule and workflow location, rationale,
+  owner, and removal trigger. *Oracle:* safe fixtures and the live repository
+  pass; minimal persisted-checkout-credential and workflow-level write-
+  permission fixtures fail with stable, path-addressed categories; a
+  deterministic hanging analyzer fails with a stable timeout category before
+  its process-level watchdog; policy mutations reject a floating version,
+  weakened thresholds, broadened exception, missing hosted command, or missing
+  release-preparation command.
+  *Evidence type:* pinned analyzer execution, deterministic process fixtures,
+  and configuration mutation tests. *Evidence:*
+  `.github/workflow-security-policy.yml`,
+  `scripts/check-workflow-security.mjs`,
+  `scripts/check-workflow-security.test.mjs`,
+  `scripts/fixtures/workflow-security/`,
+  `.github/workflows/security.yml`, and `scripts/release-prep.sh`. *Tracking:*
+  [#209](https://github.com/flyingrobots/colorful-language/issues/209).
+  *Status:* implemented.
 
 ## Hosted evidence boundary
 
@@ -256,4 +285,5 @@ The mutation suites and structural roadmap check are deterministic and local.
 The live RustSec database, GitHub dependency and issue snapshots, and CodeQL
 queries are evolving hosted oracles; a new advisory, query, or issue-state
 transition can make an unchanged revision fail and requires maintainer triage
-rather than a blanket exception.
+rather than a blanket exception. Workflow-security analysis is deliberately
+offline and pinned; advancing its analyzer requires a reviewed policy change.
