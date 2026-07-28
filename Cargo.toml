@@ -18,6 +18,7 @@ colorful-lexicon = { path = "crates/colorful-lexicon", version = "0.4.0" }
 colorful-ir = { path = "crates/colorful-ir", version = "0.4.0" }
 colorful-lint = { path = "crates/colorful-lint", version = "0.4.0" }
 colorful-projection = { path = "crates/colorful-projection", version = "0.4.0" }
+colorful-vale = { path = "crates/colorful-vale", version = "0.4.0" }
 
 logos = "0.14"
 phf = { version = "0.11", features = ["macros"] }
