@@ -189,6 +189,13 @@ v0.3 must handle the `Option` result.
   form an acyclic graph with at most one parent per child, and every parent
   range contains each child's range. Graph traversal is iterative so hostile
   depth cannot overflow the process stack.
+- **Enforced production complexity budget.** `colorful-ir` production code
+  enables Clippy's `cognitive_complexity` lint with a workspace threshold of
+  10. The normal all-target Clippy gate fails on an over-budget validator
+  helper, while `scripts/check-validator-complexity.sh` proves the configured
+  lint rejects a deliberate 11-branch fixture. Test-only mutation matrices are
+  outside this production budget so comprehensive case tables need not be
+  split merely to satisfy a source-shape metric.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust

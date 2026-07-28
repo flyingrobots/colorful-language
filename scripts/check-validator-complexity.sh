@@ -27,8 +27,9 @@ threshold_count="$(
 [[ "$threshold_count" -eq 1 ]] ||
   fail "clippy.toml must set cognitive-complexity-threshold = 10 exactly once"
 
-grep -Fx '#![warn(clippy::cognitive_complexity)]' "$ir_source" >/dev/null ||
-  fail "colorful-ir must enable clippy::cognitive_complexity"
+grep -Fx '#![cfg_attr(not(test), warn(clippy::cognitive_complexity))]' \
+  "$ir_source" >/dev/null ||
+  fail "colorful-ir production code must enable clippy::cognitive_complexity"
 
 output="$(mktemp)"
 trap 'rm -f "$output"' EXIT

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enforced IR validator complexity.** Production `colorful-ir` code now opts
+  into Clippy's cognitive-complexity lint at a workspace threshold of 10.
+  Refactored structure-graph and token-axis validation helpers remain within the
+  budget, and a deliberate over-budget fixture proves the named CI and local
+  release-preparation check fails closed when the policy is effective.
 - **Pinned workflow-security analysis.** Local release preparation and a
   read-only required security job now run `zizmor` 1.28.0 offline across every
   checked-in GitHub Actions workflow while retaining `actionlint` for syntax

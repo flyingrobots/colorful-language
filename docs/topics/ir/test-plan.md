@@ -482,9 +482,14 @@ Requirements:
   is enforced by a reproducible tool or explicitly retired with documented
   rationale. *Oracle:* a deliberate over-budget fixture fails the named check,
   or the policy and CI remove the unsupported claim together. *Evidence type:*
-  source-policy test or reviewed policy deletion. *Tracking:*
+  source-policy test or reviewed policy deletion. *Evidence:* the root
+  `clippy.toml` threshold, the production-only
+  `clippy::cognitive_complexity` opt-in in `colorful-ir`,
+  `scripts/check-validator-complexity.sh`, its deliberate over-budget fixture
+  under `scripts/fixtures/validator-complexity/`, the blocking CI Rust job, and
+  `scripts/release-prep.sh`. *Tracking:*
   [#81](https://github.com/flyingrobots/colorful-language/issues/81).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-18c** — *Requirement:* IR-18. *Behavior:* bounded deterministic mutation
   runs prove the validator tests kill reviewed invariant-breaking mutations and
   seed useful survivors into normal regression tests. *Oracle:* the pinned

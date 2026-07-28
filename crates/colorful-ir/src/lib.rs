@@ -7,6 +7,7 @@
 //! types; this crate is the one-way bridge.
 
 #![forbid(unsafe_code)]
+#![cfg_attr(not(test), warn(clippy::cognitive_complexity))]
 
 mod generated;
 pub mod vocabulary;
@@ -1212,6 +1213,18 @@ fn validate_structure_graph(
     ctx: &SourceContext,
 ) -> Vec<ValidationError> {
     let mut errors = Vec::new();
+    let node_indices = validate_structure_nodes(document, ctx, &mut errors);
+    validate_structure_edges(document, &node_indices, &mut errors);
+    validate_structure_cycles(document, &node_indices, &mut errors);
+    errors
+}
+
+/// Validate each node and build the first-occurrence index used by edge checks.
+fn validate_structure_nodes(
+    document: &syntax_v1::DocumentAnalysis,
+    ctx: &SourceContext,
+    errors: &mut Vec<ValidationError>,
+) -> std::collections::HashMap<i32, usize> {
     let mut seen_ids = std::collections::HashSet::new();
     let mut node_indices = std::collections::HashMap::new();
 
@@ -1241,7 +1254,15 @@ fn validate_structure_graph(
             });
         }
     }
+    node_indices
+}
 
+/// Validate parent ownership and range containment for every resolvable edge.
+fn validate_structure_edges(
+    document: &syntax_v1::DocumentAnalysis,
+    node_indices: &std::collections::HashMap<i32, usize>,
+    errors: &mut Vec<ValidationError>,
+) {
     let mut parents = std::collections::HashMap::new();
     for (i, node) in document.structure.iter().enumerate() {
         let path = Path::root().field("structure").index(i);
@@ -1280,7 +1301,14 @@ fn validate_structure_graph(
             }
         }
     }
+}
 
+/// Validate graph acyclicity with an iterative, wire-ordered depth-first search.
+fn validate_structure_cycles(
+    document: &syntax_v1::DocumentAnalysis,
+    node_indices: &std::collections::HashMap<i32, usize>,
+    errors: &mut Vec<ValidationError>,
+) {
     // Iterative depth-first search avoids making hostile graph depth consume
     // the process stack. Root and edge iteration preserve wire order.
     let mut colors = vec![0_u8; document.structure.len()];
@@ -1320,8 +1348,6 @@ fn validate_structure_graph(
             }
         }
     }
-
-    errors
 }
 
 /// Validate each diagnostic's byte range.
@@ -1390,47 +1416,60 @@ fn validate_derivation(
 /// only a `CONTENT` word may carry an `openClassKind`; every other `tokenKind`
 /// carries none of those optional axes.
 fn token_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
-    use syntax_v1::{LexicalClass, TokenKind};
+    use syntax_v1::TokenKind;
     match token.token_kind {
-        TokenKind::Word => match token.lexical_class {
-            None => Some("a WORD token must carry a lexicalClass"),
-            Some(LexicalClass::Function) => {
-                if token.function_kind.is_none() {
-                    Some("a FUNCTION word must carry a functionKind")
-                } else if token.open_class_kind.is_some() {
-                    Some("only a CONTENT word may carry an openClassKind")
-                } else {
-                    None
-                }
-            }
-            Some(LexicalClass::Content) => {
-                if token.function_kind.is_some() {
-                    Some("only a FUNCTION word may carry a functionKind")
-                } else {
-                    None
-                }
-            }
-            Some(LexicalClass::ProperNounCandidate) => {
-                if token.function_kind.is_some() {
-                    Some("only a FUNCTION word may carry a functionKind")
-                } else if token.open_class_kind.is_some() {
-                    Some("only a CONTENT word may carry an openClassKind")
-                } else {
-                    None
-                }
-            }
-        },
+        TokenKind::Word => word_token_axes_violation(token),
         TokenKind::Number | TokenKind::Punctuation | TokenKind::Quote => {
-            if token.lexical_class.is_some() {
-                Some("a non-word token must not carry a lexicalClass")
-            } else if token.function_kind.is_some() {
-                Some("a non-word token must not carry a functionKind")
-            } else if token.open_class_kind.is_some() {
-                Some("a non-word token must not carry an openClassKind")
-            } else {
-                None
-            }
+            non_word_token_axes_violation(token)
         }
+    }
+}
+
+fn word_token_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
+    use syntax_v1::LexicalClass;
+    match token.lexical_class {
+        None => Some("a WORD token must carry a lexicalClass"),
+        Some(LexicalClass::Function) => function_word_axes_violation(token),
+        Some(LexicalClass::Content) => token
+            .function_kind
+            .is_some()
+            .then_some("only a FUNCTION word may carry a functionKind"),
+        Some(LexicalClass::ProperNounCandidate) => proper_noun_axes_violation(token),
+    }
+}
+
+fn function_word_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
+    if token.function_kind.is_none() {
+        Some("a FUNCTION word must carry a functionKind")
+    } else {
+        token
+            .open_class_kind
+            .is_some()
+            .then_some("only a CONTENT word may carry an openClassKind")
+    }
+}
+
+fn proper_noun_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
+    if token.function_kind.is_some() {
+        Some("only a FUNCTION word may carry a functionKind")
+    } else {
+        token
+            .open_class_kind
+            .is_some()
+            .then_some("only a CONTENT word may carry an openClassKind")
+    }
+}
+
+fn non_word_token_axes_violation(token: &syntax_v1::Token) -> Option<&'static str> {
+    if token.lexical_class.is_some() {
+        Some("a non-word token must not carry a lexicalClass")
+    } else if token.function_kind.is_some() {
+        Some("a non-word token must not carry a functionKind")
+    } else {
+        token
+            .open_class_kind
+            .is_some()
+            .then_some("a non-word token must not carry an openClassKind")
     }
 }
 
