@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Cross-stage performance and allocation evidence.** A release-mode harness
+  now measures parsing, contextual annotation, lint analysis, guarded IR
+  projection, canonical serialization, and fail-closed IR validation
+  independently over the same fixed 899-byte and 45-KB corpora used by the
+  existing Criterion benches. The versioned baseline records median latency,
+  derived throughput, allocation count and bytes, corpus hashes, source commit,
+  host, toolchain, and an advisory 25% latency / 10% allocation review policy.
+  Deterministic CI validates the report and its links to the existing semantic-
+  token, incremental-edit, and Graft authorities without rerunning noisy
+  timings.
 - **Measured LSP service envelope.** A release-mode process harness drives the
   real server at 100 KiB, 1 MiB, 5 MiB, and 10 MiB through open, diagnostics,
   cached tokens, single-character changes, rapid versioned edits, and four

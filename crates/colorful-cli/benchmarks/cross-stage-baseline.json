@@ -1,0 +1,190 @@
+{
+  "authorities": [
+    {
+      "authority": "cross-stage-release",
+      "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+      "stage": "parsing"
+    },
+    {
+      "authority": "cross-stage-release",
+      "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+      "stage": "annotation"
+    },
+    {
+      "authority": "cross-stage-release",
+      "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+      "stage": "lint"
+    },
+    {
+      "authority": "cross-stage-release",
+      "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+      "stage": "ir-projection"
+    },
+    {
+      "authority": "cross-stage-release",
+      "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+      "stage": "ir-serialization"
+    },
+    {
+      "authority": "cross-stage-release",
+      "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+      "stage": "ir-validation"
+    },
+    {
+      "authority": "criterion-semantic-tokens",
+      "evidence": "crates/colorful-lsp/benches/semantic_tokens_bench.rs",
+      "stage": "semantic-tokens"
+    },
+    {
+      "authority": "lsp-envelope",
+      "evidence": "crates/colorful-lsp/examples/lsp_envelope.rs",
+      "stage": "incremental-edits"
+    },
+    {
+      "authority": "graft-projection",
+      "evidence": "consumers/graft-projection.test.mjs",
+      "stage": "graft-projection"
+    }
+  ],
+  "corpora": [
+    {
+      "byteCount": 899,
+      "id": "small",
+      "path": "crates/colorful-cli/fixtures/editor-smoke-prose.txt",
+      "sha256": "sha256:94a03286a53a888248512692865d2947ccf48c3c15247c0683f9aa3f76b82a0c"
+    },
+    {
+      "byteCount": 44999,
+      "id": "medium",
+      "path": "crates/colorful-cli/fixtures/bench-corpus.txt",
+      "sha256": "sha256:2817d71961e944b58626b507a5a352ca7fcac0575f1493fe3622eb73e98dce93"
+    }
+  ],
+  "measurement": {
+    "allocationSamplesPerStage": 1,
+    "generatedAt": "2026-07-28T09:04:26Z",
+    "hardware": "Apple M1 Pro; arm64",
+    "operatingSystem": "Darwin 25.3.0 arm64",
+    "profile": "release",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "sourceCommit": "197efa7d6c6b80246fd19e16235ae2edf99bc146",
+    "timingSamplesPerStage": 9
+  },
+  "measurements": [
+    {
+      "allocatedBytes": 18240,
+      "allocationCount": 43,
+      "corpus": "small",
+      "inputBytes": 899,
+      "medianNanoseconds": 4875,
+      "stage": "parsing",
+      "throughputBytesPerSecond": 184410256
+    },
+    {
+      "allocatedBytes": 12993,
+      "allocationCount": 136,
+      "corpus": "small",
+      "inputBytes": 899,
+      "medianNanoseconds": 16917,
+      "stage": "annotation",
+      "throughputBytesPerSecond": 53141810
+    },
+    {
+      "allocatedBytes": 9635,
+      "allocationCount": 144,
+      "corpus": "small",
+      "inputBytes": 899,
+      "medianNanoseconds": 8958,
+      "stage": "lint",
+      "throughputBytesPerSecond": 100357222
+    },
+    {
+      "allocatedBytes": 76564,
+      "allocationCount": 1063,
+      "corpus": "small",
+      "inputBytes": 899,
+      "medianNanoseconds": 84166,
+      "stage": "ir-projection",
+      "throughputBytesPerSecond": 10681272
+    },
+    {
+      "allocatedBytes": 338615,
+      "allocationCount": 2342,
+      "corpus": "small",
+      "inputBytes": 899,
+      "medianNanoseconds": 184792,
+      "stage": "ir-serialization",
+      "throughputBytesPerSecond": 4864929
+    },
+    {
+      "allocatedBytes": 60345,
+      "allocationCount": 1009,
+      "corpus": "small",
+      "inputBytes": 899,
+      "medianNanoseconds": 61833,
+      "stage": "ir-validation",
+      "throughputBytesPerSecond": 14539161
+    },
+    {
+      "allocatedBytes": 937760,
+      "allocationCount": 2009,
+      "corpus": "medium",
+      "inputBytes": 44999,
+      "medianNanoseconds": 231417,
+      "stage": "parsing",
+      "throughputBytesPerSecond": 194449845
+    },
+    {
+      "allocatedBytes": 826386,
+      "allocationCount": 6463,
+      "corpus": "medium",
+      "inputBytes": 44999,
+      "medianNanoseconds": 631125,
+      "stage": "annotation",
+      "throughputBytesPerSecond": 71299663
+    },
+    {
+      "allocatedBytes": 497206,
+      "allocationCount": 7059,
+      "corpus": "medium",
+      "inputBytes": 44999,
+      "medianNanoseconds": 388750,
+      "stage": "lint",
+      "throughputBytesPerSecond": 115753054
+    },
+    {
+      "allocatedBytes": 3350294,
+      "allocationCount": 49172,
+      "corpus": "medium",
+      "inputBytes": 44999,
+      "medianNanoseconds": 2204583,
+      "stage": "ir-projection",
+      "throughputBytesPerSecond": 20411569
+    },
+    {
+      "allocatedBytes": 17686667,
+      "allocationCount": 114264,
+      "corpus": "medium",
+      "inputBytes": 44999,
+      "medianNanoseconds": 9114542,
+      "stage": "ir-serialization",
+      "throughputBytesPerSecond": 4937055
+    },
+    {
+      "allocatedBytes": 2717962,
+      "allocationCount": 48414,
+      "corpus": "medium",
+      "inputBytes": 44999,
+      "medianNanoseconds": 1997208,
+      "stage": "ir-validation",
+      "throughputBytesPerSecond": 22530953
+    }
+  ],
+  "regressionPolicy": {
+    "allocationTolerancePercent": 10,
+    "correctnessCiTimingGate": false,
+    "enforcement": "advisory",
+    "latencyTolerancePercent": 25
+  },
+  "schemaVersion": "colorful.performance.cross-stage/v1"
+}
