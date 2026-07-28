@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import {
+  discoverFuzzTargetNames,
   PropertyFuzzPolicyError,
   validatePropertyFuzzPolicy,
 } from "./check-property-fuzz-policy.mjs";
@@ -337,6 +346,21 @@ test("rejects a missing fuzz target", () => {
     { ...VALID_SNAPSHOT, fuzzTargets },
     "E_FUZZ_TARGET",
   );
+});
+
+test("discovers stray fuzz target files from the filesystem", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "colorful-fuzz-targets-"));
+  try {
+    const targetDirectory = path.join(root, "fuzz", "fuzz_targets");
+    mkdirSync(targetDirectory, { recursive: true });
+    writeFileSync(path.join(targetDirectory, "parser.rs"), "");
+    writeFileSync(path.join(targetDirectory, "stray.rs"), "");
+    writeFileSync(path.join(targetDirectory, "README.md"), "");
+
+    assert.deepEqual(discoverFuzzTargetNames(root), ["parser", "stray"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("rejects a fuzz target missing from its manifest", () => {

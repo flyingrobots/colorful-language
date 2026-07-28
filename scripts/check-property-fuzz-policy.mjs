@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -386,6 +386,22 @@ function readUtf8(root, relativePath) {
   }
 }
 
+export function discoverFuzzTargetNames(root) {
+  try {
+    return readdirSync(path.join(root, "fuzz", "fuzz_targets"), {
+      withFileTypes: true,
+    })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".rs"))
+      .map((entry) => entry.name.slice(0, -3))
+      .sort();
+  } catch {
+    reject(
+      "E_POLICY_INPUT",
+      "fuzz/fuzz_targets: cannot scan policy input",
+    );
+  }
+}
+
 function readSnapshot(root) {
   const snapshot = Object.fromEntries(
     Object.entries(INPUT_PATHS).map(([key, relativePath]) => [
@@ -394,7 +410,7 @@ function readSnapshot(root) {
     ]),
   );
   snapshot.fuzzTargets = Object.fromEntries(
-    FUZZ_TARGETS.map((target) => [
+    discoverFuzzTargetNames(root).map((target) => [
       target,
       readUtf8(root, `fuzz/fuzz_targets/${target}.rs`),
     ]),

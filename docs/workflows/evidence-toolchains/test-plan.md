@@ -128,7 +128,7 @@ bounded property/fuzz evidence tracked by
   exits zero. *Evidence type:* manifest/lockfiles, executable policy mutation
   tests, CI step, and operational reference. *Evidence:* root and `fuzz/`
   Cargo manifest/lock pairs; `scripts/check-property-fuzz-policy.mjs`;
-  its 37-case mutation suite; `.github/workflows/ci.yml`;
+  its 38-case mutation suite; `.github/workflows/ci.yml`;
   `scripts/release-prep.sh`; the evidence-toolchain reference. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
   *Status:* implemented.
