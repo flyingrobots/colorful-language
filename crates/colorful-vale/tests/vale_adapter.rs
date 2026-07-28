@@ -211,6 +211,24 @@ fn discovery_rejects_missing_config_executable_and_major() {
 }
 
 #[test]
+fn discovery_distinguishes_malformed_and_incompatible_versions() {
+    for version in ["3.0.0-beta1", "3.9.1+build", "99999999999999999999.1.1"] {
+        let malformed = FakeVale::new(version, "printf '%s\\n' '{}'");
+        assert_eq!(
+            error_kind(ValeAnalyzer::discover(malformed.config())),
+            ValeErrorKind::UnrecognizedVersion,
+            "{version:?}"
+        );
+    }
+
+    let incompatible = FakeVale::new("4.0.0", "printf '%s\\n' '{}'");
+    assert_eq!(
+        error_kind(ValeAnalyzer::discover(incompatible.config())),
+        ValeErrorKind::IncompatibleVersion
+    );
+}
+
+#[test]
 fn permission_denied_executable_is_unavailable() {
     let fixture = success_fixture();
     let mut permissions = fs::metadata(&fixture.executable)
