@@ -114,9 +114,10 @@ lives in `crates/colorful-parse/src/lib.rs`.
   invariant is enforced independently by a time-based parser fuzz target
   outside the correctness gate. *Oracle:* parsing and annotation do not panic;
   every accepted tree/token span is non-empty, ordered, in bounds, and on a
-  character boundary; independently concatenating source gaps and spans
-  reproduces the source byte-for-byte. *Evidence type:* seeded property test,
-  fuzz target, and deterministic regression corpus. *Evidence:*
+  character boundary; every gap contains only an explicitly skipped whitespace
+  scalar; independently concatenating source gaps and spans reproduces the
+  source byte-for-byte. *Evidence type:* seeded property test, fuzz target, and
+  deterministic regression corpus. *Evidence:*
   `crates/colorful-cli/tests/property_boundaries.rs`
   `seeded_unicode_parser_and_annotator_ranges_are_legal_and_round_trip`;
   `fuzz/fuzz_targets/parser.rs`; `fuzz/fuzz_targets/annotator.rs`;

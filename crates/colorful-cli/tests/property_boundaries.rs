@@ -69,6 +69,29 @@ fn leaf_spans(tree: &Tree) -> Result<Vec<Span>, TestCaseError> {
     Ok(spans)
 }
 
+fn is_parser_whitespace(character: char) -> bool {
+    matches!(
+        character,
+        ' ' | '\t'
+            | '\r'
+            | '\n'
+            | '\u{000C}'
+            | '\u{00A0}'
+            | '\u{1680}'
+            | '\u{202F}'
+            | '\u{205F}'
+            | '\u{3000}'
+    ) || ('\u{2000}'..='\u{200A}').contains(&character)
+}
+
+fn assert_gap_is_parser_whitespace(gap: &str) -> Result<(), TestCaseError> {
+    prop_assert!(
+        gap.chars().all(is_parser_whitespace),
+        "uncovered source character in gap {gap:?}"
+    );
+    Ok(())
+}
+
 fn assert_legal_spans_and_round_trip(
     source: &str,
     tree: &Tree,
@@ -87,11 +110,15 @@ fn assert_legal_spans_and_round_trip(
         prop_assert!(source.is_char_boundary(span.end));
         prop_assert_eq!(tokens[index].span, span);
 
-        reconstructed.push_str(&source[cursor..span.start]);
+        let gap = &source[cursor..span.start];
+        assert_gap_is_parser_whitespace(gap)?;
+        reconstructed.push_str(gap);
         reconstructed.push_str(&source[span.start..span.end]);
         cursor = span.end;
     }
-    reconstructed.push_str(&source[cursor..]);
+    let trailing_gap = &source[cursor..];
+    assert_gap_is_parser_whitespace(trailing_gap)?;
+    reconstructed.push_str(trailing_gap);
     prop_assert_eq!(reconstructed, source);
     Ok(())
 }
@@ -384,4 +411,22 @@ fn seeded_cli_and_lsp_coordinates_identify_the_same_finding() {
             Ok(())
         })
         .expect("seeded CLI/LSP coordinate property");
+}
+
+#[test]
+fn source_round_trip_oracle_rejects_dropped_non_whitespace() {
+    let source = "word";
+    let error = assert_legal_spans_and_round_trip(source, &Tree::document(Vec::new()), &[])
+        .expect_err("dropped non-whitespace input must fail the round-trip oracle");
+    assert!(
+        error.to_string().contains("uncovered source character"),
+        "unexpected oracle error: {error}"
+    );
+}
+
+#[test]
+fn source_round_trip_oracle_accepts_every_parser_whitespace_scalar() {
+    let source = " \t\r\n\u{000C}\u{00A0}\u{1680}\u{2000}\u{200A}\u{202F}\u{205F}\u{3000}";
+    assert_legal_spans_and_round_trip(source, &Tree::document(Vec::new()), &[])
+        .expect("the parser may omit every explicitly skipped whitespace scalar");
 }

@@ -25,6 +25,21 @@ fn leaf_spans(tree: &Tree) -> Vec<Span> {
         .collect()
 }
 
+fn is_parser_whitespace(character: char) -> bool {
+    matches!(
+        character,
+        ' ' | '\t'
+            | '\r'
+            | '\n'
+            | '\u{000C}'
+            | '\u{00A0}'
+            | '\u{1680}'
+            | '\u{202F}'
+            | '\u{205F}'
+            | '\u{3000}'
+    ) || ('\u{2000}'..='\u{200A}').contains(&character)
+}
+
 fuzz_target!(|source: &str| {
     let tree = ProseParser::new().parse(source);
     let mut cursor = 0usize;
@@ -35,10 +50,14 @@ fuzz_target!(|source: &str| {
         assert!(span.end <= source.len());
         assert!(source.is_char_boundary(span.start));
         assert!(source.is_char_boundary(span.end));
-        reconstructed.push_str(&source[cursor..span.start]);
+        let gap = &source[cursor..span.start];
+        assert!(gap.chars().all(is_parser_whitespace));
+        reconstructed.push_str(gap);
         reconstructed.push_str(&source[span.start..span.end]);
         cursor = span.end;
     }
-    reconstructed.push_str(&source[cursor..]);
+    let trailing_gap = &source[cursor..];
+    assert!(trailing_gap.chars().all(is_parser_whitespace));
+    reconstructed.push_str(trailing_gap);
     assert_eq!(reconstructed, source);
 });
