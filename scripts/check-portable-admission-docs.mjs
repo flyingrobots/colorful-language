@@ -131,6 +131,7 @@ function expectedFragments(facts) {
       "docs/topics/ir/test-plan.md",
       [
         `${facts.authored} authored IR adapter lines`,
+        `alternatives' combined ${facts.alternatives} lines`,
         `${unique} unique / ${committed}`,
       ],
     ],
