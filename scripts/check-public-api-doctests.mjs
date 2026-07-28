@@ -7,14 +7,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "yaml";
 
 const APIS = Object.freeze([
-  ["core", "parser", "pub trait Parser"],
-  ["core", "annotator", "pub trait Annotator"],
-  ["core", "analyzer", "pub trait Analyzer"],
-  ["projection", "ir-projection", "pub fn build_document"],
-  ["vocabulary", "vocabulary", "pub fn visual_role"],
+  ["core", "parser", "pub trait Parser", ".parse("],
+  ["core", "annotator", "pub trait Annotator", ".annotate("],
+  ["core", "analyzer", "pub trait Analyzer", ".analyze("],
+  ["projection", "ir-projection", "pub fn build_document", "build_document("],
+  ["vocabulary", "vocabulary", "pub fn visual_role", "visual_role("],
 ]);
 const DOCTEST_COMMAND = "cargo test --doc --workspace --locked";
-const RUSTDOC_FENCE = /^\s*\/\/\/ ```(?:rust)?\s*$/gmu;
+const RUSTDOC_FENCE = /^\s*\/\/\/ ```(?:rust)?\s*$/u;
+const ASSERTION = /\bassert(?:_eq|_matches|_ne)?!\s*\(/u;
 
 export class PublicApiDoctestPolicyError extends Error {
   constructor(code, message) {
@@ -51,16 +52,39 @@ function rustdocBefore(source, declaration) {
   return doc.join("\n");
 }
 
-function markerIsInsideFence(doc, marker) {
-  const markerOffset = doc.indexOf(`# // public-api-doctest: ${marker}`);
-  if (markerOffset === -1) {
-    return false;
+function fencedExample(doc, marker) {
+  const lines = doc.split("\n");
+  const markerIndex = lines.findIndex((line) =>
+    line.includes(`# // public-api-doctest: ${marker}`),
+  );
+  if (markerIndex === -1) {
+    return null;
   }
-  const fencesBefore = [...doc.slice(0, markerOffset).matchAll(RUSTDOC_FENCE)]
-    .length;
-  const fencesAfter = [...doc.slice(markerOffset).matchAll(RUSTDOC_FENCE)]
-    .length;
-  return fencesBefore % 2 === 1 && fencesAfter > 0;
+
+  const fenceIndexes = lines
+    .map((line, index) => (RUSTDOC_FENCE.test(line) ? index : -1))
+    .filter((index) => index !== -1);
+  const before = fenceIndexes.filter((index) => index < markerIndex);
+  const closing = fenceIndexes.find((index) => index > markerIndex);
+  if (before.length % 2 !== 1 || closing === undefined) {
+    return null;
+  }
+
+  const opening = before.at(-1);
+  return lines
+    .slice(opening + 1, closing)
+    .map((line) => line.replace(/^\s*\/\/\/ ?/u, ""))
+    .join("\n");
+}
+
+function executableLines(example) {
+  return example
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line !== "" && !line.startsWith("#") && !line.startsWith("//"),
+    );
 }
 
 function rustJobRunsDoctests(workflow) {
@@ -86,10 +110,11 @@ function rustJobRunsDoctests(workflow) {
 }
 
 export function validatePublicApiDoctestPolicy(snapshot) {
-  for (const [file, marker, declaration] of APIS) {
+  for (const [file, marker, declaration, invocation] of APIS) {
     const count = markerCount(snapshot[file], marker);
     const doc = rustdocBefore(snapshot[file], declaration);
-    if (count === 0 || !markerIsInsideFence(doc, marker)) {
+    const example = fencedExample(doc, marker);
+    if (count === 0 || example === null) {
       throw new PublicApiDoctestPolicyError(
         "E_API_DOCTEST_MISSING",
         `${file}'s ${declaration} docs must contain the fenced ${marker} public API doctest marker`,
@@ -99,6 +124,20 @@ export function validatePublicApiDoctestPolicy(snapshot) {
       throw new PublicApiDoctestPolicyError(
         "E_API_DOCTEST_DUPLICATE",
         `${file} contains ${count} ${marker} public API doctest markers`,
+      );
+    }
+
+    const executable = executableLines(example);
+    if (!executable.some((line) => line.includes(invocation))) {
+      throw new PublicApiDoctestPolicyError(
+        "E_API_DOCTEST_ORACLE_MISSING",
+        `${marker} doctest must invoke \`${invocation}\` in executable code`,
+      );
+    }
+    if (!executable.some((line) => ASSERTION.test(line))) {
+      throw new PublicApiDoctestPolicyError(
+        "E_API_DOCTEST_ORACLE_MISSING",
+        `${marker} doctest must contain an executable assertion`,
       );
     }
   }

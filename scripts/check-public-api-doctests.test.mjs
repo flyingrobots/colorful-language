@@ -11,16 +11,22 @@ const VALID_SNAPSHOT = Object.freeze({
 /// # Examples
 /// \`\`\`
 /// # // public-api-doctest: parser
+/// let tree = parser.parse("text");
+/// assert_eq!(tree.len(), 1);
 /// \`\`\`
 pub trait Parser {}
 /// # Examples
 /// \`\`\`
 /// # // public-api-doctest: annotator
+/// let tokens = annotator.annotate("text", &tree);
+/// assert_eq!(tokens.len(), 1);
 /// \`\`\`
 pub trait Annotator {}
 /// # Examples
 /// \`\`\`
 /// # // public-api-doctest: analyzer
+/// let findings = analyzer.analyze("text", &tree, &tokens);
+/// assert_eq!(findings.len(), 1);
 /// \`\`\`
 pub trait Analyzer {}
 `,
@@ -28,6 +34,8 @@ pub trait Analyzer {}
 /// # Examples
 /// \`\`\`
 /// # // public-api-doctest: ir-projection
+/// let document = build_document("id", "text", &parser, &annotator)?;
+/// assert_eq!(document.tokens.len(), 1);
 /// \`\`\`
 pub fn build_document() {}
 `,
@@ -35,6 +43,8 @@ pub fn build_document() {}
 /// # Examples
 /// \`\`\`
 /// # // public-api-doctest: vocabulary
+/// let role = visual_role(&kind, None, None);
+/// assert_eq!(role, None);
 /// \`\`\`
 pub fn visual_role() {}
 `,
@@ -141,9 +151,41 @@ test("rejects an API marker moved outside a rustdoc code fence", () => {
   const snapshot = {
     ...VALID_SNAPSHOT,
     core: VALID_SNAPSHOT.core.replace(
-      "/// ```\n/// # // public-api-doctest: parser\n/// ```",
+      "/// ```\n/// # // public-api-doctest: parser",
       "/// ```\n/// ```\n/// # // public-api-doctest: parser",
     ),
   };
   expectPolicyError(snapshot, "E_API_DOCTEST_MISSING", /fenced parser/);
+});
+
+test("rejects a marker-only doctest fence", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    core: VALID_SNAPSHOT.core
+      .replace('/// let tree = parser.parse("text");\n', "")
+      .replace("/// assert_eq!(tree.len(), 1);\n", ""),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_ORACLE_MISSING", /parser/);
+});
+
+test("rejects an example without its named API invocation", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    core: VALID_SNAPSHOT.core.replace(
+      '/// let tree = parser.parse("text");',
+      "/// let tree = vec![1];",
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_ORACLE_MISSING", /\.parse/);
+});
+
+test("rejects an example without an executable assertion", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    core: VALID_SNAPSHOT.core.replace(
+      "/// assert_eq!(tree.len(), 1);",
+      "/// let _length = tree.len();",
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_ORACLE_MISSING", /assertion/);
 });
