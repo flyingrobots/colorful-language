@@ -38,7 +38,12 @@ pub fn build_document() {}
 /// \`\`\`
 pub fn visual_role() {}
 `,
-  workflow: "- run: cargo test --doc --workspace --locked\n",
+  workflow: `
+jobs:
+  rust:
+    steps:
+      - run: cargo test --doc --workspace --locked
+`,
 });
 
 function expectPolicyError(snapshot, code, detail) {
@@ -87,13 +92,38 @@ for (const [file, marker] of [
 test("rejects an implicit or misspelled workspace doctest command", () => {
   const snapshot = {
     ...VALID_SNAPSHOT,
-    workflow: "- run: cargo test --workspace --locked\n",
+    workflow: VALID_SNAPSHOT.workflow.replace(" --doc", ""),
   };
   expectPolicyError(
     snapshot,
     "E_API_DOCTEST_CI_MISSING",
     /cargo test --doc --workspace --locked/,
   );
+});
+
+test("rejects the doctest command when it exists only in a comment", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: `
+# cargo test --doc --workspace --locked
+jobs:
+  rust:
+    steps: []
+`,
+  };
+  expectPolicyError(
+    snapshot,
+    "E_API_DOCTEST_CI_MISSING",
+    /cargo test --doc --workspace --locked/,
+  );
+});
+
+test("rejects a doctest command outside the normal Rust job", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace("rust:", "docs:"),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_CI_MISSING", /Rust job/);
 });
 
 test("rejects a marker moved outside its API documentation", () => {

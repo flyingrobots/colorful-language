@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { parse } from "yaml";
+
 const APIS = Object.freeze([
   ["core", "parser", "pub trait Parser"],
   ["core", "annotator", "pub trait Annotator"],
@@ -61,6 +63,28 @@ function markerIsInsideFence(doc, marker) {
   return fencesBefore % 2 === 1 && fencesAfter > 0;
 }
 
+function rustJobRunsDoctests(workflow) {
+  let document;
+  try {
+    document = parse(workflow);
+  } catch (error) {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_DOCTEST_CI_INVALID",
+      `.github/workflows/ci.yml is not valid YAML: ${error.message}`,
+    );
+  }
+
+  const steps = document?.jobs?.rust?.steps;
+  return (
+    Array.isArray(steps) &&
+    steps.some(
+      (step) =>
+        typeof step?.run === "string" &&
+        step.run.trim() === DOCTEST_COMMAND,
+    )
+  );
+}
+
 export function validatePublicApiDoctestPolicy(snapshot) {
   for (const [file, marker, declaration] of APIS) {
     const count = markerCount(snapshot[file], marker);
@@ -79,10 +103,10 @@ export function validatePublicApiDoctestPolicy(snapshot) {
     }
   }
 
-  if (!snapshot.workflow.includes(DOCTEST_COMMAND)) {
+  if (!rustJobRunsDoctests(snapshot.workflow)) {
     throw new PublicApiDoctestPolicyError(
       "E_API_DOCTEST_CI_MISSING",
-      `.github/workflows/ci.yml must run \`${DOCTEST_COMMAND}\``,
+      `.github/workflows/ci.yml's Rust job must run \`${DOCTEST_COMMAND}\` as an explicit step`,
     );
   }
 }
