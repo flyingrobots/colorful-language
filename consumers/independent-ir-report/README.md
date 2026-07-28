@@ -75,6 +75,10 @@ actually satisfy.
 
 Refresh the tagged fixtures only by building the real releases:
 
+> [!WARNING]
+> `--update-fixtures` rewrites checked-in golden evidence. Review the complete
+> resulting Git diff before committing it.
+
 ```bash
 mise exec node@22.23.1 -- \
   bash scripts/version-compat-matrix.sh --update-fixtures
