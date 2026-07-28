@@ -14,6 +14,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   generateSyntaxAdmission,
   renderSyntaxAdmission,
+  syntaxAdmissionInputsFromCompatibility,
 } from "./generate-syntax-admission.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -390,6 +391,57 @@ test("generation fails closed when envelope fields drift from String", () => {
       label,
     );
   }
+});
+
+test("generation rejects malformed compatibility manifests uniformly", () => {
+  const manifest = JSON.parse(
+    readFileSync(
+      path.join(
+        ROOT,
+        "contracts/colorful/syntax-compatibility.v1.json",
+      ),
+      "utf8",
+    ),
+  );
+  const malformed = [
+    null,
+    {},
+    { ...manifest, currentIdentity: null },
+    { ...manifest, generations: {} },
+    {
+      ...manifest,
+      generations: [
+        { ...manifest.generations[0], identity: null },
+      ],
+    },
+    {
+      ...manifest,
+      generations: [
+        { ...manifest.generations[0], artifacts: null },
+      ],
+    },
+  ];
+  for (const [index, candidate] of malformed.entries()) {
+    assert.throws(
+      () =>
+        syntaxAdmissionInputsFromCompatibility(
+          candidate,
+          () => "type DocumentAnalysis {}",
+        ),
+      /^Error: generate-syntax-admission:/u,
+      `malformed manifest ${index}`,
+    );
+  }
+
+  const inputs = syntaxAdmissionInputsFromCompatibility(
+    manifest,
+    (schemaPath) => readFileSync(path.join(ROOT, schemaPath), "utf8"),
+  );
+  assert.equal(inputs.currentGenerationId, "workspace-v0.4.0");
+  assert.deepEqual(
+    inputs.generations.map(({ id }) => id),
+    ["v0.2.1", "v0.3.0", "workspace-v0.4.0"],
+  );
 });
 
 test("schema references compile once instead of once per admitted value", () => {

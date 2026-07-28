@@ -27,6 +27,24 @@ function fail(message) {
   throw new Error(`generate-syntax-admission: ${message}`);
 }
 
+function isManifestRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function validateIdentity(identity, label) {
+  if (
+    !isManifestRecord(identity) ||
+    typeof identity.contractVersion !== "string" ||
+    identity.contractVersion.length === 0 ||
+    typeof identity.schemaHash !== "string" ||
+    identity.schemaHash.length === 0 ||
+    typeof identity.vocabularyHash !== "string" ||
+    identity.vocabularyHash.length === 0
+  ) {
+    fail(`${label} must provide string contract, schema, and vocabulary identities`);
+  }
+}
+
 function namedType(reference) {
   return reference.replaceAll(/[\[\]!]/gu, "");
 }
@@ -364,26 +382,72 @@ function sameIdentity(left, right) {
   );
 }
 
-export function generateSyntaxAdmission(outputRoot = ROOT) {
-  const compatibility = JSON.parse(
-    readFileSync(path.join(ROOT, COMPATIBILITY_PATH), "utf8"),
+export function syntaxAdmissionInputsFromCompatibility(
+  compatibility,
+  readSchema,
+) {
+  if (
+    !isManifestRecord(compatibility) ||
+    compatibility.version !== "colorful.syntax-compatibility/v1" ||
+    compatibility.contractFamily !== "colorful.syntax/v1" ||
+    !Array.isArray(compatibility.generations) ||
+    compatibility.generations.length === 0 ||
+    typeof readSchema !== "function"
+  ) {
+    fail("compatibility manifest has an unsupported shape");
+  }
+  validateIdentity(
+    compatibility.currentIdentity,
+    "compatibility currentIdentity",
   );
+  for (const [index, generation] of compatibility.generations.entries()) {
+    if (
+      !isManifestRecord(generation) ||
+      typeof generation.id !== "string" ||
+      generation.id.length === 0 ||
+      !isManifestRecord(generation.artifacts) ||
+      typeof generation.artifacts.schema !== "string" ||
+      generation.artifacts.schema.length === 0
+    ) {
+      fail(`compatibility generation ${index} has an unsupported shape`);
+    }
+    validateIdentity(
+      generation.identity,
+      `compatibility generation ${index} identity`,
+    );
+  }
   const current = compatibility.generations.find((generation) =>
     sameIdentity(generation.identity, compatibility.currentIdentity)
   );
   if (current === undefined) {
     fail("compatibility manifest does not identify its current generation");
   }
-  const source = renderSyntaxAdmission({
+  return {
     currentGenerationId: current.id,
     generations: compatibility.generations.map((generation) => ({
       id: generation.id,
-      sdl: readFileSync(
-        path.join(ROOT, generation.artifacts.schema),
-        "utf8",
-      ),
+      sdl: readSchema(generation.artifacts.schema),
     })),
-  });
+  };
+}
+
+export function generateSyntaxAdmission(outputRoot = ROOT) {
+  let compatibility;
+  try {
+    compatibility = JSON.parse(
+      readFileSync(path.join(ROOT, COMPATIBILITY_PATH), "utf8"),
+    );
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      fail("compatibility manifest is not valid JSON");
+    }
+    throw error;
+  }
+  const inputs = syntaxAdmissionInputsFromCompatibility(
+    compatibility,
+    (schemaPath) => readFileSync(path.join(ROOT, schemaPath), "utf8"),
+  );
+  const source = renderSyntaxAdmission(inputs);
   for (const relativePath of OUTPUT_PATHS) {
     const output = path.join(outputRoot, relativePath);
     mkdirSync(path.dirname(output), { recursive: true });
