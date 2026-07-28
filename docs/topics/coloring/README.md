@@ -177,7 +177,8 @@ update this table when the hot path changes meaningfully.
 The cross-stage release harness uses those same two corpora to separate parsing,
 contextual annotation, lint analysis, guarded IR projection, canonical
 serialization, and fail-closed IR validation. It measures nine timing samples
-per stage/corpus pair and one allocation sample, then emits a versioned JSON
+per stage/corpus pair on the normal system allocator, invokes a separate
+instrumented process for one allocation sample, then emits a versioned JSON
 report:
 
 ```bash
@@ -189,18 +190,18 @@ Run it from a clean worktree so the report can bind itself to the exact source
 commit. Review the temporary report before updating
 [`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).
 
-**2026-07-28, source `7cc1bb210ef3a3340da6e1ef7b1980d276525b20`,
-`rustc 1.97.1`, `allocation-counter 0.8.1`, Apple M1 Pro, 16 GiB RAM,
+**2026-07-28, source `f8dfa1caae2621442b29242f665931cea3010b9d`,
+`rustc 1.97.1`, `dhat 0.3.3`, Apple M1 Pro, 16 GiB RAM,
 macOS Darwin 25.3.0 arm64, release profile:**
 
 | Stage | 899 B median | 899 B allocations | 45 KB median | 45 KB throughput | 45 KB allocations |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Parsing | 4.8 µs | 43 / 17.8 KiB | 227 µs | 198.3 MB/s | 2,009 / 915.8 KiB |
-| Contextual annotation | 17.2 µs | 136 / 12.7 KiB | 642 µs | 70.1 MB/s | 6,463 / 807.0 KiB |
-| Lint analysis | 9.0 µs | 144 / 9.4 KiB | 361 µs | 124.5 MB/s | 7,059 / 485.6 KiB |
-| Guarded IR projection | 87.4 µs | 1,063 / 74.8 KiB | 2.22 ms | 20.3 MB/s | 49,172 / 3.20 MiB |
-| Canonical IR serialization | 177 µs | 2,342 / 330.7 KiB | 9.13 ms | 4.9 MB/s | 114,264 / 16.87 MiB |
-| Fail-closed IR validation | 60.8 µs | 1,009 / 58.9 KiB | 1.96 ms | 23.0 MB/s | 48,414 / 2.59 MiB |
+| Parsing | 5.0 µs | 43 / 17.8 KiB | 260 µs | 173.0 MB/s | 2,009 / 915.8 KiB |
+| Contextual annotation | 15.1 µs | 136 / 12.7 KiB | 588 µs | 76.6 MB/s | 6,463 / 807.0 KiB |
+| Lint analysis | 7.2 µs | 144 / 9.4 KiB | 291 µs | 154.9 MB/s | 7,059 / 485.6 KiB |
+| Guarded IR projection | 80.6 µs | 1,063 / 74.8 KiB | 2.01 ms | 22.4 MB/s | 49,172 / 3.20 MiB |
+| Canonical IR serialization | 173 µs | 2,342 / 330.7 KiB | 8.21 ms | 5.5 MB/s | 114,264 / 16.87 MiB |
+| Fail-closed IR validation | 59.1 µs | 1,009 / 58.9 KiB | 1.79 ms | 25.1 MB/s | 48,414 / 2.59 MiB |
 
 Guarded IR projection uses the public `from_validated_classification()` boundary,
 so its number includes the mandatory successful-document validation
