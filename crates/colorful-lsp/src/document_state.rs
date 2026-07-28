@@ -757,4 +757,40 @@ mod tests {
             .is_empty());
         assert_eq!(store.metrics().oversized_results, 1);
     }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn failed_analysis_is_reported_but_not_counted_as_accepted() {
+        let compute: AnalysisComputer = Arc::new(move |_text, _generation| {
+            panic!("deterministic analysis failure");
+        });
+        let store = DocumentStore::new(compute, Duration::ZERO, MAX_DOCUMENT_BYTES);
+        let uri = Url::parse("file:///failed-analysis.txt").expect("test URI");
+        let publications = Arc::new(Mutex::new(Vec::new()));
+
+        store
+            .open(
+                uri.clone(),
+                "failure",
+                1,
+                recording_publisher(Arc::clone(&publications)),
+            )
+            .await;
+        wait_until(|| store.cached_generation(&uri) == Some(1)).await;
+
+        assert_eq!(store.metrics().analysis_failures, 1);
+        assert_eq!(store.metrics().accepted_results, 0);
+        assert_eq!(
+            store.diagnostics(&uri).expect("failure diagnostics")[0].code,
+            Some(NumberOrString::String(
+                "colorful/analysis-failed".to_string()
+            ))
+        );
+        assert_eq!(
+            publications
+                .lock()
+                .expect("publication log lock")
+                .as_slice(),
+            [1]
+        );
+    }
 }
