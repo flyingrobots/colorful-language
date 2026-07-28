@@ -235,8 +235,7 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
     assert_eq!(graft["schemaVersion"], GRAFT_REPORT_SCHEMA);
     assert_eq!(graft["stage"], "graft-projection");
     assert_eq!(
-        graft["allocationAttribution"],
-        "unavailable-node-runtime",
+        graft["allocationAttribution"], "unavailable-node-runtime",
         "JavaScript allocation attribution must remain explicit"
     );
     let graft_measurements = graft["measurements"]

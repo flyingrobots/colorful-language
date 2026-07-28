@@ -26,6 +26,7 @@ use cross_stage_support::{Corpus, PreparedStageInput, Stage, CORPORA, STAGES};
 
 const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
 const ALLOCATION_REPORT_SCHEMA: &str = "colorful.performance.allocations/v1";
+const GRAFT_REPORT_SCHEMA: &str = "colorful.performance.graft-projection/v1";
 const TIMING_SAMPLES: usize = 9;
 const ALLOCATION_COUNTER: &str = "stats_alloc 0.1.10";
 const THROUGHPUT_BASIS: &str = "source-utf8-bytes";
@@ -118,6 +119,19 @@ fn allocation_measurements() -> BTreeMap<(String, String), (u64, u64)> {
         );
     }
     measurements
+}
+
+fn node_program() -> String {
+    std::env::var("COLORFUL_BENCHMARK_NODE").unwrap_or_else(|_| "node".to_owned())
+}
+
+fn graft_projection_measurements(node: &str) -> Value {
+    let output = command_output(node, &["consumers/graft-projection.benchmark.mjs"]);
+    let report: Value =
+        serde_json::from_str(&output).expect("Graft projection benchmark must emit JSON");
+    assert_eq!(report["schemaVersion"], GRAFT_REPORT_SCHEMA);
+    assert_eq!(report["stage"], "graft-projection");
+    report
 }
 
 fn generated_at() -> String {
@@ -256,6 +270,7 @@ fn main() {
         "cross_stage_benchmark requires a clean worktree so sourceCommit is trustworthy"
     );
 
+    let node = node_program();
     let mut measurements = Vec::new();
 
     for corpus in &CORPORA {
@@ -340,8 +355,8 @@ fn main() {
         ),
         (
             "graft-projection",
-            "graft-projection",
-            "consumers/graft-projection.test.mjs",
+            "graft-projection-release",
+            "consumers/graft-projection.benchmark.mjs",
         ),
     ]
     .map(|(stage, authority, evidence)| {
@@ -358,6 +373,7 @@ fn main() {
             "hardware": hardware(),
             "operatingSystem": command_output("uname", &["-srm"]),
             "rustc": command_output("rustc", &["--version"]),
+            "node": command_output(&node, &["--version"]),
             "profile": "release",
             "timingSamplesPerStage": TIMING_SAMPLES,
             "allocationSamplesPerStage": 1,
@@ -374,6 +390,7 @@ fn main() {
         },
         "corpora": corpus_metadata,
         "authorities": authorities,
+        "linkedMeasurements": [graft_projection_measurements(&node)],
         "measurements": measurements
     });
 
