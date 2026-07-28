@@ -165,21 +165,24 @@ roadmap-to-issue reconciliation is tracked in
   one minimal mutation for a missing open slice, duplicate primary home,
   closed active slice, open delivered slice, and unrecognized marker fails with
   a stable path-addressed category. *Evidence type:* fixture-backed Node unit
-  tests and an offline repository command. *Planned evidence:*
+  tests and an offline repository command. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs`, roadmap fixtures, and
-  `scripts/check-roadmap-inventory.mjs`. *Status:* planned.
+  `scripts/check-roadmap-inventory.mjs`. *Status:* implemented.
 - **RM-9b — Authenticated live reconciliation.** *Requirement:* RM-9.
   *Behavior:* an explicit maintenance command reads open and closed issue state
   from GitHub and applies the same deterministic inventory comparison used by
   the fixture suite. *Oracle:* the command proves every current open non-epic
   slice has one primary active or parked disposition and no closed issue is
   presented as pending. *Evidence type:* authenticated GitHub API witness kept
-  outside the ordinary offline documentation gate. *Planned evidence:*
-  `scripts/check-roadmap-inventory.mjs --live`. *Status:* planned.
+  outside the ordinary offline documentation gate. *Evidence:*
+  `scripts/check-roadmap-inventory.mjs --live`,
+  `.github/workflows/ci.yml`, and `.github/workflows/maintenance.yml`.
+  *Status:* implemented.
 
 ## Hosted evidence boundary
 
-The mutation suite is deterministic and local. The live RustSec database,
-GitHub dependency snapshot, and CodeQL queries are evolving hosted oracles; a
-new advisory or query can make an unchanged revision fail and requires
-maintainer triage rather than a blanket exception.
+The mutation suites and structural roadmap check are deterministic and local.
+The live RustSec database, GitHub dependency and issue snapshots, and CodeQL
+queries are evolving hosted oracles; a new advisory, query, or issue-state
+transition can make an unchanged revision fail and requires maintainer triage
+rather than a blanket exception.

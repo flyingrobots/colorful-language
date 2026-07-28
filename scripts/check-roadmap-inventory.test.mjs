@@ -107,3 +107,37 @@ test("treats issues closed by the current pull request as delivered", () => {
     }),
   );
 });
+
+test("the repository wires offline and live reconciliation into distinct lanes", () => {
+  const ci = readFileSync(
+    new URL("../.github/workflows/ci.yml", import.meta.url),
+    "utf8",
+  );
+  const maintenance = readFileSync(
+    new URL("../.github/workflows/maintenance.yml", import.meta.url),
+    "utf8",
+  );
+  const releasePrep = readFileSync(
+    new URL("./release-prep.sh", import.meta.url),
+    "utf8",
+  );
+
+  for (const source of [ci, releasePrep]) {
+    assert.match(
+      source,
+      /node --test scripts\/check-roadmap-inventory\.test\.mjs/u,
+    );
+    assert.match(
+      source,
+      /node scripts\/check-roadmap-inventory\.mjs(?:\s|$)/u,
+    );
+  }
+  assert.match(ci, /--closing-pr "\$PULL_REQUEST"/u);
+  assert.match(maintenance, /^\s*schedule:\s*$/mu);
+  assert.match(maintenance, /^\s*workflow_dispatch:\s*$/mu);
+  assert.doesNotMatch(maintenance, /^\s*pull_request:\s*$/mu);
+  assert.match(
+    maintenance,
+    /node scripts\/check-roadmap-inventory\.mjs\s+--live\s+--repo "\$REPOSITORY"/u,
+  );
+});

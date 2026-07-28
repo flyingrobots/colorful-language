@@ -51,14 +51,12 @@ without changing that meaning.
 
 The moonshot remains the destination. The maturity runway turns the current
 prototype into a product sturdy enough to carry it. These tracks organized the
-34 non-epic issues open at intake on 2026-07-24. The live 2026-07-27 triage
-found 25 open non-epic slices after adding the later idea and maintenance
-issues [#172](https://github.com/flyingrobots/colorful-language/issues/172)
-through [#175](https://github.com/flyingrobots/colorful-language/issues/175),
-[#187](https://github.com/flyingrobots/colorful-language/issues/187), and
-[#188](https://github.com/flyingrobots/colorful-language/issues/188). Issue
+34 non-epic issues open at intake on 2026-07-24 and now give every open
+non-epic slice one machine-checkable primary disposition. Later idea and
+maintenance issues remain part of the same model rather than relying on a
+dated count. Issue
 [#150](https://github.com/flyingrobots/colorful-language/issues/150) was
-included in that snapshot because prerequisite
+included in the intake snapshot because prerequisite
 [PR #184](https://github.com/flyingrobots/colorful-language/pull/184) had not
 yet merged. The follow-up advisory pass added the independently reviewable
 Zed lockfile remediation
@@ -82,7 +80,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — close the remaining operational loop** | Boundary integrity, stale-LSP protection, required merge checks, Zed advisory remediation, and dependency governance have landed; roadmap drift and supported LSP capacity must become explicit. | Advance M0 roadmap evidence (#187), while #122 establishes the LSP service envelope. |
+| **Now — establish the supported operating envelope** | Boundary integrity, stale-LSP protection, required merge checks, dependency governance, and executable roadmap reconciliation have landed; supported LSP capacity must become explicit. | Advance #122 to establish the LSP service envelope. |
 | **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete the remaining M0–M2 queue. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -109,16 +107,18 @@ observe public-contract regressions before they ship.
   tested maintenance intake, license/source policy, dependency review, CodeQL,
   and solo-safe ownership
   ([#152](https://github.com/flyingrobots/colorful-language/issues/152)); and
+  executable roadmap-to-issue reconciliation
+  ([#187](https://github.com/flyingrobots/colorful-language/issues/187)); and
   required green checks on the protected branch
   ([#150](https://github.com/flyingrobots/colorful-language/issues/150),
   delivered through
   [PR #184](https://github.com/flyingrobots/colorful-language/pull/184)).
+  <!-- roadmap-primary: delivered #187 -->
 - **Open public-contract evidence:** add conservative coverage floors
   [#137](https://github.com/flyingrobots/colorful-language/issues/137) and
   runnable public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-- **Open maintenance governance:** make roadmap issue-state coverage executable
-  [#187](https://github.com/flyingrobots/colorful-language/issues/187).
+  <!-- roadmap-primary: active #137 #140 -->
 
 **Exit signal:** the documented local gate and the protected-branch gate name
 the same reproducible evidence; public binary transport and API examples are
@@ -150,9 +150,11 @@ deterministically and use valid data without reverse-engineering Colorful.
   [#82](https://github.com/flyingrobots/colorful-language/issues/82), and fuzz
   parser, projection, validation, and coordinate invariants
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+  <!-- roadmap-primary: active #81 #82 #134 -->
 - **Open consumer honesty:** prove independent consumer value and migration
   across two contract versions
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  <!-- roadmap-primary: active #156 -->
 
 **Exit signal:** invalid spans, graphs, identities, hashes, versions, vocabulary,
 and source relationships fail closed with stable categories; successful
@@ -179,9 +181,11 @@ CLI/LSP findings agree without hiding ambiguity.
   complete cross-stage parsing, annotation, lint, IR, semantic-token,
   incremental-edit, and Graft benchmarks
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+  <!-- roadmap-primary: active #122 #135 -->
 - **Open comparison adapter:** prototype an external `Analyzer` without
   weakening the pure port or making an engine mandatory
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  <!-- roadmap-primary: active #157 -->
 
 **Exit signal:** forced stale completions cannot publish; the supported
 five-megabyte case meets its reviewed SLO; overload and invalid input are
@@ -202,19 +206,23 @@ was installed, and reach the first useful editor result.
 - **Open compatibility policy:** define adapter/server version ownership and
   drift checks
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
+  <!-- roadmap-primary: active #141 -->
 - **Open package evidence:** add clean-install editor and scripted LSP
   transcript tests
   [#136](https://github.com/flyingrobots/colorful-language/issues/136), then
   publish signed VS Code, Open VSX, Zed, and platform server artifacts with
   rollback evidence
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  <!-- roadmap-primary: active #136 #154 -->
 - **Operator installation:** package the CLI, and decide the server boundary,
   for Homebrew
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).
+  <!-- roadmap-primary: active #37 -->
 - **Public surfaces and ownership:** set the homepage, useful Discussions
   posture, and deployment ownership only when maintainers and public
   destinations exist
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
+  <!-- roadmap-primary: active #153 -->
 
 **Exit signal:** public URLs, signed or checksummed artifacts, version
 compatibility, clean-install smoke tests, rollback instructions, and measured
@@ -229,9 +237,11 @@ than architectural momentum.
 - Build a redistributable, held-out, human-oracled comparison corpus and measure
   Colorful against relevant prose tools
   [#155](https://github.com/flyingrobots/colorful-language/issues/155).
+  <!-- roadmap-primary: active #155 -->
 - Run the 15-user discovery study across live POS visualization, deterministic
   CI linting, and portable IR as separate propositions
   [#158](https://github.com/flyingrobots/colorful-language/issues/158).
+  <!-- roadmap-primary: active #158 -->
 - **Roadmap accountability (completed by this pass):** map architecture to
   current user jobs and executable consumers, and preserve the explicit
   freeze/resume decision
@@ -257,6 +267,7 @@ mistaking an idea for a committed milestone or an already validated user need.
   [#175](https://github.com/flyingrobots/colorful-language/issues/175).
 - Emit deterministic SARIF for CI-native lint findings
   [#188](https://github.com/flyingrobots/colorful-language/issues/188).
+  <!-- roadmap-primary: parked #172 #173 #174 #175 #188 -->
 
 **Promotion rule:** move an experiment into M0–M4 only when a current user job,
 dependency boundary, and executable proof justify its place. Parking preserves
@@ -352,14 +363,10 @@ crate, and structured, path-aware `ValidationError`s — each recorded in
 [v0.2.1 release packet](docs/goalposts/v0.2.1/release.md), and the
 [v0.3.0 release packet](docs/goalposts/v0.3.0/release.md).
 
-Boundary integrity, stale-result protection, and required merge checks are now
-delivered foundations. The active maturity critical path is the remaining
-repository contract
-([#151](https://github.com/flyingrobots/colorful-language/issues/151),
-[#152](https://github.com/flyingrobots/colorful-language/issues/152), and
-[#187](https://github.com/flyingrobots/colorful-language/issues/187)) alongside
-the measured LSP capacity envelope
-([#122](https://github.com/flyingrobots/colorful-language/issues/122)).
+Boundary integrity, stale-result protection, required merge checks, dependency
+governance, and executable roadmap reconciliation are now delivered
+foundations. The active maturity critical path is the measured LSP capacity
+envelope ([#122](https://github.com/flyingrobots/colorful-language/issues/122)).
 Distribution follows that operational proof; independent product validation
 follows real distribution. The CNL, Edict, provenance, Ouroboros, and
 semantic-closure phases remain in place behind the explicit deep-end evidence
