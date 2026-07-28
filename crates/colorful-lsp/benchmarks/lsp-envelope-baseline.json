@@ -18,7 +18,7 @@
     "pinnedNode": "22.23.1",
     "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6"
   },
-  "generatedAt": "2026-07-28T08:08:54Z",
+  "generatedAt": "2026-07-28T08:13:04Z",
   "measurement": {
     "peakRssTool": "/usr/bin/time",
     "serverExecutable": "colorful-lsp",
@@ -35,10 +35,10 @@
       "finalDocumentVersion": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 65.229,
+        "diagnosticsMs": 65.62,
         "dispatchMs": 0.004,
         "semanticTokenCount": 4178,
-        "semanticTokensMs": 0.533
+        "semanticTokensMs": 0.509
       },
       "label": "100 KiB",
       "latestDiagnosticVersion": 6,
@@ -49,17 +49,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 60606,
+        "maxQueueDelayMicros": 61030,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 5.95,
-        "dispatchMs": 0.203,
+        "diagnosticsMs": 6.419,
+        "dispatchMs": 0.139,
         "semanticTokenCount": 4179,
-        "semanticTokensMs": 0.786,
-        "throughputBytesPerSecond": 17210084.0
+        "semanticTokensMs": 0.637,
+        "throughputBytesPerSecond": 15952641.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -67,10 +67,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          59.528,
-          59.951,
-          59.724,
-          59.227
+          60.149,
+          59.542,
+          59.892,
+          60.366
         ],
         "semanticResultIds": [
           "6",
@@ -84,10 +84,10 @@
           4178,
           4178
         ],
-        "slowestSemanticResponseMs": 59.951,
-        "timeToLatestDiagnosticsMs": 58.975
+        "slowestSemanticResponseMs": 60.366,
+        "timeToLatestDiagnosticsMs": 59.289
       },
-      "peakRssBytes": 9879552,
+      "peakRssBytes": 10502144,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -101,10 +101,10 @@
       "finalDocumentVersion": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 106.848,
-        "dispatchMs": 0.006,
+        "diagnosticsMs": 104.758,
+        "dispatchMs": 0.008,
         "semanticTokenCount": 42798,
-        "semanticTokensMs": 4.642
+        "semanticTokensMs": 4.368
       },
       "label": "1 MiB",
       "latestDiagnosticVersion": 6,
@@ -115,17 +115,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 61045,
+        "maxQueueDelayMicros": 60233,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 48.513,
-        "dispatchMs": 1.012,
+        "diagnosticsMs": 49.011,
+        "dispatchMs": 1.128,
         "semanticTokenCount": 42799,
-        "semanticTokensMs": 4.913,
-        "throughputBytesPerSecond": 21614330.0
+        "semanticTokensMs": 5.184,
+        "throughputBytesPerSecond": 21394707.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -133,10 +133,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          112.889,
-          115.372,
-          110.432,
-          117.856
+          119.053,
+          113.474,
+          116.296,
+          110.784
         ],
         "semanticResultIds": [
           "6",
@@ -150,10 +150,10 @@
           42798,
           42798
         ],
-        "slowestSemanticResponseMs": 117.856,
-        "timeToLatestDiagnosticsMs": 107.926
+        "slowestSemanticResponseMs": 119.053,
+        "timeToLatestDiagnosticsMs": 107.965
       },
-      "peakRssBytes": 67633152,
+      "peakRssBytes": 69632000,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -167,10 +167,10 @@
       "finalDocumentVersion": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 284.489,
-        "dispatchMs": 0.009,
+        "diagnosticsMs": 294.83,
+        "dispatchMs": 0.01,
         "semanticTokenCount": 213995,
-        "semanticTokensMs": 23.45
+        "semanticTokensMs": 22.931
       },
       "label": "5 MiB",
       "latestDiagnosticVersion": 6,
@@ -181,17 +181,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 55898,
+        "maxQueueDelayMicros": 59019,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 257.818,
-        "dispatchMs": 4.756,
+        "diagnosticsMs": 263.108,
+        "dispatchMs": 5.614,
         "semanticTokenCount": 213996,
-        "semanticTokensMs": 28.219,
-        "throughputBytesPerSecond": 20335586.0
+        "semanticTokensMs": 27.907,
+        "throughputBytesPerSecond": 19926722.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -199,10 +199,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          311.509,
-          324.344,
-          337.73,
-          350.257
+          331.68,
+          344.089,
+          318.815,
+          359.302
         ],
         "semanticResultIds": [
           "6",
@@ -216,10 +216,10 @@
           213995,
           213995
         ],
-        "slowestSemanticResponseMs": 350.257,
-        "timeToLatestDiagnosticsMs": 296.938
+        "slowestSemanticResponseMs": 359.302,
+        "timeToLatestDiagnosticsMs": 305.241
       },
-      "peakRssBytes": 355401728,
+      "peakRssBytes": 347766784,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -233,10 +233,10 @@
       "finalDocumentVersion": 6,
       "incremental": {
         "diagnosticCode": "colorful/document-too-large",
-        "diagnosticsMs": 59.396,
-        "dispatchMs": 0.003,
+        "diagnosticsMs": 62.025,
+        "dispatchMs": 0.006,
         "semanticTokenCount": 0,
-        "semanticTokensMs": 0.062
+        "semanticTokensMs": 0.122
       },
       "label": "10 MiB",
       "latestDiagnosticVersion": 6,
@@ -247,17 +247,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 0,
-        "maxQueueDelayMicros": 54914,
+        "maxQueueDelayMicros": 54636,
         "oversizedResults": 3,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 19.591,
-        "dispatchMs": 9.518,
+        "diagnosticsMs": 20.766,
+        "dispatchMs": 9.365,
         "semanticTokenCount": 0,
-        "semanticTokensMs": 0.063,
-        "throughputBytesPerSecond": 535233526.0
+        "semanticTokensMs": 0.091,
+        "throughputBytesPerSecond": 504948473.0
       },
       "outcomeCategory": "document-too-large",
       "overload": {
@@ -265,10 +265,10 @@
         "diagnosticCode": "colorful/document-too-large",
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          82.921,
-          82.947,
-          82.948,
-          82.946
+          83.34,
+          83.341,
+          83.342,
+          83.343
         ],
         "semanticResultIds": [
           "6",
@@ -282,10 +282,10 @@
           0,
           0
         ],
-        "slowestSemanticResponseMs": 82.948,
-        "timeToLatestDiagnosticsMs": 82.942
+        "slowestSemanticResponseMs": 83.343,
+        "timeToLatestDiagnosticsMs": 83.333
       },
-      "peakRssBytes": 114966528,
+      "peakRssBytes": 115015680,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -306,7 +306,7 @@
     "supportedPeakRssBytes": 1610612736
   },
   "source": {
-    "gitCommit": "3d461ae7202c1dfe4cd92cf190d69ed64f61effd",
+    "gitCommit": "c4854de21a29ac7464ab37f082fcfe55ee157216",
     "workingTreeDirty": false
   }
 }
