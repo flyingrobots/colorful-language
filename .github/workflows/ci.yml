@@ -14,9 +14,9 @@ jobs:
     name: Docs & whitespace
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: read
-      pull-requests: read
+      contents: read # Repository checkout and policy files.
+      issues: read # Live issue snapshot reconciliation.
+      pull-requests: read # Closing-issue references.
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Check for trailing whitespace / conflict markers

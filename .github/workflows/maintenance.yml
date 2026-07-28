@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
-  issues: read
+  contents: read # Repository checkout.
+  issues: read # Live issue snapshot reconciliation.
 
 jobs:
   roadmap-inventory:
