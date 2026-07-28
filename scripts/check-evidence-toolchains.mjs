@@ -39,6 +39,7 @@ const POLICY_CODES = new Set([
   "E_TYPESCRIPT_PIN",
 ]);
 const REQUIRED_PATHS = [
+  "AGENTS.md",
   "rust-toolchain.toml",
   ".node-version",
   "package.json",
@@ -541,17 +542,19 @@ function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
       );
     }
   }
-  const contributorGuide = files.get("CONTRIBUTING.md");
-  for (const command of [
-    "cargo fmt --all -- --check",
-    "cargo clippy --locked --all-targets --all-features -- -D warnings",
-    "cargo test --all --locked",
-  ]) {
-    if (!contributorGuide.includes(command)) {
-      reject(
-        "E_CONTRIBUTOR_RUST_GATE",
-        `CONTRIBUTING.md: standard Rust gate must include: ${command}`,
-      );
+  for (const file of ["AGENTS.md", "CONTRIBUTING.md"]) {
+    const contributorGuide = files.get(file);
+    for (const command of [
+      "cargo fmt --all -- --check",
+      "cargo clippy --locked --all-targets --all-features -- -D warnings",
+      "cargo test --all --locked",
+    ]) {
+      if (!contributorGuide.includes(command)) {
+        reject(
+          "E_CONTRIBUTOR_RUST_GATE",
+          `${file}: standard Rust gate must include: ${command}`,
+        );
+      }
     }
   }
 }
@@ -714,6 +717,13 @@ function fixtureFiles() {
 - run: bash scripts/ir-witness.sh
 `;
   return new Map([
+    [
+      "AGENTS.md",
+      `cargo fmt --all -- --check
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --all --locked
+`,
+    ],
     [".github/workflows/ci.yml", primaryWorkflow],
     [
       ".github/workflows/compatibility.yml",
@@ -1267,6 +1277,20 @@ The evidence compiler is not the minimum supported Rust version (MSRV).
             .replace(
               "cargo test --all --locked",
               "cargo test --all",
+            ),
+        ),
+      "E_CONTRIBUTOR_RUST_GATE",
+    ],
+    [
+      "unlocked agent Rust gate",
+      (files) =>
+        files.set(
+          "AGENTS.md",
+          files
+            .get("AGENTS.md")
+            .replace(
+              "cargo clippy --locked --all-targets --all-features -- -D warnings",
+              "cargo clippy --all-targets --all-features -- -D warnings",
             ),
         ),
       "E_CONTRIBUTOR_RUST_GATE",
