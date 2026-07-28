@@ -938,8 +938,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        corpus, drain_messages_after_eof, parse_peak_rss, refusal_diagnostic_code,
-        stale_publication_count, TimeFlavor, TimedMessage, CORPUS_LINE,
+        corpus, drain_messages_after_eof, parse_peak_rss, process_group_signal_target,
+        refusal_diagnostic_code, stale_publication_count, TimeFlavor, TimedMessage, CORPUS_LINE,
     };
 
     #[test]
@@ -1004,5 +1004,10 @@ mod tests {
         let messages = drain_messages_after_eof(&receiver);
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0].value["params"]["version"], 2);
+    }
+
+    #[test]
+    fn process_group_escalation_targets_the_wrapper_and_server() {
+        assert_eq!(process_group_signal_target(42), "-42");
     }
 }
