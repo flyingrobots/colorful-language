@@ -19,12 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   engines, timeout, cancellation, process failure, excessive output, invalid
   UTF-8, malformed alerts, and source mismatch remain distinct typed failures
   with no silent built-in fallback. Unix invocations own dedicated process
-  groups so timeout and
-  cancellation terminate configured wrappers and their descendants before
-  captured output is joined. Process fixtures prove CLI/LSP parity and
-  semantic-token/canonical-IR non-interference; a retained checksum-verified
-  Vale 3.14.2 smoke output anchors the mock contract. The default CLI/LSP
-  dependency graphs remain offline and Vale-free.
+  groups so timeout and cancellation terminate configured wrappers and their
+  descendants before captured output is joined. Process fixtures prove CLI/LSP
+  parity and semantic-token/canonical-IR non-interference; a retained
+  checksum-verified Vale 3.14.2 smoke output anchors the mock contract. The
+  default CLI/LSP dependency graphs remain offline and Vale-free.
 - **Schema-generated portable IR admission.** Every registered
   `colorful.syntax/v1` generation now derives a dependency-free JavaScript
   structural validator from its compatibility-selected GraphQL SDL. Graft and
