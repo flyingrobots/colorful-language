@@ -58,8 +58,8 @@ pub struct BoundValeAnalyzer<'a> {
 
 impl Analyzer for BoundValeAnalyzer<'_> {
     fn analyze(&self, source: &str, _tree: &Tree, _tokens: &[Token]) -> Vec<Finding> {
-        assert_eq!(
-            source, self.prepared.source,
+        assert!(
+            source == self.prepared.source,
             "BoundValeAnalyzer must be used with the source accepted by bind()"
         );
         self.prepared.findings.clone()
