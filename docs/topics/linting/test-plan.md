@@ -346,12 +346,15 @@ Implemented and planned cases are listed below.
   descendant that inherited its pipes. *Oracle:* a wrapper exits after
   recording a finite-lived descendant that retains the capture pipes; analysis
   returns the exact timeout category and terminates the descendant rather than
-  waiting for pipe closure. *Evidence type:* process-lifecycle regression test.
-  *Evidence:* `colorful-vale`
-  `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`.
+  waiting for pipe closure. A structural oracle requires the deadline check to
+  precede acceptance of completed I/O. *Evidence type:* process-lifecycle and
+  source-architecture regression tests. *Evidence:* `colorful-vale`
+  `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`;
+  the control-flow oracle is planned in
+  `workspace_boundary::process_deadline_precedes_completed_io_acceptance`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* implemented.
+  *Status:* planned.
 - **LINT-13k** — *Requirement:* LINT-13. *Behavior:* one Vale response indexes
   document line boundaries once before normalizing any alerts; individual alert
   lookups do not rescan the source prefix. *Oracle:* a structural test requires
