@@ -755,6 +755,8 @@ Requirements:
   burden ledger. *Evidence:*
   `consumers/independent-ir-report/src/measure.mjs` and
   `consumers/independent-ir-report/evidence/integration-effort.json`;
+  `scripts/check-portable-admission-docs.mjs` and
+  `scripts/check-portable-admission-docs.test.mjs`;
   `the effort ledger counts protocol-specific acquisition code`; the ledger
   records 249 authored IR adapter lines separately from 843 unique / 1,686
   committed generated admission lines.

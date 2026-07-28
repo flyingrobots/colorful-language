@@ -22,4 +22,6 @@ for output in "${outputs[@]}"; do
 done
 
 node --test "$root/scripts/generate-syntax-admission.test.mjs"
+node --test "$root/scripts/check-portable-admission-docs.test.mjs"
+node "$root/scripts/check-portable-admission-docs.mjs"
 echo "check-generated-syntax-admission-drift passed."

@@ -242,7 +242,8 @@ workspace.
   separately. *Oracle:* isolated copy `npm ci && npm run check` and exact ledger
   regeneration. *Evidence type:* clean-room process witness and measured
   report. *Evidence:* `scripts/check-independent-consumer.sh` and
-  `consumers/independent-ir-report/evidence/integration-effort.json`.
+  `consumers/independent-ir-report/evidence/integration-effort.json`;
+  `scripts/check-portable-admission-docs.test.mjs`.
   *Tracking:*
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
   *Status:* implemented.
