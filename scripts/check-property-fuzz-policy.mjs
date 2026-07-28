@@ -93,14 +93,7 @@ function propertySeed(source) {
   );
 }
 
-function sameStrings(actual, expected) {
-  return (
-    actual.length === expected.length &&
-    actual.every((value, index) => value === expected[index])
-  );
-}
-
-function sameNumbers(actual, expected) {
+function sameSequence(actual, expected) {
   return (
     actual.length === expected.length &&
     actual.every((value, index) => value === expected[index])
@@ -214,7 +207,7 @@ export function validatePropertyFuzzPolicy(snapshot) {
     );
   }
   const seed = propertySeed(snapshot.propertyTest);
-  if (seed === null || !sameNumbers(seed, PROPERTY_SEED)) {
+  if (seed === null || !sameSequence(seed, PROPERTY_SEED)) {
     reject(
       "E_PROPERTY_SEED",
       "PROPERTY_SEED must match the reviewed 32-byte seed",
@@ -261,7 +254,7 @@ export function validatePropertyFuzzPolicy(snapshot) {
 
   const targetNames = Object.keys(snapshot.fuzzTargets).sort();
   const expectedNames = [...FUZZ_TARGETS].sort();
-  if (!sameStrings(targetNames, expectedNames)) {
+  if (!sameSequence(targetNames, expectedNames)) {
     reject(
       "E_FUZZ_TARGET",
       `fuzz target files must be exactly: ${FUZZ_TARGETS.join(", ")}`,
