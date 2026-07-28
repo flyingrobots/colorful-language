@@ -92,7 +92,7 @@ test("generation is deterministic and both runtime copies are identical", async 
   assert.equal(graft, independent);
 
   const runtime = await import(
-    `${pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href}?test=${Date.now()}`
+    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
   );
   assert.equal(runtime.CURRENT_SYNTAX_GENERATION, "workspace-v0.4.0");
   assert.deepEqual(runtime.SYNTAX_GENERATION_IDS, [
@@ -109,7 +109,7 @@ test("every compatibility generation admits its exact released shape", async (t)
   t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
   generateSyntaxAdmission(outputRoot);
   const runtime = await import(
-    `${pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href}?test=${Date.now()}`
+    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
   );
 
   assert.doesNotThrow(() =>
@@ -151,7 +151,7 @@ test("generated admission rejects missing, unknown, primitive, and enum drift", 
   t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
   generateSyntaxAdmission(outputRoot);
   const runtime = await import(
-    `${pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href}?test=${Date.now()}`
+    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
   );
   const generation = runtime.CURRENT_SYNTAX_GENERATION;
 
@@ -198,7 +198,7 @@ test("prototype properties cannot impersonate syntax generation ids", async (t) 
   t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
   generateSyntaxAdmission(outputRoot);
   const runtime = await import(
-    `${pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href}?test=${Date.now()}`
+    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
   );
 
   for (const operation of [
