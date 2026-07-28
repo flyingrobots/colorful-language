@@ -31,6 +31,7 @@ const COVERAGE_COMMAND =
 const SUMMARY_PATH = "target/llvm-cov/coverage-summary.json";
 const REPORT_DIRECTORY = "target/llvm-cov";
 const HTML_PATH = "target/llvm-cov/html";
+const PREPARE_OUTPUT_COMMAND = `mkdir -p ${REPORT_DIRECTORY}`;
 const CHECKOUT_ACTION =
   "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
 const RUST_TOOLCHAIN_ACTION =
@@ -609,11 +610,14 @@ export function validateCoverageWorkflow(workflow, policy) {
     "--summary-only",
     `--output-path ${SUMMARY_PATH}`,
   ].join(" ");
-  if (commandStep(steps, measurementCommand) === undefined) {
+  if (
+    commandStep(steps, PREPARE_OUTPUT_COMMAND) === undefined ||
+    commandStep(steps, measurementCommand) === undefined
+  ) {
     reject(
       "E_COVERAGE_COMMAND",
       "CI workflow.jobs.coverage.steps",
-      "missing the workspace/all-features/all-targets locked measurement",
+      "missing clean-checkout output preparation or the locked workspace measurement",
     );
   }
   if (

@@ -121,6 +121,8 @@ jobs:
           fallback: none
       - name: Install coverage policy dependencies
         run: npm ci
+      - name: Prepare coverage output
+        run: mkdir -p target/llvm-cov
       - name: Measure workspace coverage
         run: >-
           cargo llvm-cov
