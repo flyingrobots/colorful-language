@@ -11,9 +11,10 @@ use serde_json::Value;
 const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
 const GRAFT_REPORT_SCHEMA: &str = "colorful.performance.graft-projection/v1";
 const LOCAL_AUTHORITY: &str = "cross-stage-release";
-const LOCAL_STAGES: [&str; 6] = [
+const LOCAL_STAGES: [&str; 7] = [
     "parsing",
     "annotation",
+    "classification-validation",
     "lint",
     "ir-projection",
     "ir-serialization",
