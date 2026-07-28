@@ -24,6 +24,14 @@ updates:
       zed-cargo:
         patterns:
           - "*"
+  - package-ecosystem: cargo
+    directory: /fuzz
+    schedule:
+      interval: weekly
+    groups:
+      fuzz-cargo:
+        patterns:
+          - "*"
   - package-ecosystem: npm
     directory: /
     schedule:

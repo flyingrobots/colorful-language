@@ -44,6 +44,14 @@ updates:
       zed-cargo:
         patterns:
           - "*"
+  - package-ecosystem: cargo
+    directory: /fuzz
+    schedule:
+      interval: weekly
+    groups:
+      fuzz-cargo:
+        patterns:
+          - "*"
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -120,6 +128,11 @@ test("accepts update sources in any order", () => {
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
 });
 
+test("accepts a reviewed standalone fuzz Cargo update source", () => {
+  const candidate = fixture();
+  assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
+});
+
 test("rejects a floating third-party action reference", () => {
   expectCode(({ workflows }) => {
     workflows.set(
@@ -193,6 +206,18 @@ test("rejects omission of the standalone Zed Cargo workspace", () => {
         !(
           update["package-ecosystem"] === "cargo" &&
           update.directory === "/editors/zed"
+        ),
+    );
+  }, "E_DEPENDABOT_SOURCE");
+});
+
+test("rejects omission of the standalone fuzz Cargo workspace", () => {
+  expectCode(({ dependabot }) => {
+    dependabot.updates = dependabot.updates.filter(
+      (update) =>
+        !(
+          update["package-ecosystem"] === "cargo" &&
+          update.directory === "/fuzz"
         ),
     );
   }, "E_DEPENDABOT_SOURCE");

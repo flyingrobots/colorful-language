@@ -121,8 +121,8 @@ deterministic maintenance suite.
 
 `.github/dependabot.yml` remains the only dependency-update scheduler. Its
 weekly groups preserve separate rollback boundaries for GitHub Actions, the
-root and Zed Cargo workspaces, root Node evidence tooling, and the VS Code
-adapter.
+root, Zed, and fuzz Cargo workspaces, root Node evidence tooling, and the VS
+Code adapter.
 
 `CODEOWNERS` assigns the repository to `@flyingrobots`. This is ownership
 metadata, not a second-human gate: the checked-in and live mainline ruleset

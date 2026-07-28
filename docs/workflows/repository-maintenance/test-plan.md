@@ -117,10 +117,12 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
 - **RM-4a — Coordinated weekly updates and pull-request review.**
   *Requirement:* RM-4. *Behavior:* the grouped weekly Dependabot policy from
-  issue #151 remains the sole update scheduler, while a pull-request-only
-  dependency-review job rejects moderate-or-higher vulnerabilities and
-  detected dependency licenses outside the reviewed SPDX allowlist. GitHub
-  reports but cannot fail a dependency whose license it cannot identify.
+  issue #151 remains the sole update scheduler for GitHub Actions, the root,
+  Zed, and fuzz Cargo workspaces, and both Node workspaces, while a
+  pull-request-only dependency-review job rejects moderate-or-higher
+  vulnerabilities and detected dependency licenses outside the reviewed SPDX
+  allowlist. GitHub reports but cannot fail a dependency whose license it
+  cannot identify.
   *Oracle:* the existing dependency-update checker continues to pass; the
   maintenance checker rejects a weakened severity, license, event, or
   action-pin policy. *Evidence type:* deterministic configuration tests and
