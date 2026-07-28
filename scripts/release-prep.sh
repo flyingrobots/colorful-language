@@ -29,6 +29,7 @@ node scripts/check-release-publish-order.mjs
 
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
+bash scripts/check-validator-complexity.sh
 cargo test --all --locked
 cargo test --doc --workspace --locked
 bash scripts/package-witness.sh
