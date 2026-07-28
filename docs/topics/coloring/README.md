@@ -189,17 +189,18 @@ Run it from a clean worktree so the report can bind itself to the exact source
 commit. Review the temporary report before updating
 [`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).
 
-**2026-07-28, source `197efa7d6c6b80246fd19e16235ae2edf99bc146`,
-`rustc 1.97.1`, Apple M1 Pro, macOS Darwin 25.3.0 arm64, release profile:**
+**2026-07-28, source `7cc1bb210ef3a3340da6e1ef7b1980d276525b20`,
+`rustc 1.97.1`, `allocation-counter 0.8.1`, Apple M1 Pro, 16 GiB RAM,
+macOS Darwin 25.3.0 arm64, release profile:**
 
 | Stage | 899 B median | 899 B allocations | 45 KB median | 45 KB throughput | 45 KB allocations |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Parsing | 4.9 µs | 43 / 17.8 KiB | 231 µs | 194.4 MB/s | 2,009 / 915.8 KiB |
-| Contextual annotation | 16.9 µs | 136 / 12.7 KiB | 631 µs | 71.3 MB/s | 6,463 / 807.0 KiB |
-| Lint analysis | 9.0 µs | 144 / 9.4 KiB | 389 µs | 115.8 MB/s | 7,059 / 485.6 KiB |
-| Guarded IR projection | 84.2 µs | 1,063 / 74.8 KiB | 2.20 ms | 20.4 MB/s | 49,172 / 3.20 MiB |
-| Canonical IR serialization | 185 µs | 2,342 / 330.7 KiB | 9.11 ms | 4.9 MB/s | 114,264 / 16.87 MiB |
-| Fail-closed IR validation | 61.8 µs | 1,009 / 58.9 KiB | 2.00 ms | 22.5 MB/s | 48,414 / 2.59 MiB |
+| Parsing | 4.8 µs | 43 / 17.8 KiB | 227 µs | 198.3 MB/s | 2,009 / 915.8 KiB |
+| Contextual annotation | 17.2 µs | 136 / 12.7 KiB | 642 µs | 70.1 MB/s | 6,463 / 807.0 KiB |
+| Lint analysis | 9.0 µs | 144 / 9.4 KiB | 361 µs | 124.5 MB/s | 7,059 / 485.6 KiB |
+| Guarded IR projection | 87.4 µs | 1,063 / 74.8 KiB | 2.22 ms | 20.3 MB/s | 49,172 / 3.20 MiB |
+| Canonical IR serialization | 177 µs | 2,342 / 330.7 KiB | 9.13 ms | 4.9 MB/s | 114,264 / 16.87 MiB |
+| Fail-closed IR validation | 60.8 µs | 1,009 / 58.9 KiB | 1.96 ms | 23.0 MB/s | 48,414 / 2.59 MiB |
 
 Guarded IR projection uses the public `from_validated_classification()` boundary,
 so its number includes the mandatory successful-document validation
@@ -212,7 +213,9 @@ The reviewed regression policy calls for investigation when median latency
 changes by more than 25% or allocation count/bytes by more than 10% on a
 comparable host and toolchain. It is deliberately advisory: correctness CI
 checks corpus hashes, measurement arithmetic, matrix completeness, and policy
-metadata, but never reruns or fails on wall-clock timing. Semantic-token
+metadata, but never reruns or fails on wall-clock timing. Throughput is
+source-equivalent UTF-8 bytes per second for every row, so the stages remain
+comparable even when the prepared IR is larger than its source. Semantic-token
 generation remains owned by the COL-12a Criterion bench, incremental editing
 and concurrency by the COL-16a LSP envelope, and Graft projection by the
 deterministic-cursor plus informational wall-clock evidence in
