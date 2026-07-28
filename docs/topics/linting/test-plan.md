@@ -340,6 +340,18 @@ Implemented and planned cases are listed below.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
+- **LINT-13j** — *Requirement:* LINT-13. *Behavior:* the configured timeout and
+  cancellation token remain authoritative until stdin writing and captured
+  stdout/stderr draining finish, even when the selected wrapper exits before a
+  descendant that inherited its pipes. *Oracle:* a wrapper exits after
+  recording a finite-lived descendant that retains the capture pipes; analysis
+  returns the exact timeout category and terminates the descendant rather than
+  waiting for pipe closure. *Evidence type:* process-lifecycle regression test.
+  *Evidence:* planned in `colorful-vale`
+  `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
