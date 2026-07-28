@@ -75,6 +75,15 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         Some("examples/cross_stage_benchmark.rs")
     );
     assert_eq!(harness["test"].as_bool(), Some(true));
+    let allocation_probe = examples
+        .iter()
+        .find(|example| example["name"].as_str() == Some("cross_stage_allocations"))
+        .expect("CLI manifest must declare the cross_stage_allocations example");
+    assert_eq!(
+        allocation_probe["path"].as_str(),
+        Some("examples/cross_stage_allocations.rs")
+    );
+    assert_eq!(allocation_probe["test"].as_bool(), Some(true));
 
     let report = report();
     assert_eq!(report["schemaVersion"], REPORT_SCHEMA);
@@ -84,7 +93,7 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
     assert_eq!(metadata["profile"], "release");
     assert_eq!(metadata["timingSamplesPerStage"].as_u64(), Some(9));
     assert_eq!(metadata["allocationSamplesPerStage"].as_u64(), Some(1));
-    assert_eq!(metadata["allocationCounter"], "allocation-counter 0.8.1");
+    assert_eq!(metadata["allocationCounter"], "dhat 0.3.3");
     assert_eq!(metadata["throughputBasis"], "source-utf8-bytes");
     assert!(
         metadata["totalMemoryBytes"]
