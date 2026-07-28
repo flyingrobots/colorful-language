@@ -509,13 +509,48 @@ Requirements:
   blocking Rust CI job, and `scripts/release-prep.sh`. *Tracking:*
   [#82](https://github.com/flyingrobots/colorful-language/issues/82).
   *Status:* implemented.
-- **IR-19a** — *Requirement:* IR-19. *Behavior:* an independent non-Rust
-  consumer validates source/schema/vocabulary/version, renders a useful
-  artifact, rejects an incompatible version, and migrates across two contract
-  versions before repeating the job with CLI text and LSP tokens. *Oracle:*
-  exact functional results plus a reviewed integration-effort ledger and an
-  explicit retain/simplify/version decision. *Evidence type:* executable
-  consumer and measured migration report. *Tracking:*
+- **IR-19a** — *Requirement:* IR-19. *Behavior:* a standalone Node package
+  with no Cargo-workspace or third-party runtime dependency admits a
+  `DocumentAnalysis` only after validating its required shape, supported
+  contract generation, schema and vocabulary identities, source length and
+  digest, and token ranges, then renders a deterministic role-span report.
+  Invalid JSON, unsupported generations, wrong identities, malformed fields,
+  and mismatched source fail with stable error codes and no report on stdout.
+  *Oracle:* exact report bytes for valid input; exact process status, error
+  code, and empty stdout for every refusal. *Evidence type:* process-level
+  consumer tests. *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* planned.
+- **IR-19b** — *Requirement:* IR-19. *Behavior:* the consumer accepts
+  provenance-recorded artifacts emitted by the real `v0.2.1` and `v0.3.0`
+  release binaries. It migrates the additive `openClassKind` generation
+  boundary into one internal role-span model while preserving the source and
+  rejecting unregistered identity combinations. *Oracle:* both fixtures
+  render the reviewed common report; generation-specific profile hashes match
+  the tagged contract and vocabulary inputs; swapping any profile identity
+  fails closed. *Evidence type:* checked-in tagged fixtures, migration tests,
+  and a fixture-provenance check. *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* planned.
+- **IR-19c** — *Requirement:* IR-19. *Behavior:* IR, ANSI CLI text, and LSP
+  semantic tokens perform the same role-span reporting job over the same
+  source, with implementation and maintenance burden recorded under one
+  executable measurement method. The ledger reports nonblank adapter lines,
+  validation/error categories, fixtures, assertions, migration-specific
+  lines, runtime dependencies, and process steps. *Oracle:* every adapter
+  renders byte-identical output, the committed ledger matches a fresh
+  measurement, and the IR rationale applies the reviewed retain/simplify rule
+  to the measured result. *Evidence type:* black-box parity test, generated
+  integration-effort ledger, and design decision. *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* planned.
+- **IR-19d** — *Requirement:* IR-19. *Behavior:* the proof runs from a clean
+  copy containing only the independent package, with no repository
+  `Cargo.toml`, `target/`, built Colorful binary, or ambient `node_modules`.
+  *Oracle:* `npm ci` and the package's full test/report command pass in the
+  temporary copy, and a guard fails if any path escapes that package root.
+  *Evidence type:* clean-environment shell witness in CI and release
+  preparation. *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* planned.
 - **IR-20a** — *Requirement:* IR-20. *Behavior:* the public producer front door
