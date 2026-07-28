@@ -259,15 +259,58 @@ Requirements:
   *Tracking:*
   [#122](https://github.com/flyingrobots/colorful-language/issues/122).
   *Status:* implemented.
-- **COL-17a** — *Requirement:* COL-17. *Behavior:* parsing, annotation, lint,
-  IR serialization/validation, semantic-token generation, incremental edits,
-  and Graft projection run over fixed corpora and sizes in release mode.
-  *Oracle:* versioned benchmark output records throughput, allocations,
-  hardware, toolchain, and reviewed regression tolerances without gating
-  correctness CI on noisy timing. *Evidence type:* Criterion or equivalent
-  benchmark suite and published baseline. *Tracking:*
+- **COL-17a** — *Requirement:* COL-17. *Behavior:* one release-mode stage
+  harness measures parsing, contextual annotation, lint analysis, IR
+  projection, canonical serialization, and fail-closed IR validation
+  independently over the committed 899-byte editor sample and 45-KB repeated
+  corpus already used by COL-12a. Each stage consumes the prior stage's
+  prepared output when setup is not part of the boundary being measured.
+  *Oracle:* every stage and corpus pair reports elapsed time, input bytes,
+  throughput, allocation count, and allocated bytes without failing on a
+  wall-clock value. *Evidence type:* release benchmark harness and published
+  baseline. *Evidence:* `colorful-cli` example `cross_stage_benchmark` and
+  `crates/colorful-cli/benchmarks/cross-stage-baseline.json`. *Tracking:*
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
-  *Status:* planned.
+  *Status:* implemented.
+- **COL-17b** — *Requirement:* COL-17. *Behavior:* the cross-stage benchmark
+  baseline identifies its schema version, corpus hashes, benchmark date,
+  hardware, operating system, Rust toolchain, profile, sample count, and exact
+  source commit, and carries reviewed advisory latency and allocation
+  tolerances; throughput remains deterministically derived from input bytes and
+  latency. *Oracle:* deterministic tests reject missing, duplicated,
+  stale-corpus, non-finite, or self-inconsistent measurements and assert that
+  tolerance policy remains advisory rather than a correctness-CI timing gate.
+  *Evidence type:* versioned JSON report and report-contract test.
+  *Evidence:* `colorful-cli` integration test
+  `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
+  *Tracking:*
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+  *Status:* implemented.
+- **COL-17c** — *Requirement:* COL-17. *Behavior:* the benchmark matrix links
+  semantic-token generation to COL-12a, incremental editing and concurrent LSP
+  work to COL-16a, and Graft projection to CONSUMER-3d instead of reimplementing
+  those authoritative harnesses. *Oracle:* a deterministic matrix-completeness
+  test requires exactly one named authority for parsing, annotation, lint, IR
+  projection, IR serialization, IR validation, semantic tokens, incremental
+  edits, and Graft projection. *Evidence type:* benchmark-matrix manifest and
+  contract test. *Evidence:* the `authorities` section of
+  `crates/colorful-cli/benchmarks/cross-stage-baseline.json` and
+  `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
+  *Tracking:*
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+  *Status:* implemented.
+- **COL-17d** — *Requirement:* COL-17. *Behavior:* the mandatory borrowed
+  classification-validation boundary runs separately over each fixed corpus
+  after parsing and annotation, without charging repeated-input cloning to the
+  validator. *Oracle:* the cross-stage report requires one latency, throughput,
+  and allocation row for `classification-validation` per corpus. *Evidence
+  type:* release benchmark stage and deterministic report-contract assertion.
+  *Tracking:*
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+  *Evidence:* `cross_stage_support::Stage::ClassificationValidation`;
+  `crates/colorful-cli/benchmarks/cross-stage-baseline.json`;
+  `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
+  *Status:* implemented.
 - **COL-18a** — *Requirement:* COL-18. *Behavior:* a bounded seeded corpus
   generates valid Unicode plus malformed public trees and IR mutations and
   exercises parser, annotator, projection, validation, and UTF-16 indexing.
@@ -317,13 +360,12 @@ Requirements:
   today would fail on infrastructure variance, not real regressions. Wire it
   into CI once a run of stable baselines exists. The guarded canonical IR path
   used by `colorful ir` and `colorful diagnose --json` is outside COL-12's two
-  measured functions; its projection plus fail-closed `validate_document`
-  postcondition remains unmeasured. COL-16a measures the production
-  `analyze_document()` plus `DocumentStore` scheduling, queueing, caching,
-  publication, JSON-RPC, and peak-RSS path. The standalone
-  `compute_diagnostics()` helper is not benchmarked, but it is not the
-  `didChange` handler. COL-17a and
-  [#135](https://github.com/flyingrobots/colorful-language/issues/135) own
-  broader stage-specific throughput and allocation evidence.
+  measured functions, so COL-12's 16 ms budget does not apply to that combined
+  command path. COL-17a measures guarded IR projection including the producer's
+  mandatory validation postcondition and separately measures validation over
+  prepared IR. COL-16a measures the production `analyze_document()` plus
+  `DocumentStore` scheduling, queueing, caching, publication, JSON-RPC, and
+  peak-RSS path. The standalone `compute_diagnostics()` helper is not
+  benchmarked, but it is not the `didChange` handler.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.

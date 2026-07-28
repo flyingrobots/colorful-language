@@ -80,8 +80,8 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — make quality measurable** | The supported LSP capacity envelope is explicit; broader analysis and projection costs must become comparable. | Advance #135 using #122's process harness without turning noisy wall-clock evidence into a correctness gate. |
-| **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete the remaining M0–M2 queue. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
+| **Now — make quality measurable** | LSP capacity and cross-stage analysis costs are explicit; coverage must stop regressing silently. | Advance #137, then #140, before the remaining validator-confidence queue. Measurements remain advisory until their environment is stable. |
+| **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete #81, #82, #134, #156, and #157 in dependency order. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -174,18 +174,17 @@ CLI/LSP findings agree without hiding ambiguity.
   a release-mode service envelope with versioned queue/stale/limit metrics,
   exact 100 KiB–10 MiB process evidence, and a passing 5 MiB SLO
   ([#122](https://github.com/flyingrobots/colorful-language/issues/122));
+  fixed-corpus release evidence for parsing, annotation, classification
+  validation, lint, guarded IR projection, serialization, IR validation, and
+  the existing semantic-token, incremental-edit, and Graft authorities
+  ([#135](https://github.com/flyingrobots/colorful-language/issues/135));
   Unicode and mixed-line-ending CLI/LSP coordinate parity
   ([#125](https://github.com/flyingrobots/colorful-language/issues/125)); and
   evidence-based passive-voice, quotation, and numeric-scanner decisions
   ([#138](https://github.com/flyingrobots/colorful-language/issues/138),
   [#139](https://github.com/flyingrobots/colorful-language/issues/139),
   [#143](https://github.com/flyingrobots/colorful-language/issues/143)).
-  <!-- roadmap-primary: delivered #122 -->
-- **Open capacity evidence:** complete cross-stage parsing, annotation, lint,
-  IR, semantic-token,
-  incremental-edit, and Graft benchmarks
-  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
-  <!-- roadmap-primary: active #135 -->
+  <!-- roadmap-primary: delivered #122 #135 -->
 - **Open comparison adapter:** prototype an external `Analyzer` without
   weakening the pure port or making an engine mandatory
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
@@ -368,10 +367,11 @@ crate, and structured, path-aware `ValidationError`s — each recorded in
 [v0.3.0 release packet](docs/goalposts/v0.3.0/release.md).
 
 Boundary integrity, stale-result protection, required merge checks, dependency
-governance, executable roadmap reconciliation, and the measured LSP capacity
-envelope are now delivered foundations. The active maturity critical path is
-broader cross-stage performance evidence
-([#135](https://github.com/flyingrobots/colorful-language/issues/135)).
+governance, executable roadmap reconciliation, the measured LSP capacity
+envelope, and cross-stage performance/allocation evidence are now delivered
+foundations. The active maturity critical path is conservative coverage
+ratcheting
+([#137](https://github.com/flyingrobots/colorful-language/issues/137)).
 Distribution follows that operational proof; independent product validation
 follows real distribution. The CNL, Edict, provenance, Ouroboros, and
 semantic-closure phases remain in place behind the explicit deep-end evidence

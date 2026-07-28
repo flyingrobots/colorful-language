@@ -123,5 +123,7 @@ done
 echo "Checking extracted package workspace..."
 cargo generate-lockfile --manifest-path "$pkgroot/Cargo.toml"
 cargo check --manifest-path "$pkgroot/Cargo.toml" --workspace --all-targets --locked
+cargo test --manifest-path "$pkgroot/Cargo.toml" \
+  -p colorful-cli --test cross_stage_benchmark_report --locked
 
 echo "PACKAGE WITNESS PASSED"

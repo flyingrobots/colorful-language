@@ -60,6 +60,19 @@ workspace.
   JavaScript assertion on a counter; wall-clock is informational. *Evidence
   type:* unit test (deterministic) plus an informational benchmark.
   *Evidence:* `consumers/graft-projection.test.mjs`. *Status:* implemented.
+- **CONSUMER-3d** — *Requirement:* CONSUMER-3. *Behavior:* the complete
+  fail-closed `project()` boundary runs in release evidence over the same fixed
+  899-byte and 45-KB corpora used by the Rust cross-stage matrix. *Oracle:* a
+  versioned report records corpus hashes, token/span counts, median latency, and
+  source-byte throughput, and deterministic tests reject stale corpora or
+  self-inconsistent arithmetic; allocator-level attribution remains explicitly
+  unavailable for the JavaScript runtime. *Evidence type:* informational
+  release benchmark plus deterministic report-contract test. *Tracking:*
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+  *Evidence:* `consumers/graft-projection.benchmark.mjs`;
+  `crates/colorful-cli/benchmarks/cross-stage-baseline.json`;
+  `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
+  *Status:* implemented.
 - **CONSUMER-4a** — *Requirement:* CONSUMER-4. *Behavior:* structural keyword,
   proper noun, number, quote, unstyled content, and open-class roles all derive
   their Graft class from the vocabulary manifest. *Oracle:* JavaScript

@@ -172,6 +172,69 @@ enforce against, and turning it into a hard failure before establishing one
 would just make CI flaky on noisy hardware. Re-run the benchmarks and
 update this table when the hot path changes meaningfully.
 
+### Cross-stage comparison
+
+The cross-stage release harness uses those same two corpora to separate parsing,
+contextual annotation, mandatory classification validation, lint analysis,
+guarded IR projection, canonical serialization, and fail-closed IR validation.
+It measures nine timing samples per stage/corpus pair on the normal system
+allocator, invokes a separate instrumented process for one allocation sample,
+then emits a versioned JSON report. Allocation count includes allocator
+allocation and reallocation calls; allocated bytes include fresh allocation
+bytes plus positive net reallocation growth:
+
+```bash
+cargo run --locked --release -p colorful-cli \
+  --example cross_stage_benchmark > /tmp/colorful-cross-stage.json
+```
+
+macOS and Linux supply automatic date, processor, architecture, operating
+system, and memory probes. On another host, set
+`COLORFUL_BENCHMARK_GENERATED_AT` (`YYYY-MM-DDTHH:MM:SSZ`),
+`COLORFUL_BENCHMARK_PROCESSOR`, `COLORFUL_BENCHMARK_ARCHITECTURE`,
+`COLORFUL_BENCHMARK_OPERATING_SYSTEM`, and
+`COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES` before running the same command. Empty
+or missing overrides are rejected instead of producing incomplete metadata.
+
+Run it from a clean worktree so the report can bind itself to the exact source
+commit. Review the temporary report before updating
+[`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).
+
+**2026-07-28, source `7067cb6da5eebf8f6fd79008cf9842c8da134f9d`,
+`rustc 1.97.1`, Node 22.23.1, `stats_alloc 0.1.10`, Apple M1 Pro,
+16 GiB RAM, macOS Darwin 25.3.0 arm64, release profile:**
+
+| Stage | 899 B median | 899 B allocations | 45 KB median | 45 KB throughput | 45 KB allocations |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Parsing | 5.3 µs | 43 / 17.8 KiB | 248 µs | 181.1 MB/s | 2,009 / 915.8 KiB |
+| Contextual annotation | 15.0 µs | 136 / 12.7 KiB | 595 µs | 75.7 MB/s | 6,463 / 807.0 KiB |
+| Classification validation | 28.2 µs | 753 / 75.0 KiB | 1.06 ms | 42.3 MB/s | 37,215 / 3.94 MiB |
+| Lint analysis | 7.5 µs | 144 / 9.4 KiB | 294 µs | 152.9 MB/s | 7,059 / 485.6 KiB |
+| Guarded IR projection | 84.0 µs | 1,063 / 75.3 KiB | 1.96 ms | 22.9 MB/s | 49,172 / 3.20 MiB |
+| Canonical IR serialization | 170 µs | 2,342 / 330.7 KiB | 8.37 ms | 5.4 MB/s | 114,264 / 16.87 MiB |
+| Fail-closed IR validation | 59.8 µs | 1,009 / 59.2 KiB | 1.77 ms | 25.4 MB/s | 48,414 / 2.60 MiB |
+| Graft projection | 656 µs | unavailable | 7.63 ms | 5.9 MB/s | unavailable |
+
+Guarded IR projection uses the public `from_validated_classification()` boundary,
+so its number includes the mandatory successful-document validation
+postcondition. The separate validation row measures `validate_document()` over
+already prepared IR. Canonical serialization is the largest measured 45-KB
+stage; this baseline makes that cost visible without prematurely prescribing an
+optimization.
+
+The reviewed regression policy calls for investigation when median latency
+changes by more than 25% or allocation count/bytes by more than 10% on a
+comparable host and toolchain. It is deliberately advisory: correctness CI
+checks corpus hashes, measurement arithmetic, matrix completeness, and policy
+metadata, but never reruns or fails on wall-clock timing. Throughput is
+source-equivalent UTF-8 bytes per second for every row, so the stages remain
+comparable even when the prepared IR is larger than its source. Semantic-token
+generation remains owned by the COL-12a Criterion bench, incremental editing
+and concurrency by the COL-16a LSP envelope, and Graft projection by the
+complete fixed-corpus `project()` evidence in
+`consumers/graft-projection.benchmark.mjs`; the matrix invokes that authority
+rather than cloning it.
+
 ### Supported LSP envelope
 
 The process-level workflow builds the real release server, then the harness
@@ -222,17 +285,12 @@ benchmark is not rerun or used as a noisy correctness gate.
 
 **Known gaps:**
 
-- The guarded canonical IR path used by `colorful ir` and
-  `colorful diagnose --json` is not one of the two benchmarked functions.
-  That path builds `DocumentAnalysis`, then runs the fail-closed
-  `validate_document` producer postcondition before returning. No 16 ms claim
-  is made for that additional projection/validation work; COL-17a and
-  [#135](https://github.com/flyingrobots/colorful-language/issues/135) own its
-  release-mode measurement.
-- Peak server RSS is measured for the production LSP lifecycle, but
-  stage-specific allocations are not yet attributed. Broader cross-stage
-  throughput and allocation coverage is tracked by
-  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+- The cross-stage baseline attributes allocations to the six synchronous Rust
+  stage boundaries, while peak server RSS remains the process-level memory
+  oracle for scheduling, caching, transport, and concurrent requests. Node does
+  not expose an allocator-event oracle comparable to `stats_alloc`, so the
+  JavaScript Graft authority explicitly reports allocation attribution as
+  unavailable rather than substituting noisy heap deltas.
 - The supported envelope covers one open document and four concurrent token
   requests on Darwin/Linux hosts with `/usr/bin/time`; it does not claim
   multi-document capacity, editor-adapter latency, or networked transport.
