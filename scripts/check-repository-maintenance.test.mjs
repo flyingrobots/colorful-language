@@ -15,6 +15,8 @@ const RUST_TOOLCHAIN_ACTION =
   "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
 const INSTALL_ACTION =
   "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
+const SETUP_NODE_ACTION =
+  "actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444";
 const DEPENDENCY_ACTION =
   "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294";
 const CODEQL_INIT =
@@ -100,6 +102,31 @@ allow-git = []
       version: 1,
       exceptions: [],
     },
+    workflowSecurityPolicy: {
+      version: 1,
+      analyzer: {
+        name: "zizmor",
+        version: "1.28.0",
+      },
+      invocation: {
+        persona: "auditor",
+        min_severity: "low",
+        min_confidence: "low",
+        offline: true,
+        collect: "workflows",
+        strict_collection: true,
+      },
+      exceptions: [
+        {
+          rule: "secrets-outside-env",
+          path: ".github/workflows/release.yml:jobs.release.steps[Publish to crates.io].env.CARGO_REGISTRY_TOKEN",
+          selector: "CARGO_REGISTRY_TOKEN",
+          owner: "@flyingrobots",
+          reason: "The release environment is not configured yet.",
+          remove_when: "A protected release environment is configured.",
+        },
+      ],
+    },
     securityWorkflow: {
       on: {
         push: { branches: ["main"] },
@@ -164,6 +191,43 @@ allow-git = []
             { uses: CODEQL_ANALYZE },
           ],
         },
+        "workflow-security": {
+          permissions: {
+            contents: "read",
+          },
+          steps: [
+            {
+              uses: CHECKOUT_ACTION,
+              with: { "persist-credentials": false },
+            },
+            {
+              uses: SETUP_NODE_ACTION,
+              with: { "node-version-file": ".node-version" },
+            },
+            { run: "npm ci" },
+            {
+              uses: INSTALL_ACTION,
+              with: { tool: "zizmor@1.28.0", fallback: "none" },
+            },
+            { run: "node --test scripts/check-workflow-security.test.mjs" },
+            { run: "node scripts/check-workflow-security.mjs" },
+          ],
+        },
+      },
+    },
+    releaseWorkflow: {
+      jobs: {
+        release: {
+          steps: [
+            {
+              name: "Publish to crates.io",
+              env: {
+                CARGO_REGISTRY_TOKEN:
+                  "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+              },
+            },
+          ],
+        },
       },
     },
     ciWorkflow: {
@@ -180,6 +244,8 @@ allow-git = []
     },
     releasePrep: `node --test scripts/check-repository-maintenance.test.mjs
 node scripts/check-repository-maintenance.mjs
+node --test scripts/check-workflow-security.test.mjs
+node scripts/check-workflow-security.mjs
 bash scripts/check-rust-dependency-policy.test.sh
 bash scripts/check-rust-dependency-policy.sh
 `,
@@ -322,6 +388,55 @@ test("rejects a floating cargo-deny tool version", () => {
       INSTALL_ACTION,
     ).with.tool = "cargo-deny";
   }, "E_CARGO_DENY_PIN");
+});
+
+test("rejects a floating workflow-security analyzer version", () => {
+  expectCode(({ workflowSecurityPolicy }) => {
+    workflowSecurityPolicy.analyzer.version = "latest";
+  }, "E_WORKFLOW_SECURITY_POLICY");
+});
+
+test("rejects a weakened workflow-security severity threshold", () => {
+  expectCode(({ workflowSecurityPolicy }) => {
+    workflowSecurityPolicy.invocation.min_severity = "high";
+  }, "E_WORKFLOW_SECURITY_POLICY");
+});
+
+test("rejects a broadened workflow-security exception", () => {
+  expectCode(({ workflowSecurityPolicy }) => {
+    workflowSecurityPolicy.exceptions[0].path =
+      ".github/workflows/release.yml";
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects persisted analyzer checkout credentials", () => {
+  expectCode(({ securityWorkflow }) => {
+    actionStep(
+      securityWorkflow.jobs["workflow-security"],
+      CHECKOUT_ACTION,
+    ).with["persist-credentials"] = true;
+  }, "E_WORKFLOW_SECURITY_CREDENTIALS");
+});
+
+test("rejects write-capable analyzer permissions", () => {
+  expectCode(({ securityWorkflow }) => {
+    securityWorkflow.jobs["workflow-security"].permissions.contents = "write";
+  }, "E_WORKFLOW_SECURITY_PERMISSIONS");
+});
+
+test("rejects a missing hosted workflow-security scan", () => {
+  expectCode(({ securityWorkflow }) => {
+    securityWorkflow.jobs["workflow-security"].steps.pop();
+  }, "E_WORKFLOW_SECURITY_WIRING");
+});
+
+test("rejects a missing release-preparation workflow-security scan", () => {
+  expectCode((candidate) => {
+    candidate.releasePrep = candidate.releasePrep.replace(
+      "node scripts/check-workflow-security.mjs\n",
+      "",
+    );
+  }, "E_WORKFLOW_SECURITY_WIRING");
 });
 
 test("rejects a floating Rust policy checkout action", () => {
