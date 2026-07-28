@@ -26,6 +26,8 @@ use serde_json::{json, Value};
 
 const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
 const TIMING_SAMPLES: usize = 9;
+const ALLOCATION_COUNTER: &str = "allocation-counter 0.8.1";
+const THROUGHPUT_BASIS: &str = "source-utf8-bytes";
 const SMALL: &str = include_str!("../fixtures/editor-smoke-prose.txt");
 const MEDIUM: &str = include_str!("../fixtures/bench-corpus.txt");
 
@@ -70,8 +72,24 @@ fn command_output(program: &str, args: &[&str]) -> String {
 }
 
 fn generated_at() -> String {
-    std::env::var("COLORFUL_BENCHMARK_GENERATED_AT")
-        .unwrap_or_else(|_| command_output("date", &["-u", "+%Y-%m-%dT%H:%M:%SZ"]))
+    let value = std::env::var("COLORFUL_BENCHMARK_GENERATED_AT")
+        .unwrap_or_else(|_| command_output("date", &["-u", "+%Y-%m-%dT%H:%M:%SZ"]));
+    assert!(
+        is_utc_timestamp(&value),
+        "generatedAt must use YYYY-MM-DDTHH:MM:SSZ"
+    );
+    value
+}
+
+fn is_utc_timestamp(value: &str) -> bool {
+    value.len() == 20
+        && value.bytes().enumerate().all(|(index, byte)| match index {
+            4 | 7 => byte == b'-',
+            10 => byte == b'T',
+            13 | 16 => byte == b':',
+            19 => byte == b'Z',
+            _ => byte.is_ascii_digit(),
+        })
 }
 
 fn hardware() -> String {
@@ -89,6 +107,34 @@ fn hardware() -> String {
         "unknown processor".to_owned()
     };
     format!("{processor}; {architecture}")
+}
+
+fn parse_linux_memory_bytes(meminfo: &str) -> Option<u64> {
+    let kibibytes = meminfo.lines().find_map(|line| {
+        let fields = line.strip_prefix("MemTotal:")?.split_whitespace();
+        fields.into_iter().next()?.parse::<u64>().ok()
+    })?;
+    kibibytes.checked_mul(1024)
+}
+
+fn total_memory_bytes() -> u64 {
+    if let Ok(value) = std::env::var("COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES") {
+        return value
+            .parse()
+            .expect("COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES must be a u64");
+    }
+    if cfg!(target_os = "macos") {
+        return command_output("sysctl", &["-n", "hw.memsize"])
+            .parse()
+            .expect("sysctl hw.memsize must be a u64");
+    }
+    if cfg!(target_os = "linux") {
+        let meminfo = std::fs::read_to_string("/proc/meminfo").expect("read /proc/meminfo");
+        return parse_linux_memory_bytes(&meminfo).expect("parse MemTotal from /proc/meminfo");
+    }
+    panic!(
+        "set COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES on platforms without a built-in memory probe"
+    );
 }
 
 fn median_nanoseconds(mut samples: Vec<u64>) -> u64 {
@@ -319,6 +365,9 @@ fn main() {
             "profile": "release",
             "timingSamplesPerStage": TIMING_SAMPLES,
             "allocationSamplesPerStage": 1,
+            "allocationCounter": ALLOCATION_COUNTER,
+            "throughputBasis": THROUGHPUT_BASIS,
+            "totalMemoryBytes": total_memory_bytes(),
             "sourceCommit": command_output("git", &["rev-parse", "HEAD"])
         },
         "regressionPolicy": {
@@ -350,5 +399,21 @@ mod tests {
     #[test]
     fn throughput_is_derived_from_bytes_and_nanoseconds() {
         assert_eq!(throughput_bytes_per_second(1_000, 2_000), 500_000_000);
+    }
+
+    #[test]
+    fn timestamp_contract_accepts_only_the_published_utc_shape() {
+        assert!(is_utc_timestamp("2026-07-28T09:04:26Z"));
+        assert!(!is_utc_timestamp("2026-07-28 09:04:26Z"));
+        assert!(!is_utc_timestamp("2026-07-28T09:04:26+00:00"));
+    }
+
+    #[test]
+    fn linux_memory_parser_converts_kibibytes_to_bytes() {
+        assert_eq!(
+            parse_linux_memory_bytes("MemTotal:       16384 kB\nMemFree: 2 kB\n"),
+            Some(16_777_216)
+        );
+        assert_eq!(parse_linux_memory_bytes("MemFree: 2 kB\n"), None);
     }
 }
