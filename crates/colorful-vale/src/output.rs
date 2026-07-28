@@ -99,6 +99,15 @@ pub(crate) fn parse_findings(
 }
 
 fn normalize_alert(source: &str, alert: ValeAlert) -> Result<Finding, ValeError> {
+    if alert.check.is_empty() {
+        return Err(invalid_alert("Vale alert check is empty"));
+    }
+    if alert.message.is_empty() {
+        return Err(invalid_alert(format!(
+            "{} alert message is empty",
+            alert.check
+        )));
+    }
     if alert.span.len() != 2 {
         return Err(invalid_alert(format!(
             "{} has {} span elements; expected two",
@@ -157,15 +166,6 @@ fn normalize_alert(source: &str, alert: ValeAlert) -> Result<Finding, ValeError>
             alert.check,
             alert.matched,
             span.slice(source)
-        )));
-    }
-    if alert.check.is_empty() {
-        return Err(invalid_alert("Vale alert check is empty"));
-    }
-    if alert.message.is_empty() {
-        return Err(invalid_alert(format!(
-            "{} alert message is empty",
-            alert.check
         )));
     }
     let rule = Rule::external(format!("vale/{}", alert.check))
