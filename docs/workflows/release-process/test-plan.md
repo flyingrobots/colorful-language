@@ -91,9 +91,13 @@ Verification for release preparation, tag automation, and release witnesses.
   identity tuples or missing migration evidence before packaging. *Oracle:*
   deterministic compatibility mutation tests and release-gate source review.
   *Evidence type:* current workflow reference, manifest validator, and release
-  gate. *Evidence:* `docs/workflows/release-process/README.md`,
-  `scripts/check-ir-compatibility.test.mjs`,
-  `scripts/check-ir-compatibility.mjs`, and `scripts/release-prep.sh`.
+  gate. *Evidence:* `node --test scripts/check-ir-compatibility.test.mjs`
+  (`manifest validation rejects each compatibility-authority mutation` and
+  `the canonical manifest records every supported wire generation`);
+  `node scripts/check-ir-compatibility.mjs`;
+  `docs/workflows/release-process/README.md`;
+  `.github/workflows/ci.yml` job `Generated IR and vocabulary drift`; and
+  `scripts/release-prep.sh`.
   *Tracking:*
   [#221](https://github.com/flyingrobots/colorful-language/issues/221).
   *Status:* implemented.
