@@ -280,6 +280,27 @@ test("generation fails closed on unsupported or dangling SDL", () => {
   );
 });
 
+test("schema references compile once instead of once per admitted value", () => {
+  const source = renderSyntaxAdmission({
+    currentGenerationId: "current",
+    generations: [
+      {
+        id: "current",
+        sdl: readFileSync(
+          path.join(ROOT, "contracts/colorful/syntax.v1.graphql"),
+          "utf8",
+        ),
+      },
+    ],
+  });
+  assert.match(source, /function prepareSchemas\(\)/u);
+  assert.match(source, /prepareSchemas\(\);/u);
+  assert.doesNotMatch(
+    source,
+    /const allowed = new Set\(definition\.fields/u,
+  );
+});
+
 test("consumers do not retain handwritten structural field or enum tables", () => {
   for (const relativePath of [
     "consumers/graft-projection.mjs",

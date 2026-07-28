@@ -152,7 +152,7 @@ const portableAdmission = {
   committedGeneratedNonblankLines:
     portableAdmissionLines * portableAdmissionSources.length,
   copyIdentityEvidence: "scripts/check-generated-syntax-admission-drift.sh",
-  reviewedGeneratorCases: 7,
+  reviewedGeneratorCases: 8,
   countedAsAuthoredAdapter: false,
   rationale:
     "generated structural admission is reported separately; only authored " +

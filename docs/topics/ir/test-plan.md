@@ -723,8 +723,9 @@ Requirements:
   `every compatibility generation admits its exact released shape`,
   `generated admission rejects missing, unknown, primitive, and enum drift`,
   `prototype properties cannot impersonate syntax generation ids`,
-  `a schema edit changes generated required-field and enum behavior`, and
-  `generation fails closed on unsupported or dangling SDL`.
+  `a schema edit changes generated required-field and enum behavior`,
+  `generation fails closed on unsupported or dangling SDL`, and
+  `schema references compile once instead of once per admitted value`.
   *Tracking:*
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
   *Status:* implemented.
@@ -755,7 +756,7 @@ Requirements:
   `consumers/independent-ir-report/src/measure.mjs` and
   `consumers/independent-ir-report/evidence/integration-effort.json`;
   `the effort ledger counts protocol-specific acquisition code`; the ledger
-  records 249 authored IR adapter lines separately from 830 unique / 1,660
+  records 249 authored IR adapter lines separately from 843 unique / 1,686
   committed generated admission lines.
   *Tracking:*
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
@@ -772,7 +773,7 @@ Requirements:
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
   correctness rule. Its remaining 249 authored IR adapter lines are smaller
-  than the alternatives' combined 354 lines. The 830 unique generated
+  than the alternatives' combined 354 lines. The 843 unique generated
   admission lines are reported separately rather than misrepresented as an
   authored reduction; the measured correctness advantage does not justify
   expanding the wire contract.

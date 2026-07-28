@@ -111,10 +111,10 @@
       "consumers/independent-ir-report/generated/syntax-admission-v1.mjs"
     ],
     "generatedCopies": 2,
-    "uniqueGeneratedNonblankLines": 830,
-    "committedGeneratedNonblankLines": 1660,
+    "uniqueGeneratedNonblankLines": 843,
+    "committedGeneratedNonblankLines": 1686,
     "copyIdentityEvidence": "scripts/check-generated-syntax-admission-drift.sh",
-    "reviewedGeneratorCases": 7,
+    "reviewedGeneratorCases": 8,
     "countedAsAuthoredAdapter": false,
     "rationale": "generated structural admission is reported separately; only authored adapter lines participate in the retain-or-simplify decision"
   },

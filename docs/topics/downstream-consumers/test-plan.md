@@ -256,6 +256,6 @@ workspace.
 - The independent proof retains stable v1 because the IR uniquely verifies five
   identities within its reviewed two-times adapter-size bound. The remaining
   risk is implementation cost: its 249 authored lines are now smaller than the
-  alternatives' combined 354 lines, but its 830 unique generated admission
+  alternatives' combined 354 lines, but its 843 unique generated admission
   lines remain a real distribution and review burden. Contract expansion stays
   frozen until separate product evidence justifies it.

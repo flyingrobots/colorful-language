@@ -73,7 +73,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "consumers/independent-ir-report/generated/syntax-admission-v1.mjs",
   ]);
   assert.equal(ledger.portableAdmission.generatedCopies, 2);
-  assert.equal(ledger.portableAdmission.reviewedGeneratorCases, 7);
+  assert.equal(ledger.portableAdmission.reviewedGeneratorCases, 8);
   assert.equal(ledger.portableAdmission.countedAsAuthoredAdapter, false);
   assert.equal(
     ledger.portableAdmission.committedGeneratedNonblankLines,

@@ -708,6 +708,23 @@ function parseReference(reference) {
   return { kind: "named", required, name: core };
 }
 
+function prepareSchemas() {
+  for (const schema of Object.values(GENERATIONS)) {
+    for (const definition of Object.values(schema)) {
+      if (definition.kind !== "type") continue;
+      definition.fieldNames = new Set(
+        definition.fields.map(([field]) => field),
+      );
+      definition.fields = definition.fields.map(([field, reference]) => [
+        field,
+        parseReference(reference),
+      ]);
+    }
+  }
+}
+
+prepareSchemas();
+
 function validateBuiltIn(value, name, path, reject) {
   if (name === "String" || name === "ID") {
     if (typeof value !== "string") {
@@ -764,15 +781,13 @@ function validateNamed(value, name, schema, path, reject) {
   if (!isRecord(value)) {
     rejectWith(reject, path, "must be an object");
   }
-  const allowed = new Set(definition.fields.map(([field]) => field));
   for (const field of Object.keys(value)) {
-    if (!allowed.has(field)) {
+    if (!definition.fieldNames.has(field)) {
       rejectWith(reject, fieldPath(path, field), "is not part of the contract");
     }
   }
-  for (const [field, reference] of definition.fields) {
+  for (const [field, parsedReference] of definition.fields) {
     const childPath = fieldPath(path, field);
-    const parsedReference = parseReference(reference);
     if (!Object.hasOwn(value, field)) {
       if (parsedReference.required) {
         validateReference(
