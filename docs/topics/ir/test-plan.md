@@ -540,15 +540,17 @@ Requirements:
   provenance-recorded artifacts emitted by the real `v0.2.1` and `v0.3.0`
   release binaries. It migrates the additive `openClassKind` generation
   boundary into one internal role-span model while preserving the source and
-  rejecting unregistered identity combinations. *Oracle:* both fixtures
-  render the reviewed common report; generation-specific profile hashes match
-  the tagged contract and vocabulary inputs; swapping any profile identity
-  fails closed. *Evidence type:* checked-in tagged fixtures, migration tests,
-  and a fixture-provenance check. *Evidence:*
+  rejecting unregistered identity combinations. *Oracle:* each fixture renders
+  its distinct reviewed release-specific report (`v0.2.1.md` or `v0.3.0.md`);
+  generation-specific profile hashes match the tagged contract and vocabulary
+  inputs; swapping any profile identity fails closed. *Evidence type:*
+  checked-in tagged fixtures, migration tests, and a fixture-provenance check.
+  *Evidence:*
   `consumers/independent-ir-report/fixtures/releases/{v0.2.1,v0.3.0}/`,
   `consumers/independent-ir-report/fixtures/expected/{v0.2.1,v0.3.0}.md`,
   `scripts/version-compat-matrix.sh`, and
-  `consumer.test.mjs` `v0.2.1 and v0.3.0 IR render the same report`.
+  `consumers/independent-ir-report/test/consumer.test.mjs`
+  `both released IR generations migrate into reviewed reports`.
   *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* implemented.
