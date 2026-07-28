@@ -69,7 +69,7 @@ jobs:
   rust:
     steps:
       - run: cargo test --doc --workspace --locked
-  `,
+`,
 });
 
 function writeSnapshot(root, omitted) {
@@ -106,7 +106,10 @@ test("reports a missing policy input without a raw stack trace", () => {
     const result = spawnSync(
       process.execPath,
       [script, "--root", root],
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+        timeout: 5_000,
+      },
     );
     assert.equal(result.error, undefined);
     assert.equal(result.status, 1);
