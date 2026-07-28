@@ -1553,7 +1553,13 @@ mod tests {
         assert_eq!(current["contractVersion"], CONTRACT_VERSION);
         assert_eq!(current["schemaHash"], syntax_schema_hash());
         assert_eq!(current["vocabularyHash"], vocabulary_hash());
-        assert_eq!(manifest["generations"].as_array().unwrap().len(), 3);
+        let matching_generations = manifest["generations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|generation| generation.get("identity") == Some(current))
+            .count();
+        assert_eq!(matching_generations, 1);
     }
 
     #[test]

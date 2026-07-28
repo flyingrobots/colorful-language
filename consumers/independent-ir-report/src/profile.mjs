@@ -74,7 +74,7 @@ function selectGeneration(metadata, compatibility) {
       generation.schemaHashMode === "descriptions-stripped-sdl-sha256"
     )
   ) {
-    fail("E_PROFILE", "selected compatibility generation is malformed");
+    fail("E_PROFILE", "selected compatibility generation is unsupported");
   }
   return generation;
 }

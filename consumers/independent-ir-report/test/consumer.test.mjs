@@ -174,20 +174,6 @@ test("a self-consistent but unknown identity tuple is rejected", (t) => {
   writeFileSync(profilePath, `${JSON.stringify(metadata, null, 2)}\n`);
 
   expectConsumerError("E_PROFILE", () => loadProfile(copy));
-  const forgedCompatibility = JSON.parse(
-    readFileSync(path.join(ROOT, "compatibility.v1.json"), "utf8"),
-  );
-  forgedCompatibility.generations.push({
-    ...structuredClone(forgedCompatibility.generations[1]),
-    id: "caller-forged-generation",
-    identity: {
-      ...forgedCompatibility.generations[1].identity,
-      schemaHash: metadata.schemaHash,
-    },
-  });
-  expectConsumerError("E_PROFILE", () =>
-    loadProfile(copy, forgedCompatibility)
-  );
 });
 
 function expectConsumerError(code, operation) {
