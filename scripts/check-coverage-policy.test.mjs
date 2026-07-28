@@ -413,6 +413,14 @@ test("rejects an artifact without both machine and browsable reports", () => {
   });
 });
 
+test("rejects artifact retention that drifts from the reference", () => {
+  expectWorkflowError("E_COVERAGE_ARTIFACT", (candidate) => {
+    namedWorkflowStep(candidate, "Upload coverage report").with[
+      "retention-days"
+    ] = 15;
+  });
+});
+
 test("rejects an unbounded artifact retention period", () => {
   expectWorkflowError("E_COVERAGE_ARTIFACT", (candidate) => {
     delete namedWorkflowStep(candidate, "Upload coverage report").with[
