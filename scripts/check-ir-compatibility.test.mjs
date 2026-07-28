@@ -185,6 +185,41 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
   }
 });
 
+test("transition decisions must match their predecessor deltas", () => {
+  const cases = [
+    (manifest) => {
+      manifest.generations[1].changeKinds = ["nullable-field"];
+    },
+    (manifest) => {
+      manifest.generations[1].changeKinds.push("schema-hash-algorithm");
+    },
+    (manifest) => {
+      manifest.generations[0].wireShape.openClassKind = "nullable";
+      manifest.generations[1].changeKinds = ["vocabulary"];
+    },
+    (manifest) => {
+      manifest.generations[1].identity.vocabularyHash = HASH_B;
+      manifest.generations[1].artifacts.vocabulary =
+        manifest.generations[0].artifacts.vocabulary;
+      manifest.currentIdentity = identity(HASH_C, HASH_B);
+    },
+    (manifest) => {
+      manifest.generations[1].wireShape.openClassKind = "absent";
+    },
+  ];
+
+  for (const mutate of cases) {
+    const manifest = manifestFixture();
+    mutate(manifest);
+    expectCompatibilityError("E_TRANSITION", () =>
+      validateCompatibilityManifest(manifest, {
+        currentIdentity: manifest.currentIdentity,
+        repositoryRoot: ROOT,
+      }),
+    );
+  }
+});
+
 test("compatibility copies fail closed on byte drift", () => {
   validateCompatibilityCopies("canonical\n", [
     { label: "matching copy", text: "canonical\n" },

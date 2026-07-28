@@ -391,6 +391,50 @@ function validateAcyclic(generationsById) {
   }
 }
 
+function validateTransition(generation, predecessor, index) {
+  const context = `generations[${index}]`;
+  const changes = new Set(generation.changeKinds);
+  const checks = [
+    [
+      "nullable-field",
+      generation.wireShape.openClassKind !==
+        predecessor.wireShape.openClassKind,
+      "wireShape.openClassKind",
+    ],
+    [
+      "vocabulary",
+      generation.identity.vocabularyHash !==
+        predecessor.identity.vocabularyHash,
+      "vocabularyHash",
+    ],
+    [
+      "schema-hash-algorithm",
+      generation.schemaHashMode !== predecessor.schemaHashMode,
+      "schemaHashMode",
+    ],
+  ];
+  for (const [change, actual, field] of checks) {
+    if (changes.has(change) !== actual) {
+      fail(
+        "E_TRANSITION",
+        `${context} ${field} delta must agree with change kind ${change}`,
+      );
+    }
+  }
+
+  const schemaIdentityChanged =
+    generation.identity.schemaHash !== predecessor.identity.schemaHash;
+  const declaredSchemaChange =
+    changes.has("nullable-field") ||
+    changes.has("schema-hash-algorithm");
+  if (schemaIdentityChanged !== declaredSchemaChange) {
+    fail(
+      "E_TRANSITION",
+      `${context} schemaHash delta must be explained by a nullable field or hash algorithm change`,
+    );
+  }
+}
+
 export function validateCompatibilityManifest(
   manifest,
   { currentIdentity, repositoryRoot },
@@ -467,6 +511,15 @@ export function validateCompatibilityManifest(
       "E_PREDECESSOR",
       `compatibility family must have one root, found ${roots}`,
     );
+  }
+  for (const [index, generation] of manifest.generations.entries()) {
+    if (generation.predecessor !== null) {
+      validateTransition(
+        generation,
+        generationsById.get(generation.predecessor),
+        index,
+      );
+    }
   }
 
   const declaredCurrentKey = identityKey(manifest.currentIdentity);
