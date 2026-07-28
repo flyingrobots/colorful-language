@@ -28,8 +28,8 @@ workspace.
 - **CONSUMER-9** Process-level witness failures reject malformed artifacts under
   stable error categories without emitting canonical output.
 - **CONSUMER-10** An independent consumer proves validation, rendering,
-  incompatible-version rejection, and migration across two contract versions,
-  then compares that effort with CLI text and LSP tokens.
+  incompatible-version rejection, and migration across two released contract
+  generations, then compares that effort with CLI text and LSP tokens.
 
 ## Cases
 
@@ -178,15 +178,31 @@ workspace.
   [#148](https://github.com/flyingrobots/colorful-language/issues/148).
   *Status:* implemented.
 - **CONSUMER-10a** — *Requirement:* CONSUMER-10. *Behavior:* a non-Rust
-  consumer validates source identity/schema/vocabulary/version, renders a useful
-  artifact, rejects an incompatible version, and migrates across two contract
-  versions before repeating the job with CLI text and LSP tokens. *Oracle:*
+  consumer validates raw-source UTF-8, source
+  identity/schema/vocabulary/version, renders a useful artifact, rejects an
+  incompatible version, and migrates across two released contract generations
+  before repeating the job with CLI text and LSP tokens.
+  *Oracle:*
   exact rejection/rendering/migration results plus a reviewed integration-effort
-  ledger; the contract is simplified rather than expanded if it does not reduce
-  downstream cost. *Evidence type:* independent executable consumer and
-  measured migration report. *Tracking:*
+  ledger; exact record admission rejects both missing and unknown fields; the
+  contract is simplified rather than expanded if it does not reduce downstream
+  cost. *Evidence type:* independent executable consumer and measured migration
+  report. *Evidence:*
+  `consumers/independent-ir-report/`,
+  `consumers/independent-ir-report/evidence/integration-effort.json`,
+  `scripts/version-compat-matrix.sh`, and
+  `scripts/check-independent-consumer.sh`; `consumer.test.mjs`
+  `the IR process rejects invalid UTF-8 before source identity trust`,
+  `the IR process reports file-system failures as stable refusals`,
+  `IR admission rejects unknown fields in every document record`,
+  `release profiles project every classified visual role`,
+  `IR admission enforces derivation trace identity`,
+  `Markdown reports escape table delimiters inside code spans`,
+  `LSP capture bounds child-process exit`,
+  `the retention rule honors both documented decision branches`.
+  *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Open verification gaps
 
@@ -194,5 +210,10 @@ workspace.
   the runtime host.
 - Graft package API compatibility checks belong in the Graft repository; this
   repository keeps only the reference consumer witness.
-- Independent consumption, migration, and integration-cost evidence remains
-  open in CONSUMER-10a.
+- The independent proof retains stable v1 because the IR uniquely verifies five
+  identities within its reviewed two-times adapter-size bound. The remaining
+  risk is implementation cost: its 424-line adapter is larger than the
+  305-line LSP protocol and decoding adapter, so contract expansion stays
+  frozen while
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222)
+  simplifies consumer admission.

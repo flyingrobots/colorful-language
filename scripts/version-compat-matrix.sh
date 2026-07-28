@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Proves the documented colorful-CLI version floor for downstream (Graft/
-# jedit) discovery, by actually building and running the tagged releases
-# rather than asserting the docs are correct. See
-# docs/topics/downstream-consumers/{README.md,test-plan.md} (CONSUMER-5).
+# jedit) discovery and the provenance of the independent-consumer fixtures by
+# actually building and running the tagged releases. See
+# docs/topics/downstream-consumers/{README.md,test-plan.md} (CONSUMER-5) and
+# docs/topics/ir/test-plan.md (IR-19).
 #
 # Finding this script proves: the real v0.2.1 binary has no `--version` flag
 # at all (it was added five commits after the v0.2.1 tag, in
@@ -18,13 +19,40 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 work="$(mktemp -d)"
-fixture_text="The quick fox runs. She writes carefully."
+fixture_root="$root/consumers/independent-ir-report/fixtures"
+fixture_text="😀 the book I book rooms the fast river connects fast 2."
+update_fixtures=false
+
+if [[ "$#" -gt 1 ]] || [[ "$#" -eq 1 && "$1" != "--update-fixtures" ]]; then
+  echo "usage: scripts/version-compat-matrix.sh [--update-fixtures]" >&2
+  exit 2
+fi
+if [[ "$#" -eq 1 ]]; then
+  update_fixtures=true
+fi
 
 cleanup() {
+  local original_status=$?
+  local cleanup_status=0
+  trap - EXIT
+  set +e
   for tag in v0.2.1 v0.3.0; do
-    git -C "$root" worktree remove --force "$work/$tag" >/dev/null 2>&1 || true
+    if [[ -d "$work/$tag" ]]; then
+      if ! git -C "$root" worktree remove "$work/$tag" >/dev/null; then
+        echo "version-compat-matrix cleanup left $work/$tag registered" >&2
+        cleanup_status=1
+      fi
+    fi
   done
-  rm -rf "$work"
+  if [[ "$cleanup_status" -eq 0 ]]; then
+    rm -rf "$work" || cleanup_status=$?
+  else
+    echo "version-compat-matrix cleanup retained $work for inspection" >&2
+  fi
+  if [[ "$original_status" -ne 0 ]]; then
+    exit "$original_status"
+  fi
+  exit "$cleanup_status"
 }
 trap cleanup EXIT
 
@@ -36,8 +64,20 @@ fail() {
 build_tag() {
   local tag="$1"
   git -C "$root" worktree add --detach "$work/$tag" "$tag" >/dev/null
-  cargo install --locked --path "$work/$tag/crates/colorful-cli" \
-    --root "$work/prefix-$tag" --force >/dev/null
+  local packages=(-p colorful-cli)
+  if [[ "$tag" == "v0.3.0" ]]; then
+    packages+=(-p colorful-lsp)
+  fi
+  CARGO_TARGET_DIR="$work/target-$tag" cargo build \
+    --manifest-path "$work/$tag/Cargo.toml" \
+    --release \
+    --locked \
+    "${packages[@]}" >/dev/null
+}
+
+colorful_bin() {
+  local tag="$1"
+  printf '%s/target-%s/release/colorful' "$work" "$tag"
 }
 
 # probe_version <tag>
@@ -48,7 +88,7 @@ probe_version() {
   local tag="$1"
   local out exit_code
   set +e
-  out="$("$work/prefix-$tag/bin/colorful" --version 2>&1)"
+  out="$("$(colorful_bin "$tag")" --version 2>&1)"
   exit_code=$?
   set -e
   printf '%s\t%s\n' "$exit_code" "$out"
@@ -78,7 +118,13 @@ assert_version_probe_reports() {
 
 emit_ir() {
   local tag="$1"
-  printf '%s' "$fixture_text" | "$work/prefix-$tag/bin/colorful" ir - >"$work/ir-$tag.json"
+  printf '%s' "$fixture_text" | "$(colorful_bin "$tag")" ir - >"$work/ir-$tag.json"
+}
+
+emit_ansi() {
+  local tag="$1"
+  printf '%s' "$fixture_text" |
+    env -u NO_COLOR "$(colorful_bin "$tag")" - >"$work/ansi-$tag.txt"
 }
 
 # validate_ir_self_consistent <tag>
@@ -110,6 +156,68 @@ assert_open_class_kind_presence() {
   echo "OK: openClassKind absent in v0.2.1, present in v0.3.0 (additive field)"
 }
 
+write_profile() {
+  local tag="$1"
+  local output="$work/profile-$tag.json"
+  local commit
+  commit="$(git -C "$root" rev-parse "$tag^{commit}")"
+  node --input-type=module -e "
+    import { readFileSync, writeFileSync } from 'node:fs';
+    const document = JSON.parse(readFileSync(process.argv[1], 'utf8'));
+    const profile = {
+      profileVersion: 'colorful.consumer-profile/v1',
+      release: process.argv[2],
+      commit: process.argv[3],
+      contractVersion: document.contractVersion,
+      schemaHash: document.schemaHash,
+      vocabularyHash: document.vocabularyHash,
+      openClassKindField: process.argv[2] === 'v0.3.0',
+    };
+    writeFileSync(process.argv[4], JSON.stringify(profile, null, 2) + '\\n');
+  " "$work/ir-$tag.json" "$tag" "$commit" "$output"
+}
+
+capture_lsp() {
+  printf '%s' "$fixture_text" >"$work/source.txt"
+  node "$root/consumers/independent-ir-report/scripts/capture-lsp.mjs" \
+    "$work/target-v0.3.0/release/colorful-lsp" \
+    "$work/source.txt" \
+    >"$work/lsp-v0.3.0.json"
+}
+
+sync_fixture() {
+  local generated="$1" committed="$2"
+  if "$update_fixtures"; then
+    mkdir -p "$(dirname "$committed")"
+    cp "$generated" "$committed"
+  elif ! cmp -s "$generated" "$committed"; then
+    diff -u "$committed" "$generated" || true
+    fail "fixture drift: ${committed#"$root/"}"
+  fi
+}
+
+sync_release_fixtures() {
+  printf '%s' "$fixture_text" >"$work/source.txt"
+  sync_fixture "$work/source.txt" "$fixture_root/source.txt"
+
+  for tag in v0.2.1 v0.3.0; do
+    local release_root="$fixture_root/releases/$tag"
+    sync_fixture "$work/ir-$tag.json" "$release_root/ir.json"
+    sync_fixture \
+      "$work/$tag/contracts/colorful/syntax.v1.graphql" \
+      "$release_root/syntax.v1.graphql"
+    sync_fixture \
+      "$work/$tag/contracts/colorful/vocabulary.v1.json" \
+      "$release_root/vocabulary.v1.json"
+    sync_fixture "$work/profile-$tag.json" "$release_root/profile.json"
+  done
+
+  sync_fixture "$work/ansi-v0.3.0.txt" \
+    "$fixture_root/releases/v0.3.0/ansi.txt"
+  sync_fixture "$work/lsp-v0.3.0.json" \
+    "$fixture_root/releases/v0.3.0/lsp.json"
+}
+
 main() {
   command -v cargo >/dev/null 2>&1 || fail "cargo is required"
   command -v node >/dev/null 2>&1 || fail "node is required"
@@ -125,12 +233,18 @@ main() {
   # supplementary context, not part of the floor decision.
   emit_ir v0.2.1
   emit_ir v0.3.0
+  emit_ansi v0.3.0
   validate_ir_self_consistent v0.2.1 project
   validate_ir_self_consistent v0.3.0 project
   assert_open_class_kind_presence
+  write_profile v0.2.1
+  write_profile v0.3.0
+  capture_lsp
+  sync_release_fixtures
 
   echo "version-compat-matrix passed: the provable colorful --version" \
-    "discovery floor is >= 0.3.0, not >= 0.2.1."
+    "discovery floor is >= 0.3.0, not >= 0.2.1; independent-consumer" \
+    "fixtures match both tagged releases."
 }
 
 main "$@"

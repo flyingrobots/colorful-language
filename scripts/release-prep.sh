@@ -61,6 +61,7 @@ node scripts/check-vscode-dependency-policy.mjs
 npm --prefix editors/vscode ci
 npm --prefix editors/vscode audit --audit-level=high
 bash scripts/ir-witness.sh
+bash scripts/check-independent-consumer.sh
 bash scripts/check-generated-ir-drift.sh
 bash scripts/check-generated-vocabulary-drift.sh
 node consumers/graft-projection.test.mjs

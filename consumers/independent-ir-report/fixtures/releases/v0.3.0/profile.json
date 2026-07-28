@@ -1,0 +1,9 @@
+{
+  "profileVersion": "colorful.consumer-profile/v1",
+  "release": "v0.3.0",
+  "commit": "f97b9f5051de7b846892bd2ecf2576bc2567f1ee",
+  "contractVersion": "colorful.syntax/v1",
+  "schemaHash": "sha256:f090e7ee24920d7b8c55e8da34e0f70d863414d8ba0c20b52a5913c3d0884c20",
+  "vocabularyHash": "sha256:c4f1a36f839ba6e56955c60c8fa45f8d6692685fd137eed2a084416f52531461",
+  "openClassKindField": true
+}

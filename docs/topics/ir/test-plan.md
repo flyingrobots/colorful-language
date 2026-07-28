@@ -64,8 +64,9 @@ Requirements:
 - **IR-18** Validator error definitions and complexity budgets are mechanically
   checkable, and mutation evidence replaces speculative invariant-gap hunting
   where it provides value.
-- **IR-19** An independent non-Rust consumer proves two-version migration and
-  whether the IR reduces downstream effort relative to CLI text or LSP tokens.
+- **IR-19** An independent non-Rust consumer proves migration across two
+  released contract generations and whether the IR reduces downstream effort
+  relative to CLI text or LSP tokens.
 - **IR-20** Public IR projection and vocabulary APIs have concise runnable
   examples that demonstrate their fallible boundaries without duplicating the
   IR reference.
@@ -509,15 +510,78 @@ Requirements:
   blocking Rust CI job, and `scripts/release-prep.sh`. *Tracking:*
   [#82](https://github.com/flyingrobots/colorful-language/issues/82).
   *Status:* implemented.
-- **IR-19a** — *Requirement:* IR-19. *Behavior:* an independent non-Rust
-  consumer validates source/schema/vocabulary/version, renders a useful
-  artifact, rejects an incompatible version, and migrates across two contract
-  versions before repeating the job with CLI text and LSP tokens. *Oracle:*
-  exact functional results plus a reviewed integration-effort ledger and an
-  explicit retain/simplify/version decision. *Evidence type:* executable
-  consumer and measured migration report. *Tracking:*
+- **IR-19a** — *Requirement:* IR-19. *Behavior:* a standalone Node package
+  with no Cargo-workspace or third-party runtime dependency admits a
+  `DocumentAnalysis` only after validating its required shape, supported
+  contract generation, schema and vocabulary identities, raw-source UTF-8,
+  source length and digest, and token ranges, then renders a deterministic
+  role-span report. Invalid JSON, invalid UTF-8, unsupported generations, wrong
+  identities, missing or unknown fields, and mismatched source fail with stable
+  error codes and no report on stdout.
+  *Oracle:* exact report bytes for valid input; exact process status, error
+  code, and empty stdout for every refusal. *Evidence type:* process-level
+  consumer tests. *Evidence:*
+  `consumers/independent-ir-report/src/{common,profile,ir}.mjs`,
+  `consumers/independent-ir-report/bin/report.mjs`, and
+  `consumer.test.mjs`
+  `the IR process refuses every stable category without output`,
+  `the IR process rejects invalid UTF-8 before source identity trust`,
+  `the IR process reports file-system failures as stable refusals`,
+  `IR admission rejects unknown fields in every document record`,
+  `release profiles project every classified visual role`,
+  `IR admission enforces derivation trace identity`,
+  `Markdown reports escape table delimiters inside code spans`,
+  `LSP capture bounds child-process exit`,
+  `the retention rule honors both documented decision branches`.
+  *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
-  *Status:* planned.
+  *Status:* implemented.
+- **IR-19b** — *Requirement:* IR-19. *Behavior:* the consumer accepts
+  provenance-recorded artifacts emitted by the real `v0.2.1` and `v0.3.0`
+  release binaries. It migrates the additive `openClassKind` generation
+  boundary into one internal role-span model while preserving the source and
+  rejecting unregistered identity combinations. *Oracle:* each fixture renders
+  its distinct reviewed release-specific report (`v0.2.1.md` or `v0.3.0.md`);
+  generation-specific profile hashes match the tagged contract and vocabulary
+  inputs; swapping any profile identity fails closed. *Evidence type:*
+  checked-in tagged fixtures, migration tests, and a fixture-provenance check.
+  *Evidence:*
+  `consumers/independent-ir-report/fixtures/releases/{v0.2.1,v0.3.0}/`,
+  `consumers/independent-ir-report/fixtures/expected/{v0.2.1,v0.3.0}.md`,
+  `scripts/version-compat-matrix.sh`, and
+  `consumers/independent-ir-report/test/consumer.test.mjs`
+  `both released IR generations migrate into reviewed reports`.
+  *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* implemented.
+- **IR-19c** — *Requirement:* IR-19. *Behavior:* IR, ANSI CLI text, and LSP
+  semantic tokens perform the same role-span reporting job over the same
+  source, with implementation and maintenance burden recorded under one
+  executable measurement method. The ledger reports nonblank adapter lines,
+  validation/error categories, fixtures, assertions, migration-specific
+  lines, runtime dependencies, and process steps. *Oracle:* every adapter
+  renders byte-identical output, the committed ledger matches a fresh
+  measurement, and the IR rationale applies the reviewed retain/simplify rule
+  to the measured result. *Evidence type:* black-box parity test, generated
+  integration-effort ledger, and design decision. *Evidence:*
+  `consumers/independent-ir-report/src/{ansi,lsp,lsp-fixture,measure}.mjs`,
+  `consumers/independent-ir-report/scripts/capture-lsp.mjs`,
+  `consumers/independent-ir-report/evidence/integration-effort.json`,
+  `consumer.test.mjs`
+  `IR, ANSI CLI text, and LSP tokens render the same v0.3.0 job`, and
+  `architecture.md` `Product-evidence gate`. *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* implemented.
+- **IR-19d** — *Requirement:* IR-19. *Behavior:* the proof runs from a clean
+  copy containing only the independent package, with no repository
+  `Cargo.toml`, `target/`, built Colorful binary, or ambient `node_modules`.
+  *Oracle:* `npm ci` and the package's full test/report command pass in the
+  temporary copy, and a guard fails if any path escapes that package root.
+  *Evidence type:* clean-environment shell witness in CI and release
+  preparation. *Evidence:* `scripts/check-independent-consumer.sh`, CI
+  `ir-witness`, and `scripts/release-prep.sh`. *Tracking:*
+  [#156](https://github.com/flyingrobots/colorful-language/issues/156).
+  *Status:* implemented.
 - **IR-20a** — *Requirement:* IR-20. *Behavior:* the public producer front door
   projects valid source and demonstrates typed failure handling in a compiled
   rustdoc example. *Oracle:* `cargo test --doc --workspace` runs the success
@@ -561,6 +625,15 @@ Requirements:
   and `ruleId` now name a real, validated producer identity (IR-8), but
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
-- The independent two-version consumer and
-  [product-evidence decision](architecture.md#product-evidence-gate) remains
-  open in IR-19a.
+- The independent consumer retains stable v1 under the reviewed cost and
+  correctness rule. Its 424-line IR adapter is larger than the 305-line
+  LSP protocol and decoding adapter, so reducing duplicate consumer admission
+  code is deliberate follow-up debt in
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222); the
+  measured correctness advantage does not justify expanding the wire contract.
+- The `v0.2.1` and `v0.3.0` schema generations share one
+  `colorful.syntax/v1` label. IR-19 uses their full identity tuples to fail
+  closed, but the compatibility meaning of an intra-v1 schema change remains
+  implicit and release-tag-oriented;
+  [#221](https://github.com/flyingrobots/colorful-language/issues/221) owns the
+  generated/declarative compatibility authority.
