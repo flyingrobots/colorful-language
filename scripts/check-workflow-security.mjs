@@ -27,6 +27,7 @@ const policyPath = join(
   ".github",
   "workflow-security-policy.yml",
 );
+const SUBPROCESS_TIMEOUT_MS = 60_000;
 
 export class WorkflowSecurityError extends Error {
   constructor(code, message) {
@@ -83,22 +84,30 @@ function workflowPaths(root) {
   return paths;
 }
 
-function checkedSpawn(binary, args, code) {
+function checkedSpawn(binary, args, code, timeoutMs) {
   const result = spawnSync(binary, args, {
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
+    timeout: timeoutMs,
   });
+  if (result.error?.code === "ETIMEDOUT") {
+    reject(code, `${binary} timed out after ${timeoutMs} ms`);
+  }
   if (result.error !== undefined) {
     reject(code, `${binary}: ${result.error.message}`);
+  }
+  if (result.signal !== null) {
+    reject(code, `${binary} terminated by signal ${result.signal}`);
   }
   return result;
 }
 
-function verifyVersion(binary, version) {
+function verifyVersion(binary, version, timeoutMs) {
   const result = checkedSpawn(
     binary,
     ["--version"],
     "E_WORKFLOW_SECURITY_VERSION",
+    timeoutMs,
   );
   const observed = result.stdout.trim();
   const expected = `zizmor ${version}`;
@@ -170,10 +179,11 @@ function parseArguments(argv) {
 export function auditWorkflows({
   root = repositoryRoot,
   binary = process.env.ZIZMOR_BIN ?? "zizmor",
+  timeoutMs = SUBPROCESS_TIMEOUT_MS,
 } = {}) {
   const policy = loadPolicy();
   const workflows = workflowPaths(root);
-  verifyVersion(binary, policy.analyzer.version);
+  verifyVersion(binary, policy.analyzer.version, timeoutMs);
 
   const temporaryDirectory = mkdtempSync(
     join(tmpdir(), "colorful-zizmor-"),
@@ -206,6 +216,7 @@ export function auditWorkflows({
         ...workflows,
       ],
       "E_WORKFLOW_SECURITY_ANALYZER",
+      timeoutMs,
     );
     if (result.status !== 0) {
       reject(

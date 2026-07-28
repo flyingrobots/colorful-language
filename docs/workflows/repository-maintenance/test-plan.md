@@ -264,9 +264,11 @@ roadmap-to-issue reconciliation is tracked in
   analyzer exception names one exact rule and workflow location, rationale,
   owner, and removal trigger. *Oracle:* safe fixtures and the live repository
   pass; minimal persisted-checkout-credential and workflow-level write-
-  permission fixtures fail with stable, path-addressed categories; policy
-  mutations reject a floating version, weakened thresholds, broadened
-  exception, missing hosted command, or missing release-preparation command.
+  permission fixtures fail with stable, path-addressed categories; a
+  deterministic hanging analyzer fails with a stable timeout category before
+  its process-level watchdog; policy mutations reject a floating version,
+  weakened thresholds, broadened exception, missing hosted command, or missing
+  release-preparation command.
   *Evidence type:* pinned analyzer execution, deterministic process fixtures,
   and configuration mutation tests. *Evidence:*
   `.github/workflow-security-policy.yml`,

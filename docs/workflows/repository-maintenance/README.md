@@ -63,8 +63,9 @@ node --test scripts/check-workflow-security.test.mjs
 node scripts/check-workflow-security.mjs
 ```
 
-The runner verifies the installed version before invoking it. It generates the
-analyzer configuration from
+The runner verifies the installed version before invoking it and terminates
+either analyzer subprocess after 60 seconds with a stable error category. It
+generates the analyzer configuration from
 [`.github/workflow-security-policy.yml`](../../../.github/workflow-security-policy.yml),
 uses offline workflow-only collection, and rejects every low-or-higher finding.
 Run `actionlint .github/workflows/*.yml` separately for syntax and schema
@@ -88,7 +89,7 @@ and manual recovery:
 - workflow security installs `zizmor` 1.28.0 with the full-SHA-pinned installer,
   then runs deterministic unsafe-workflow fixtures and scans every checked-in
   workflow offline with the auditor persona and all low-or-higher findings
-  blocking.
+  blocking; hung analyzer subprocesses fail closed after 60 seconds.
 
 The same repository-policy mutation tests run in the required documentation job
 and release preparation. Release preparation also reruns the Rust self-test and

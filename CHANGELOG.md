@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The versioned policy binds the analyzer identity, invocation, and sole
   crates.io release-token exception; all workflow checkouts now disable
   credential persistence, template expressions enter shell steps through the
-  environment, superseded CI runs cancel, and tag releases no longer restore a
-  shared build cache.
+  environment, hung analyzer subprocesses fail closed after 60 seconds,
+  superseded CI runs cancel, and tag releases no longer restore a shared build
+  cache.
 - **Runnable public API evidence.** Concise doctests now exercise the public
   `Parser`, `Annotator`, `Analyzer`, IR producer, and fallible vocabulary
   boundaries. A deterministic policy test prevents any named example or the
