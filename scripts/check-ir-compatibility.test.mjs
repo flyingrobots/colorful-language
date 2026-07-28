@@ -20,7 +20,7 @@ import {
 } from "./check-ir-compatibility.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const EVIDENCE = "docs/topics/ir/test-plan.md";
+const EVIDENCE = "scripts/version-compat-matrix.sh";
 const HASH_A =
   "sha256:acf86cf0f9d31f5b02df8e546e8b968a6c8e78d94761a5bbe81750f219101a58";
 const HASH_B =
@@ -124,6 +124,13 @@ test("wire shape represents nullable fields without a field-specific schema", ()
     currentIdentity: manifest.currentIdentity,
     repositoryRoot: ROOT,
   });
+  assert.deepEqual(
+    selectCompatibilityGeneration(
+      manifest,
+      manifest.generations[1].identity,
+    ).wireShape.optionalFields,
+    ["Token.openClassKind"],
+  );
 });
 
 test("only additive nullable SDL changes remain inside the contract family", () => {
@@ -231,6 +238,20 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
       },
     ],
     [
+      "E_DUPLICATE_GENERATION",
+      (manifest) => {
+        const duplicate = structuredClone(manifest.generations[1]);
+        duplicate.identity = identity(HASH_C, HASH_E);
+        manifest.generations.push(duplicate);
+      },
+    ],
+    [
+      "E_MANIFEST_SHAPE",
+      (manifest) => {
+        delete manifest.generations[1].wireShape;
+      },
+    ],
+    [
       "E_PREDECESSOR",
       (manifest) => {
         manifest.generations[1].predecessor = "missing";
@@ -269,6 +290,12 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
       },
     ],
     [
+      "E_EVIDENCE",
+      (manifest) => {
+        manifest.generations[1].migrationEvidence = ["README.md"];
+      },
+    ],
+    [
       "E_CURRENT_IDENTITY",
       (manifest) => {
         manifest.currentIdentity = identity(HASH_E, HASH_D);
@@ -290,6 +317,11 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
 
 test("transition decisions must match their predecessor deltas", () => {
   const cases = [
+    (manifest) => {
+      manifest.generations[0].wireShape.optionalFields = [
+        "Token.openClassKind",
+      ];
+    },
     (manifest) => {
       manifest.generations[1].changeKinds = ["nullable-field"];
     },
@@ -323,6 +355,24 @@ test("transition decisions must match their predecessor deltas", () => {
       }),
     );
   }
+});
+
+test("GraphQL underscore coordinates reach transition validation", () => {
+  const manifest = manifestFixture();
+  manifest.generations[0].wireShape.optionalFields = [
+    "Token._legacyOptional",
+  ];
+  manifest.generations[1].wireShape.optionalFields = [
+    "Token._legacyOptional",
+    "Token.openClassKind",
+  ];
+
+  expectCompatibilityError("E_TRANSITION", () =>
+    validateCompatibilityManifest(manifest, {
+      currentIdentity: manifest.currentIdentity,
+      repositoryRoot: ROOT,
+    })
+  );
 });
 
 test("compatibility copies fail closed on byte drift", () => {

@@ -36,8 +36,8 @@
         "optionalFields": []
       },
       "migrationEvidence": [
-        "consumers/independent-ir-report/fixtures/expected/v0.2.1.md",
-        "consumers/independent-ir-report/test/consumer.test.mjs"
+        "consumers/independent-ir-report/test/consumer.test.mjs",
+        "scripts/version-compat-matrix.sh"
       ]
     },
     {
@@ -64,8 +64,8 @@
         ]
       },
       "migrationEvidence": [
-        "consumers/independent-ir-report/fixtures/expected/v0.3.0.md",
-        "consumers/independent-ir-report/test/consumer.test.mjs"
+        "consumers/independent-ir-report/test/consumer.test.mjs",
+        "scripts/version-compat-matrix.sh"
       ]
     },
     {

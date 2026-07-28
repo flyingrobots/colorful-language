@@ -66,6 +66,7 @@ bash scripts/ir-witness.sh
 bash scripts/check-independent-consumer.sh
 bash scripts/check-generated-ir-drift.sh
 bash scripts/check-generated-vocabulary-drift.sh
+bash scripts/version-compat-matrix.sh
 node consumers/graft-projection.test.mjs
 npm --prefix editors/vscode run compile
 cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked

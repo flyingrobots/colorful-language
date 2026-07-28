@@ -19,7 +19,7 @@ const MANIFEST_VERSION = "colorful.syntax-compatibility/v1";
 const CONTRACT_FAMILY = "colorful.syntax/v1";
 const HASH_PATTERN = /^sha256:[0-9a-f]{64}$/u;
 const OPTIONAL_FIELD_PATTERN =
-  /^[A-Za-z][A-Za-z0-9]*(?:\[\])?(?:\.[A-Za-z][A-Za-z0-9]*(?:\[\])?)*$/u;
+  /^[_A-Za-z][_0-9A-Za-z]*(?:\[\])?(?:\.[_A-Za-z][_0-9A-Za-z]*(?:\[\])?)*$/u;
 const SCHEMA_HASH_MODES = new Set([
   "raw-sdl-sha256",
   "descriptions-stripped-sdl-sha256",
@@ -33,6 +33,28 @@ const EXPLICIT_GENERATION_CHANGES = new Set([
   "nullable-field",
   "vocabulary",
   "schema-hash-algorithm",
+]);
+const MIGRATION_ORACLES = new Map([
+  [
+    "consumers/independent-ir-report/test/consumer.test.mjs",
+    "bash scripts/check-independent-consumer.sh",
+  ],
+  [
+    "consumers/graft-projection.test.mjs",
+    "node consumers/graft-projection.test.mjs",
+  ],
+  [
+    "crates/colorful-ir/src/lib.rs",
+    "cargo test --all --locked",
+  ],
+  [
+    "scripts/ir-witness.sh",
+    "bash scripts/ir-witness.sh",
+  ],
+  [
+    "scripts/version-compat-matrix.sh",
+    "bash scripts/version-compat-matrix.sh",
+  ],
 ]);
 const POLICY = Object.freeze({
   "description-only": "preserve-generation",
@@ -319,6 +341,12 @@ function validateDecision(generation, index) {
         `${context} root must use origin with no change kinds`,
       );
     }
+    if (generation.wireShape.optionalFields.length !== 0) {
+      fail(
+        "E_TRANSITION",
+        `${context} root must start with an empty optional-field wire shape`,
+      );
+    }
     return;
   }
   if (generation.compatibilityDecision === "origin") {
@@ -379,14 +407,42 @@ function validateGenerationFiles(generation, index, repositoryRoot) {
       `${context} vocabulary artifact hashes to ${actualVocabularyHash}`,
     );
   }
+  const ciWorkflow = readRepositoryFile(
+    repositoryRoot,
+    ".github/workflows/ci.yml",
+    "E_EVIDENCE",
+    "CI migration-evidence workflow",
+  ).toString("utf8");
+  const releasePrep = readRepositoryFile(
+    repositoryRoot,
+    "scripts/release-prep.sh",
+    "E_EVIDENCE",
+    "release-prep migration-evidence gate",
+  ).toString("utf8");
   for (const [evidenceIndex, evidence] of
     generation.migrationEvidence.entries()) {
+    const invocation = MIGRATION_ORACLES.get(evidence);
+    if (invocation === undefined) {
+      fail(
+        "E_EVIDENCE",
+        `${context}.migrationEvidence[${evidenceIndex}] is not a reviewed executable oracle`,
+      );
+    }
     readRepositoryFile(
       repositoryRoot,
       evidence,
       "E_EVIDENCE",
       `${context}.migrationEvidence[${evidenceIndex}]`,
     );
+    if (
+      !ciWorkflow.includes(invocation) ||
+      !releasePrep.includes(invocation)
+    ) {
+      fail(
+        "E_EVIDENCE",
+        `${context}.migrationEvidence[${evidenceIndex}] is not invoked by CI and release preparation`,
+      );
+    }
   }
   return schemaSdl;
 }
