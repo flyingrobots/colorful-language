@@ -19,6 +19,7 @@ import {
   consumeLsp,
   loadProfile,
 } from "../src/index.mjs";
+import { renderReport } from "../src/common.mjs";
 import { buildLspFixture } from "../src/lsp-fixture.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -34,6 +35,23 @@ test("the independent package enforces its pinned Node engine", () => {
     readFileSync(path.join(ROOT, "package.json"), "utf8"),
   );
   assert.deepEqual(packageJson.engines, { node: ">=22.23.1 <23" });
+});
+
+test("Markdown reports escape table delimiters inside code spans", () => {
+  assert.equal(
+    renderReport([
+      {
+        startUtf8: 0,
+        endUtf8: 3,
+        text: "a|b",
+        role: "role|name",
+      },
+    ]),
+    "# Highlight spans\n\n" +
+      "| UTF-8 bytes | Text | Role |\n" +
+      "| --- | --- | --- |\n" +
+      "| `0..3` | `a\\|b` | `role\\|name` |\n",
+  );
 });
 
 test("the effort ledger counts protocol-specific acquisition code", () => {

@@ -61,6 +61,10 @@ function markdownCode(text) {
   return `${fence}${pad}${text}${pad}${fence}`;
 }
 
+function markdownTableCode(text) {
+  return markdownCode(text).replaceAll("|", "\\|");
+}
+
 export function normalizeSpans(source, spans, code) {
   const boundaries = utf8Boundaries(source);
   const sourceLength = Buffer.byteLength(source, "utf8");
@@ -97,8 +101,9 @@ export function renderReport(spans) {
   ];
   for (const span of spans) {
     lines.push(
-      `| ${markdownCode(`${span.startUtf8}..${span.endUtf8}`)} | ` +
-        `${markdownCode(span.text)} | ${markdownCode(span.role)} |`,
+      `| ${markdownTableCode(`${span.startUtf8}..${span.endUtf8}`)} | ` +
+        `${markdownTableCode(span.text)} | ` +
+        `${markdownTableCode(span.role)} |`,
     );
   }
   return `${lines.join("\n")}\n`;

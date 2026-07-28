@@ -10,6 +10,8 @@ required document shape, token axes, and UTF-8 ranges before rendering. Invalid
 input exits with status 1, writes a stable error category to stderr, and leaves
 stdout empty. Shape admission is exact: unknown fields are rejected at the
 document root and in every nested contract record.
+Report cells escape Markdown table delimiters even when the source text or a
+role name contains `|`.
 
 ## Run the proof
 

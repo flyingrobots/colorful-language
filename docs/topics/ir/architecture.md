@@ -156,7 +156,7 @@ The generated integration-effort ledger records:
 | ANSI | 49 | 0 | 4 | 1 |
 | LSP | 264 | 0 | 5 | 2 |
 
-Shared profile loading and report rendering account for another 270 nonblank
+Shared profile loading and report rendering account for another 274 nonblank
 lines and are excluded from every adapter equally. The exact source, fixtures,
 assertions, dependencies, and process steps behind these counts live in
 `consumers/independent-ir-report/evidence/integration-effort.json`.
