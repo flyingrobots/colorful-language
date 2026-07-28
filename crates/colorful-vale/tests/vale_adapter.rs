@@ -1,11 +1,12 @@
 #![cfg(unix)]
 
+use std::ffi::OsString;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -23,6 +24,7 @@ use colorful_vale::{
 use tower_lsp::lsp_types::{DiagnosticSeverity, NumberOrString, Position};
 
 static FIXTURE_ID: AtomicU64 = AtomicU64::new(0);
+static ENVIRONMENT_LOCK: Mutex<()> = Mutex::new(());
 
 const SOURCE: &str = "😀 e\u{301}cho\r\nThis is very clear.\n";
 
@@ -64,6 +66,35 @@ struct FakeVale {
     worker_pid: PathBuf,
 }
 
+struct EnvironmentGuard {
+    saved: Vec<(&'static str, Option<OsString>)>,
+}
+
+impl EnvironmentGuard {
+    fn set(entries: &[(&'static str, &'static str)]) -> Self {
+        let saved = entries
+            .iter()
+            .map(|(name, value)| {
+                let previous = std::env::var_os(name);
+                std::env::set_var(name, value);
+                (*name, previous)
+            })
+            .collect();
+        Self { saved }
+    }
+}
+
+impl Drop for EnvironmentGuard {
+    fn drop(&mut self) {
+        for (name, value) in self.saved.drain(..).rev() {
+            match value {
+                Some(value) => std::env::set_var(name, value),
+                None => std::env::remove_var(name),
+            }
+        }
+    }
+}
+
 impl FakeVale {
     fn new(version: &str, analysis_body: &str) -> Self {
         let root = loop {
@@ -94,9 +125,19 @@ impl FakeVale {
 
         let script = format!(
             r#"#!/bin/sh
-if [ "${{VALE_CONFIG_PATH+x}}" = x ] || [ "${{VALE_STYLES_PATH+x}}" = x ]; then
-  printf '%s\n' 'ambient Vale configuration leaked into adapter' >&2
+if [ "${{VALE_CONFIG_PATH+x}}" = x ] ||
+   [ "${{VALE_STYLES_PATH+x}}" = x ] ||
+   [ "${{HOME+x}}" = x ] ||
+   [ "${{XDG_CONFIG_HOME+x}}" = x ] ||
+   [ "${{HTTP_PROXY+x}}" = x ] ||
+   [ "${{HTTPS_PROXY+x}}" = x ] ||
+   [ "${{NO_PROXY+x}}" = x ]; then
+  printf '%s\n' 'ambient environment leaked into adapter' >&2
   exit 91
+fi
+if [ "${{PATH-}}" != "/usr/bin:/bin" ]; then
+  printf '%s\n' 'adapter did not install the reviewed executable PATH' >&2
+  exit 93
 fi
 if [ "${{1-}}" = "--version" ]; then
   if [ "$#" -ne 1 ]; then
@@ -169,14 +210,19 @@ fn error_kind(result: Result<ValeAnalyzer, colorful_vale::ValeError>) -> ValeErr
 
 #[test]
 fn discovery_is_explicit_versioned_and_ambient_config_free() {
+    let _environment_lock = ENVIRONMENT_LOCK.lock().expect("environment lock");
+    let _environment = EnvironmentGuard::set(&[
+        ("VALE_CONFIG_PATH", "/ambient/config"),
+        ("VALE_STYLES_PATH", "/ambient/styles"),
+        ("XDG_CONFIG_HOME", "/ambient/xdg"),
+        ("HTTP_PROXY", "http://ambient.invalid"),
+        ("HTTPS_PROXY", "https://ambient.invalid"),
+        ("NO_PROXY", "ambient.invalid"),
+    ]);
     let fixture = success_fixture();
-    std::env::set_var("VALE_CONFIG_PATH", "/ambient/config");
-    std::env::set_var("VALE_STYLES_PATH", "/ambient/styles");
 
     let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale v3");
 
-    std::env::remove_var("VALE_CONFIG_PATH");
-    std::env::remove_var("VALE_STYLES_PATH");
     assert_eq!(SUPPORTED_VALE_MAJOR, 3);
     assert_eq!(analyzer.capabilities().major(), 3);
     assert_eq!(analyzer.capabilities().version(), "3.14.2");
