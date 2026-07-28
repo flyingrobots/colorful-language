@@ -204,6 +204,10 @@ impl LspProcess {
         if let Some(reader) = self.stdout_reader.take() {
             reader.join().expect("join colorful-lsp stdout reader");
         }
+        for message in drain_messages_after_eof(&self.messages) {
+            self.observe(&message.value);
+            self.pending.push_back(message);
+        }
         let stderr = self
             .stderr_reader
             .take()
@@ -238,6 +242,19 @@ struct ProcessEvidence {
     status: ExitStatus,
     peak_rss_bytes: u64,
     diagnostic_versions: Vec<i64>,
+}
+
+fn drain_messages_after_eof(
+    messages: &Receiver<Result<TimedMessage, String>>,
+) -> Vec<TimedMessage> {
+    let mut drained = Vec::new();
+    loop {
+        match messages.recv() {
+            Ok(Ok(message)) => drained.push(message),
+            Ok(Err(error)) => panic!("failed reading colorful-lsp output: {error}"),
+            Err(_) => return drained,
+        }
+    }
 }
 
 fn read_message(reader: &mut impl BufRead) -> io::Result<Option<Value>> {
