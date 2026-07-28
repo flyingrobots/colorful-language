@@ -480,10 +480,13 @@ Requirements:
   *Status:* implemented.
 - **IR-18b** — *Requirement:* IR-18. *Behavior:* the validator complexity budget
   is enforced by a reproducible tool or explicitly retired with documented
-  rationale. *Oracle:* a deliberate over-budget fixture fails the named check,
-  or the policy and CI remove the unsupported claim together. *Evidence type:*
-  source-policy test or reviewed policy deletion. *Evidence:* the root
-  `clippy.toml` threshold, the production-only
+  rationale. The configured Clippy score is treated as a Rust
+  1.97.1-toolchain-bound source-shape heuristic, not a standardized
+  human-comprehension metric. *Oracle:* a deliberate over-budget fixture fails
+  the named check, the current reference names the evidence toolchain and
+  limitation, or the policy and CI remove the unsupported claim together.
+  *Evidence type:* source-policy test or reviewed policy deletion. *Evidence:*
+  the root `clippy.toml` threshold, the production-only
   `clippy::cognitive_complexity` opt-in in `colorful-ir`,
   `scripts/check-validator-complexity.sh`, its deliberate over-budget fixture
   under `scripts/fixtures/validator-complexity/`, the blocking CI Rust job, and

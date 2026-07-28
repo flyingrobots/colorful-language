@@ -6,8 +6,10 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 config="$root/clippy.toml"
 ir_source="$root/crates/colorful-ir/src/lib.rs"
+ir_reference="$root/docs/topics/ir/README.md"
 fixture="$root/scripts/fixtures/validator-complexity/Cargo.toml"
 target="$root/target/validator-complexity-fixture"
+toolchain_file="$root/rust-toolchain.toml"
 
 fail() {
   printf 'validator complexity check failed: %s\n' "$*" >&2
@@ -19,6 +21,25 @@ if [[ "$#" -ne 0 ]]; then
 fi
 
 [[ -f "$config" ]] || fail "missing clippy.toml"
+[[ -f "$ir_reference" ]] || fail "missing IR reference"
+[[ -f "$toolchain_file" ]] || fail "missing rust-toolchain.toml"
+
+evidence_rust="$(
+  sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)"[[:space:]]*$/\1/p' \
+    "$toolchain_file"
+)"
+[[ -n "$evidence_rust" ]] ||
+  fail "rust-toolchain.toml must declare the evidence Rust channel"
+
+cd "$root"
+actual_rust="$(rustc --version | awk '{print $2}')"
+[[ "$actual_rust" == "$evidence_rust" ]] ||
+  fail "expected evidence Rust $evidence_rust, found $actual_rust"
+
+grep -F "Rust $evidence_rust" "$ir_reference" >/dev/null ||
+  fail "IR reference must name the evidence Rust release for the Clippy heuristic"
+grep -F "toolchain-bound heuristic" "$ir_reference" >/dev/null ||
+  fail "IR reference must document the complexity lint's toolchain-bound limitation"
 
 threshold_count="$(
   grep -Ec '^[[:space:]]*cognitive-complexity-threshold[[:space:]]*=[[:space:]]*10[[:space:]]*$' \

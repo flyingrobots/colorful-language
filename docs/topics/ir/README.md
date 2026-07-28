@@ -191,12 +191,16 @@ v0.3 must handle the `Option` result.
   depth cannot overflow the process stack.
 - **Enforced production complexity budget.** `colorful-ir` production code
   enables Clippy's `cognitive_complexity` lint with a workspace threshold of
-  10. The normal all-target Clippy gate fails on an over-budget validator
-  helper, while `scripts/check-validator-complexity.sh` proves the configured
-  lint accepts a measured score of 10 and rejects a measured score of 11.
-  Test-only mutation matrices are outside this production budget so
-  comprehensive case tables need not be split merely to satisfy a source-shape
-  metric.
+  10. This restriction-category lint is a toolchain-bound heuristic owned by
+  the reviewed Rust 1.97.1 evidence release; it is not a standardized measure
+  of human comprehension or language-independent cognitive complexity. The
+  normal all-target Clippy gate fails on an over-budget validator helper, while
+  `scripts/check-validator-complexity.sh` proves the configured lint accepts a
+  measured score of 10 and rejects a measured score of 11. A future evidence
+  toolchain update must preserve that fixture behavior or replace or retire the
+  policy and its documentation in the same change. Test-only mutation matrices
+  are outside this production budget so comprehensive case tables need not be
+  split merely to satisfy a source-shape metric.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust
