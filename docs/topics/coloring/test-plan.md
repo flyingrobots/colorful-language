@@ -348,14 +348,12 @@ Requirements:
   today would fail on infrastructure variance, not real regressions. Wire it
   into CI once a run of stable baselines exists. The guarded canonical IR path
   used by `colorful ir` and `colorful diagnose --json` is outside COL-12's two
-  measured functions; its projection plus fail-closed `validate_document`
-  postcondition remains unmeasured. COL-16a measures the production
-  `analyze_document()` plus `DocumentStore` scheduling, queueing, caching,
-  publication, JSON-RPC, and peak-RSS path. The standalone
-  `compute_diagnostics()` helper is not benchmarked, but it is not the
-  `didChange` handler. COL-17a records broader stage-specific throughput and
-  allocation evidence; its guarded IR projection measurement includes the
-  producer's mandatory validation postcondition, while COL-17a's separate IR
-  validation row measures that validator directly over prepared IR.
+  measured functions, so COL-12's 16 ms budget does not apply to that combined
+  command path. COL-17a measures guarded IR projection including the producer's
+  mandatory validation postcondition and separately measures validation over
+  prepared IR. COL-16a measures the production `analyze_document()` plus
+  `DocumentStore` scheduling, queueing, caching, publication, JSON-RPC, and
+  peak-RSS path. The standalone `compute_diagnostics()` helper is not
+  benchmarked, but it is not the `didChange` handler.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.
