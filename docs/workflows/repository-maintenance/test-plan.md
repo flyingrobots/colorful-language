@@ -76,7 +76,9 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   maintenance mutation suite accepts one complete synthetic exception and
   rejects each malformed or mismatched variant with
   `E_RUST_ADVISORY_EXCEPTION`. *Evidence type:* checked-in empty exception
-  registry and deterministic metadata/TOML parity tests. *Status:* planned.
+  registry and deterministic metadata/TOML parity tests. *Evidence:*
+  `.github/rust-advisory-exceptions.yml`, `deny.toml`, and
+  `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
 - **RM-3a — Reproducible issue forms and routing.** *Requirement:* RM-3.
   *Behavior:* the bug form requires reproduction, observed and expected
   behavior, version, and environment; the feature form requires the problem,

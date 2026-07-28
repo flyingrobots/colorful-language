@@ -38,15 +38,19 @@ Both checks use their workspace lockfile. Vulnerability and unsoundness
 advisories fail through the evolving RustSec database. Production and
 development dependencies with licenses outside the reviewed SPDX allowlist
 fail, as do Git dependencies and registries other than the public crates.io
-index. There are no advisory or per-crate license exceptions. The checker
-self-test adds a third standalone workspace to prove that a future workspace
-cannot silently escape the inventory.
+index. There are no active advisory or per-crate license exceptions. The
+checker self-test adds a third standalone workspace to prove that a future
+workspace cannot silently escape the inventory.
 
 The RustSec database is an external, evolving oracle. A newly published
 advisory can therefore make an unchanged lockfile fail. The maintainer owns
 triage: verify the advisory and dependency path, prefer the narrowest compatible
-upgrade, and record any unavoidable exception with its advisory identifier,
-reason, and removal trigger.
+upgrade, and do not add a bare ignore. If no compatible fix exists, add the
+RustSec ID to `deny.toml` and one matching record to
+`.github/rust-advisory-exceptions.yml`. The record must name one GitHub owner,
+the reviewed reason, and an explicit removal trigger. The policy checker rejects
+missing, duplicate, incomplete, or stale records and any mismatch between the
+two files.
 
 ## Hosted security gates
 

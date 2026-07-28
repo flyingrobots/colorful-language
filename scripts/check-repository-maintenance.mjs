@@ -236,15 +236,82 @@ function tomlBoolean(section, key, code) {
   return match[1] === "true";
 }
 
-function validateRustPolicy(source) {
-  const advisories = tomlSection(source, "advisories");
-  if (tomlStringArray(advisories, "ignore", "E_RUST_ADVISORY_EXCEPTION").length) {
+function validateAdvisoryExceptions(ignored, policy) {
+  const path = ".github/rust-advisory-exceptions.yml";
+  requireObject(policy, "E_RUST_ADVISORY_EXCEPTION", path);
+  if (policy.version !== 1 || !Array.isArray(policy.exceptions)) {
     reject(
       "E_RUST_ADVISORY_EXCEPTION",
-      "deny.toml:advisories.ignore",
-      "blanket advisory exceptions are not permitted",
+      path,
+      "must use version 1 with an exceptions array",
     );
   }
+
+  const ids = new Set();
+  for (const [index, exception] of policy.exceptions.entries()) {
+    const entryPath = `${path}:exceptions[${index}]`;
+    requireObject(exception, "E_RUST_ADVISORY_EXCEPTION", entryPath);
+    const keys = Object.keys(exception).toSorted();
+    if (!sameStrings(keys, ["id", "owner", "reason", "remove_when"])) {
+      reject(
+        "E_RUST_ADVISORY_EXCEPTION",
+        entryPath,
+        "must contain only id, owner, reason, and remove_when",
+      );
+    }
+    if (
+      typeof exception.id !== "string" ||
+      !/^RUSTSEC-\d{4}-\d{4}$/u.test(exception.id) ||
+      ids.has(exception.id)
+    ) {
+      reject(
+        "E_RUST_ADVISORY_EXCEPTION",
+        `${entryPath}.id`,
+        "must be a unique RustSec advisory ID",
+      );
+    }
+    if (
+      typeof exception.owner !== "string" ||
+      !/^@[A-Za-z0-9-]+$/u.test(exception.owner)
+    ) {
+      reject(
+        "E_RUST_ADVISORY_EXCEPTION",
+        `${entryPath}.owner`,
+        "must name one GitHub owner",
+      );
+    }
+    for (const key of ["reason", "remove_when"]) {
+      if (
+        typeof exception[key] !== "string" ||
+        exception[key].trim() === ""
+      ) {
+        reject(
+          "E_RUST_ADVISORY_EXCEPTION",
+          `${entryPath}.${key}`,
+          "must be a non-empty string",
+        );
+      }
+    }
+    ids.add(exception.id);
+  }
+
+  if (!sameStrings([...ids].toSorted(), ignored)) {
+    reject(
+      "E_RUST_ADVISORY_EXCEPTION",
+      path,
+      "metadata IDs must exactly match deny.toml advisories.ignore",
+    );
+  }
+}
+
+function validateRustPolicy(source, advisoryExceptions) {
+  const advisories = tomlSection(source, "advisories");
+  const ignored = tomlStringArray(
+    advisories,
+    "ignore",
+    "E_RUST_ADVISORY_EXCEPTION",
+  );
+  validateAdvisoryExceptions(ignored, advisoryExceptions);
 
   const licenses = tomlSection(source, "licenses");
   const allowed = tomlStringArray(licenses, "allow", "E_RUST_LICENSES");
@@ -572,7 +639,7 @@ export function validateRepositoryMaintenance(candidate) {
     requiredFields: ["problem", "outcome", "alternatives"],
   });
   validateIssueConfig(candidate.issueConfig);
-  validateRustPolicy(candidate.rustPolicy);
+  validateRustPolicy(candidate.rustPolicy, candidate.advisoryExceptions);
 
   requireObject(
     candidate.securityWorkflow,
@@ -608,6 +675,9 @@ export function repositoryCandidate() {
     featureForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/feature.yml"),
     issueConfig: parseOptionalYaml(".github/ISSUE_TEMPLATE/config.yml"),
     rustPolicy: readOptional("deny.toml"),
+    advisoryExceptions: parseOptionalYaml(
+      ".github/rust-advisory-exceptions.yml",
+    ),
     securityWorkflow: parseOptionalYaml(".github/workflows/security.yml"),
     ciWorkflow: parseOptionalYaml(".github/workflows/ci.yml"),
     releasePrep: readOptional("scripts/release-prep.sh"),
