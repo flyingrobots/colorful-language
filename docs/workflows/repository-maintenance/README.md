@@ -186,9 +186,10 @@ cargo test --doc --workspace --locked
 
 [`check-public-api-doctests.mjs`](../../../scripts/check-public-api-doctests.mjs)
 guards the five named examples and the visible CI command. Its mutation suite
-rejects a missing or duplicate example marker and a missing or misspelled
-workspace doctest command. Rustdoc compilation remains the authority for
-whether the examples actually build and run.
+rejects a missing or duplicate example marker, a missing or misspelled workspace
+doctest command, execution guards, and non-blocking error handling on the Rust
+job or doctest step. Rustdoc compilation remains the authority for whether the
+examples actually build and run.
 
 ## Evidence
 

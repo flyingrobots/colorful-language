@@ -136,6 +136,67 @@ test("rejects a doctest command outside the normal Rust job", () => {
   expectPolicyError(snapshot, "E_API_DOCTEST_CI_MISSING", /Rust job/);
 });
 
+test("rejects a guarded Rust job", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(
+      "  rust:\n",
+      "  rust:\n    if: false\n",
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_CI_DISABLED", /Rust job/);
+});
+
+test("rejects a guarded doctest step", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(
+      "      - run:",
+      "      - if: false\n        run:",
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_CI_DISABLED", /doctest step/);
+});
+
+test("rejects a non-blocking Rust job", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(
+      "  rust:\n",
+      "  rust:\n    continue-on-error: true\n",
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_DOCTEST_CI_NON_BLOCKING", /Rust job/);
+});
+
+test("rejects a non-blocking doctest step", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(
+      "      - run:",
+      "      - continue-on-error: true\n        run:",
+    ),
+  };
+  expectPolicyError(
+    snapshot,
+    "E_API_DOCTEST_CI_NON_BLOCKING",
+    /doctest step/,
+  );
+});
+
+test("accepts explicit blocking configuration", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow
+      .replace("  rust:\n", "  rust:\n    continue-on-error: false\n")
+      .replace(
+        "      - run:",
+        "      - continue-on-error: false\n        run:",
+      ),
+  };
+  assert.doesNotThrow(() => validatePublicApiDoctestPolicy(snapshot));
+});
+
 test("rejects a marker moved outside its API documentation", () => {
   const snapshot = {
     ...VALID_SNAPSHOT,

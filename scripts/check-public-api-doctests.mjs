@@ -98,15 +98,51 @@ function rustJobRunsDoctests(workflow) {
     );
   }
 
-  const steps = document?.jobs?.rust?.steps;
-  return (
-    Array.isArray(steps) &&
-    steps.some(
-      (step) =>
-        typeof step?.run === "string" &&
-        step.run.trim() === DOCTEST_COMMAND,
-    )
-  );
+  const rustJob = document?.jobs?.rust;
+  const steps = rustJob?.steps;
+  const doctestStep = Array.isArray(steps)
+    ? steps.find(
+        (step) =>
+          typeof step?.run === "string" &&
+          step.run.trim() === DOCTEST_COMMAND,
+      )
+    : undefined;
+  if (doctestStep === undefined) {
+    return false;
+  }
+
+  if (Object.hasOwn(rustJob, "if")) {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_DOCTEST_CI_DISABLED",
+      "the Rust job containing the required doctest command must not have an execution guard",
+    );
+  }
+  if (Object.hasOwn(doctestStep, "if")) {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_DOCTEST_CI_DISABLED",
+      "the required doctest step must not have an execution guard",
+    );
+  }
+  if (
+    Object.hasOwn(rustJob, "continue-on-error") &&
+    rustJob["continue-on-error"] !== false
+  ) {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_DOCTEST_CI_NON_BLOCKING",
+      "the Rust job containing the required doctest command must be blocking",
+    );
+  }
+  if (
+    Object.hasOwn(doctestStep, "continue-on-error") &&
+    doctestStep["continue-on-error"] !== false
+  ) {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_DOCTEST_CI_NON_BLOCKING",
+      "the required doctest step must be blocking",
+    );
+  }
+
+  return true;
 }
 
 export function validatePublicApiDoctestPolicy(snapshot) {
