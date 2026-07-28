@@ -216,12 +216,51 @@ Implemented and planned cases are listed below.
   `docs/topics/linting/README.md`. *Tracking:*
   [#139](https://github.com/flyingrobots/colorful-language/issues/139).
   *Status:* implemented.
-- **LINT-13a** — *Requirement:* LINT-13. *Behavior:* a Harper or Vale adapter
-  lives outside `colorful-core`, normalizes findings deterministically, leaves
-  the built-in analyzer usable without network or external binaries, and emits
-  identical CLI/LSP results. *Oracle:* exact ordered finding equality for
-  built-in and external adapters plus stable unavailable-engine behavior.
-  *Evidence type:* adapter contract and process-level parity tests. *Tracking:*
+- **LINT-13a** — *Requirement:* LINT-13. *Behavior:* a Vale v3 process adapter
+  lives in an outer crate that depends on `colorful-core`; neither
+  `colorful-core` nor either production binary depends on the adapter. A
+  successful process result becomes a document-bound, I/O-free analyzer
+  snapshot behind the existing `Analyzer` port. *Oracle:* the workspace
+  dependency graph has the required direction; default CLI/LSP analysis stays
+  built-in and succeeds with no `vale` executable; and the prepared snapshot
+  implements `Analyzer`. *Evidence type:* manifest-boundary test and analyzer
+  contract test. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
+- **LINT-13b** — *Requirement:* LINT-13. *Behavior:* explicit configuration and
+  capability discovery admit supported Vale v3 JSON/stdin behavior, isolate
+  ambient global configuration, and reject a missing configuration,
+  unavailable executable, or incompatible major version before analysis.
+  *Oracle:* exact typed error categories and exact spawned argument/environment
+  witnesses from a deterministic mock process. *Evidence type:* process-level
+  adapter test. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
+- **LINT-13c** — *Requirement:* LINT-13. *Behavior:* timeout, cancellation,
+  non-zero process failure, oversized output, invalid UTF-8, malformed JSON,
+  and invalid Vale alert fields fail explicitly without fallback findings or a
+  panic. *Oracle:* one exact typed error category per fault; a synchronized
+  cancellation witness proves an already-started child is terminated.
+  *Evidence type:* deterministic process and parser fault matrix. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
+- **LINT-13d** — *Requirement:* LINT-13. *Behavior:* Vale alert line/column
+  coordinates, severities, check identities, and messages normalize into
+  Colorful `Finding`s with legal byte spans and a total deterministic order.
+  The coordinate corpus includes ASCII, an astral scalar, a combining mark, and
+  CRLF. *Oracle:* exact span, external rule code, severity, message, and order
+  vectors; malformed, reversed, or out-of-range coordinates are rejected.
+  *Evidence type:* normalization contract test. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
+- **LINT-13e** — *Requirement:* LINT-13. *Behavior:* the built-in
+  `ProseLinter` and a prepared Vale analyzer each project the same ordered
+  findings through CLI text and LSP diagnostics without turning external
+  editorial rules into syntax classifications or canonical IR axes. *Oracle:*
+  for each analyzer, exact code/severity/message/order equality and equivalent
+  CLI scalar versus LSP UTF-16 ranges; semantic tokens and canonical IR remain
+  unchanged when the analyzer changes. *Evidence type:* cross-surface
+  integration test. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
@@ -244,6 +283,6 @@ Implemented and planned cases are listed below.
 
 ## Open verification gaps
 
-- Optional external-analyzer parity remains open in LINT-13a.
+- Optional external-analyzer parity remains open in LINT-13a through LINT-13e.
 - Product-level comparative evidence remains open in LINT-14a; built-in rule
   fixtures are not a substitute for the held-out oracle.

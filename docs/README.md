@@ -66,6 +66,9 @@ not pose as the current reference.
 - [ADR-0004](design/0004-portable-ir-admission.md) — GraphQL/compatibility
   authority generates portable structural admission while semantic invariants
   remain named in each consumer.
+- [ADR-0005](design/0005-optional-vale-analyzer.md) — a Vale v3 process
+  boundary prepares an I/O-free analyzer snapshot without making an external
+  engine part of Colorful's default path.
 
 ## Audits
 
