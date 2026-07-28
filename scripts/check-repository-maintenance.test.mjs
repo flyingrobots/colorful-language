@@ -212,6 +212,10 @@ function actionStep(job, action) {
   return job.steps.find((step) => step.uses === action);
 }
 
+function commandStep(job, command) {
+  return job.steps.find((step) => step.run === command);
+}
+
 function addAdvisoryException(candidate) {
   candidate.rustPolicy = candidate.rustPolicy.replace(
     "ignore = []",
@@ -351,6 +355,45 @@ test("rejects an omitted live Rust dependency scan", () => {
   expectCode(({ securityWorkflow }) => {
     securityWorkflow.jobs["rust-dependency-policy"].steps.pop();
   }, "E_SECURITY_WORKFLOW");
+});
+
+test("rejects a non-blocking Rust policy job", () => {
+  expectCode(({ securityWorkflow }) => {
+    securityWorkflow.jobs["rust-dependency-policy"]["continue-on-error"] = true;
+  }, "E_SECURITY_SUPPRESSION");
+});
+
+test("rejects a disabled Rust policy command", () => {
+  expectCode(({ securityWorkflow }) => {
+    commandStep(
+      securityWorkflow.jobs["rust-dependency-policy"],
+      "bash scripts/check-rust-dependency-policy.sh",
+    ).if = "${{ false }}";
+  }, "E_SECURITY_SUPPRESSION");
+});
+
+test("rejects a non-blocking dependency-review action", () => {
+  expectCode(({ securityWorkflow }) => {
+    actionStep(
+      securityWorkflow.jobs["dependency-review"],
+      DEPENDENCY_ACTION,
+    )["continue-on-error"] = true;
+  }, "E_SECURITY_SUPPRESSION");
+});
+
+test("rejects a disabled CodeQL job", () => {
+  expectCode(({ securityWorkflow }) => {
+    securityWorkflow.jobs.codeql.if = "${{ false }}";
+  }, "E_SECURITY_SUPPRESSION");
+});
+
+test("rejects a non-blocking CodeQL analysis step", () => {
+  expectCode(({ securityWorkflow }) => {
+    actionStep(
+      securityWorkflow.jobs.codeql,
+      CODEQL_ANALYZE,
+    )["continue-on-error"] = true;
+  }, "E_SECURITY_SUPPRESSION");
 });
 
 test("rejects a weakened dependency-review severity", () => {
