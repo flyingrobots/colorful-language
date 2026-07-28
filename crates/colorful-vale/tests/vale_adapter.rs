@@ -550,6 +550,73 @@ fn alerts_normalize_to_legal_ordered_colorful_findings() {
 }
 
 #[test]
+fn vale_v3_inclusive_rune_endpoints_and_severities_are_preserved() {
+    let source = "one 😀 three";
+    let json = r#"{
+  "stdin.txt": [
+    {
+      "Action": {"Name": "", "Params": null},
+      "Span": [1, 3],
+      "Check": "Style.Info",
+      "Description": "",
+      "Link": "",
+      "Message": "Suggestion.",
+      "Severity": "suggestion",
+      "Match": "one",
+      "Line": 1
+    },
+    {
+      "Action": {"Name": "", "Params": null},
+      "Span": [5, 5],
+      "Check": "Style.Error",
+      "Description": "",
+      "Link": "",
+      "Message": "Error.",
+      "Severity": "error",
+      "Match": "😀",
+      "Line": 1
+    },
+    {
+      "Action": {"Name": "", "Params": null},
+      "Span": [7, 11],
+      "Check": "Style.Warning",
+      "Description": "",
+      "Link": "",
+      "Message": "Warning.",
+      "Severity": "warning",
+      "Match": "three",
+      "Line": 1
+    }
+  ]
+}"#;
+    let fixture = FakeVale::new(
+        "3.14.2",
+        &format!("printf '%s\\n' '{}'", json.replace('\'', "'\\''")),
+    );
+    let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");
+    let findings = analyzer
+        .analyze(source, &CancellationToken::new())
+        .expect("normalize authoritative span fixture")
+        .findings()
+        .to_vec();
+
+    assert_eq!(
+        findings
+            .iter()
+            .map(|finding| finding.span.slice(source))
+            .collect::<Vec<_>>(),
+        ["one", "😀", "three"]
+    );
+    assert_eq!(
+        findings
+            .iter()
+            .map(|finding| finding.severity)
+            .collect::<Vec<_>>(),
+        [Severity::Info, Severity::Warning, Severity::Warning]
+    );
+}
+
+#[test]
 fn pinned_real_vale_v3_smoke_shape_remains_admitted() {
     let fixture = FakeVale::new(
         "3.14.2",

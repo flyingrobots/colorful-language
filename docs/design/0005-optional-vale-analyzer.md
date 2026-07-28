@@ -53,10 +53,12 @@ becomes an empty finding list or a fallback to `ProseLinter`.
 
 External check identities become validated, namespaced diagnostic rule codes.
 Vale suggestions map to Colorful `Info`; Vale warnings and errors map to
-Colorful `Warning`. Findings sort by complete source range, rule code, severity,
-and message, independent of Vale's object or alert order. Vale findings remain
-editorial diagnostics only: they do not alter parser output, token
-classification, semantic tokens, or canonical IR.
+Colorful `Warning` because the core has no higher editorial severity. Vale
+v3's one-based, inclusive rune columns become checked Rust byte ranges whose
+source slice must equal the reported match. Findings sort by complete source
+range, rule code, severity, and message, independent of Vale's object or alert
+order. Vale findings remain editorial diagnostics only: they do not alter
+parser output, token classification, semantic tokens, or canonical IR.
 
 ## Prototype result
 

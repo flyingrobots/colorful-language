@@ -171,6 +171,7 @@ fn normalize_alert(source: &str, alert: ValeAlert) -> Result<Finding, ValeError>
         .map_err(|error| invalid_alert(error.to_string()))?;
     let severity = match alert.severity.as_str() {
         "suggestion" => Severity::Info,
+        // Colorful has no error tier; Warning is its highest editorial severity.
         "warning" | "error" => Severity::Warning,
         other => {
             return Err(invalid_alert(format!(
