@@ -110,3 +110,20 @@ colorful-vale = { path = "../colorful-vale" }
         "target-specific dependencies must not bypass the production boundary"
     );
 }
+
+#[test]
+fn output_parser_has_one_typed_deserialization_owner() {
+    let source = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("output.rs"),
+    )
+    .expect("read Vale output parser");
+    assert!(!source.contains("serde_json::Value"));
+    assert!(!source.contains("serde_json::from_value"));
+    assert_eq!(
+        source.matches("serde_json::from_str").count(),
+        1,
+        "Vale output must be deserialized exactly once"
+    );
+}
