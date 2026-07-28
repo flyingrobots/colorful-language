@@ -1881,13 +1881,22 @@ mod tests {
 
     #[test]
     fn external_rule_codes_require_a_non_colliding_namespace() {
-        assert_eq!(
-            Rule::external("vale/Style.Rule")
-                .expect("valid external rule")
-                .code(),
-            "vale/Style.Rule"
-        );
-        for invalid in ["", "weak-word", "vale/", "/Style.Rule", "vale/has space"] {
+        let minimum = "a/b";
+        let maximum = format!("a/{}", "b".repeat(126));
+        assert_eq!(Rule::external(minimum).unwrap().code(), minimum);
+        assert_eq!(Rule::external(&maximum).unwrap().code(), maximum);
+
+        let too_long = format!("a/{}", "b".repeat(127));
+        for invalid in [
+            "",
+            "a/",
+            "weak-word",
+            "vale/",
+            "/Style.Rule",
+            "vale/has space",
+            "vale/rulé",
+            &too_long,
+        ] {
             assert!(Rule::external(invalid).is_err(), "{invalid:?}");
         }
     }

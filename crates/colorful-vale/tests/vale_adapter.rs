@@ -467,20 +467,6 @@ fn alerts_normalize_to_legal_ordered_colorful_findings() {
     assert_eq!(findings[1].severity, Severity::Warning);
     assert_eq!(line_col(SOURCE, findings[0].span.start), (1, 3));
     assert_eq!(line_col(SOURCE, findings[1].span.start), (2, 9));
-
-    assert_eq!(
-        Rule::external("vale/Style.Safe").unwrap().code(),
-        "vale/Style.Safe"
-    );
-    for invalid in [
-        "",
-        "weak-word",
-        "vale/",
-        "vale/has space",
-        "vale/has\nnewline",
-    ] {
-        assert!(Rule::external(invalid).is_err(), "{invalid:?}");
-    }
 }
 
 #[test]
