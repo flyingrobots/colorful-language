@@ -1,0 +1,321 @@
+{
+  "corpus": {
+    "id": "colorful-lsp-repeated-prose/v1",
+    "sizes": [
+      102400,
+      1048576,
+      5242880,
+      10485760
+    ],
+    "template": "The maintainable documentation explains deterministic interfaces and careful validation for readers working across editors and command-line tools.\n"
+  },
+  "environment": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "cpu": "Apple M1 Pro",
+    "memoryBytes": 17179869184,
+    "node": "v22.23.1",
+    "operatingSystem": "macOS 26.3 (arm64)",
+    "pinnedNode": "22.23.1",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6"
+  },
+  "generatedAt": "2026-07-28T08:50:11Z",
+  "measurement": {
+    "measuredPlatform": "darwin-aarch64",
+    "peakRssTool": "/usr/bin/time",
+    "runsPerScenario": 1,
+    "serverExecutable": "colorful-lsp",
+    "serverProvenance": "workspace-release-build",
+    "serverSha256": "57e3727a8771a37c6c424978c98fe8416028f993eb85d83674487dae7ecd944b",
+    "serverSourceGitCommit": "abbcc84c205350b3e6a6b3ca8666af64e25ab504",
+    "timingClock": "std::time::Instant",
+    "wallClockGatesCorrectnessCi": false
+  },
+  "profile": "release",
+  "scenarios": [
+    {
+      "corpusBytes": 102400,
+      "corpusSha256": "865875af1c7319b82049b062ca547dc2dfbb146fb9878af190a135ffc74683e6",
+      "diagnosticCode": null,
+      "documentBytes": 102400,
+      "finalDocumentVersion": 6,
+      "finalGeneration": 6,
+      "incremental": {
+        "diagnosticCode": null,
+        "diagnosticsMs": 58.624,
+        "dispatchMs": 0.004,
+        "semanticTokenCount": 4178,
+        "semanticTokensMs": 0.521
+      },
+      "label": "100 KiB",
+      "latestDiagnosticVersion": 6,
+      "metrics": {
+        "acceptedResults": 3,
+        "activeDocuments": 1,
+        "analysisFailures": 0,
+        "analysisLimitBytes": 5242880,
+        "cancelledBeforeCompute": 3,
+        "computationsStarted": 3,
+        "maxQueueDelayMicros": 4083,
+        "oversizedResults": 0,
+        "schemaVersion": "colorful.lsp.metrics/v1",
+        "staleResults": 0
+      },
+      "open": {
+        "diagnosticsMs": 5.612,
+        "dispatchMs": 0.17,
+        "semanticTokenCount": 4179,
+        "semanticTokensMs": 0.655,
+        "throughputBytesPerSecond": 18246614.0
+      },
+      "outcomeCategory": "analyzed",
+      "overload": {
+        "concurrentSemanticRequests": 4,
+        "diagnosticCode": null,
+        "rapidEditCount": 4,
+        "semanticResponseMs": [
+          58.748,
+          59.189,
+          58.949,
+          58.464
+        ],
+        "semanticResultIds": [
+          "6",
+          "6",
+          "6",
+          "6"
+        ],
+        "semanticTokenCounts": [
+          4178,
+          4178,
+          4178,
+          4178
+        ],
+        "slowestSemanticResponseMs": 59.189,
+        "timeToLatestDiagnosticsMs": 58.47
+      },
+      "peakRssBytes": 9977856,
+      "processExitCode": 0,
+      "sloFailures": [],
+      "sloMet": true,
+      "stalePublicationCount": 0
+    },
+    {
+      "corpusBytes": 1048576,
+      "corpusSha256": "132232b845dccfb0eea80c37ab263c8a352c51e7595ae7896e28f91f38481972",
+      "diagnosticCode": null,
+      "documentBytes": 1048576,
+      "finalDocumentVersion": 6,
+      "finalGeneration": 6,
+      "incremental": {
+        "diagnosticCode": null,
+        "diagnosticsMs": 100.928,
+        "dispatchMs": 0.007,
+        "semanticTokenCount": 42798,
+        "semanticTokensMs": 4.828
+      },
+      "label": "1 MiB",
+      "latestDiagnosticVersion": 6,
+      "metrics": {
+        "acceptedResults": 3,
+        "activeDocuments": 1,
+        "analysisFailures": 0,
+        "analysisLimitBytes": 5242880,
+        "cancelledBeforeCompute": 3,
+        "computationsStarted": 3,
+        "maxQueueDelayMicros": 6323,
+        "oversizedResults": 0,
+        "schemaVersion": "colorful.lsp.metrics/v1",
+        "staleResults": 0
+      },
+      "open": {
+        "diagnosticsMs": 49.338,
+        "dispatchMs": 1.135,
+        "semanticTokenCount": 42799,
+        "semanticTokensMs": 4.951,
+        "throughputBytesPerSecond": 21252909.0
+      },
+      "outcomeCategory": "analyzed",
+      "overload": {
+        "concurrentSemanticRequests": 4,
+        "diagnosticCode": null,
+        "rapidEditCount": 4,
+        "semanticResponseMs": [
+          106.345,
+          111.449,
+          113.93,
+          108.987
+        ],
+        "semanticResultIds": [
+          "6",
+          "6",
+          "6",
+          "6"
+        ],
+        "semanticTokenCounts": [
+          42798,
+          42798,
+          42798,
+          42798
+        ],
+        "slowestSemanticResponseMs": 113.93,
+        "timeToLatestDiagnosticsMs": 103.582
+      },
+      "peakRssBytes": 68911104,
+      "processExitCode": 0,
+      "sloFailures": [],
+      "sloMet": true,
+      "stalePublicationCount": 0
+    },
+    {
+      "corpusBytes": 5242880,
+      "corpusSha256": "75ce29a07e64b830504ddc9f28b8843cd9dd1d6159786fabe3e6235dc85f9892",
+      "diagnosticCode": null,
+      "documentBytes": 5242880,
+      "finalDocumentVersion": 6,
+      "finalGeneration": 6,
+      "incremental": {
+        "diagnosticCode": null,
+        "diagnosticsMs": 288.702,
+        "dispatchMs": 0.01,
+        "semanticTokenCount": 213995,
+        "semanticTokensMs": 25.998
+      },
+      "label": "5 MiB",
+      "latestDiagnosticVersion": 6,
+      "metrics": {
+        "acceptedResults": 3,
+        "activeDocuments": 1,
+        "analysisFailures": 0,
+        "analysisLimitBytes": 5242880,
+        "cancelledBeforeCompute": 3,
+        "computationsStarted": 3,
+        "maxQueueDelayMicros": 6101,
+        "oversizedResults": 0,
+        "schemaVersion": "colorful.lsp.metrics/v1",
+        "staleResults": 0
+      },
+      "open": {
+        "diagnosticsMs": 266.865,
+        "dispatchMs": 4.919,
+        "semanticTokenCount": 213996,
+        "semanticTokensMs": 25.561,
+        "throughputBytesPerSecond": 19646188.0
+      },
+      "outcomeCategory": "analyzed",
+      "overload": {
+        "concurrentSemanticRequests": 4,
+        "diagnosticCode": null,
+        "rapidEditCount": 4,
+        "semanticResponseMs": [
+          315.186,
+          353.97,
+          328.283,
+          340.942
+        ],
+        "semanticResultIds": [
+          "6",
+          "6",
+          "6",
+          "6"
+        ],
+        "semanticTokenCounts": [
+          213995,
+          213995,
+          213995,
+          213995
+        ],
+        "slowestSemanticResponseMs": 353.97,
+        "timeToLatestDiagnosticsMs": 315.209
+      },
+      "peakRssBytes": 347160576,
+      "processExitCode": 0,
+      "sloFailures": [],
+      "sloMet": true,
+      "stalePublicationCount": 0
+    },
+    {
+      "corpusBytes": 10485760,
+      "corpusSha256": "38a01ef6a56c67aa5cb0a7e159890dba039f7a1891cbfff2ba928e4ca1afcb57",
+      "diagnosticCode": "colorful/document-too-large",
+      "documentBytes": 10485760,
+      "finalDocumentVersion": 6,
+      "finalGeneration": 6,
+      "incremental": {
+        "diagnosticCode": "colorful/document-too-large",
+        "diagnosticsMs": 59.649,
+        "dispatchMs": 0.003,
+        "semanticTokenCount": 0,
+        "semanticTokensMs": 0.059
+      },
+      "label": "10 MiB",
+      "latestDiagnosticVersion": 6,
+      "metrics": {
+        "acceptedResults": 3,
+        "activeDocuments": 1,
+        "analysisFailures": 0,
+        "analysisLimitBytes": 5242880,
+        "cancelledBeforeCompute": 3,
+        "computationsStarted": 0,
+        "maxQueueDelayMicros": 2523,
+        "oversizedResults": 3,
+        "schemaVersion": "colorful.lsp.metrics/v1",
+        "staleResults": 0
+      },
+      "open": {
+        "diagnosticsMs": 20.757,
+        "dispatchMs": 10.233,
+        "semanticTokenCount": 0,
+        "semanticTokensMs": 0.057,
+        "throughputBytesPerSecond": null
+      },
+      "outcomeCategory": "document-too-large",
+      "overload": {
+        "concurrentSemanticRequests": 4,
+        "diagnosticCode": "colorful/document-too-large",
+        "rapidEditCount": 4,
+        "semanticResponseMs": [
+          79.466,
+          79.515,
+          79.475,
+          79.474
+        ],
+        "semanticResultIds": [
+          "6",
+          "6",
+          "6",
+          "6"
+        ],
+        "semanticTokenCounts": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "slowestSemanticResponseMs": 79.515,
+        "timeToLatestDiagnosticsMs": 79.451
+      },
+      "peakRssBytes": 117030912,
+      "processExitCode": 0,
+      "sloFailures": [],
+      "sloMet": true,
+      "stalePublicationCount": 0
+    }
+  ],
+  "schemaVersion": "colorful.lsp.envelope/v1",
+  "slo": {
+    "cachedSemanticTokensMs": 2000,
+    "concurrentSemanticRequests": 4,
+    "maxQueueDelayMs": 250,
+    "openOrChangeToDiagnosticsMs": 5000,
+    "overloadCompletionMs": 8000,
+    "rapidEditCount": 4,
+    "refusalDiagnosticsMs": 1000,
+    "refusalPeakRssBytes": 536870912,
+    "supportedLimitBytes": 5242880,
+    "supportedPeakRssBytes": 1610612736
+  },
+  "source": {
+    "gitCommit": "abbcc84c205350b3e6a6b3ca8666af64e25ab504",
+    "workingTreeDirty": false
+  }
+}

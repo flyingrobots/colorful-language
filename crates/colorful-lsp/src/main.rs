@@ -31,7 +31,8 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 mod document_state;
 
 use document_state::{
-    AnalysisComputer, AnalysisPublisher, CompletedAnalysis, DocumentStore, MAX_DOCUMENT_BYTES,
+    AnalysisComputer, AnalysisPublisher, CompletedAnalysis, DocumentMetricsSnapshot, DocumentStore,
+    MAX_DOCUMENT_BYTES,
 };
 
 /// The language server: a document store plus the parser and annotator adapters.
@@ -71,6 +72,10 @@ impl Backend {
                     .await;
             })
         })
+    }
+
+    async fn metrics(&self, _: Option<()>) -> Result<DocumentMetricsSnapshot> {
+        Ok(self.documents.metrics())
     }
 }
 
@@ -167,6 +172,8 @@ fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassLexicon> {
 async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
-    let (service, socket) = LspService::new(Backend::new);
+    let (service, socket) = LspService::build(Backend::new)
+        .custom_method("colorful/metrics", Backend::metrics)
+        .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
 }

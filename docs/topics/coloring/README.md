@@ -125,10 +125,18 @@ publishes one error diagnostic with code
 Normal analysis accepts documents through 5 MiB (5,242,880 bytes). A larger
 document bypasses parsing and classification, returns no semantic tokens, and
 publishes one warning with code `colorful/document-too-large`. The supported
-latency and memory envelope inside that boundary is not yet established; that
-measurement and any incremental-region work remain tracked by
-[#122](https://github.com/flyingrobots/colorful-language/issues/122). A shipped
-editor theme also remains future work.
+envelope is one open document through 5 MiB, a burst of four versioned edits,
+and no more than four simultaneous full-token requests. A shipped editor theme
+remains future work.
+
+The custom `colorful/metrics` JSON-RPC request accepts `null` parameters and
+returns the versioned `colorful.lsp.metrics/v1` counters used by the overload
+harness: the analysis limit, active-document count, computations and accepted
+results, pre-compute cancellations, stale and oversized results, analysis
+failures, and maximum analysis queue delay. These metrics distinguish overload
+and stale work from `colorful/invalid-classification`,
+`colorful/analysis-failed`, and the stable `colorful/document-too-large` limit
+diagnostic.
 
 ## Performance
 
@@ -164,6 +172,54 @@ enforce against, and turning it into a hard failure before establishing one
 would just make CI flaky on noisy hardware. Re-run the benchmarks and
 update this table when the hot path changes meaningfully.
 
+### Supported LSP envelope
+
+The process-level workflow builds the real release server, then the harness
+drives it at exact 100 KiB, 1 MiB, 5 MiB, and 10 MiB sizes. For each size it
+measures open through diagnostics, cached semantic tokens, one single-character
+replacement through diagnostics and tokens, then four rapid replacements
+observed by four concurrent full-token requests. It records peak server RSS
+through `/usr/bin/time`, queue delay and stale/cancellation counters through
+`colorful/metrics`, corpus hashes, process status, and exact host/toolchain
+identity.
+
+```bash
+mise x node@22.23.1 -- cargo build --locked --release \
+  -p colorful-lsp --bin colorful-lsp
+mise x node@22.23.1 -- cargo run --locked --release \
+  -p colorful-lsp --example lsp_envelope \
+  > /tmp/colorful-lsp-envelope.json
+```
+
+The reviewed SLO supports one document through 5 MiB with four simultaneous
+full-token requests: open or one edit must reach latest diagnostics within
+5 seconds, cached tokens within 2 seconds, and the rapid-edit/concurrent-request
+burst within 8 seconds; queue delay must remain below 250 ms and server RSS
+below 1,536 MiB. A 10 MiB document is deliberately outside the envelope: it
+must return `colorful/document-too-large` and empty tokens within 1 second,
+below 512 MiB RSS. The checked-in baseline is one reviewed run per scenario on
+Darwin/aarch64, not a cross-platform variance study.
+
+**2026-07-28, `rustc 1.97.1`, Node 22.23.1, Apple M1 Pro, 16 GiB RAM, macOS
+26.3 arm64, release profile:**
+
+| Size | Outcome | Open diagnostics | Edit diagnostics | Cached tokens | Four-request burst | Peak RSS |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 100 KiB | analyzed | 5.6 ms | 58.6 ms | 0.7 ms | 59.2 ms | 9.5 MiB |
+| 1 MiB | analyzed | 49.3 ms | 100.9 ms | 5.0 ms | 113.9 ms | 65.7 MiB |
+| 5 MiB | analyzed | 266.9 ms | 288.7 ms | 25.6 ms | 354.0 ms | 331.1 MiB |
+| 10 MiB | document too large | 20.8 ms | 59.6 ms | 0.1 ms | 79.5 ms | 111.6 MiB |
+
+Every scenario met its predeclared SLO, returned process status zero, and
+ended on diagnostic version 6 without regressing to an older publication. The
+accepted sizes recorded three cancelled debounced generations, zero stale
+results, zero stale publications, and approximately 2.5–6.3 ms maximum queue
+delay. The exact machine-readable evidence, including all four response timings
+and corpus SHA-256 values, is
+[`lsp-envelope-baseline.json`](../../../crates/colorful-lsp/benchmarks/lsp-envelope-baseline.json).
+The report contract is checked in deterministic CI, but the wall-clock
+benchmark is not rerun or used as a noisy correctness gate.
+
 **Known gaps:**
 
 - The guarded canonical IR path used by `colorful ir` and
@@ -173,13 +229,12 @@ update this table when the hot path changes meaningfully.
   is made for that additional projection/validation work; COL-17a and
   [#135](https://github.com/flyingrobots/colorful-language/issues/135) own its
   release-mode measurement.
-- The combined production `analyze_document` and versioned scheduling path has
-  no benchmark yet. Only the standalone `compute_semantic_tokens` helper is
-  measured above. The release-mode SLO and overload harness are tracked by
-  [#122](https://github.com/flyingrobots/colorful-language/issues/122).
-- Memory is not yet benchmarked — no allocation or peak-RSS profiling
-  exists today. Treat both as open gaps, not an implied "cheap" claim. Broader
-  cross-stage throughput and allocation coverage is tracked by
+- Peak server RSS is measured for the production LSP lifecycle, but
+  stage-specific allocations are not yet attributed. Broader cross-stage
+  throughput and allocation coverage is tracked by
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+- The supported envelope covers one open document and four concurrent token
+  requests on Darwin/Linux hosts with `/usr/bin/time`; it does not claim
+  multi-document capacity, editor-adapter latency, or networked transport.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

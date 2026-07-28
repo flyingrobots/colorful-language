@@ -80,7 +80,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — establish the supported operating envelope** | Boundary integrity, stale-LSP protection, required merge checks, dependency governance, and executable roadmap reconciliation have landed; supported LSP capacity must become explicit. | Advance #122 to establish the LSP service envelope. |
+| **Now — make quality measurable** | The supported LSP capacity envelope is explicit; broader analysis and projection costs must become comparable. | Advance #135 using #122's process harness without turning noisy wall-clock evidence into a correctness gate. |
 | **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete the remaining M0–M2 queue. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -171,19 +171,21 @@ CLI/LSP findings agree without hiding ambiguity.
 - **Delivered foundation:** versioned per-document state, cancellation,
   caching, debouncing, stale-result rejection, and document limits
   ([#121](https://github.com/flyingrobots/colorful-language/issues/121));
+  a release-mode service envelope with versioned queue/stale/limit metrics,
+  exact 100 KiB–10 MiB process evidence, and a passing 5 MiB SLO
+  ([#122](https://github.com/flyingrobots/colorful-language/issues/122));
   Unicode and mixed-line-ending CLI/LSP coordinate parity
   ([#125](https://github.com/flyingrobots/colorful-language/issues/125)); and
   evidence-based passive-voice, quotation, and numeric-scanner decisions
   ([#138](https://github.com/flyingrobots/colorful-language/issues/138),
   [#139](https://github.com/flyingrobots/colorful-language/issues/139),
   [#143](https://github.com/flyingrobots/colorful-language/issues/143)).
-- **Open capacity evidence:** establish the release-mode LSP SLO and overload
-  envelope
-  [#122](https://github.com/flyingrobots/colorful-language/issues/122), then
-  complete cross-stage parsing, annotation, lint, IR, semantic-token,
+  <!-- roadmap-primary: delivered #122 -->
+- **Open capacity evidence:** complete cross-stage parsing, annotation, lint,
+  IR, semantic-token,
   incremental-edit, and Graft benchmarks
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
-  <!-- roadmap-primary: active #122 #135 -->
+  <!-- roadmap-primary: active #135 -->
 - **Open comparison adapter:** prototype an external `Analyzer` without
   weakening the pure port or making an engine mandatory
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
@@ -303,9 +305,9 @@ exists:
 1. **Boundary integrity — satisfied:** #126, #142, #144, #145, and #148 prove
    that producer, wire, vocabulary, identity, range, and source failures are
    rejected.
-2. **Live operability — partial:** #121 proves freshness under forced stale
-   completion; #122 remains open for the supported LSP envelope and overload
-   evidence.
+2. **Live operability — satisfied:** #121 proves freshness under forced stale
+   completion; #122 proves the supported LSP envelope, overload/refusal
+   categories, peak RSS, queue delay, and zero stale publication.
 3. **Real distribution — open:** #136 and #154 must prove clean installation,
    activation, version compatibility, useful output, and rollback from public
    artifacts.
@@ -366,9 +368,10 @@ crate, and structured, path-aware `ValidationError`s — each recorded in
 [v0.3.0 release packet](docs/goalposts/v0.3.0/release.md).
 
 Boundary integrity, stale-result protection, required merge checks, dependency
-governance, and executable roadmap reconciliation are now delivered
-foundations. The active maturity critical path is the measured LSP capacity
-envelope ([#122](https://github.com/flyingrobots/colorful-language/issues/122)).
+governance, executable roadmap reconciliation, and the measured LSP capacity
+envelope are now delivered foundations. The active maturity critical path is
+broader cross-stage performance evidence
+([#135](https://github.com/flyingrobots/colorful-language/issues/135)).
 Distribution follows that operational proof; independent product validation
 follows real distribution. The CNL, Edict, provenance, Ouroboros, and
 semantic-closure phases remain in place behind the explicit deep-end evidence

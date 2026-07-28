@@ -45,9 +45,11 @@ Requirements:
   after a newer edit, reuses one cached parse/classification for diagnostics and
   semantic tokens, and exposes deterministic cancellation and document-limit
   evidence.
-- **COL-16** A release-mode overload harness measures the supported document
-  envelope, including queue delay, peak RSS, stale-result count, and time to the
-  latest diagnostic.
+- **COL-16** A release-mode overload harness measures open, incremental edit,
+  diagnostics publication, and semantic-token response at 100 KiB, 1 MiB,
+  5 MiB, and 10 MiB, including queue delay, peak RSS, stale-result count, and
+  time to the latest diagnostic. Wall-clock measurements are reviewed evidence,
+  not a correctness-CI gate.
 - **COL-17** Fixed-corpus release benchmarks measure every major analysis and
   projection stage without turning noisy wall-clock results into correctness
   gates.
@@ -229,15 +231,34 @@ Requirements:
   *Tracking:*
   [#121](https://github.com/flyingrobots/colorful-language/issues/121).
   *Status:* implemented.
-- **COL-16a** — *Requirement:* COL-16. *Behavior:* four concurrent semantic and
-  diagnostic requests plus rapid versioned edits run against 1, 5, and 10 MB
-  documents in release mode under an explicit supported-envelope SLO. *Oracle:*
-  queue delay, peak RSS, stale-result count, and time-to-latest-diagnostic stay
-  within the reviewed 5 MB limits; larger inputs degrade with a stable overload
-  outcome. *Evidence type:* release benchmark and process metrics report.
+- **COL-16a** — *Requirement:* COL-16. *Behavior:* the real release-mode server
+  runs one deterministic prose corpus at exactly 100 KiB, 1 MiB, 5 MiB, and
+  10 MiB. Each scenario measures open-to-diagnostics, one cached
+  semantic-token response, a single-character incremental change, and a burst
+  of four further versioned single-character edits observed by four concurrent
+  full-token requests. The supported envelope is one open document through
+  5 MiB with no more than four simultaneous full-token requests. On the
+  published reference host, accepted generations must publish latest
+  diagnostics within 5 seconds of open or one edit, the overload burst must
+  publish its latest diagnostics and answer all four requests within 8 seconds,
+  cached tokens must answer within 2 seconds, maximum server-side analysis
+  queue delay must stay below 250 ms, no stale generation may publish, and peak
+  server RSS must stay below 1,536 MiB. A 10 MiB document is outside the
+  supported envelope and must publish `colorful/document-too-large` with empty
+  tokens within 1 second while staying below 512 MiB RSS. *Oracle:* a versioned
+  JSON report records every duration, byte count, throughput, peak RSS, stable
+  outcome category, cancellation/stale counters, corpus hash, hardware,
+  operating system, profile, and exact Rust/Node toolchains; deterministic
+  tests validate the report shape and supported-envelope verdict without
+  rerunning its wall-clock measurements in CI. *Evidence type:* release
+  benchmark, process metrics report, and deterministic report-contract test.
+  *Evidence:* `colorful-lsp` example `lsp_envelope`,
+  `crates/colorful-lsp/benchmarks/lsp-envelope-baseline.json`, and integration
+  tests `stdio_contract::server_metrics_use_a_stable_versioned_contract` and
+  `lsp_envelope_report::baseline_covers_the_reviewed_supported_envelope`.
   *Tracking:*
   [#122](https://github.com/flyingrobots/colorful-language/issues/122).
-  *Status:* planned.
+  *Status:* implemented.
 - **COL-17a** — *Requirement:* COL-17. *Behavior:* parsing, annotation, lint,
   IR serialization/validation, semantic-token generation, incremental edits,
   and Graft projection run over fixed corpora and sizes in release mode.
@@ -297,14 +318,12 @@ Requirements:
   into CI once a run of stable baselines exists. The guarded canonical IR path
   used by `colorful ir` and `colorful diagnose --json` is outside COL-12's two
   measured functions; its projection plus fail-closed `validate_document`
-  postcondition remains unmeasured. The production `analyze_document()` plus
-  `DocumentStore` scheduling, queueing, caching, publication, and JSON-RPC path
-  is also unmeasured, as are memory and allocation. The standalone
-  `compute_diagnostics()` helper is not benchmarked either, but it is not the
-  `didChange` handler. COL-16a, tracked by
-  [#122](https://github.com/flyingrobots/colorful-language/issues/122), owns the
-  production supported-envelope evidence; COL-17a and
+  postcondition remains unmeasured. COL-16a measures the production
+  `analyze_document()` plus `DocumentStore` scheduling, queueing, caching,
+  publication, JSON-RPC, and peak-RSS path. The standalone
+  `compute_diagnostics()` helper is not benchmarked, but it is not the
+  `didChange` handler. COL-17a and
   [#135](https://github.com/flyingrobots/colorful-language/issues/135) own
-  broader cross-stage evidence.
+  broader stage-specific throughput and allocation evidence.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.
