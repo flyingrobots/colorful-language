@@ -352,6 +352,17 @@ Implemented and planned cases are listed below.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
+- **LINT-13k** — *Requirement:* LINT-13. *Behavior:* one Vale response indexes
+  document line boundaries once before normalizing any alerts; individual alert
+  lookups do not rescan the source prefix. *Oracle:* a structural test requires
+  one `LineIndex` construction in the response parser, passes that index into
+  alert normalization, and forbids the former source-rescanning helper.
+  *Evidence type:* source-architecture regression test. *Evidence:* planned in
+  `colorful-vale`
+  `workspace_boundary::output_parser_indexes_lines_once_per_response`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
