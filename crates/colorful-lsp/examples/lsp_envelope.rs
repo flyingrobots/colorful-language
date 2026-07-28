@@ -763,6 +763,10 @@ fn main() {
     let root = repository_root();
     let source_commit = git_output(&root, &["rev-parse", "HEAD"]);
     let working_tree_dirty = !git_output(&root, &["status", "--porcelain"]).is_empty();
+    let server_executable = server_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .expect("UTF-8 server executable filename");
     let scenarios = SCENARIOS
         .into_iter()
         .map(|(label, byte_count)| benchmark_scenario(&server_path, label, byte_count))
@@ -804,9 +808,7 @@ fn main() {
             "rapidEditCount": RAPID_EDIT_COUNT
         },
         "measurement": {
-            "serverExecutable": server_path
-                .file_name()
-                .expect("server executable filename"),
+            "serverExecutable": server_executable,
             "peakRssTool": "/usr/bin/time",
             "timingClock": "std::time::Instant",
             "wallClockGatesCorrectnessCi": false
