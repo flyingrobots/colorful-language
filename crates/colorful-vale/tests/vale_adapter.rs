@@ -138,9 +138,14 @@ impl Drop for FakeVale {
 }
 
 fn success_fixture() -> FakeVale {
+    success_fixture_for("stdin.txt")
+}
+
+fn success_fixture_for(source_key: &str) -> FakeVale {
+    let json = SUCCESS_JSON.replacen("stdin.txt", source_key, 1);
     FakeVale::new(
         "3.14.2",
-        &format!("printf '%s\\n' '{}'", SUCCESS_JSON.replace('\'', "'\\''")),
+        &format!("printf '%s\\n' '{}'", json.replace('\'', "'\\''")),
     )
 }
 
@@ -257,7 +262,7 @@ fn bound_analyzer_rejects_source_identity_bypass() {
 
 #[test]
 fn analysis_honors_the_explicit_document_extension() {
-    let fixture = success_fixture();
+    let fixture = success_fixture_for("stdin.md");
     let analyzer = ValeAnalyzer::discover(fixture.config().with_extension(".md"))
         .expect("discover Markdown-configured Vale");
     analyzer
