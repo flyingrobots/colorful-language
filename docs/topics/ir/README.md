@@ -193,9 +193,10 @@ v0.3 must handle the `Option` result.
   enables Clippy's `cognitive_complexity` lint with a workspace threshold of
   10. The normal all-target Clippy gate fails on an over-budget validator
   helper, while `scripts/check-validator-complexity.sh` proves the configured
-  lint rejects a deliberate 11-branch fixture. Test-only mutation matrices are
-  outside this production budget so comprehensive case tables need not be
-  split merely to satisfy a source-shape metric.
+  lint accepts a measured score of 10 and rejects a measured score of 11.
+  Test-only mutation matrices are outside this production budget so
+  comprehensive case tables need not be split merely to satisfy a source-shape
+  metric.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust
