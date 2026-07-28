@@ -30,11 +30,23 @@ fuzz_target!(|data: (&str, u8)| {
             ("ContentHashMismatch", "source.contentHash")
         }
         2 => {
-            document.document.tokens[0].byte_range.start_utf8 = -1;
+            document
+                .document
+                .tokens
+                .first_mut()
+                .expect("the prefixed source produces a token")
+                .byte_range
+                .start_utf8 = -1;
             ("NegativeOffset", "tokens[0].byteRange.startUtf8")
         }
         _ => {
-            document.document.tokens[0].byte_range.start_utf8 = 1;
+            document
+                .document
+                .tokens
+                .first_mut()
+                .expect("the prefixed source produces a token")
+                .byte_range
+                .start_utf8 = 1;
             ("RangeNotOnCharBoundary", "tokens[0].byteRange.startUtf8")
         }
     };
