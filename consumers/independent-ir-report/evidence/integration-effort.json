@@ -73,9 +73,10 @@
     "lsp": {
       "sources": [
         "src/lsp.mjs",
+        "src/lsp-fixture.mjs",
         "scripts/capture-lsp.mjs"
       ],
-      "nonblankAdapterLines": 226,
+      "nonblankAdapterLines": 264,
       "migrationSpecificLines": 0,
       "stableErrorCategories": [
         "E_LSP_JSON",
@@ -89,7 +90,7 @@
         "semanticTokenLegend"
       ],
       "fixtureCount": 1,
-      "reviewedAssertions": 6,
+      "reviewedAssertions": 9,
       "runtimeDependencies": 0,
       "processSteps": [
         "initialize server",
@@ -105,7 +106,7 @@
     "simplify": "otherwise preserve compatibility but simplify implementation or optional surface before adding contract fields"
   },
   "result": {
-    "alternativesNonblankAdapterLines": 275,
+    "alternativesNonblankAdapterLines": 313,
     "correctnessAdvantage": true,
     "withinReviewedCostBound": true,
     "decision": "retain-stable-v1"

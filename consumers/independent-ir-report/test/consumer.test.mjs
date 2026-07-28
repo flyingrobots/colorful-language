@@ -18,6 +18,7 @@ import {
   consumeLsp,
   loadProfile,
 } from "../src/index.mjs";
+import { buildLspFixture } from "../src/lsp-fixture.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FIXTURES = path.join(ROOT, "fixtures");
@@ -42,6 +43,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
   assert.deepEqual(ledger.adapters.ansi.sources, ["src/ansi.mjs"]);
   assert.deepEqual(ledger.adapters.lsp.sources, [
     "src/lsp.mjs",
+    "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
   assert.equal(ledger.adapters.ir.reviewedAssertions, 21);
@@ -233,6 +235,49 @@ test("LSP refusal cases cover every stable adapter category", () => {
       consumeLsp({ source: SOURCE, responseJson, profile }),
     );
   }
+});
+
+test("LSP capture rejects unsuccessful responses before serialization", () => {
+  expectConsumerError("E_LSP_SHAPE", () =>
+    buildLspFixture(
+      { jsonrpc: "2.0", id: 1, error: { code: -32603 } },
+      { jsonrpc: "2.0", id: 2, result: { data: [] } },
+    ),
+  );
+  expectConsumerError("E_LSP_SHAPE", () =>
+    buildLspFixture(
+      {
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+          serverInfo: { name: "colorful-lsp", version: "0.3.0" },
+          capabilities: {
+            semanticTokensProvider: {
+              legend: { tokenTypes: ["keyword"] },
+            },
+          },
+        },
+      },
+      { jsonrpc: "2.0", id: 2, error: { code: -32603 } },
+    ),
+  );
+  expectConsumerError("E_LSP_SHAPE", () =>
+    buildLspFixture(
+      {
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+          serverInfo: { name: "colorful-lsp", version: "0.3.0" },
+          capabilities: {
+            semanticTokensProvider: {
+              legend: { tokenTypes: ["keyword"] },
+            },
+          },
+        },
+      },
+      { jsonrpc: "2.0", id: 2, result: { data: [0] } },
+    ),
+  );
 });
 
 test("the IR process refuses every stable category without output", (context) => {

@@ -154,7 +154,7 @@ The generated integration-effort ledger records:
 | --- | ---: | ---: | ---: | ---: |
 | IR | 239 | 43 | 9 | 5 |
 | ANSI | 49 | 0 | 4 | 1 |
-| LSP | 226 | 0 | 5 | 2 |
+| LSP | 264 | 0 | 5 | 2 |
 
 Shared profile loading and report rendering account for another 229 nonblank
 lines and are excluded from every adapter equally. The exact source, fixtures,
@@ -169,8 +169,8 @@ larger than twice the ANSI and LSP adapters combined, or when the IR is the
 smallest adapter. Otherwise the project preserves compatibility but simplifies
 implementation or optional surface area before adding contract fields.
 
-The result is **retain stable v1**: 239 IR lines are 0.87 times the alternatives'
-combined 275 lines, within the two-times bound, while only the IR authenticates
+The result is **retain stable v1**: 239 IR lines are 0.77 times the alternatives'
+combined 313 lines, within the two-times bound, while only the IR authenticates
 all five wire identities. The result is not permission to expand the contract.
 Consumer admission remains the cost to reduce; replayable provenance, CNL, and
 Edict fields remain frozen until new evidence justifies them. The fact that two

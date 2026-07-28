@@ -3,6 +3,8 @@
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 
+import { buildLspFixture } from "../src/lsp-fixture.mjs";
+
 const [binary, sourcePath] = process.argv.slice(2);
 if (!binary || !sourcePath) {
   process.stderr.write("usage: capture-lsp.mjs COLORFUL_LSP SOURCE\n");
@@ -110,13 +112,7 @@ async function main() {
   send({ jsonrpc: "2.0", method: "exit", params: null });
   child.stdin.end();
 
-  const result = {
-    fixtureVersion: "colorful.lsp-fixture/v1",
-    serverInfo: initialized.result.serverInfo,
-    legend:
-      initialized.result.capabilities.semanticTokensProvider.legend.tokenTypes,
-    data: semanticTokens.result.data,
-  };
+  const result = buildLspFixture(initialized, semanticTokens);
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 

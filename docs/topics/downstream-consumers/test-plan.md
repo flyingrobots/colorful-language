@@ -202,5 +202,5 @@ workspace.
 - The independent proof retains stable v1 because the IR uniquely verifies five
   identities within its reviewed two-times adapter-size bound. The remaining
   risk is implementation cost: its 239-line adapter is nearly as large as the
-  226-line LSP protocol and decoding adapter, so contract expansion stays
+  264-line LSP protocol and decoding adapter, so contract expansion stays
   frozen while consumer admission is simplified.

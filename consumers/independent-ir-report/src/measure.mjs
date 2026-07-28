@@ -88,11 +88,15 @@ const definitions = {
     ],
   },
   lsp: {
-    sources: ["src/lsp.mjs", "scripts/capture-lsp.mjs"],
+    sources: [
+      "src/lsp.mjs",
+      "src/lsp-fixture.mjs",
+      "scripts/capture-lsp.mjs",
+    ],
     stableErrorCategories: LSP_ERROR_CODES,
     verifiedIdentities: ["serverVersion", "semanticTokenLegend"],
     fixtures: ["fixtures/releases/v0.3.0/lsp.json"],
-    reviewedAssertions: 6,
+    reviewedAssertions: 9,
     processSteps: [
       "initialize server",
       "open document",

@@ -45,11 +45,11 @@ reviewed comparison:
 | --- | ---: | ---: | ---: |
 | IR | 239 | 9 | 5 |
 | ANSI | 49 | 4 | 1 |
-| LSP | 226 | 5 | 2 |
+| LSP | 264 | 5 | 2 |
 
 The LSP count includes its JSON-RPC acquisition client; the CLI-backed IR and
 ANSI paths share the same trivial process boundary. The IR adapter is smaller
-than the alternatives' combined 275 lines and uniquely verifies the contract,
+than the alternatives' combined 313 lines and uniquely verifies the contract,
 schema, vocabulary, source length, and source digest. The resulting decision is
 to retain stable v1, simplify consumer admission cost where possible, make the
 currently hash-selected generation policy explicit in

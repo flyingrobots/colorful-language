@@ -552,7 +552,8 @@ Requirements:
   measurement, and the IR rationale applies the reviewed retain/simplify rule
   to the measured result. *Evidence type:* black-box parity test, generated
   integration-effort ledger, and design decision. *Evidence:*
-  `consumers/independent-ir-report/src/{ansi,lsp,measure}.mjs`,
+  `consumers/independent-ir-report/src/{ansi,lsp,lsp-fixture,measure}.mjs`,
+  `consumers/independent-ir-report/scripts/capture-lsp.mjs`,
   `consumers/independent-ir-report/evidence/integration-effort.json`,
   `consumer.test.mjs`
   `IR, ANSI CLI text, and LSP tokens render the same v0.3.0 job`, and
@@ -613,7 +614,7 @@ Requirements:
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
-  correctness rule. Its 239-line IR adapter is nearly as large as the 226-line
+  correctness rule. Its 239-line IR adapter is nearly as large as the 264-line
   LSP protocol and decoding adapter, so reducing duplicate consumer admission
   code is deliberate follow-up debt; the measured correctness advantage does
   not justify expanding the wire contract.
