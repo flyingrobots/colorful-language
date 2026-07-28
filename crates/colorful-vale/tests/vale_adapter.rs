@@ -478,6 +478,41 @@ fn malformed_outputs_fail_closed_by_category() {
 }
 
 #[test]
+fn required_alert_text_precedes_coordinate_validation() {
+    let cases = [
+        (
+            SUCCESS_JSON
+                .replacen("\"Span\": [9, 12]", "\"Span\": []", 1)
+                .replacen("\"Check\": \"Style.Clarity\"", "\"Check\": \"\"", 1),
+            "Vale alert check is empty",
+        ),
+        (
+            SUCCESS_JSON
+                .replacen("\"Span\": [9, 12]", "\"Span\": []", 1)
+                .replacen(
+                    "\"Message\": \"Consider replacing 'very'.\"",
+                    "\"Message\": \"\"",
+                    1,
+                ),
+            "Style.Clarity alert message is empty",
+        ),
+    ];
+
+    for (json, expected_message) in cases {
+        let fixture = FakeVale::new(
+            "3.14.2",
+            &format!("printf '%s\\n' '{}'", json.replace('\'', "'\\''")),
+        );
+        let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");
+        let error = analyzer
+            .analyze(SOURCE, &CancellationToken::new())
+            .expect_err("reject required text before coordinates");
+        assert_eq!(error.kind(), ValeErrorKind::InvalidAlert);
+        assert_eq!(error.message(), expected_message);
+    }
+}
+
+#[test]
 fn alerts_normalize_to_legal_ordered_colorful_findings() {
     let fixture = success_fixture();
     let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");
