@@ -280,3 +280,56 @@ fn real_server_completes_the_public_stdio_lifecycle() {
 
     assert_eq!(server.finish().code(), Some(0));
 }
+
+#[test]
+fn server_metrics_use_a_stable_versioned_contract() {
+    let mut server = LspProcess::spawn();
+    server.send(json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "processId": null,
+            "rootUri": null,
+            "capabilities": {}
+        }
+    }));
+    server.receive("initialize response", |message| message["id"] == 1);
+
+    server.send(json!({
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "colorful/metrics",
+        "params": null
+    }));
+    let metrics = server.receive("server metrics response", |message| message["id"] == 2);
+    assert_eq!(
+        metrics["result"],
+        json!({
+            "schemaVersion": "colorful.lsp.metrics/v1",
+            "analysisLimitBytes": 5 * 1024 * 1024,
+            "activeDocuments": 0,
+            "computationsStarted": 0,
+            "acceptedResults": 0,
+            "cancelledBeforeCompute": 0,
+            "staleResults": 0,
+            "oversizedResults": 0,
+            "analysisFailures": 0,
+            "maxQueueDelayMicros": 0
+        })
+    );
+
+    server.send(json!({
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "shutdown",
+        "params": null
+    }));
+    server.receive("shutdown response", |message| message["id"] == 3);
+    server.send(json!({
+        "jsonrpc": "2.0",
+        "method": "exit",
+        "params": null
+    }));
+    assert_eq!(server.finish().code(), Some(0));
+}
