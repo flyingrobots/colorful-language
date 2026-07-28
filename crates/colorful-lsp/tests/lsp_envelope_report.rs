@@ -288,6 +288,7 @@ fn baseline_covers_the_reviewed_supported_envelope() {
         "colorful/document-too-large"
     );
     assert_eq!(refused["open"]["semanticTokenCount"], 0);
+    assert!(refused["open"]["throughputBytesPerSecond"].is_null());
     assert_eq!(refused["incremental"]["semanticTokenCount"], 0);
     assert!(refused["overload"]["semanticTokenCounts"]
         .as_array()
