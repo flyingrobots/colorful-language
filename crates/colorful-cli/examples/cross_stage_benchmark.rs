@@ -345,6 +345,11 @@ fn main() {
             "crates/colorful-cli/examples/cross_stage_benchmark.rs",
         ),
         (
+            "classification-validation",
+            "cross-stage-release",
+            "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+        ),
+        (
             "lint",
             "cross-stage-release",
             "crates/colorful-cli/examples/cross_stage_benchmark.rs",

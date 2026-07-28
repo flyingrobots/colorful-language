@@ -163,6 +163,7 @@ fn readme_report_mismatch(readme: &str, report: &Value) -> Option<String> {
     let stage_labels = [
         ("parsing", "Parsing"),
         ("annotation", "Contextual annotation"),
+        ("classification-validation", "Classification validation"),
         ("lint", "Lint analysis"),
         ("ir-projection", "Guarded IR projection"),
         ("ir-serialization", "Canonical IR serialization"),

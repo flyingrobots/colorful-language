@@ -22,9 +22,10 @@ pub const CORPORA: [Corpus; 2] = [
     },
 ];
 
-pub const STAGES: [Stage; 6] = [
+pub const STAGES: [Stage; 7] = [
     Stage::Parsing,
     Stage::Annotation,
+    Stage::ClassificationValidation,
     Stage::Lint,
     Stage::IrProjection,
     Stage::IrSerialization,
@@ -41,6 +42,7 @@ pub struct Corpus {
 pub enum Stage {
     Parsing,
     Annotation,
+    ClassificationValidation,
     Lint,
     IrProjection,
     IrSerialization,
@@ -52,6 +54,7 @@ impl Stage {
         match self {
             Self::Parsing => "parsing",
             Self::Annotation => "annotation",
+            Self::ClassificationValidation => "classification-validation",
             Self::Lint => "lint",
             Self::IrProjection => "ir-projection",
             Self::IrSerialization => "ir-serialization",
@@ -110,6 +113,14 @@ impl PreparedStageInput {
                     black_box(self.corpus.source),
                     black_box(&self.tree),
                 )));
+            }
+            Stage::ClassificationValidation => {
+                black_box(colorful_core::validate_classification(
+                    black_box(self.corpus.source),
+                    black_box(&self.tree),
+                    black_box(&self.tokens),
+                ))
+                .expect("built-in classification validates");
             }
             Stage::Lint => {
                 drop(black_box(self.linter.analyze(
