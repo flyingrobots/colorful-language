@@ -352,6 +352,12 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
             None,
             "performance reference must render the reviewed report exactly"
         );
+        let test_plan = std::fs::read_to_string(root.join("docs/topics/coloring/test-plan.md"))
+            .expect("read test plan");
+        assert!(
+            !test_plan.contains("postcondition remains unmeasured"),
+            "the test plan must not call delivered IR projection evidence unmeasured"
+        );
     }
 
     let policy = &report["regressionPolicy"];
