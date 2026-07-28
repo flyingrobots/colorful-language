@@ -159,6 +159,23 @@ export function validateRoadmapInventory({
     }
   }
 
+  const closingSlices = [...closingIssueNumbers]
+    .map((number) => byNumber.get(number))
+    .filter(
+      (issue) =>
+        issue?.labels.includes("slice") && !issue.labels.includes("epic"),
+    )
+    .sort((left, right) => left.number - right.number);
+  for (const issue of closingSlices) {
+    if (!inventory.has(issue.number)) {
+      fail(
+        "E_ROADMAP_MISSING_DELIVERED",
+        `${issuePath}:issues[${issue.snapshotIndex}]`,
+        `slice #${issue.number} is closed by this pull request but has no delivered primary marker in ${roadmapPath}`,
+      );
+    }
+  }
+
   const openSlices = [...byNumber.values()]
     .filter(
       (issue) =>
