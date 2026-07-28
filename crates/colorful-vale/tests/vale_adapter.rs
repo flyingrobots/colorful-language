@@ -10,7 +10,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use colorful_cli::{line_col, lint_report};
-use colorful_core::{Analyzer, Rule, Severity, ValidatedClassification};
+use colorful_core::{Analyzer, Severity, ValidatedClassification};
 use colorful_ir::canonical_json;
 use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
