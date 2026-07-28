@@ -197,6 +197,22 @@ test("accepts explicit blocking configuration", () => {
   assert.doesNotThrow(() => validatePublicApiDoctestPolicy(snapshot));
 });
 
+test("accepts executable rustdoc-hidden lines as oracle evidence", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    core: VALID_SNAPSHOT.core
+      .replace(
+        '/// let tree = parser.parse("text");',
+        '/// # let tree = parser.parse("text");',
+      )
+      .replace(
+        "/// assert_eq!(tree.len(), 1);",
+        "/// # assert_eq!(tree.len(), 1);",
+      ),
+  };
+  assert.doesNotThrow(() => validatePublicApiDoctestPolicy(snapshot));
+});
+
 test("rejects a marker moved outside its API documentation", () => {
   const snapshot = {
     ...VALID_SNAPSHOT,

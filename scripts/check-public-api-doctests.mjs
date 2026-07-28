@@ -16,6 +16,7 @@ const APIS = Object.freeze([
 const DOCTEST_COMMAND = "cargo test --doc --workspace --locked";
 const RUSTDOC_FENCE = /^\s*\/\/\/ ```(?:rust)?\s*$/u;
 const ASSERTION = /\bassert(?:_eq|_matches|_ne)?!\s*\(/u;
+const DOCTEST_MARKER = /^#\s*\/\/\s*public-api-doctest:/u;
 
 export class PublicApiDoctestPolicyError extends Error {
   constructor(code, message) {
@@ -81,10 +82,15 @@ function executableLines(example) {
   return example
     .split("\n")
     .map((line) => line.trim())
-    .filter(
-      (line) =>
-        line !== "" && !line.startsWith("#") && !line.startsWith("//"),
-    );
+    .filter((line) => !DOCTEST_MARKER.test(line))
+    .map((line) =>
+      line === "#"
+        ? ""
+        : line.startsWith("# ")
+          ? line.slice(2).trimStart()
+          : line,
+    )
+    .filter((line) => line !== "" && !line.startsWith("//"));
 }
 
 function rustJobRunsDoctests(workflow) {
