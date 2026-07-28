@@ -84,6 +84,15 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         Some("examples/cross_stage_allocations.rs")
     );
     assert_eq!(allocation_probe["test"].as_bool(), Some(true));
+    assert_eq!(
+        manifest["dev-dependencies"]["stats_alloc"]["workspace"].as_bool(),
+        Some(true),
+        "the allocation probe must use the reviewed workspace profiler"
+    );
+    assert!(
+        manifest["dev-dependencies"].get("dhat").is_none(),
+        "dhat pulls thousands 0.2.0, whose deprecated license expression is rejected by dependency review"
+    );
 
     let report = report();
     assert_eq!(report["schemaVersion"], REPORT_SCHEMA);
@@ -93,7 +102,7 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
     assert_eq!(metadata["profile"], "release");
     assert_eq!(metadata["timingSamplesPerStage"].as_u64(), Some(9));
     assert_eq!(metadata["allocationSamplesPerStage"].as_u64(), Some(1));
-    assert_eq!(metadata["allocationCounter"], "dhat 0.3.3");
+    assert_eq!(metadata["allocationCounter"], "stats_alloc 0.1.10");
     assert_eq!(metadata["throughputBasis"], "source-utf8-bytes");
     assert!(
         metadata["totalMemoryBytes"]
