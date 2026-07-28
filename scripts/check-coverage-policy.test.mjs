@@ -139,6 +139,10 @@ function workflow() {
             },
           },
           {
+            name: "Prepare coverage output",
+            run: "mkdir -p target/llvm-cov",
+          },
+          {
             name: "Measure workspace coverage",
             run: [
               "cargo llvm-cov",
@@ -223,6 +227,10 @@ function expectWorkflowError(code, mutate) {
     (error) =>
       error instanceof CoveragePolicyError && error.code === code,
   );
+}
+
+function namedWorkflowStep(candidate, name) {
+  return candidate.jobs.coverage.steps.find((step) => step.name === name);
 }
 
 test("accepts the reviewed workspace and transport coverage", () => {
@@ -335,29 +343,44 @@ test("accepts the pinned coverage workflow", () => {
   assert.doesNotThrow(() => validateCoverageWorkflow(workflow(), policy()));
 });
 
+test("rejects a workflow that omits clean-checkout output preparation", () => {
+  expectWorkflowError("E_COVERAGE_COMMAND", (candidate) => {
+    candidate.jobs.coverage.steps =
+      candidate.jobs.coverage.steps.filter(
+        (step) => step.name !== "Prepare coverage output",
+      );
+  });
+});
+
 test("rejects a coverage command that omits all targets", () => {
   expectWorkflowError("E_COVERAGE_COMMAND", (candidate) => {
-    candidate.jobs.coverage.steps[4].run =
-      candidate.jobs.coverage.steps[4].run.replace(" --all-targets", "");
+    const measurement = namedWorkflowStep(
+      candidate,
+      "Measure workspace coverage",
+    );
+    measurement.run = measurement.run.replace(" --all-targets", "");
   });
 });
 
 test("rejects a floating or wrong upload action", () => {
   expectWorkflowError("E_COVERAGE_ACTION", (candidate) => {
-    candidate.jobs.coverage.steps[7].uses = "actions/upload-artifact@v7";
+    namedWorkflowStep(candidate, "Upload coverage report").uses =
+      "actions/upload-artifact@v7";
   });
 });
 
 test("rejects an artifact without both machine and browsable reports", () => {
   expectWorkflowError("E_COVERAGE_ARTIFACT", (candidate) => {
-    candidate.jobs.coverage.steps[7].with.path =
+    namedWorkflowStep(candidate, "Upload coverage report").with.path =
       "target/llvm-cov/coverage-summary.json";
   });
 });
 
 test("rejects an unbounded artifact retention period", () => {
   expectWorkflowError("E_COVERAGE_ARTIFACT", (candidate) => {
-    delete candidate.jobs.coverage.steps[7].with["retention-days"];
+    delete namedWorkflowStep(candidate, "Upload coverage report").with[
+      "retention-days"
+    ];
   });
 });
 
