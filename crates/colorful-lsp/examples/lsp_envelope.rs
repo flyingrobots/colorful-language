@@ -737,6 +737,8 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
             ));
         }
     }
+    let throughput_bytes_per_second = (outcome_category == "analyzed")
+        .then(|| (byte_count as f64 / (open_diagnostics_ms / 1_000.0)).round());
 
     json!({
         "label": label,
@@ -750,7 +752,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
             "diagnosticsMs": open_diagnostics_ms,
             "semanticTokensMs": open_tokens_ms,
             "semanticTokenCount": open_token_count,
-            "throughputBytesPerSecond": (byte_count as f64 / (open_diagnostics_ms / 1_000.0)).round()
+            "throughputBytesPerSecond": throughput_bytes_per_second
         },
         "incremental": {
             "dispatchMs": milliseconds(incremental_dispatch),
