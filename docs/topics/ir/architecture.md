@@ -126,6 +126,16 @@ version). The richer fields that make derivation *replayable* —
 deferred; the trace seed reserves the shape so they can land without a
 contract break, but the IR does not yet claim replay.
 
+### Rust source ownership
+
+`colorful-ir` keeps generated DTOs and the vocabulary module at their existing
+boundaries. Its handwritten crate-root facade re-exports four private,
+single-purpose modules: canonical hashing, core-to-IR projection, structured
+paths, and received-document validation. The split changes source ownership,
+not the public Rust API or the wire contract. External facade tests compile the
+original item paths, while source-layout tests reject duplicated definitions in
+the facade or a sibling module.
+
 ### Presentation lives in a versioned manifest
 
 `VisualRole` is an abstract enum; the concrete mapping — token axes → `VisualRole`

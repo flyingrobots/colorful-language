@@ -12,6 +12,8 @@ const root = path.resolve(
 );
 const checkerPath = path.join(root, "scripts/check-ir-validator-mutants.sh");
 const checker = fs.readFileSync(checkerPath, "utf8");
+const mutantsConfigPath = path.join(root, ".cargo/mutants.toml");
+const mutantsConfig = fs.readFileSync(mutantsConfigPath, "utf8");
 
 function assertBoundedPhases(source) {
   const requiredLines = [
@@ -29,6 +31,17 @@ function assertBoundedPhases(source) {
 
 test("the mutation gate bounds test and build phases", () => {
   assertBoundedPhases(checker);
+});
+
+test("the mutation gate scans the validator source owner", () => {
+  assert.match(
+    mutantsConfig,
+    /^examine_globs = \["crates\/colorful-ir\/src\/validation\.rs"\]$/mu,
+  );
+  assert.doesNotMatch(
+    mutantsConfig,
+    /^examine_globs = \["crates\/colorful-ir\/src\/lib\.rs"\]$/mu,
+  );
 });
 
 for (const line of ["  --timeout 60 \\\n", "  --build-timeout 60 \\\n"]) {

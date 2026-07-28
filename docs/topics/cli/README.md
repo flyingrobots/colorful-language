@@ -46,6 +46,22 @@ tests, benchmarks, and the fuzzing workspace:
 The binary in `crates/colorful-cli/src/main.rs` is deliberately thin. It passes
 arguments to `run`, prints process errors, and converts them to failure status.
 
+## Source ownership
+
+`crates/colorful-cli/src/lib.rs` is a stable facade. It re-exports the existing
+public functions from four private implementation modules:
+
+- `cli/args.rs` owns command selection, help/version rendering, and shared
+  single-document argument parsing;
+- `cli/color.rs` owns classification-to-ANSI rendering and color policy;
+- `cli/diagnose.rs` owns canonical IR emission and diagnostic JSON;
+- `cli/lint.rs` owns lint execution, report rendering, and human positions.
+
+These modules are not public API. Callers continue to import every supported
+function from the `colorful_cli` crate root. Unit tests live beside the private
+module facade in `cli/tests.rs`; external module-layout and facade checks live in
+`tests/module_layout.rs`.
+
 ## Evidence
 
 The process contract is exercised by

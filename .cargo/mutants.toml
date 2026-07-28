@@ -1,6 +1,6 @@
 # Keep the bounded validator corpus focused on the production entrypoint,
 # its seven stages, and their range, graph, and token-axis helpers.
-examine_globs = ["crates/colorful-ir/src/lib.rs"]
+examine_globs = ["crates/colorful-ir/src/validation.rs"]
 examine_re = ["(validate_|check_range|token_axes_violation)"]
 test_package = ["colorful-ir"]
 additional_cargo_args = ["--locked"]

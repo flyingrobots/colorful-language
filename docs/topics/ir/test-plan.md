@@ -682,24 +682,30 @@ Requirements:
   hashing, projection, path, and validation item remains importable with the
   same signature after source decomposition. *Oracle:* an external integration
   target compiles and exercises the unchanged facade without importing private
-  implementation modules. *Evidence type:* Rust integration test. *Tracking:*
+  implementation modules. *Evidence type:* Rust integration test. *Evidence:*
+  `crates/colorful-ir/tests/module_layout.rs`
+  `existing_public_facade_remains_importable`. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-23b** — *Requirement:* IR-23. *Behavior:* hashing, projection, path, and
   validation definitions have exactly one source owner and the crate root
   delegates to those modules. *Oracle:* exact module inventory and
   source-owner assertions. *Evidence type:* deterministic source layout test.
-  *Tracking:*
+  *Evidence:* `crates/colorful-ir/tests/module_layout.rs`
+  `implementation_responsibilities_have_exactly_one_module_owner`. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-23c** — *Requirement:* IR-23. *Behavior:* canonical bytes, projection
   errors, validation order/codes/paths, and generated boundary behavior remain
   unchanged after the split. *Oracle:* the existing unit, integration,
   mutation, witness, and generated-drift suites pass without weakened
   assertions. *Evidence type:* black-box characterization and contract tests.
-  *Tracking:*
+  *Evidence:* `colorful-ir`'s 77 unit tests;
+  `scripts/ir-witness.sh`;
+  `scripts/check-ir-validator-mutants.sh`;
+  `scripts/check-generated-ir-drift.sh`. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps / risks
 

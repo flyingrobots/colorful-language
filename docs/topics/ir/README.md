@@ -68,6 +68,18 @@ schema. Regenerate all boundaries with `scripts/gen-ir.sh` (needs
 generated types, and `colorful_ir` owns the one-way projection from the domain
 model into the DTO.
 
+The handwritten Rust boundary is separated by responsibility behind the
+unchanged `colorful_ir` crate-root facade:
+
+- `hashing.rs` owns canonical JSON and contract/vocabulary hashes;
+- `projection.rs` owns validated core-to-IR projection;
+- `path.rs` owns structured validation paths;
+- `validation.rs` owns hostile-document validation and error categories.
+
+The modules are private implementation details. Existing callers continue to
+import `canonical_json`, projection entry points, path types, validation types,
+and `validate_document` from the crate root.
+
 `colorful-core` exposes a source-bound `ValidatedClassification` aggregate for
 producer adapters. It rejects malformed public tree/token output with typed,
 path-addressed `ClassificationError`s and keeps valid values behind read-only
