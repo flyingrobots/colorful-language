@@ -18,13 +18,13 @@
     "pinnedNode": "22.23.1",
     "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6"
   },
-  "generatedAt": "2026-07-28T08:29:39Z",
+  "generatedAt": "2026-07-28T08:39:20Z",
   "measurement": {
     "peakRssTool": "/usr/bin/time",
     "serverExecutable": "colorful-lsp",
     "serverProvenance": "workspace-release-build",
-    "serverSha256": "ee47f41321f1ecbb7ae19e3737321c18ec0f055b67d1fdf0f3c09f995d22795d",
-    "serverSourceGitCommit": "9035f9a2710ba92a708c1606dd75f9d962ce6785",
+    "serverSha256": "57e3727a8771a37c6c424978c98fe8416028f993eb85d83674487dae7ecd944b",
+    "serverSourceGitCommit": "492238d440c965a570df14a78b00a72b33fdd752",
     "timingClock": "std::time::Instant",
     "wallClockGatesCorrectnessCi": false
   },
@@ -36,12 +36,13 @@
       "diagnosticCode": null,
       "documentBytes": 102400,
       "finalDocumentVersion": 6,
+      "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 60.606,
+        "diagnosticsMs": 60.611,
         "dispatchMs": 0.003,
         "semanticTokenCount": 4178,
-        "semanticTokensMs": 0.546
+        "semanticTokensMs": 0.55
       },
       "label": "100 KiB",
       "latestDiagnosticVersion": 6,
@@ -52,17 +53,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 55953,
+        "maxQueueDelayMicros": 6079,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 5.411,
-        "dispatchMs": 0.176,
+        "diagnosticsMs": 5.197,
+        "dispatchMs": 0.151,
         "semanticTokenCount": 4179,
-        "semanticTokensMs": 0.6,
-        "throughputBytesPerSecond": 18924413.0
+        "semanticTokensMs": 0.564,
+        "throughputBytesPerSecond": 19703675.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -70,10 +71,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          62.397,
-          61.879,
-          62.143,
-          61.583
+          62.077,
+          61.55,
+          61.838,
+          62.271
         ],
         "semanticResultIds": [
           "6",
@@ -87,10 +88,10 @@
           4178,
           4178
         ],
-        "slowestSemanticResponseMs": 62.397,
-        "timeToLatestDiagnosticsMs": 61.317
+        "slowestSemanticResponseMs": 62.271,
+        "timeToLatestDiagnosticsMs": 61.278
       },
-      "peakRssBytes": 9879552,
+      "peakRssBytes": 11239424,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -102,12 +103,13 @@
       "diagnosticCode": null,
       "documentBytes": 1048576,
       "finalDocumentVersion": 6,
+      "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 106.617,
-        "dispatchMs": 0.009,
+        "diagnosticsMs": 99.418,
+        "dispatchMs": 0.008,
         "semanticTokenCount": 42798,
-        "semanticTokensMs": 5.181
+        "semanticTokensMs": 4.639
       },
       "label": "1 MiB",
       "latestDiagnosticVersion": 6,
@@ -118,17 +120,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 61043,
+        "maxQueueDelayMicros": 5584,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 50.464,
-        "dispatchMs": 1.135,
+        "diagnosticsMs": 48.468,
+        "dispatchMs": 1.07,
         "semanticTokenCount": 42799,
-        "semanticTokensMs": 5.161,
-        "throughputBytesPerSecond": 20778694.0
+        "semanticTokensMs": 4.909,
+        "throughputBytesPerSecond": 21634398.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -136,10 +138,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          109.689,
-          112.253,
-          114.731,
-          117.144
+          104.259,
+          101.775,
+          106.667,
+          109.22
         ],
         "semanticResultIds": [
           "6",
@@ -153,10 +155,10 @@
           42798,
           42798
         ],
-        "slowestSemanticResponseMs": 117.144,
-        "timeToLatestDiagnosticsMs": 107.168
+        "slowestSemanticResponseMs": 109.22,
+        "timeToLatestDiagnosticsMs": 99.259
       },
-      "peakRssBytes": 70107136,
+      "peakRssBytes": 69959680,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -168,12 +170,13 @@
       "diagnosticCode": null,
       "documentBytes": 5242880,
       "finalDocumentVersion": 6,
+      "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": null,
-        "diagnosticsMs": 293.891,
-        "dispatchMs": 0.009,
+        "diagnosticsMs": 277.489,
+        "dispatchMs": 0.007,
         "semanticTokenCount": 213995,
-        "semanticTokensMs": 25.188
+        "semanticTokensMs": 22.59
       },
       "label": "5 MiB",
       "latestDiagnosticVersion": 6,
@@ -184,17 +187,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 3,
-        "maxQueueDelayMicros": 59093,
+        "maxQueueDelayMicros": 1554,
         "oversizedResults": 0,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 262.078,
-        "dispatchMs": 5.1,
+        "diagnosticsMs": 246.667,
+        "dispatchMs": 5.005,
         "semanticTokenCount": 213996,
-        "semanticTokensMs": 28.782,
-        "throughputBytesPerSecond": 20005037.0
+        "semanticTokensMs": 26.009,
+        "throughputBytesPerSecond": 21254890.0
       },
       "outcomeCategory": "analyzed",
       "overload": {
@@ -202,10 +205,10 @@
         "diagnosticCode": null,
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          350.805,
-          337.847,
-          365.078,
-          323.803
+          311.555,
+          324.048,
+          366.706,
+          336.348
         ],
         "semanticResultIds": [
           "6",
@@ -219,10 +222,10 @@
           213995,
           213995
         ],
-        "slowestSemanticResponseMs": 365.078,
-        "timeToLatestDiagnosticsMs": 309.365
+        "slowestSemanticResponseMs": 366.706,
+        "timeToLatestDiagnosticsMs": 297.53
       },
-      "peakRssBytes": 355909632,
+      "peakRssBytes": 353714176,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -234,12 +237,13 @@
       "diagnosticCode": "colorful/document-too-large",
       "documentBytes": 10485760,
       "finalDocumentVersion": 6,
+      "finalGeneration": 6,
       "incremental": {
         "diagnosticCode": "colorful/document-too-large",
-        "diagnosticsMs": 61.361,
-        "dispatchMs": 0.005,
+        "diagnosticsMs": 60.065,
+        "dispatchMs": 0.003,
         "semanticTokenCount": 0,
-        "semanticTokensMs": 0.097
+        "semanticTokensMs": 0.064
       },
       "label": "10 MiB",
       "latestDiagnosticVersion": 6,
@@ -250,17 +254,17 @@
         "analysisLimitBytes": 5242880,
         "cancelledBeforeCompute": 3,
         "computationsStarted": 0,
-        "maxQueueDelayMicros": 53906,
+        "maxQueueDelayMicros": 3098,
         "oversizedResults": 3,
         "schemaVersion": "colorful.lsp.metrics/v1",
         "staleResults": 0
       },
       "open": {
-        "diagnosticsMs": 21.378,
-        "dispatchMs": 10.112,
+        "diagnosticsMs": 19.213,
+        "dispatchMs": 9.096,
         "semanticTokenCount": 0,
-        "semanticTokensMs": 0.064,
-        "throughputBytesPerSecond": 490493030.0
+        "semanticTokensMs": 0.061,
+        "throughputBytesPerSecond": 545763806.0
       },
       "outcomeCategory": "document-too-large",
       "overload": {
@@ -268,10 +272,10 @@
         "diagnosticCode": "colorful/document-too-large",
         "rapidEditCount": 4,
         "semanticResponseMs": [
-          81.635,
-          81.619,
-          81.62,
-          81.596
+          80.047,
+          80.044,
+          80.045,
+          80.048
         ],
         "semanticResultIds": [
           "6",
@@ -285,10 +289,10 @@
           0,
           0
         ],
-        "slowestSemanticResponseMs": 81.635,
-        "timeToLatestDiagnosticsMs": 81.617
+        "slowestSemanticResponseMs": 80.048,
+        "timeToLatestDiagnosticsMs": 80.032
       },
-      "peakRssBytes": 116965376,
+      "peakRssBytes": 116998144,
       "processExitCode": 0,
       "sloFailures": [],
       "sloMet": true,
@@ -309,7 +313,7 @@
     "supportedPeakRssBytes": 1610612736
   },
   "source": {
-    "gitCommit": "9035f9a2710ba92a708c1606dd75f9d962ce6785",
+    "gitCommit": "492238d440c965a570df14a78b00a72b33fdd752",
     "workingTreeDirty": false
   }
 }
