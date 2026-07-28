@@ -72,7 +72,7 @@ const definitions = {
       "fixtures/releases/v0.2.1/vocabulary.v1.json",
       "fixtures/releases/v0.3.0/vocabulary.v1.json",
     ],
-    reviewedAssertions: 39,
+    reviewedAssertions: 43,
     processSteps: ["emit IR", "decode and admit", "render spans"],
   },
   ansi: {

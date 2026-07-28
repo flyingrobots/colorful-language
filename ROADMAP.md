@@ -200,7 +200,7 @@ deterministically and use valid data without reverse-engineering Colorful.
 - **Delivered consumer honesty:** a standalone zero-dependency Node consumer
   validates five wire identities, migrates real `v0.2.1` and `v0.3.0`
   `colorful.syntax/v1` generations, and renders the same role spans as ANSI and
-  LSP. Its 412-line IR adapter remains within the reviewed two-times bound
+  LSP. Its 424-line IR adapter remains within the reviewed two-times bound
   against the alternatives' combined 313 lines, so stable v1 is retained while
   additional contract surface stays frozen
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
@@ -355,7 +355,7 @@ preserving the deeper destination.
 | Mechanism | Current user job | Executable consumer or evidence | Cost and compatibility obligation | Disposition |
 | --- | --- | --- | --- | --- |
 | `Parser`, `Lexicon`, `Annotator`, `Analyzer` ports | Substitute deterministic analysis adapters without coupling I/O to the domain. | CLI, LSP, built-in parser/lexicon/annotator/linter, and public-port tests. | Medium API cost; keep the four seams stable and pure. | **Keep.** They justify current CLI/LSP behavior and the optional adapter experiment. |
-| `colorful.syntax/v1` surface IR | Move structured analysis across a process/language boundary. | `colorful ir`, Graft/jedit fixtures, the IR witness, and the standalone independent consumer (#156). | High wire-compatibility cost; the measured IR adapter is 412 lines versus 313 for ANSI and LSP combined. | **Retain stable v1; simplify admission.** Five authenticated wire identities justify current bytes within the reviewed cost bound, not new fields. |
+| `colorful.syntax/v1` surface IR | Move structured analysis across a process/language boundary. | `colorful ir`, Graft/jedit fixtures, the IR witness, and the standalone independent consumer (#156). | High wire-compatibility cost; the measured IR adapter is 424 lines versus 313 for ANSI and LSP combined. | **Retain stable v1; simplify admission.** Five authenticated wire identities justify current bytes within the reviewed cost bound, not new fields. |
 | `colorful.vocabulary/v1` | Give every surface one versioned role/key authority. | Current ANSI, LSP, Graft projection, manifest hash checks, and schema-generated validators (#145). | High drift cost across Rust and JavaScript. | **Keep generated.** One schema authority drives both consumers. |
 | `PassIdentity` and derivation trace seed | Identify which parser and annotator produced an artifact. | `colorful-projection`, IR validation, and witness fixtures. | Existing fields are a compatibility obligation; replayable provenance would add substantial contract and cross-system cost. | **Preserve; freeze expansion.** Do not add provenance layers before the deep-end gate. |
 | Graft projection | Give agents a fail-closed structured prose projection. | `consumers/graft-projection.mjs`, parity fixtures, process witnesses, and the independent-consumer comparison. | Boundary code must reject, never clamp or coerce, malformed artifacts. | **Boundary hardened; value supported.** #148 supplies negative witnesses and #156 supports stable v1 without authorizing expansion. |
@@ -382,7 +382,7 @@ exists:
    artifacts.
 4. **Independent consumer value — satisfied:** #156 proves a correctness
    advantage over CLI text and LSP tokens by authenticating five wire
-   identities. Its 412-line adapter remains within the reviewed two-times bound
+   identities. Its 424-line adapter remains within the reviewed two-times bound
    against the alternatives' combined 313 lines, retaining stable v1 while
    freezing expansion and making admission-cost reduction the follow-up.
 5. **Observed product value — open:** #155 and #158 must provide held-out

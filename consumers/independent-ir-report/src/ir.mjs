@@ -297,14 +297,26 @@ function validateAuxiliaryShape(document, sourceLength, boundaries, profile) {
     requireString(diagnostic, "message", label);
   }
 
-  for (const [index, stepValue] of requireArray(
+  const derivation = requireArray(
     document.derivation,
     "derivation",
-  ).entries()) {
+  );
+  if (derivation.length === 0) {
+    fail("E_SHAPE", "derivation must contain at least one step");
+  }
+  const passIds = new Set();
+  for (const [index, stepValue] of derivation.entries()) {
     const label = `derivation[${index}]`;
     const step = requireRecord(stepValue, label, DERIVATION_FIELDS);
-    requireString(step, "passId", label);
-    requireString(step, "ruleId", label);
+    const passId = requireString(step, "passId", label);
+    const ruleId = requireString(step, "ruleId", label);
+    if (passId.length === 0 || ruleId.length === 0) {
+      fail("E_SHAPE", `${label} must identify its pass and rule`);
+    }
+    if (passIds.has(passId)) {
+      fail("E_SHAPE", `${label}.passId must be unique`);
+    }
+    passIds.add(passId);
     requireString(step, "compilerBuildHash", label);
     for (const [rangeIndex, range] of requireArray(
       step.sourceRanges,

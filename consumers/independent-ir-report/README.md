@@ -14,6 +14,8 @@ Profile admission also requires every classified visual role to have an
 explicit rendering projection.
 Report cells escape Markdown table delimiters even when the source text or a
 role name contains `|`.
+Derivation admission mirrors the producer validator: at least one step,
+non-empty `passId` and `ruleId`, and unique `passId` values.
 
 ## Run the proof
 
@@ -49,7 +51,7 @@ reviewed comparison:
 
 | Adapter | Nonblank adapter lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: |
-| IR | 412 | 10 | 5 |
+| IR | 424 | 10 | 5 |
 | ANSI | 49 | 4 | 1 |
 | LSP | 264 | 5 | 2 |
 

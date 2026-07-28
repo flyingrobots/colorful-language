@@ -228,14 +228,15 @@ v0.3 must handle the `Option` result.
   immutable `v0.2.1` and `v0.3.0` tags without linking the Rust workspace. It
   recomputes the contract schema and vocabulary identities, rejects invalid
   raw-source UTF-8 before trusting its declared identity, verifies source length
-  and digest, validates required shape, axes, and UTF-8 ranges, and renders one
-  deterministic Markdown role-span report. Invalid input fails with a stable
-  category and empty stdout. The v0.3.0 IR, ANSI, and LSP adapters
+  and digest, validates required shape, axes, UTF-8 ranges, and derivation
+  identity, and renders one deterministic Markdown role-span report. Invalid
+  input fails with a stable category and empty stdout. The v0.3.0 IR, ANSI, and
+  LSP adapters
   produce byte-identical reports over the same Unicode source; an isolated-copy
   witness proves the package needs no repository build artifacts or ambient
   `node_modules`.
 
-  The generated burden ledger measures 412 nonblank IR adapter lines, including
+  The generated burden ledger measures 424 nonblank IR adapter lines, including
   48 migration-specific lines, versus 49 for ANSI and 264 for LSP including its
   JSON-RPC acquisition client. Because the IR alone authenticates all five wire
   identities and remains below the reviewed two-times limit against the

@@ -195,6 +195,7 @@ workspace.
   `the IR process rejects invalid UTF-8 before source identity trust`,
   `IR admission rejects unknown fields in every document record`,
   `release profiles project every classified visual role`,
+  `IR admission enforces derivation trace identity`,
   `Markdown reports escape table delimiters inside code spans`,
   `the retention rule honors both documented decision branches`.
   *Tracking:*
@@ -209,7 +210,7 @@ workspace.
   repository keeps only the reference consumer witness.
 - The independent proof retains stable v1 because the IR uniquely verifies five
   identities within its reviewed two-times adapter-size bound. The remaining
-  risk is implementation cost: its 412-line adapter is larger than the
+  risk is implementation cost: its 424-line adapter is larger than the
   264-line LSP protocol and decoding adapter, so contract expansion stays
   frozen while
   [#222](https://github.com/flyingrobots/colorful-language/issues/222)

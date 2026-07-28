@@ -65,7 +65,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
-  assert.equal(ledger.adapters.ir.reviewedAssertions, 39);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 43);
   assert.equal(ledger.result.smallestAdapter, false);
   assert.equal(ledger.result.decision, "retain-stable-v1");
 });
@@ -409,6 +409,27 @@ test("release profiles project every classified visual role", (context) => {
   );
 
   expectConsumerError("E_PROFILE", () => loadProfile(directory));
+});
+
+test("IR admission enforces derivation trace identity", () => {
+  const currentFixture = releaseFixture("v0.3.0");
+  const baseline = JSON.parse(currentFixture.ir);
+  const [first, second] = baseline.derivation;
+  const cases = [
+    [],
+    [{ ...first, passId: "" }, second],
+    [{ ...first, ruleId: "" }, second],
+    [first, { ...second, passId: first.passId }],
+  ];
+  for (const derivation of cases) {
+    expectConsumerError("E_SHAPE", () =>
+      consumeIr({
+        source: SOURCE,
+        artifactJson: JSON.stringify({ ...baseline, derivation }),
+        profiles: [currentFixture.profile],
+      }),
+    );
+  }
 });
 
 test("ANSI refusal cases cover every stable adapter category", () => {

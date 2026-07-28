@@ -152,7 +152,7 @@ The generated integration-effort ledger records:
 
 | Adapter | Nonblank adapter lines | Migration lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: | ---: |
-| IR | 412 | 48 | 10 | 5 |
+| IR | 424 | 48 | 10 | 5 |
 | ANSI | 49 | 0 | 4 | 1 |
 | LSP | 264 | 0 | 5 | 2 |
 
@@ -171,7 +171,7 @@ implementation or optional surface area before adding contract fields.
 `src/decision.mjs` is the executable authority for both branches; its unit test
 prevents this prose and the measured result from diverging.
 
-The result is **retain stable v1**: 412 IR lines are 1.32 times the alternatives'
+The result is **retain stable v1**: 424 IR lines are 1.35 times the alternatives'
 combined 313 lines, within the two-times bound, while only the IR authenticates
 all five wire identities. The result is not permission to expand the contract.
 Consumer admission remains the cost to reduce; replayable provenance, CNL, and
