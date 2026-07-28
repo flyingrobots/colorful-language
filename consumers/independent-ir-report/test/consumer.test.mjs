@@ -343,6 +343,41 @@ test("IR admission rejects unknown fields in every document record", () => {
   }
 });
 
+test("release profiles project every classified visual role", (context) => {
+  const directory = mkdtempSync(path.join(tmpdir(), "colorful-profile-"));
+  context.after(() => rmSync(directory, { recursive: true }));
+  const fixtureDirectory = path.join(FIXTURES, "releases", "v0.3.0");
+  const syntax = readFileSync(
+    path.join(fixtureDirectory, "syntax.v1.graphql"),
+    "utf8",
+  );
+  const vocabulary = JSON.parse(
+    readFileSync(
+      path.join(fixtureDirectory, "vocabulary.v1.json"),
+      "utf8",
+    ),
+  );
+  const missingRole = vocabulary.classRoles[0].visualRole;
+  vocabulary.roleProjections = vocabulary.roleProjections.filter(
+    (projection) => projection.visualRole !== missingRole,
+  );
+  const vocabularyText = `${JSON.stringify(vocabulary, null, 2)}\n`;
+  const metadata = JSON.parse(
+    readFileSync(path.join(fixtureDirectory, "profile.json"), "utf8"),
+  );
+  metadata.vocabularyHash = `sha256:${createHash("sha256")
+    .update(vocabularyText, "utf8")
+    .digest("hex")}`;
+  writeFileSync(path.join(directory, "syntax.v1.graphql"), syntax);
+  writeFileSync(path.join(directory, "vocabulary.v1.json"), vocabularyText);
+  writeFileSync(
+    path.join(directory, "profile.json"),
+    `${JSON.stringify(metadata, null, 2)}\n`,
+  );
+
+  expectConsumerError("E_PROFILE", () => loadProfile(directory));
+});
+
 test("ANSI refusal cases cover every stable adapter category", () => {
   const directory = path.join(FIXTURES, "releases", "v0.3.0");
   const profile = loadProfile(directory);

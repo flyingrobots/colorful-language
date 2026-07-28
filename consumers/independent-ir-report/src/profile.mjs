@@ -137,6 +137,14 @@ export function loadProfile(directory) {
       lspLegend.push(projection.lspTokenType);
     }
   }
+  for (const [axes, role] of rolesByAxes) {
+    if (!projectionsByRole.has(role)) {
+      fail(
+        "E_PROFILE",
+        `profile class role ${role} for axes ${axes} has no projection`,
+      );
+    }
+  }
 
   return Object.freeze({
     directory,

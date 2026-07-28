@@ -10,7 +10,7 @@
     "dependencies": "runtime package dependencies required by an adapter",
     "processSteps": "distinct external or decoding stages for the same job"
   },
-  "sharedNonblankLines": 274,
+  "sharedNonblankLines": 282,
   "adapters": {
     "ir": {
       "sources": [
