@@ -13,12 +13,13 @@ authors = ["James Ross", "the colorful-language contributors"]
 
 [workspace.dependencies]
 colorful-core = { path = "crates/colorful-core", version = "0.4.0" }
+colorful-cli = { path = "crates/colorful-cli", version = "0.4.0" }
 colorful-parse = { path = "crates/colorful-parse", version = "0.4.0" }
 colorful-lexicon = { path = "crates/colorful-lexicon", version = "0.4.0" }
 colorful-ir = { path = "crates/colorful-ir", version = "0.4.0" }
 colorful-lint = { path = "crates/colorful-lint", version = "0.4.0" }
+colorful-lsp = { path = "crates/colorful-lsp", version = "0.4.0" }
 colorful-projection = { path = "crates/colorful-projection", version = "0.4.0" }
-colorful-vale = { path = "crates/colorful-vale", version = "0.4.0" }
 
 logos = "0.14"
 phf = { version = "0.11", features = ["macros"] }

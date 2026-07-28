@@ -19,11 +19,11 @@ serde_json = { workspace = true }
 rustix = { workspace = true }
 
 [dev-dependencies]
-colorful-cli = { path = "../colorful-cli", version = "0.4.0" }
+colorful-cli = { workspace = true }
 colorful-ir = { workspace = true }
 colorful-lexicon = { workspace = true }
 colorful-lint = { workspace = true }
-colorful-lsp = { path = "../colorful-lsp", version = "0.4.0" }
+colorful-lsp = { workspace = true }
 colorful-parse = { workspace = true }
 colorful-projection = { workspace = true }
 toml = { workspace = true }
