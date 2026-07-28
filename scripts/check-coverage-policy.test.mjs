@@ -285,6 +285,17 @@ test("rejects stale coverage measurements in the maintained reference", () => {
   );
 });
 
+test("rejects coverage rows without exact repository-relative paths", () => {
+  const staleReference = COVERAGE_REFERENCE.replaceAll("`crates/", "`");
+  assert.notEqual(staleReference, COVERAGE_REFERENCE);
+  assert.throws(
+    () => validateCoverageReference(staleReference, ACTUAL_POLICY),
+    (error) =>
+      error instanceof CoveragePolicyError &&
+      error.code === "E_COVERAGE_REFERENCE",
+  );
+});
+
 test("rejects a workspace line percentage below the reviewed floor", () => {
   expectPolicyError(
     "E_COVERAGE_WORKSPACE_FLOOR",
