@@ -167,6 +167,7 @@ dependencies = [
  "colorful-projection",
  "criterion",
  "serde_json",
+ "toml",
  "tower-lsp",
 ]
 
