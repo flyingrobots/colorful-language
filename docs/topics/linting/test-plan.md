@@ -241,6 +241,7 @@ Implemented and planned cases are listed below.
   adapter test. *Evidence:* `colorful-vale`
   `vale_adapter::{discovery_is_explicit_versioned_and_ambient_config_free,
   discovery_rejects_missing_config_executable_and_major,
+  permission_denied_executable_is_unavailable,
   analysis_uses_exact_isolated_stdin_contract,
   analysis_honors_the_explicit_document_extension}`,
   `config::tests::relative_paths_are_resolved_before_the_process_changes_directory`,

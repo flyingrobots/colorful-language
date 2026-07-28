@@ -195,6 +195,21 @@ fn discovery_rejects_missing_config_executable_and_major() {
 }
 
 #[test]
+fn permission_denied_executable_is_unavailable() {
+    let fixture = success_fixture();
+    let mut permissions = fs::metadata(&fixture.executable)
+        .expect("fake Vale metadata")
+        .permissions();
+    permissions.set_mode(0o644);
+    fs::set_permissions(&fixture.executable, permissions).expect("remove execute permission");
+
+    assert_eq!(
+        error_kind(ValeAnalyzer::discover(fixture.config())),
+        ValeErrorKind::Unavailable
+    );
+}
+
+#[test]
 fn analysis_uses_exact_isolated_stdin_contract() {
     let fixture = success_fixture();
     let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");

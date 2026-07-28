@@ -445,6 +445,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   adapter now builds `--config=` as an `OsString` instead of formatting
   `Path::display()`, so a valid non-UTF-8 path is not replaced with lossy
   Unicode before process launch.
+- **Unstartable Vale executables report as unavailable.** Missing and
+  permission-denied executables now share the explicit `Unavailable` adapter
+  category instead of classifying a permission error as a generic process
+  failure.
 - **Stable public-API policy input failures.** Missing, moved, or unreadable
   source and workflow inputs now fail the doctest policy checker with
   `E_API_DOCTEST_INPUT`, the repository-relative path, empty standard output,

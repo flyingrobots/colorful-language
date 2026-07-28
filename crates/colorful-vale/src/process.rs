@@ -66,10 +66,9 @@ pub(crate) fn run_process(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     let mut child = command.spawn().map_err(|error| {
-        let kind = if error.kind() == io::ErrorKind::NotFound {
-            ValeErrorKind::Unavailable
-        } else {
-            ValeErrorKind::ProcessFailure
+        let kind = match error.kind() {
+            io::ErrorKind::NotFound | io::ErrorKind::PermissionDenied => ValeErrorKind::Unavailable,
+            _ => ValeErrorKind::ProcessFailure,
         };
         ValeError::new(
             kind,
