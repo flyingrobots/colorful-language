@@ -168,6 +168,8 @@ schema, vocabulary, source length, and source digest and its adapter is no
 larger than twice the ANSI and LSP adapters combined, or when the IR is the
 smallest adapter. Otherwise the project preserves compatibility but simplifies
 implementation or optional surface area before adding contract fields.
+`src/decision.mjs` is the executable authority for both branches; its unit test
+prevents this prose and the measured result from diverging.
 
 The result is **retain stable v1**: 412 IR lines are 1.32 times the alternatives'
 combined 313 lines, within the two-times bound, while only the IR authenticates

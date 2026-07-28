@@ -528,7 +528,8 @@ Requirements:
   `the IR process rejects invalid UTF-8 before source identity trust`,
   `IR admission rejects unknown fields in every document record`,
   `release profiles project every classified visual role`,
-  `Markdown reports escape table delimiters inside code spans`.
+  `Markdown reports escape table delimiters inside code spans`,
+  `the retention rule honors both documented decision branches`.
   *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* implemented.

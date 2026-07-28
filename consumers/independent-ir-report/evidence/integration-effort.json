@@ -110,6 +110,7 @@
     "alternativesNonblankAdapterLines": 313,
     "correctnessAdvantage": true,
     "withinReviewedCostBound": true,
+    "smallestAdapter": false,
     "decision": "retain-stable-v1"
   }
 }

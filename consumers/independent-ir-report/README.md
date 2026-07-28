@@ -64,6 +64,10 @@ hash-selected generation policy explicit in
 shared portable admission through
 [#222](https://github.com/flyingrobots/colorful-language/issues/222), and avoid
 adding contract fields without new evidence.
+The executable decision records both policy branches explicitly: the IR may be
+retained for its bounded correctness advantage or because it is the smallest
+adapter. The checked-in result records which branch the current measurements
+actually satisfy.
 
 Refresh the tagged fixtures only by building the real releases:
 

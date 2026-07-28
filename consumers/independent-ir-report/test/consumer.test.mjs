@@ -66,6 +66,39 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "scripts/capture-lsp.mjs",
   ]);
   assert.equal(ledger.adapters.ir.reviewedAssertions, 39);
+  assert.equal(ledger.result.smallestAdapter, false);
+  assert.equal(ledger.result.decision, "retain-stable-v1");
+});
+
+test("the retention rule honors both documented decision branches", async () => {
+  const { decideIrContract } = await import("../src/decision.mjs");
+  assert.equal(
+    decideIrContract({
+      irLines: 10,
+      ansiLines: 11,
+      lspLines: 12,
+      correctnessAdvantage: false,
+    }).decision,
+    "retain-stable-v1",
+  );
+  assert.equal(
+    decideIrContract({
+      irLines: 20,
+      ansiLines: 5,
+      lspLines: 6,
+      correctnessAdvantage: false,
+    }).decision,
+    "simplify-before-expansion",
+  );
+  assert.equal(
+    decideIrContract({
+      irLines: 20,
+      ansiLines: 5,
+      lspLines: 6,
+      correctnessAdvantage: true,
+    }).decision,
+    "retain-stable-v1",
+  );
 });
 
 function releaseFixture(release) {

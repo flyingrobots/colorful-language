@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { ANSI_ERROR_CODES } from "./ansi.mjs";
+import { decideIrContract } from "./decision.mjs";
 import { IR_ERROR_CODES } from "./ir.mjs";
 import { LSP_ERROR_CODES } from "./lsp.mjs";
 
@@ -136,15 +137,16 @@ const adapters = Object.fromEntries(
     measureAdapter(definition),
   ]),
 );
-const alternativesLines =
-  adapters.ansi.nonblankAdapterLines + adapters.lsp.nonblankAdapterLines;
 const correctnessAdvantage =
   adapters.ir.verifiedIdentities.length === 5 &&
   adapters.ansi.verifiedIdentities.length < 5 &&
   adapters.lsp.verifiedIdentities.length < 5;
-const withinReviewedCostBound =
-  adapters.ir.nonblankAdapterLines <= alternativesLines * 2;
-const retain = correctnessAdvantage && withinReviewedCostBound;
+const result = decideIrContract({
+  irLines: adapters.ir.nonblankAdapterLines,
+  ansiLines: adapters.ansi.nonblankAdapterLines,
+  lspLines: adapters.lsp.nonblankAdapterLines,
+  correctnessAdvantage,
+});
 
 const report = {
   reportVersion: "colorful.integration-effort/v1",
@@ -174,12 +176,7 @@ const report = {
       "otherwise preserve compatibility but simplify implementation or " +
       "optional surface before adding contract fields",
   },
-  result: {
-    alternativesNonblankAdapterLines: alternativesLines,
-    correctnessAdvantage,
-    withinReviewedCostBound,
-    decision: retain ? "retain-stable-v1" : "simplify-before-expansion",
-  },
+  result,
 };
 const rendered = `${JSON.stringify(report, null, 2)}\n`;
 const [mode] = process.argv.slice(2);
