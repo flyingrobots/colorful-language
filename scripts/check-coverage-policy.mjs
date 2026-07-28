@@ -553,6 +553,21 @@ export function validateCoverageWorkflow(workflow, policy) {
       "must be a blocking ubuntu-latest Rust coverage job",
     );
   }
+  const permissions = requireObject(
+    job.permissions,
+    "E_COVERAGE_WORKFLOW",
+    "CI workflow.jobs.coverage.permissions",
+  );
+  if (
+    permissions.contents !== "read" ||
+    Object.keys(permissions).length !== 1
+  ) {
+    reject(
+      "E_COVERAGE_WORKFLOW",
+      "CI workflow.jobs.coverage.permissions",
+      "must grant only read access to repository contents",
+    );
+  }
   if (!Array.isArray(job.steps)) {
     reject(
       "E_COVERAGE_WORKFLOW",
@@ -577,6 +592,14 @@ export function validateCoverageWorkflow(workflow, policy) {
     }
   }
 
+  const checkout = actionStep(steps, CHECKOUT_ACTION);
+  if (checkout.with?.["persist-credentials"] !== false) {
+    reject(
+      "E_COVERAGE_ACTION",
+      "CI workflow.jobs.coverage.steps",
+      "checkout must not persist the GitHub token",
+    );
+  }
   const toolchain = actionStep(steps, RUST_TOOLCHAIN_ACTION);
   if (
     toolchain.with?.toolchain !== checked.toolchain.rust ||
