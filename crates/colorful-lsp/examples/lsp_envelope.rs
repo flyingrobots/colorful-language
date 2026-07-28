@@ -1012,14 +1012,16 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
     use std::sync::mpsc;
-    use std::time::Instant;
+    use std::time::{Duration, Instant};
 
     use serde_json::json;
 
     use super::{
-        corpus, drain_messages_after_eof, parse_peak_rss, process_group_signal_target,
-        refusal_diagnostic_code, stale_publication_count, workload_plan, TimeFlavor, TimedMessage,
+        corpus, drain_messages_after_eof, milliseconds, parse_peak_rss,
+        process_group_signal_target, read_message, refusal_diagnostic_code, semantic_token_count,
+        stale_publication_count, workload_plan, TimeFlavor, TimedMessage,
         CONCURRENT_SEMANTIC_REQUESTS, CORPUS_LINE, RAPID_EDIT_COUNT,
     };
 
@@ -1105,5 +1107,47 @@ mod tests {
         );
         assert_eq!(workload.final_document_version, 6);
         assert_eq!(workload.final_generation, 6);
+    }
+
+    #[test]
+    fn json_rpc_framing_covers_success_eof_and_header_errors() {
+        assert!(read_message(&mut Cursor::new(b""))
+            .expect("clean EOF")
+            .is_none());
+
+        for source in [
+            b"malformed\r\n\r\n".as_slice(),
+            b"Content-Length: nope\r\n\r\n".as_slice(),
+            b"Content-Type: application/json\r\n\r\n".as_slice(),
+        ] {
+            assert!(read_message(&mut Cursor::new(source)).is_err());
+        }
+
+        assert_eq!(
+            read_message(&mut Cursor::new(b"Content-Length: 2\r\n\r\n{}"))
+                .expect("valid JSON-RPC frame"),
+            Some(json!({}))
+        );
+    }
+
+    #[test]
+    fn timing_and_semantic_token_counts_have_stable_units() {
+        assert_eq!(milliseconds(Duration::from_micros(1_234)), 1.234);
+        assert_eq!(
+            semantic_token_count(&json!({
+                "result": {
+                    "data": [0, 0, 1, 0, 0, 0, 1, 1, 0, 0]
+                }
+            })),
+            2
+        );
+    }
+
+    #[test]
+    fn malformed_semantic_token_group_is_rejected() {
+        assert!(std::panic::catch_unwind(|| {
+            semantic_token_count(&json!({"result": {"data": [0]}}));
+        })
+        .is_err());
     }
 }
