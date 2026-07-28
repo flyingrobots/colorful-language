@@ -61,14 +61,14 @@
     }
   ],
   "measurement": {
-    "allocationCounter": "dhat 0.3.3",
+    "allocationCounter": "stats_alloc 0.1.10",
     "allocationSamplesPerStage": 1,
-    "generatedAt": "2026-07-28T09:23:55Z",
+    "generatedAt": "2026-07-28T09:31:49Z",
     "hardware": "Apple M1 Pro; arm64",
     "operatingSystem": "Darwin 25.3.0 arm64",
     "profile": "release",
     "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-    "sourceCommit": "f8dfa1caae2621442b29242f665931cea3010b9d",
+    "sourceCommit": "0ca1dea1efa066a54e38330fd37fda369cdba2f5",
     "throughputBasis": "source-utf8-bytes",
     "timingSamplesPerStage": 9,
     "totalMemoryBytes": 17179869184
@@ -79,108 +79,108 @@
       "allocationCount": 43,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 5000,
+      "medianNanoseconds": 5333,
       "stage": "parsing",
-      "throughputBytesPerSecond": 179800000
+      "throughputBytesPerSecond": 168573035
     },
     {
       "allocatedBytes": 12993,
       "allocationCount": 136,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 15125,
+      "medianNanoseconds": 15500,
       "stage": "annotation",
-      "throughputBytesPerSecond": 59438016
+      "throughputBytesPerSecond": 58000000
     },
     {
       "allocatedBytes": 9635,
       "allocationCount": 144,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 7167,
+      "medianNanoseconds": 7416,
       "stage": "lint",
-      "throughputBytesPerSecond": 125436026
+      "throughputBytesPerSecond": 121224379
     },
     {
-      "allocatedBytes": 76564,
+      "allocatedBytes": 77062,
       "allocationCount": 1063,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 80625,
+      "medianNanoseconds": 84208,
       "stage": "ir-projection",
-      "throughputBytesPerSecond": 11150387
+      "throughputBytesPerSecond": 10675945
     },
     {
-      "allocatedBytes": 338615,
+      "allocatedBytes": 338616,
       "allocationCount": 2342,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 173250,
+      "medianNanoseconds": 174000,
       "stage": "ir-serialization",
-      "throughputBytesPerSecond": 5189033
+      "throughputBytesPerSecond": 5166666
     },
     {
-      "allocatedBytes": 60345,
+      "allocatedBytes": 60602,
       "allocationCount": 1009,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 59125,
+      "medianNanoseconds": 61709,
       "stage": "ir-validation",
-      "throughputBytesPerSecond": 15205073
+      "throughputBytesPerSecond": 14568377
     },
     {
       "allocatedBytes": 937760,
       "allocationCount": 2009,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 260166,
+      "medianNanoseconds": 252166,
       "stage": "parsing",
-      "throughputBytesPerSecond": 172962646
+      "throughputBytesPerSecond": 178449909
     },
     {
       "allocatedBytes": 826386,
       "allocationCount": 6463,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 587667,
+      "medianNanoseconds": 568375,
       "stage": "annotation",
-      "throughputBytesPerSecond": 76572276
+      "throughputBytesPerSecond": 79171321
     },
     {
       "allocatedBytes": 497206,
       "allocationCount": 7059,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 290583,
+      "medianNanoseconds": 311459,
       "stage": "lint",
-      "throughputBytesPerSecond": 154857648
+      "throughputBytesPerSecond": 144478085
     },
     {
-      "allocatedBytes": 3350294,
+      "allocatedBytes": 3360200,
       "allocationCount": 49172,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 2010042,
+      "medianNanoseconds": 1993500,
       "stage": "ir-projection",
-      "throughputBytesPerSecond": 22387094
+      "throughputBytesPerSecond": 22572861
     },
     {
-      "allocatedBytes": 17686667,
+      "allocatedBytes": 17686668,
       "allocationCount": 114264,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 8212167,
+      "medianNanoseconds": 8540667,
       "stage": "ir-serialization",
-      "throughputBytesPerSecond": 5479552
+      "throughputBytesPerSecond": 5268792
     },
     {
-      "allocatedBytes": 2717962,
+      "allocatedBytes": 2724491,
       "allocationCount": 48414,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 1794459,
+      "medianNanoseconds": 1755708,
       "stage": "ir-validation",
-      "throughputBytesPerSecond": 25076638
+      "throughputBytesPerSecond": 25630116
     }
   ],
   "regressionPolicy": {
