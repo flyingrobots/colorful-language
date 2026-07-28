@@ -105,10 +105,13 @@ impl Drop for EnvironmentGuard {
 
 impl FakeVale {
     fn new(version: &str, analysis_body: &str) -> Self {
+        Self::new_in(&std::env::temp_dir(), version, analysis_body)
+    }
+
+    fn new_in(parent: &Path, version: &str, analysis_body: &str) -> Self {
         let root = loop {
             let id = FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
-            let candidate = std::env::temp_dir()
-                .join(format!("colorful-vale-test-{}-{id}", std::process::id()));
+            let candidate = parent.join(format!("colorful-vale-test-{}-{id}", std::process::id()));
             match fs::create_dir(&candidate) {
                 Ok(()) => break candidate,
                 Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
@@ -122,8 +125,8 @@ impl FakeVale {
         let marker = root.join("started");
         let worker_pid = root.join("worker.pid");
         let analysis_body = analysis_body
-            .replace("{FAKE_VALE_MARKER}", &marker.display().to_string())
-            .replace("{FAKE_VALE_WORKER_PID}", &worker_pid.display().to_string());
+            .replace("{FAKE_VALE_MARKER}", "started")
+            .replace("{FAKE_VALE_WORKER_PID}", "worker.pid");
         fs::write(
             &configuration,
             "StylesPath = styles\n[*.txt]\nBasedOnStyles = Test\n",
@@ -155,12 +158,10 @@ if [ "${{1-}}" = "--version" ]; then
   printf '%s\n' 'vale version {version}'
   exit 0
 fi
-printf '%s\n' "$@" > '{arguments}'
-cat > '{captured_input}'
+printf '%s\n' "$@" > 'arguments.txt'
+cat > 'input.txt'
 {analysis_body}
 "#,
-            arguments = arguments.display(),
-            captured_input = captured_input.display(),
         );
         fs::write(&executable, script).expect("write fake Vale executable");
         let mut permissions = fs::metadata(&executable)
@@ -193,6 +194,14 @@ impl Drop for FakeVale {
 
 fn success_fixture() -> FakeVale {
     success_fixture_for("stdin.txt")
+}
+
+fn success_fixture_in(parent: &Path) -> FakeVale {
+    FakeVale::new_in(
+        parent,
+        "3.14.2",
+        &format!("printf '%s\\n' '{}'", SUCCESS_JSON.replace('\'', "'\\''")),
+    )
 }
 
 fn success_fixture_for(source_key: &str) -> FakeVale {
@@ -818,7 +827,7 @@ fn pre_cancelled_analysis_does_not_start_a_process() {
 }
 
 #[test]
-fn fixture_paths_are_absolute_and_shell_safe() {
+fn fixture_paths_are_absolute() {
     let fixture = success_fixture();
     for path in [
         &fixture.root,
@@ -827,15 +836,14 @@ fn fixture_paths_are_absolute_and_shell_safe() {
         &fixture.arguments,
         &fixture.captured_input,
         &fixture.marker,
+        &fixture.worker_pid,
     ] {
-        assert!(Path::new(path).is_absolute());
-        assert!(!path.to_string_lossy().contains('\''));
+        assert!(path.is_absolute());
     }
 }
 
 #[test]
 fn fixture_paths_with_shell_metacharacters_are_supported() {
-    let _environment_lock = ENVIRONMENT_LOCK.lock().expect("environment lock");
     let quoted_parent = loop {
         let id = FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
         let candidate = std::env::temp_dir().join(format!(
@@ -852,14 +860,19 @@ fn fixture_paths_with_shell_metacharacters_are_supported() {
         }
     };
     let _quoted_parent = DirectoryGuard(quoted_parent.clone());
-    let previous = std::env::var_os("TMPDIR");
-    std::env::set_var("TMPDIR", &quoted_parent);
-    let _environment = EnvironmentGuard {
-        saved: vec![("TMPDIR", previous)],
-    };
 
-    let fixture = success_fixture();
-    assert!(fixture.root.starts_with(&quoted_parent));
+    let fixture = success_fixture_in(&quoted_parent);
+    for path in [
+        &fixture.root,
+        &fixture.executable,
+        &fixture.configuration,
+        &fixture.arguments,
+        &fixture.captured_input,
+        &fixture.marker,
+        &fixture.worker_pid,
+    ] {
+        assert!(path.starts_with(&quoted_parent), "{}", path.display());
+    }
     let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover quoted-path Vale");
     analyzer
         .analyze(SOURCE, &CancellationToken::new())

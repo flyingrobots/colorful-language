@@ -366,14 +366,15 @@ Implemented and planned cases are listed below.
   *Status:* implemented.
 - **LINT-13l** — *Requirement:* LINT-13. *Behavior:* deterministic fake-engine
   evidence transports fixture paths without embedding ambient temporary paths
-  into shell literals. *Oracle:* discovery and analysis succeed when `TMPDIR`
-  contains an apostrophe, while every captured artifact remains under that
-  temporary root. *Evidence type:* hostile-path process-fixture regression
-  test. *Evidence:* planned in `colorful-vale`
+  into shell literals. *Oracle:* discovery and analysis succeed under an
+  explicit temporary parent containing an apostrophe, while every captured
+  artifact remains under that parent and no process-global environment changes
+  race parallel tests. *Evidence type:* hostile-path process-fixture regression
+  test. *Evidence:* `colorful-vale`
   `vale_adapter::fixture_paths_with_shell_metacharacters_are_supported`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
