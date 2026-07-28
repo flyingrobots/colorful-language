@@ -15,6 +15,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-8** The current lifecycle records verification and retrospective duties.
 - **REL-9** The tag workflow validates metadata and is safe to rerun after
   crates are already available in the crates.io registry index.
+- **REL-10** Release preparation fails when a `colorful.syntax/v1` schema or
+  vocabulary identity lacks an explicit compatibility decision and migration
+  evidence.
 
 ## Cases
 
@@ -81,6 +84,19 @@ Verification for release preparation, tag automation, and release witnesses.
   moving the tag; the job timeout covers the aggregate index-readiness polling
   budget. *Oracle:* workflow source review. *Evidence:*
   `.github/workflows/release.yml`. *Status:* implemented.
+- **REL-10a** — *Requirement:* REL-10. *Behavior:* the release-process reference
+  defines which schema edits preserve a v1 generation, require a new explicit
+  v1 generation, or require a deliberately versioned contract; release prep
+  validates the canonical compatibility manifest and rejects unregistered
+  identity tuples or missing migration evidence before packaging. *Oracle:*
+  deterministic compatibility mutation tests and release-gate source review.
+  *Evidence type:* current workflow reference, manifest validator, and release
+  gate. *Evidence:* `docs/workflows/release-process/README.md`,
+  `scripts/check-ir-compatibility.test.mjs`,
+  `scripts/check-ir-compatibility.mjs`, and `scripts/release-prep.sh`.
+  *Tracking:*
+  [#221](https://github.com/flyingrobots/colorful-language/issues/221).
+  *Status:* implemented.
 
 ## Open verification gaps
 
