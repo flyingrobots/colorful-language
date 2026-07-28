@@ -871,9 +871,10 @@ export function syntaxGenerationHasField(
   generationId,
   typeName,
   fieldName,
+  reject = defaultReject,
 ) {
-  const schema = generationSchema(generationId, defaultReject);
-  const definition = schema?.[typeName];
+  const schema = generationSchema(generationId, reject);
+  const definition = schema[typeName];
   return (
     definition?.kind === "type" &&
     definition.fields.some(([field]) => field === fieldName)

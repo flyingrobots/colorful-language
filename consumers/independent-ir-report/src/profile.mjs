@@ -17,6 +17,11 @@ const PROFILE_FIELDS = [
   "vocabularyHash",
 ];
 
+function rejectProfile(path, reason) {
+  const label = path.length === 0 ? "compatibility manifest" : path;
+  fail("E_PROFILE", `${label} ${reason}`);
+}
+
 function requiredString(record, field) {
   if (typeof record[field] !== "string" || record[field].length === 0) {
     fail("E_PROFILE", `profile ${field} must be a non-empty string`);
@@ -162,6 +167,7 @@ export function loadProfile(directory) {
       generation.id,
       "Token",
       "openClassKind",
+      rejectProfile,
     );
   const schemaHash = profileSchemaHash(syntax, generation.schemaHashMode);
   const vocabularyHash = sha256(vocabularyText);

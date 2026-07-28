@@ -259,6 +259,31 @@ test("prototype properties cannot impersonate syntax generation ids", async (t) 
   }
 });
 
+test("generation field lookup preserves the caller error taxonomy", async (t) => {
+  const outputRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-syntax-field-lookup-"),
+  );
+  t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
+  generateSyntaxAdmission(outputRoot);
+  const runtime = await import(
+    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
+  );
+  const sentinel = new Error("consumer taxonomy");
+
+  assert.throws(
+    () =>
+      runtime.syntaxGenerationHasField(
+        "missing-generation",
+        "Token",
+        "tokenKind",
+        () => {
+          throw sentinel;
+        },
+      ),
+    (error) => error === sentinel,
+  );
+});
+
 test("a schema edit changes generated required-field and enum behavior", async () => {
   const currentSchema = readFileSync(
     path.join(ROOT, "contracts/colorful/syntax.v1.graphql"),
