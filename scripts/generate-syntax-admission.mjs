@@ -132,6 +132,17 @@ function rejectWith(reject, path, reason) {
   throw new TypeError("syntax admission rejection callback must throw");
 }
 
+function generationSchema(generationId, reject) {
+  if (!Object.hasOwn(GENERATIONS, generationId)) {
+    rejectWith(
+      reject,
+      "",
+      \`uses unknown syntax generation \${generationId}\`,
+    );
+  }
+  return GENERATIONS[generationId];
+}
+
 function isRecord(value) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return false;
@@ -280,10 +291,7 @@ export function validateSyntaxShape(
   generationId,
   reject = defaultReject,
 ) {
-  const schema = GENERATIONS[generationId];
-  if (schema === undefined) {
-    rejectWith(reject, "", \`uses unknown syntax generation \${generationId}\`);
-  }
+  const schema = generationSchema(generationId, reject);
   validateNamed(value, "DocumentAnalysis", schema, "", reject);
 }
 
@@ -292,10 +300,7 @@ export function syntaxGenerationHasField(
   typeName,
   fieldName,
 ) {
-  const schema = GENERATIONS[generationId];
-  if (schema === undefined) {
-    defaultReject("", \`uses unknown syntax generation \${generationId}\`);
-  }
+  const schema = generationSchema(generationId, defaultReject);
   const definition = schema?.[typeName];
   return (
     definition?.kind === "type" &&

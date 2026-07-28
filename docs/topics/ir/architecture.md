@@ -201,7 +201,7 @@ The LSP count includes its JSON-RPC acquisition client; IR and ANSI use the
 same CLI process boundary, so neither count includes that shared invocation.
 
 The schema-generated JavaScript admission runtime is measured separately at
-826 unique nonblank lines and 1,652 lines across its two byte-identical
+830 unique nonblank lines and 1,660 lines across its two byte-identical
 committed copies. Those bytes are a real review and distribution cost, but they
 do not count as authored adapter code: their structural field and enum behavior
 derives from the versioned GraphQL SDLs and is guarded by regeneration drift.

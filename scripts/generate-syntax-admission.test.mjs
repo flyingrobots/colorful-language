@@ -191,6 +191,31 @@ test("generated admission rejects missing, unknown, primitive, and enum drift", 
   );
 });
 
+test("prototype properties cannot impersonate syntax generation ids", async (t) => {
+  const outputRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-syntax-generation-id-"),
+  );
+  t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
+  generateSyntaxAdmission(outputRoot);
+  const runtime = await import(
+    `${pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href}?test=${Date.now()}`
+  );
+
+  for (const operation of [
+    () => runtime.validateSyntaxShape(currentDocument(), "toString"),
+    () => runtime.syntaxGenerationHasField("toString", "Token", "tokenKind"),
+  ]) {
+    assert.throws(
+      operation,
+      (error) =>
+        error?.name === "SyntaxAdmissionError" &&
+        error.code === "E_SYNTAX_SHAPE" &&
+        error.path === "" &&
+        /unknown syntax generation toString/u.test(error.message),
+    );
+  }
+});
+
 test("a schema edit changes generated required-field and enum behavior", async () => {
   const currentSchema = readFileSync(
     path.join(ROOT, "contracts/colorful/syntax.v1.graphql"),
