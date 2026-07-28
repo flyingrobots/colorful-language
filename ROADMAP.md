@@ -121,6 +121,11 @@ observe public-contract regressions before they ship.
   runnable public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
   <!-- roadmap-primary: active #137 #140 -->
+- **Queued evidence hygiene:** derive the cross-stage allocation-profiler
+  identity from the resolved dependency authority
+  [#207](https://github.com/flyingrobots/colorful-language/issues/207) after
+  the coverage and public-API gates.
+  <!-- roadmap-primary: parked #207 -->
 
 **Exit signal:** the documented local gate and the protected-branch gate name
 the same reproducible evidence; public binary transport and API examples are
