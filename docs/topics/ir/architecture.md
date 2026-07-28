@@ -188,17 +188,23 @@ The generated integration-effort ledger records:
 
 | Adapter | Nonblank adapter lines | Migration lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: | ---: |
-| IR | 424 | 48 | 11 | 5 |
+| IR | 249 | 25 | 11 | 5 |
 | ANSI | 49 | 0 | 4 | 1 |
 | LSP | 305 | 0 | 5 | 2 |
 
 Shared profile loading, compatibility selection, and report rendering account
-for another 389 nonblank lines and are excluded from every adapter equally. The
+for another 363 nonblank lines and are excluded from every adapter equally. The
 exact source, fixtures, assertions, dependencies, and process steps behind
 these counts live in
 `consumers/independent-ir-report/evidence/integration-effort.json`.
 The LSP count includes its JSON-RPC acquisition client; IR and ANSI use the
 same CLI process boundary, so neither count includes that shared invocation.
+
+The schema-generated JavaScript admission runtime is measured separately at
+862 unique nonblank lines and 1,724 lines across its two byte-identical
+committed copies. Those bytes are a real review and distribution cost, but they
+do not count as authored adapter code: their structural field and enum behavior
+derives from the versioned GraphQL SDLs and is guarded by regeneration drift.
 
 The reviewed rule retains stable v1 when the IR uniquely verifies the contract,
 schema, vocabulary, source length, and source digest and its adapter is no
@@ -208,19 +214,15 @@ implementation or optional surface area before adding contract fields.
 `src/decision.mjs` is the executable authority for both branches; its unit test
 prevents this prose and the measured result from diverging.
 
-The result is **retain stable v1**: 424 IR lines are 1.20 times the alternatives'
-combined 354 lines, within the two-times bound, while only the IR authenticates
-all five wire identities. The result is not permission to expand the contract.
-Consumer admission remains the cost to reduce; replayable provenance, CNL, and
-Edict fields remain frozen until new evidence justifies them. The three
-supported `colorful.syntax/v1` identities now have the authored compatibility
-policy delivered by
-[#221](https://github.com/flyingrobots/colorful-language/issues/221).
-[#222](https://github.com/flyingrobots/colorful-language/issues/222) owns
-replacing duplicated hand-written structural admission with generated portable
-validation while preserving explicitly semantic checks. A worthwhile
-simplification that cannot preserve v1 bytes still requires a deliberately
-versioned contract and fresh migration evidence.
+The result is **retain stable v1**: 249 authored IR lines are 0.70 times the
+alternatives' combined 354 lines, while only the IR authenticates all five wire
+identities. The result is not permission to expand the contract. Generated
+portable admission removes duplicated structural authorities while preserving
+explicit semantic checks and stable refusal categories; its separately reported
+size remains a compatibility cost. Replayable provenance, CNL, and Edict fields
+remain frozen until new evidence justifies them. A worthwhile simplification
+that cannot preserve v1 bytes still requires a deliberately versioned contract
+and fresh migration evidence.
 
 The broader [deep-end evidence gate](../../../ROADMAP.md#deep-end-evidence-gate)
 controls when new provenance, CNL, and Edict surface area resumes. It preserves

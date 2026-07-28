@@ -59,7 +59,7 @@ echo "Negative fixtures: the TS leg must reject each malformed artifact for its 
 # the wrong reason. Assert the exact expected message substring instead.
 declare -A expected_rejection=(
   [unknown-field]="unknown top-level field: unexpectedField"
-  [missing-field]="derivation must be an array"
+  [missing-field]="derivation is required by the contract shape"
   [wrong-type]="contractVersion must be a string"
 )
 for fixture in witness/negative/*.json; do

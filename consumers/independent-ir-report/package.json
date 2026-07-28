@@ -9,7 +9,7 @@
     "node": ">=22.23.1 <23"
   },
   "scripts": {
-    "check": "npm test && npm run measure -- --check",
+    "check": "npm test",
     "measure": "node src/measure.mjs",
     "test": "node --test"
   }

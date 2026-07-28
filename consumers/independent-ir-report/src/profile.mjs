@@ -2,6 +2,10 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import { fail, isRecord, parseJson, sha256 } from "./common.mjs";
+import {
+  SYNTAX_GENERATION_IDS,
+  syntaxGenerationHasField,
+} from "../generated/syntax-admission-v1.mjs";
 
 const COMPATIBILITY = loadCompatibilityManifest();
 const PROFILE_FIELDS = [
@@ -12,6 +16,11 @@ const PROFILE_FIELDS = [
   "schemaHash",
   "vocabularyHash",
 ];
+
+function rejectProfile(path, reason) {
+  const label = path.length === 0 ? "compatibility manifest" : path;
+  fail("E_PROFILE", `${label} ${reason}`);
+}
 
 function requiredString(record, field) {
   if (typeof record[field] !== "string" || record[field].length === 0) {
@@ -63,12 +72,7 @@ function selectGeneration(metadata, compatibility) {
   const [generation] = matches;
   if (
     typeof generation.id !== "string" ||
-    !isRecord(generation.wireShape) ||
-    !Array.isArray(generation.wireShape.optionalFields) ||
-    generation.wireShape.optionalFields.some(
-      (field) =>
-        field !== "Token.openClassKind",
-    ) ||
+    !SYNTAX_GENERATION_IDS.includes(generation.id) ||
     !(
       generation.schemaHashMode === "raw-sdl-sha256" ||
       generation.schemaHashMode === "descriptions-stripped-sdl-sha256"
@@ -111,27 +115,6 @@ function axisKey(tokenKind, lexicalClass, openClassKind) {
     lexicalClass ?? null,
     openClassKind ?? null,
   ]);
-}
-
-function enumValues(syntax, name, optional = false) {
-  const match = new RegExp(
-    `(?:^|\\n)enum ${name} \\{([\\s\\S]*?)\\n\\}`,
-    "u",
-  ).exec(syntax);
-  if (!match) {
-    if (optional) return null;
-    fail("E_PROFILE", `profile SDL is missing enum ${name}`);
-  }
-  const values = new Set(
-    match[1]
-      .split(/\r?\n/u)
-      .map((line) => line.trim())
-      .filter((line) => /^[_A-Z][_0-9A-Z]*$/u.test(line)),
-  );
-  if (values.size === 0) {
-    fail("E_PROFILE", `profile SDL enum ${name} has no values`);
-  }
-  return values;
 }
 
 export function validateRoleCoverage(rolesByAxes, projectionsByRole) {
@@ -180,8 +163,11 @@ export function loadProfile(directory) {
     COMPATIBILITY,
   );
   const openClassKindField =
-    generation.wireShape.optionalFields.includes(
-      "Token.openClassKind",
+    syntaxGenerationHasField(
+      generation.id,
+      "Token",
+      "openClassKind",
+      rejectProfile,
     );
   const schemaHash = profileSchemaHash(syntax, generation.schemaHashMode);
   const vocabularyHash = sha256(vocabularyText);
@@ -269,18 +255,6 @@ export function loadProfile(directory) {
     schemaHash,
     vocabularyHash,
     openClassKindField,
-    enums: Object.freeze({
-      tokenKind: enumValues(syntax, "TokenKind"),
-      lexicalClass: enumValues(syntax, "LexicalClass"),
-      functionKind: enumValues(syntax, "FunctionKind"),
-      openClassKind: enumValues(
-        syntax,
-        "OpenClassKind",
-        !openClassKindField,
-      ),
-      outlineKind: enumValues(syntax, "OutlineKind"),
-      diagnosticSeverity: enumValues(syntax, "DiagnosticSeverity"),
-    }),
     rolesByAxes,
     projectionsByRole,
     rolesByAnsi,

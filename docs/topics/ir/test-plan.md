@@ -82,6 +82,10 @@ Requirements:
 - **IR-23** The `colorful-ir` crate root remains a stable public facade while
   hashing, projection, path addressing, and received-document validation live
   in separate implementation modules.
+- **IR-24** Every registered `colorful.syntax/v1` generation derives portable
+  JavaScript structural admission from its compatibility-selected GraphQL SDL,
+  while non-SDL semantic invariants retain named validators, stable categories,
+  and deterministic precedence.
 
 ## Cases
 
@@ -583,8 +587,9 @@ Requirements:
 - **IR-19d** — *Requirement:* IR-19. *Behavior:* the proof runs from a clean
   copy containing only the independent package, with no repository
   `Cargo.toml`, `target/`, built Colorful binary, or ambient `node_modules`.
-  *Oracle:* `npm ci` and the package's full test/report command pass in the
-  temporary copy, and a guard fails if any path escapes that package root.
+  *Oracle:* repository-level burden measurement passes before isolation;
+  `npm ci` and the package's test command then pass in the temporary copy, and a
+  guard fails if any path escapes that package root.
   *Evidence type:* clean-environment shell witness in CI and release
   preparation. *Evidence:* `scripts/check-independent-consumer.sh`, CI
   `ir-witness`, and `scripts/release-prep.sh`. *Tracking:*
@@ -706,6 +711,61 @@ Requirements:
   `scripts/check-generated-ir-drift.sh`. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
   *Status:* implemented.
+- **IR-24a** — *Requirement:* IR-24. *Behavior:* one deterministic generator
+  parses every compatibility-manifest SDL and emits dependency-free JavaScript
+  admission for exact fields, presence, primitives, lists, nullability, enums,
+  and signed GraphQL `Int` values. *Oracle:* schema mutations change generated
+  behavior, malformed/unsupported SDL fails closed, and both committed runtime
+  copies are byte-identical to fresh output. *Evidence type:* generator unit
+  tests plus regeneration drift gate. *Evidence:*
+  `scripts/generate-syntax-admission.test.mjs` and
+  `scripts/check-generated-syntax-admission-drift.sh`;
+  `generation is deterministic and both runtime copies are identical`,
+  `every compatibility generation admits its exact released shape`,
+  `generated admission rejects missing, unknown, primitive, and enum drift`,
+  `prototype properties cannot impersonate syntax generation ids`,
+  `a schema edit changes generated required-field and enum behavior`,
+  `generation fails closed on unsupported or dangling SDL`, and
+  `schema references compile once instead of once per admitted value`.
+  *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* implemented.
+- **IR-24b** — *Requirement:* IR-24. *Behavior:* the Graft reference consumer
+  admits the workspace generation through generated structural validation, and
+  the independent package admits the `v0.2.1` and `v0.3.0` fixtures through
+  their matched generated generations. Existing semantic mutation cases retain
+  their stable error categories and no consumer emits partial trusted output.
+  *Oracle:* the shared Rust/JavaScript mutation matrix, process-negative
+  witness, Graft suite, and clean-room independent suite remain green; generated
+  missing/unknown/type/enum mutations fail under the existing shape category.
+  *Evidence type:* cross-language and process-level consumer tests. *Evidence:*
+  `consumers/graft-projection.test.mjs`,
+  `consumers/independent-ir-report/test/consumer.test.mjs`,
+  `scripts/ir-witness.sh`, and `scripts/check-independent-consumer.sh`;
+  `IR admission enforces enum members from the selected schema`,
+  `IR admission enforces the signed GraphQL Int range`,
+  `IR admission rejects unknown fields in every document record`, and the
+  shared 25-case validator-parity matrix. *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* implemented.
+- **IR-24c** — *Requirement:* IR-24. *Behavior:* the independent-consumer ledger
+  separates remaining authored adapter lines from generated admission lines and
+  does not claim that moving code into generation alone lowers total
+  maintenance cost. *Oracle:* measurement regeneration refuses a missing or
+  byte-divergent committed generated copy, and documentation parity rejects a
+  stale line count or decision input. *Evidence type:* deterministic
+  burden ledger. *Evidence:*
+  `consumers/independent-ir-report/src/measure.mjs` and
+  `consumers/independent-ir-report/evidence/integration-effort.json`;
+  `scripts/check-portable-admission-docs.mjs` and
+  `scripts/check-portable-admission-docs.test.mjs`;
+  `the effort ledger counts protocol-specific acquisition code` and
+  `portable admission measurement rejects missing or drifted copies`; the ledger
+  records 249 authored IR adapter lines separately from 862 unique / 1,724
+  committed generated admission lines.
+  *Tracking:*
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  *Status:* implemented.
 
 ## Known gaps / risks
 
@@ -717,13 +777,12 @@ Requirements:
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
-  correctness rule. Its 424-line IR adapter is larger than the 305-line
-  LSP protocol and decoding adapter, so reducing duplicate consumer admission
-  code is deliberate follow-up debt in
-  [#222](https://github.com/flyingrobots/colorful-language/issues/222); the
-  measured correctness advantage does not justify expanding the wire contract.
+  correctness rule. Its remaining 249 authored IR adapter lines are smaller
+  than the alternatives' combined 354 lines. The 862 unique generated
+  admission lines are reported separately rather than misrepresented as an
+  authored reduction; the measured correctness advantage does not justify
+  expanding the wire contract.
 - The `v0.2.1`, `v0.3.0`, and current workspace generations share one
   `colorful.syntax/v1` family. IR-22 makes their full identity tuples and
-  directional compatibility explicit; generated portable admission remains
-  follow-up work in
-  [#222](https://github.com/flyingrobots/colorful-language/issues/222).
+  directional compatibility explicit; IR-24 derives each generation's
+  structural admission from its selected SDL.

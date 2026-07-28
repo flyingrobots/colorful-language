@@ -23,6 +23,7 @@ import {
 } from "../src/index.mjs";
 import { renderReport } from "../src/common.mjs";
 import { buildLspFixture } from "../src/lsp-fixture.mjs";
+import { measurePortableAdmission } from "../src/measure-portable-admission.mjs";
 import { validateRoleCoverage } from "../src/profile.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -68,9 +69,48 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
+  assert.deepEqual(ledger.portableAdmission.sources, [
+    "consumers/generated/syntax-admission-v1.mjs",
+    "consumers/independent-ir-report/generated/syntax-admission-v1.mjs",
+  ]);
+  assert.equal(ledger.portableAdmission.generatedCopies, 2);
+  assert.equal(ledger.portableAdmission.reviewedGeneratorCases, 13);
+  assert.equal(ledger.portableAdmission.countedAsAuthoredAdapter, false);
+  assert.equal(
+    ledger.portableAdmission.committedGeneratedNonblankLines,
+    ledger.portableAdmission.uniqueGeneratedNonblankLines * 2,
+  );
   assert.equal(ledger.adapters.ir.reviewedAssertions, 45);
   assert.equal(ledger.result.smallestAdapter, false);
   assert.equal(ledger.result.decision, "retain-stable-v1");
+});
+
+test("portable admission measurement rejects missing or drifted copies", () => {
+  const canonical = Buffer.from("export const generated = true;\n", "utf8");
+  assert.deepEqual(
+    measurePortableAdmission(canonical, [
+      { path: "first.mjs", bytes: canonical },
+      { path: "second.mjs", bytes: Buffer.from(canonical) },
+    ]),
+    {
+      uniqueGeneratedNonblankLines: 1,
+      committedGeneratedNonblankLines: 2,
+    },
+  );
+  assert.throws(
+    () =>
+      measurePortableAdmission(canonical, [
+        { path: "missing.mjs", bytes: undefined },
+      ]),
+    /generated admission copy missing\.mjs is missing/u,
+  );
+  assert.throws(
+    () =>
+      measurePortableAdmission(canonical, [
+        { path: "drifted.mjs", bytes: Buffer.from("drift\n", "utf8") },
+      ]),
+    /generated admission copy drifted\.mjs is not byte-identical/u,
+  );
 });
 
 test("the retention rule honors both documented decision branches", async () => {

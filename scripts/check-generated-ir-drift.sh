@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Fails on drift between the committed Wesley-generated IR outputs
-# (crates/colorful-ir/{src/generated,ts}/) and what an immutable, pinned
-# Wesley checkout actually produces from contracts/colorful/*.graphql today.
+# Fails on drift between committed IR boundary outputs and their owning
+# generators: Wesley for Rust/TypeScript DTOs and the repository generator for
+# portable JavaScript admission.
 # Generates into a temporary directory and diffs -- never overwrites the
 # checkout -- so CI, not an ambient developer COLORFUL_WESLEY_ROOT checkout,
 # is the oracle for "is the committed output correct."
@@ -66,3 +66,4 @@ if [[ "$drift" -ne 0 ]]; then
 fi
 
 echo "check-generated-ir-drift passed: committed generated output matches pinned Wesley $REQUIRED_WESLEY_VERSION."
+bash "$root/scripts/check-generated-syntax-admission-drift.sh"

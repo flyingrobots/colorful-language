@@ -8,13 +8,20 @@ import { ANSI_ERROR_CODES } from "./ansi.mjs";
 import { decideIrContract } from "./decision.mjs";
 import { IR_ERROR_CODES } from "./ir.mjs";
 import { LSP_ERROR_CODES } from "./lsp.mjs";
+import { measurePortableAdmission } from "./measure-portable-admission.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const REPOSITORY_ROOT = path.resolve(ROOT, "../..");
 const OUTPUT = path.join(ROOT, "evidence", "integration-effort.json");
 const packageJson = JSON.parse(
   readFileSync(path.join(ROOT, "package.json"), "utf8"),
 );
 const runtimeDependencyCount = Object.keys(packageJson.dependencies ?? {}).length;
+const portableAdmissionSource = "generated/syntax-admission-v1.mjs";
+const portableAdmissionSources = [
+  "consumers/generated/syntax-admission-v1.mjs",
+  "consumers/independent-ir-report/generated/syntax-admission-v1.mjs",
+];
 
 function sourceLines(relativePath) {
   return readFileSync(path.join(ROOT, relativePath), "utf8").split("\n");
@@ -137,6 +144,44 @@ const adapters = Object.fromEntries(
     measureAdapter(definition),
   ]),
 );
+const canonicalPortableAdmission = readFileSync(
+  path.join(ROOT, portableAdmissionSource),
+);
+const portableAdmissionCopies = portableAdmissionSources.map(
+  (relativePath) => {
+    try {
+      return {
+        path: relativePath,
+        bytes: readFileSync(path.join(REPOSITORY_ROOT, relativePath)),
+      };
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        throw new Error(
+          `generated admission copy ${relativePath} is missing`,
+          { cause: error },
+        );
+      }
+      throw error;
+    }
+  },
+);
+const portableAdmissionMeasurement = measurePortableAdmission(
+  canonicalPortableAdmission,
+  portableAdmissionCopies,
+);
+const portableAdmission = {
+  authority:
+    "contracts/colorful/syntax-compatibility.v1.json and its generation SDLs",
+  sources: portableAdmissionSources,
+  generatedCopies: portableAdmissionSources.length,
+  ...portableAdmissionMeasurement,
+  copyIdentityEvidence: "scripts/check-generated-syntax-admission-drift.sh",
+  reviewedGeneratorCases: 13,
+  countedAsAuthoredAdapter: false,
+  rationale:
+    "generated structural admission is reported separately; only authored " +
+    "adapter lines participate in the retain-or-simplify decision",
+};
 const correctnessAdvantage =
   adapters.ir.verifiedIdentities.length === 5 &&
   adapters.ansi.verifiedIdentities.length < 5 &&
@@ -162,11 +207,15 @@ const report = {
     migration: "nonblank lines between effort:migration markers",
     dependencies: "runtime package dependencies required by an adapter",
     processSteps: "distinct external or decoding stages for the same job",
+    generated:
+      "generated structural admission is reported as unique logical lines " +
+      "and total committed copy lines, never as authored adapter code",
   },
   sharedNonblankLines:
     nonblankSourceLines("src/common.mjs") +
     nonblankSourceLines("src/profile.mjs"),
   adapters,
+  portableAdmission,
   decisionRule: {
     retain:
       "retain stable v1 when IR uniquely verifies all five wire identities " +

@@ -8,16 +8,17 @@
     "assertions": "reviewed black-box outcomes in test/consumer.test.mjs",
     "migration": "nonblank lines between effort:migration markers",
     "dependencies": "runtime package dependencies required by an adapter",
-    "processSteps": "distinct external or decoding stages for the same job"
+    "processSteps": "distinct external or decoding stages for the same job",
+    "generated": "generated structural admission is reported as unique logical lines and total committed copy lines, never as authored adapter code"
   },
-  "sharedNonblankLines": 389,
+  "sharedNonblankLines": 363,
   "adapters": {
     "ir": {
       "sources": [
         "src/ir.mjs"
       ],
-      "nonblankAdapterLines": 424,
-      "migrationSpecificLines": 48,
+      "nonblankAdapterLines": 249,
+      "migrationSpecificLines": 25,
       "stableErrorCategories": [
         "E_JSON",
         "E_SHAPE",
@@ -102,6 +103,20 @@
         "render spans"
       ]
     }
+  },
+  "portableAdmission": {
+    "authority": "contracts/colorful/syntax-compatibility.v1.json and its generation SDLs",
+    "sources": [
+      "consumers/generated/syntax-admission-v1.mjs",
+      "consumers/independent-ir-report/generated/syntax-admission-v1.mjs"
+    ],
+    "generatedCopies": 2,
+    "uniqueGeneratedNonblankLines": 862,
+    "committedGeneratedNonblankLines": 1724,
+    "copyIdentityEvidence": "scripts/check-generated-syntax-admission-drift.sh",
+    "reviewedGeneratorCases": 13,
+    "countedAsAuthoredAdapter": false,
+    "rationale": "generated structural admission is reported separately; only authored adapter lines participate in the retain-or-simplify decision"
   },
   "decisionRule": {
     "retain": "retain stable v1 when IR uniquely verifies all five wire identities and its adapter is no larger than twice the combined ANSI and LSP adapters, or when IR is the smallest adapter",
