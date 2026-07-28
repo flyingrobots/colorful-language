@@ -55,15 +55,25 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
 /// Strip GraphQL description strings from `sdl` before hashing, so a
 /// documentation-only description edit does not change `schemaHash` --
 /// only real shape (types, fields, enum values) does. This crate's
-/// contracts only ever use a single-line `"..."` description immediately
-/// preceding a type or enum, never a `"""..."""` block string or a
-/// field-level description, so a per-line check (a line that, once
-/// trimmed, is nothing but a quoted string) is sufficient; extend this if
-/// that ever changes.
+/// contracts may use either single-line `"..."` descriptions or multiline
+/// `"""..."""` block descriptions.
 fn strip_graphql_descriptions(sdl: &str) -> String {
+    let mut in_block_description = false;
     sdl.lines()
         .filter(|line| {
             let trimmed = line.trim();
+            if in_block_description {
+                if trimmed.contains("\"\"\"") {
+                    in_block_description = false;
+                }
+                return false;
+            }
+            if let Some(after_delimiter) = trimmed.strip_prefix("\"\"\"") {
+                if !after_delimiter.contains("\"\"\"") {
+                    in_block_description = true;
+                }
+                return false;
+            }
             !(trimmed.len() >= 2 && trimmed.starts_with('"') && trimmed.ends_with('"'))
         })
         .collect::<Vec<_>>()
@@ -1553,11 +1563,26 @@ mod tests {
 
     #[test]
     fn strip_graphql_descriptions_removes_only_description_lines() {
-        let sdl = "\"A description.\"\ntype Foo {\n  bar: Int!\n}\n";
+        let sdl = concat!(
+            "\"A description.\"\n",
+            "type Foo {\n",
+            "  bar: Int!\n",
+            "}\n",
+            "\"\"\"\n",
+            "A block description.\n",
+            "With a second line.\n",
+            "\"\"\"\n",
+            "enum Choice {\n",
+            "  YES\n",
+            "}\n",
+        );
         let stripped = strip_graphql_descriptions(sdl);
         assert!(!stripped.contains("A description."));
+        assert!(!stripped.contains("A block description."));
+        assert!(!stripped.contains("With a second line."));
         assert!(stripped.contains("type Foo"));
         assert!(stripped.contains("bar: Int!"));
+        assert!(stripped.contains("enum Choice"));
     }
 
     #[test]

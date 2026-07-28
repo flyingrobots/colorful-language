@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   classifySyntaxTransition,
+  descriptionlessGraphqlLines,
   SchemaPolicyError,
 } from "./ir-schema-policy.mjs";
 
@@ -144,23 +145,8 @@ function sha256(value) {
 }
 
 export function stripGraphqlDescriptions(sdl) {
-  const lines = sdl.split(/\r\n|\n/u);
-  if (
-    lines.length > 0 &&
-    lines[lines.length - 1] === "" &&
-    /(?:\r\n|\n)$/u.test(sdl)
-  ) {
-    lines.pop();
-  }
-  return lines
-    .filter((line) => {
-      const trimmed = line.trim();
-      return !(
-        trimmed.length >= 2 &&
-        trimmed.startsWith('"') &&
-        trimmed.endsWith('"')
-      );
-    })
+  return descriptionlessGraphqlLines(sdl)
+    .filter((line) => line !== null)
     .join("\n");
 }
 

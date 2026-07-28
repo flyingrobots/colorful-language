@@ -13,6 +13,7 @@ import {
   classifySchemaTransition,
   IrCompatibilityError,
   selectCompatibilityGeneration,
+  stripGraphqlDescriptions,
   validateCompatibilityCopies,
   validateCompatibilityManifest,
   workspaceIdentity,
@@ -172,6 +173,30 @@ enum OpenKind {
       baseline.replace("Description one.", "Edited description."),
     ),
     [],
+  );
+  const blockDescribed = baseline.replace(
+    '"Description one."',
+    '"""\nDescription one.\nSecond line.\n"""',
+  );
+  assert.deepEqual(
+    classifySchemaTransition(
+      blockDescribed,
+      blockDescribed.replace("Second line.", "Edited second line."),
+    ),
+    [],
+  );
+  assert.deepEqual(
+    classifySchemaTransition(
+      baseline,
+      baseline.replace("  role: Role", "  role: Role # remains nullable"),
+    ),
+    [],
+  );
+  assert.equal(
+    stripGraphqlDescriptions(blockDescribed),
+    stripGraphqlDescriptions(
+      blockDescribed.replace("Second line.", "Edited second line."),
+    ),
   );
 
   const incompatible = [

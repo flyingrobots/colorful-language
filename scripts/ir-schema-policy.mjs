@@ -17,6 +17,48 @@ function fail(message) {
   throw new SchemaPolicyError(message);
 }
 
+export function descriptionlessGraphqlLines(sdl) {
+  if (typeof sdl !== "string") {
+    fail("schema source must be a string");
+  }
+  const lines = sdl.split(/\r\n|\n/u);
+  if (
+    lines.length > 0 &&
+    lines[lines.length - 1] === "" &&
+    /(?:\r\n|\n)$/u.test(sdl)
+  ) {
+    lines.pop();
+  }
+  let inBlockDescription = false;
+  const shapeLines = lines.map((rawLine) => {
+    const trimmed = rawLine.trim();
+    if (inBlockDescription) {
+      if (trimmed.includes('"""')) {
+        inBlockDescription = false;
+      }
+      return null;
+    }
+    if (trimmed.startsWith('"""')) {
+      if (!trimmed.slice(3).includes('"""')) {
+        inBlockDescription = true;
+      }
+      return null;
+    }
+    if (
+      trimmed.length >= 2 &&
+      trimmed.startsWith('"') &&
+      trimmed.endsWith('"')
+    ) {
+      return null;
+    }
+    return rawLine;
+  });
+  if (inBlockDescription) {
+    fail("schema contains an unterminated GraphQL block description");
+  }
+  return shapeLines;
+}
+
 function typeReference(source, context) {
   const compact = source.replaceAll(/\s/gu, "");
   if (!NAMED_TYPE.test(compact) && !LIST_TYPE.test(compact)) {
@@ -30,19 +72,14 @@ function namedType(reference) {
 }
 
 function parseSchema(sdl) {
-  if (typeof sdl !== "string") {
-    fail("schema source must be a string");
-  }
   const definitions = new Map();
   let active = null;
-  for (const [lineIndex, rawLine] of sdl.split(/\r\n|\n/u).entries()) {
-    const line = rawLine.trim();
+  for (const [lineIndex, rawLine] of
+    descriptionlessGraphqlLines(sdl).entries()) {
+    if (rawLine === null) continue;
+    const line = rawLine.replace(/\s+#.*$/u, "").trim();
     const context = `line ${lineIndex + 1}`;
-    if (
-      line.length === 0 ||
-      line.startsWith("#") ||
-      (line.startsWith('"') && line.endsWith('"'))
-    ) {
+    if (line.length === 0 || line.startsWith("#")) {
       continue;
     }
     if (active === null) {
