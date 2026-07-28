@@ -19,6 +19,13 @@ function sourceLines(relativePath) {
   return readFileSync(path.join(ROOT, relativePath), "utf8").split("\n");
 }
 
+function totalSourceLines(relativePaths, measure) {
+  return relativePaths.reduce(
+    (total, relativePath) => total + measure(relativePath),
+    0,
+  );
+}
+
 function nonblankSourceLines(relativePath) {
   return sourceLines(relativePath).filter((line) => {
     const trimmed = line.trim();
@@ -47,7 +54,7 @@ function migrationSpecificLines(relativePath) {
 
 const definitions = {
   ir: {
-    source: "src/ir.mjs",
+    sources: ["src/ir.mjs"],
     stableErrorCategories: IR_ERROR_CODES,
     verifiedIdentities: [
       "contractVersion",
@@ -68,7 +75,7 @@ const definitions = {
     processSteps: ["emit IR", "decode and admit", "render spans"],
   },
   ansi: {
-    source: "src/ansi.mjs",
+    sources: ["src/ansi.mjs"],
     stableErrorCategories: ANSI_ERROR_CODES,
     verifiedIdentities: ["exact source text"],
     fixtures: ["fixtures/releases/v0.3.0/ansi.txt"],
@@ -81,7 +88,7 @@ const definitions = {
     ],
   },
   lsp: {
-    source: "src/lsp.mjs",
+    sources: ["src/lsp.mjs", "scripts/capture-lsp.mjs"],
     stableErrorCategories: LSP_ERROR_CODES,
     verifiedIdentities: ["serverVersion", "semanticTokenLegend"],
     fixtures: ["fixtures/releases/v0.3.0/lsp.json"],
@@ -101,9 +108,15 @@ function measureAdapter(definition) {
     readFileSync(path.join(ROOT, fixture));
   }
   return {
-    source: definition.source,
-    nonblankAdapterLines: nonblankSourceLines(definition.source),
-    migrationSpecificLines: migrationSpecificLines(definition.source),
+    sources: definition.sources,
+    nonblankAdapterLines: totalSourceLines(
+      definition.sources,
+      nonblankSourceLines,
+    ),
+    migrationSpecificLines: totalSourceLines(
+      definition.sources,
+      migrationSpecificLines,
+    ),
     stableErrorCategories: [...definition.stableErrorCategories],
     verifiedIdentities: definition.verifiedIdentities,
     fixtureCount: definition.fixtures.length,
@@ -134,8 +147,9 @@ const report = {
   targetArtifact: "deterministic Markdown highlight-span report",
   method: {
     lines:
-      "nonblank non-comment lines in each adapter; shared profile/rendering " +
-      "code is reported separately",
+      "nonblank non-comment lines in each adapter, including " +
+      "protocol-specific acquisition; shared profile/rendering code is " +
+      "reported separately",
     errors: "exported stable adapter error-code inventory",
     fixtures: "checked-in inputs read by this measurement",
     assertions: "reviewed black-box outcomes in test/consumer.test.mjs",

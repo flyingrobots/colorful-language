@@ -235,10 +235,11 @@ v0.3 must handle the `Option` result.
   `node_modules`.
 
   The generated burden ledger measures 239 nonblank IR adapter lines, including
-  43 migration-specific lines, versus 49 for ANSI and 109 for LSP. Because the
-  IR alone authenticates all five wire identities and remains below the
-  reviewed two-times cost bound, the decision is to retain stable v1. This
-  preserves current bytes; it does not authorize new contract fields.
+  43 migration-specific lines, versus 49 for ANSI and 226 for LSP including its
+  JSON-RPC acquisition client. Because the IR alone authenticates all five wire
+  identities and is smaller than the alternatives' combined 275 lines, the
+  decision is to retain stable v1. This preserves current bytes; it does not
+  authorize new contract fields.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust
@@ -259,9 +260,10 @@ v0.3 must handle the `Option` result.
   input/output ids, a real `compilerBuildHash`, and artifact hashes are not
   implemented. Expanding that surface is evidence-gated rather than assumed.
 - Independent admission is deliberately strict but not yet compact: the
-  measured IR adapter is larger than the ANSI and LSP adapters combined.
-  Further contract expansion remains frozen while that implementation cost is
-  reduced without weakening validation or changing v1 bytes.
+  measured IR adapter is nearly as large as the complete LSP protocol and
+  decoding adapter. Further contract expansion remains frozen while that
+  implementation cost is reduced without weakening validation or changing v1
+  bytes.
 - `v0.2.1` and `v0.3.0` carry distinct schema/vocabulary identity tuples under
   the same `colorful.syntax/v1` label. The independent consumer admits those
   exact tuples, but [#221](https://github.com/flyingrobots/colorful-language/issues/221)

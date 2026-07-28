@@ -28,6 +28,18 @@ test("the independent package enforces its pinned Node engine", () => {
   assert.deepEqual(packageJson.engines, { node: ">=22.23.1 <23" });
 });
 
+test("the effort ledger counts protocol-specific acquisition code", () => {
+  const ledger = JSON.parse(
+    readFileSync(path.join(ROOT, "evidence", "integration-effort.json"), "utf8"),
+  );
+  assert.deepEqual(ledger.adapters.ir.sources, ["src/ir.mjs"]);
+  assert.deepEqual(ledger.adapters.ansi.sources, ["src/ansi.mjs"]);
+  assert.deepEqual(ledger.adapters.lsp.sources, [
+    "src/lsp.mjs",
+    "scripts/capture-lsp.mjs",
+  ]);
+});
+
 function releaseFixture(release) {
   const directory = path.join(FIXTURES, "releases", release);
   return {

@@ -2,7 +2,7 @@
   "reportVersion": "colorful.integration-effort/v1",
   "targetArtifact": "deterministic Markdown highlight-span report",
   "method": {
-    "lines": "nonblank non-comment lines in each adapter; shared profile/rendering code is reported separately",
+    "lines": "nonblank non-comment lines in each adapter, including protocol-specific acquisition; shared profile/rendering code is reported separately",
     "errors": "exported stable adapter error-code inventory",
     "fixtures": "checked-in inputs read by this measurement",
     "assertions": "reviewed black-box outcomes in test/consumer.test.mjs",
@@ -13,7 +13,9 @@
   "sharedNonblankLines": 229,
   "adapters": {
     "ir": {
-      "source": "src/ir.mjs",
+      "sources": [
+        "src/ir.mjs"
+      ],
       "nonblankAdapterLines": 239,
       "migrationSpecificLines": 43,
       "stableErrorCategories": [
@@ -44,7 +46,9 @@
       ]
     },
     "ansi": {
-      "source": "src/ansi.mjs",
+      "sources": [
+        "src/ansi.mjs"
+      ],
       "nonblankAdapterLines": 49,
       "migrationSpecificLines": 0,
       "stableErrorCategories": [
@@ -67,8 +71,11 @@
       ]
     },
     "lsp": {
-      "source": "src/lsp.mjs",
-      "nonblankAdapterLines": 109,
+      "sources": [
+        "src/lsp.mjs",
+        "scripts/capture-lsp.mjs"
+      ],
+      "nonblankAdapterLines": 226,
       "migrationSpecificLines": 0,
       "stableErrorCategories": [
         "E_LSP_JSON",
@@ -98,7 +105,7 @@
     "simplify": "otherwise preserve compatibility but simplify implementation or optional surface before adding contract fields"
   },
   "result": {
-    "alternativesNonblankAdapterLines": 158,
+    "alternativesNonblankAdapterLines": 275,
     "correctnessAdvantage": true,
     "withinReviewedCostBound": true,
     "decision": "retain-stable-v1"

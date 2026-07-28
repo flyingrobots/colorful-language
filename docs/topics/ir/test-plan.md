@@ -612,8 +612,8 @@ Requirements:
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
-  correctness rule. Its 239-line IR adapter remains larger than the 158-line
-  ANSI and LSP adapters combined, so reducing duplicate consumer admission
+  correctness rule. Its 239-line IR adapter is nearly as large as the 226-line
+  LSP protocol and decoding adapter, so reducing duplicate consumer admission
   code is deliberate follow-up debt; the measured correctness advantage does
   not justify expanding the wire contract.
 - The `v0.2.1` and `v0.3.0` schema generations share one
