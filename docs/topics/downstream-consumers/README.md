@@ -81,14 +81,15 @@ something an older consumer needs to specially handle).
 The repository also includes
 [`consumers/independent-ir-report`](../../../consumers/independent-ir-report/README.md),
 a zero-dependency Node proof that does not link the Rust workspace. It validates
-the contract, schema, vocabulary, source length, source digest, required shape,
-token axes, and UTF-8 ranges before rendering a deterministic Markdown
-role-span report. Checked-in artifacts from the real `v0.2.1` and `v0.3.0`
+the contract, schema, vocabulary, raw-source UTF-8 validity, source length,
+source digest, required shape, token axes, and UTF-8 ranges before rendering a
+deterministic Markdown role-span report. Checked-in artifacts from the real
+`v0.2.1` and `v0.3.0`
 release tags prove migration across two released `colorful.syntax/v1`
 generations, and the v0.3.0 IR, ANSI, and LSP adapters produce byte-identical
 reports for the same Unicode source.
 
-The executable burden ledger measures 349 nonblank IR adapter lines versus 49
+The executable burden ledger measures 357 nonblank IR adapter lines versus 49
 for ANSI and 264 for LSP including its JSON-RPC acquisition client. The IR is
 larger than the alternatives' combined 313 lines, but it alone verifies all
 five wire identities and stays below the reviewed limit of twice their combined

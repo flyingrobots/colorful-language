@@ -37,7 +37,7 @@ if (
 
 try {
   const report = consumeIr({
-    source: readFileSync(options.get("--source"), "utf8"),
+    source: readFileSync(options.get("--source")),
     artifactJson: readFileSync(options.get("--input"), "utf8"),
     profiles: loadProfiles(options.get("--profiles")),
   });

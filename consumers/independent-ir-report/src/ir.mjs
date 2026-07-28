@@ -1,4 +1,5 @@
 import {
+  decodeUtf8,
   fail,
   isRecord,
   normalizeSpans,
@@ -15,6 +16,7 @@ export const IR_ERROR_CODES = Object.freeze([
   "E_CONTRACT_VERSION",
   "E_SCHEMA_HASH",
   "E_VOCABULARY_HASH",
+  "E_SOURCE_UTF8",
   "E_SOURCE_LENGTH",
   "E_SOURCE_HASH",
   "E_RANGE",
@@ -271,6 +273,12 @@ export function consumeIr({ source, artifactJson, profiles }) {
   const document = parseJson(artifactJson);
   if (!isRecord(document)) fail("E_SHAPE", "artifact must be an object");
   const profile = selectProfile(document, profiles);
+  const sourceBytes =
+    typeof source === "string" ? Buffer.from(source, "utf8") : source;
+  if (!(sourceBytes instanceof Uint8Array)) {
+    fail("E_SOURCE_UTF8", "source must be UTF-8 bytes or text");
+  }
+  const sourceText = decodeUtf8(sourceBytes);
   const sourceRecord = requireRecord(document.source, "source");
   requireString(sourceRecord, "unitId", "source");
   const declaredLength = requireInteger(
@@ -278,7 +286,7 @@ export function consumeIr({ source, artifactJson, profiles }) {
     "utf8ByteLength",
     "source",
   );
-  const actualLength = Buffer.byteLength(source, "utf8");
+  const actualLength = sourceBytes.byteLength;
   if (declaredLength !== actualLength) {
     fail(
       "E_SOURCE_LENGTH",
@@ -286,12 +294,12 @@ export function consumeIr({ source, artifactJson, profiles }) {
     );
   }
   const declaredHash = requireString(sourceRecord, "contentHash", "source");
-  const actualHash = sha256(source);
+  const actualHash = sha256(sourceBytes);
   if (declaredHash !== actualHash) {
     fail("E_SOURCE_HASH", "source content hash does not match the artifact");
   }
 
-  const boundaries = utf8Boundaries(source);
+  const boundaries = utf8Boundaries(sourceText);
   const seenIds = new Set();
   let previousEnd = 0;
   const spans = [];
@@ -369,5 +377,5 @@ export function consumeIr({ source, artifactJson, profiles }) {
   }
 
   validateAuxiliaryShape(document, actualLength, boundaries, profile);
-  return renderReport(normalizeSpans(source, spans, "E_RANGE"));
+  return renderReport(normalizeSpans(sourceText, spans, "E_RANGE"));
 }

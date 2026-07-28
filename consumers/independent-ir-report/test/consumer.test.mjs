@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdtempSync,
   readFileSync,
@@ -46,7 +47,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
-  assert.equal(ledger.adapters.ir.reviewedAssertions, 31);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 32);
 });
 
 function releaseFixture(release) {
@@ -395,4 +396,55 @@ test("the IR process refuses every stable category without output", (context) =>
       code,
     );
   }
+});
+
+test("the IR process rejects invalid UTF-8 before source identity trust", (context) => {
+  const directory = mkdtempSync(path.join(tmpdir(), "colorful-ir-utf8-"));
+  context.after(() => rmSync(directory, { recursive: true }));
+  const source = path.join(directory, "source.txt");
+  const input = path.join(directory, "artifact.json");
+  const replacementText = "\uFFFD";
+  const { ir } = releaseFixture("v0.3.0");
+  const baseline = JSON.parse(ir);
+  const artifact = {
+    ...baseline,
+    source: {
+      ...baseline.source,
+      utf8ByteLength: Buffer.byteLength(replacementText, "utf8"),
+      contentHash: `sha256:${createHash("sha256")
+        .update(replacementText, "utf8")
+        .digest("hex")}`,
+    },
+    tokens: [],
+    structure: [],
+    diagnostics: [],
+    derivation: [
+      {
+        ...baseline.derivation[0],
+        sourceRanges: [],
+      },
+    ],
+  };
+  writeFileSync(source, Buffer.from([0x80]));
+  writeFileSync(input, `${JSON.stringify(artifact)}\n`);
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(ROOT, "bin", "report.mjs"),
+      "--format",
+      "ir",
+      "--source",
+      source,
+      "--input",
+      input,
+      "--profiles",
+      path.join(FIXTURES, "releases"),
+    ],
+    { encoding: "utf8" },
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /^independent-ir-report: E_SOURCE_UTF8:/);
 });

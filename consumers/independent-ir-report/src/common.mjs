@@ -24,8 +24,18 @@ export function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function sha256(text) {
-  return `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
+export function decodeUtf8(bytes) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    fail("E_SOURCE_UTF8", "source is not valid UTF-8");
+  }
+}
+
+export function sha256(value) {
+  const hash = createHash("sha256");
+  hash.update(value, typeof value === "string" ? "utf8" : undefined);
+  return `sha256:${hash.digest("hex")}`;
 }
 
 export function utf8Boundaries(source) {
