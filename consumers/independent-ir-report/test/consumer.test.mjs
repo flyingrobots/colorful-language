@@ -65,7 +65,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
-  assert.equal(ledger.adapters.ir.reviewedAssertions, 43);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 45);
   assert.equal(ledger.result.smallestAdapter, false);
   assert.equal(ledger.result.decision, "retain-stable-v1");
 });
@@ -609,4 +609,47 @@ test("the IR process rejects invalid UTF-8 before source identity trust", (conte
   assert.equal(result.status, 1);
   assert.equal(result.stdout, "");
   assert.match(result.stderr, /^independent-ir-report: E_SOURCE_UTF8:/);
+});
+
+test("the IR process reports file-system failures as stable refusals", () => {
+  const validSource = path.join(FIXTURES, "source.txt");
+  const validInput = path.join(
+    FIXTURES,
+    "releases",
+    "v0.3.0",
+    "ir.json",
+  );
+  const cases = [
+    {
+      source: path.join(FIXTURES, "missing-source.txt"),
+      input: validInput,
+      profiles: path.join(FIXTURES, "releases"),
+    },
+    {
+      source: validSource,
+      input: validInput,
+      profiles: path.join(FIXTURES, "missing-profiles"),
+    },
+  ];
+  for (const options of cases) {
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(ROOT, "bin", "report.mjs"),
+        "--format",
+        "ir",
+        "--source",
+        options.source,
+        "--input",
+        options.input,
+        "--profiles",
+        options.profiles,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /^independent-ir-report: E_IO:/);
+    assert.doesNotMatch(result.stderr, /\n\s+at /u);
+  }
 });

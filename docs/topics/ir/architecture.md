@@ -152,7 +152,7 @@ The generated integration-effort ledger records:
 
 | Adapter | Nonblank adapter lines | Migration lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: | ---: |
-| IR | 424 | 48 | 10 | 5 |
+| IR | 424 | 48 | 11 | 5 |
 | ANSI | 49 | 0 | 4 | 1 |
 | LSP | 264 | 0 | 5 | 2 |
 

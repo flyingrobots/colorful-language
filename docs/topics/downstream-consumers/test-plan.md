@@ -193,6 +193,7 @@ workspace.
   `scripts/version-compat-matrix.sh`, and
   `scripts/check-independent-consumer.sh`; `consumer.test.mjs`
   `the IR process rejects invalid UTF-8 before source identity trust`,
+  `the IR process reports file-system failures as stable refusals`,
   `IR admission rejects unknown fields in every document record`,
   `release profiles project every classified visual role`,
   `IR admission enforces derivation trace identity`,

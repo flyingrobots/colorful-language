@@ -16,6 +16,14 @@ function usage() {
   process.exit(2);
 }
 
+function isFileSystemError(error) {
+  return (
+    error instanceof Error &&
+    typeof error.code === "string" &&
+    typeof error.syscall === "string"
+  );
+}
+
 const options = new Map();
 for (let index = 2; index < process.argv.length; index += 2) {
   const name = process.argv[index];
@@ -46,6 +54,12 @@ try {
   if (error instanceof ConsumerError) {
     process.stderr.write(
       `independent-ir-report: ${error.code}: ${error.message}\n`,
+    );
+    process.exit(1);
+  }
+  if (isFileSystemError(error)) {
+    process.stderr.write(
+      `independent-ir-report: E_IO: ${error.message.replaceAll("\n", " ")}\n`,
     );
     process.exit(1);
   }

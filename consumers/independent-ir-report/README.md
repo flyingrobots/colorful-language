@@ -12,6 +12,8 @@ stdout empty. Shape admission is exact: unknown fields are rejected at the
 document root and in every nested contract record.
 Profile admission also requires every classified visual role to have an
 explicit rendering projection.
+Unavailable or unreadable source, artifact, and profile paths fail as `E_IO`
+without an uncaught Node stack trace.
 Report cells escape Markdown table delimiters even when the source text or a
 role name contains `|`.
 Derivation admission mirrors the producer validator: at least one step,
@@ -51,7 +53,7 @@ reviewed comparison:
 
 | Adapter | Nonblank adapter lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: |
-| IR | 424 | 10 | 5 |
+| IR | 424 | 11 | 5 |
 | ANSI | 49 | 4 | 1 |
 | LSP | 264 | 5 | 2 |
 

@@ -56,7 +56,7 @@ function migrationSpecificLines(relativePath) {
 const definitions = {
   ir: {
     sources: ["src/ir.mjs"],
-    stableErrorCategories: IR_ERROR_CODES,
+    stableErrorCategories: [...IR_ERROR_CODES, "E_IO"],
     verifiedIdentities: [
       "contractVersion",
       "schemaHash",
@@ -72,7 +72,7 @@ const definitions = {
       "fixtures/releases/v0.2.1/vocabulary.v1.json",
       "fixtures/releases/v0.3.0/vocabulary.v1.json",
     ],
-    reviewedAssertions: 43,
+    reviewedAssertions: 45,
     processSteps: ["emit IR", "decode and admit", "render spans"],
   },
   ansi: {

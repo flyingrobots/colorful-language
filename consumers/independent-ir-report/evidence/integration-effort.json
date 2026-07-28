@@ -28,7 +28,8 @@
         "E_SOURCE_LENGTH",
         "E_SOURCE_HASH",
         "E_RANGE",
-        "E_AXES"
+        "E_AXES",
+        "E_IO"
       ],
       "verifiedIdentities": [
         "contractVersion",
@@ -38,7 +39,7 @@
         "sourceHash"
       ],
       "fixtureCount": 6,
-      "reviewedAssertions": 43,
+      "reviewedAssertions": 45,
       "runtimeDependencies": 0,
       "processSteps": [
         "emit IR",
