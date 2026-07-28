@@ -172,6 +172,7 @@ deterministically and use valid data without reverse-engineering Colorful.
   ([#148](https://github.com/flyingrobots/colorful-language/issues/148)); and
   preserve the historical v0.2.0 packet with its dated Graft correction
   ([#149](https://github.com/flyingrobots/colorful-language/issues/149)).
+  <!-- roadmap-primary: delivered #81 -->
 - **Open validator confidence:** use real mutation evidence where it pays for
   itself
   [#82](https://github.com/flyingrobots/colorful-language/issues/82), and fuzz

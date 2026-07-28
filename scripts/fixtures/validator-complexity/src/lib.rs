@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 #![warn(clippy::cognitive_complexity)]
 
 /// Sits exactly at the repository's cognitive-complexity budget.
