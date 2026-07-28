@@ -2693,6 +2693,46 @@ mod integration {
     }
 
     #[test]
+    fn rejects_a_cycle_reached_through_an_unvisited_child() {
+        let mut doc = analyze(VALID_SOURCE);
+        let paragraph_index = doc
+            .structure
+            .iter()
+            .position(|node| node.kind == syntax_v1::OutlineKind::Paragraph)
+            .expect("fixture needs a paragraph");
+        let paragraph_id = doc.structure[paragraph_index].node_id;
+        let paragraph_range = doc.structure[paragraph_index].byte_range.clone();
+        let child_id = doc.structure[paragraph_index]
+            .child_node_ids
+            .first()
+            .copied()
+            .expect("fixture paragraph needs a child");
+        let child_index = doc
+            .structure
+            .iter()
+            .position(|node| node.node_id == child_id)
+            .expect("paragraph child must exist");
+
+        // Equalize the ranges so the back edge isolates acyclicity from the
+        // independent parent-containment invariant.
+        doc.structure[child_index].byte_range = paragraph_range;
+        doc.structure[child_index].child_node_ids = vec![paragraph_id];
+
+        let errors = validate_document(&doc, Some(VALID_SOURCE.as_bytes())).unwrap_err();
+        assert_eq!(errors.0.len(), 1, "{errors:?}");
+        assert!(matches!(
+            &errors.0[0],
+            ValidationError::StructureCycle {
+                path,
+                parent,
+                child,
+            } if path.to_string() == format!("structure[{child_index}].childNodeIds[0]")
+                && *parent == child_id
+                && *child == paragraph_id
+        ));
+    }
+
+    #[test]
     fn rejects_a_child_with_multiple_parents() {
         let mut doc = analyze(VALID_SOURCE);
         let paragraph_indices: Vec<_> = doc

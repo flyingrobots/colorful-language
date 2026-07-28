@@ -107,6 +107,10 @@ jobs:
         with:
           node-version-file: ".node-version"
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf # v2.85.2
+        with:
+          tool: cargo-mutants@27.0.0
+          fallback: none
       - run: node scripts/check-release-publish-order.mjs
       - run: bash scripts/check-rust-source-policy.test.sh
       - run: bash scripts/check-rust-source-policy.sh
@@ -115,6 +119,7 @@ jobs:
       - run: bash scripts/check-validator-complexity.sh
       - run: cargo test --all --locked
       - run: cargo test --doc --workspace --locked
+      - run: bash scripts/check-ir-validator-mutants.sh
 
   coverage:
     name: Rust coverage

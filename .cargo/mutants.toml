@@ -1,0 +1,14 @@
+# Keep the bounded validator corpus focused on the production entrypoint,
+# its seven stages, and their range, graph, and token-axis helpers.
+examine_globs = ["crates/colorful-ir/src/lib.rs"]
+examine_re = ["(validate_|check_range|token_axes_violation)"]
+test_package = ["colorful-ir"]
+additional_cargo_args = ["--locked"]
+additional_cargo_test_args = ["--lib"]
+
+# Multiplying a zero-based DFS edge index by zero cannot terminate or expose a
+# finite semantic outcome. The bounded corpus tests every other generated
+# mutation in this validator surface.
+exclude_re = [
+  'replace \+= with \*= in validate_structure_cycles',
+]

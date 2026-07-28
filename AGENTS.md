@@ -179,8 +179,8 @@ Run the local gate and confirm it is clean. Once crates exist:
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --all --locked
 ```
 
 For documentation changes:

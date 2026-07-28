@@ -1,0 +1,80 @@
+replace validate_document -> Result<(), ValidationErrors> with Ok(())
+replace validate_contract_identity -> Vec<ValidationError> with vec![]
+replace validate_contract_identity -> Vec<ValidationError> with vec![Default::default()]
+replace != with == in validate_contract_identity
+replace != with == in validate_contract_identity
+replace != with == in validate_contract_identity
+replace validate_source_identity -> (SourceContext<'a>, Vec<ValidationError>) with (Default::default(), vec![])
+replace validate_source_identity -> (SourceContext<'a>, Vec<ValidationError>) with (Default::default(), vec![Default::default()])
+replace < with == in validate_source_identity
+replace < with > in validate_source_identity
+replace < with <= in validate_source_identity
+replace != with == in validate_source_identity
+replace != with == in validate_source_identity
+replace check_range -> Vec<ValidationError> with vec![]
+replace check_range -> Vec<ValidationError> with vec![Default::default()]
+replace < with == in check_range
+replace < with > in check_range
+replace < with <= in check_range
+replace > with == in check_range
+replace > with < in check_range
+replace > with >= in check_range
+replace > with == in check_range
+replace > with < in check_range
+replace > with >= in check_range
+replace && with || in check_range
+replace <= with > in check_range
+delete ! in check_range
+replace validate_token_ranges -> Vec<ValidationError> with vec![]
+replace validate_token_ranges -> Vec<ValidationError> with vec![Default::default()]
+replace == with != in validate_token_ranges
+replace < with == in validate_token_ranges
+replace < with > in validate_token_ranges
+replace < with <= in validate_token_ranges
+replace < with == in validate_token_ranges
+replace < with > in validate_token_ranges
+replace < with <= in validate_token_ranges
+delete ! in validate_token_ranges
+replace validate_token_axes -> Vec<ValidationError> with vec![]
+replace validate_token_axes -> Vec<ValidationError> with vec![Default::default()]
+replace validate_structure_graph -> Vec<ValidationError> with vec![]
+replace validate_structure_graph -> Vec<ValidationError> with vec![Default::default()]
+replace validate_structure_nodes -> std::collections::HashMap<i32, usize> with HashMap::new()
+replace validate_structure_nodes -> std::collections::HashMap<i32, usize> with HashMap::from_iter([(0, 0)])
+replace validate_structure_nodes -> std::collections::HashMap<i32, usize> with HashMap::from_iter([(0, 1)])
+replace validate_structure_nodes -> std::collections::HashMap<i32, usize> with HashMap::from_iter([(1, 0)])
+replace validate_structure_nodes -> std::collections::HashMap<i32, usize> with HashMap::from_iter([(1, 1)])
+replace validate_structure_nodes -> std::collections::HashMap<i32, usize> with HashMap::from_iter([(-1, 0)])
+replace validate_structure_nodes -> std::collections::HashMap<i32, usize> with HashMap::from_iter([(-1, 1)])
+delete ! in validate_structure_nodes
+replace != with == in validate_structure_nodes
+replace validate_structure_edges with ()
+replace != with == in validate_structure_edges
+replace || with && in validate_structure_edges
+replace < with == in validate_structure_edges
+replace < with > in validate_structure_edges
+replace < with <= in validate_structure_edges
+replace > with == in validate_structure_edges
+replace > with < in validate_structure_edges
+replace > with >= in validate_structure_edges
+replace validate_structure_cycles with ()
+replace != with == in validate_structure_cycles
+replace == with != in validate_structure_cycles
+replace += with -= in validate_structure_cycles
+delete match arm 0 in validate_structure_cycles
+delete match arm 1 in validate_structure_cycles
+replace validate_diagnostics -> Vec<ValidationError> with vec![]
+replace validate_diagnostics -> Vec<ValidationError> with vec![Default::default()]
+replace validate_derivation -> Vec<ValidationError> with vec![]
+replace validate_derivation -> Vec<ValidationError> with vec![Default::default()]
+replace || with && in validate_derivation
+delete ! in validate_derivation
+replace token_axes_violation -> Option<&'static str> with None
+replace token_axes_violation -> Option<&'static str> with Some("")
+replace token_axes_violation -> Option<&'static str> with Some("xyzzy")
+replace word_token_axes_violation -> Option<&'static str> with None
+replace word_token_axes_violation -> Option<&'static str> with Some("")
+replace word_token_axes_violation -> Option<&'static str> with Some("xyzzy")
+replace non_word_token_axes_violation -> Option<&'static str> with None
+replace non_word_token_axes_violation -> Option<&'static str> with Some("")
+replace non_word_token_axes_violation -> Option<&'static str> with Some("xyzzy")

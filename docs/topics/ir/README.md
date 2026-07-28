@@ -201,6 +201,19 @@ v0.3 must handle the `Option` result.
   policy and its documentation in the same change. Test-only mutation matrices
   are outside this production budget so comprehensive case tables need not be
   split merely to satisfy a source-shape metric.
+- **Bounded validator mutation gate.** `cargo-mutants` 27.0.0 generates one
+  reviewed 80-mutation corpus over `validate_document`, its seven validation
+  stages, and their range, graph, and token-axis helpers. The checked-in
+  `.cargo/mutants.toml` excludes one non-terminating zero-index multiplication
+  with explicit rationale; `scripts/fixtures/ir-validator-mutants.txt` freezes
+  the remaining normalized inventory without coupling it to source line
+  numbers. `scripts/check-ir-validator-mutants.sh` runs that corpus serially and
+  fails on inventory drift, a survivor, or a timeout. The current corpus kills
+  63 mutations and rejects 17 generated edits at compile time. Its first
+  survivor produced
+  `integration::rejects_a_cycle_reached_through_an_unvisited_child`, which
+  proves iterative DFS descends before detecting a back edge. The blocking Rust
+  CI job and local release preparation run the same check.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust

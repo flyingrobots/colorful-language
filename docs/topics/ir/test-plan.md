@@ -498,9 +498,13 @@ Requirements:
   seed useful survivors into normal regression tests. *Oracle:* the pinned
   mutation corpus reports no unexplained surviving in-scope mutation.
   *Evidence type:* `cargo-mutants` configuration, bounded CI corpus, and seeded
-  tests. *Tracking:*
+  tests. *Evidence:* `.cargo/mutants.toml`,
+  `scripts/fixtures/ir-validator-mutants.txt`,
+  `scripts/check-ir-validator-mutants.sh`,
+  `integration::rejects_a_cycle_reached_through_an_unvisited_child`, the
+  blocking Rust CI job, and `scripts/release-prep.sh`. *Tracking:*
   [#82](https://github.com/flyingrobots/colorful-language/issues/82).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-19a** — *Requirement:* IR-19. *Behavior:* an independent non-Rust
   consumer validates source/schema/vocabulary/version, renders a useful
   artifact, rejects an incompatible version, and migrates across two contract
@@ -536,7 +540,6 @@ Requirements:
   and `ruleId` now name a real, validated producer identity (IR-8), but
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
-- Bounded deterministic mutation evidence remains open in IR-18c.
 - The independent two-version consumer and
   [product-evidence decision](architecture.md#product-evidence-gate) remains
   open in IR-19a.

@@ -32,6 +32,7 @@ cargo clippy --locked --all-targets --all-features -- -D warnings
 bash scripts/check-validator-complexity.sh
 cargo test --all --locked
 cargo test --doc --workspace --locked
+bash scripts/check-ir-validator-mutants.sh
 bash scripts/package-witness.sh
 bash scripts/smoke-test-install-local.sh
 cargo build --release --locked

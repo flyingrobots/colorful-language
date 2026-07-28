@@ -22,6 +22,7 @@ const POLICY_CODES = new Set([
   "E_COMPAT_RUST_OVERRIDE",
   "E_COMPAT_RUST_SELECTOR",
   "E_COMPAT_TRIGGER",
+  "E_CONTRIBUTOR_RUST_GATE",
   "E_JSON",
   "E_MSRV_UNVERIFIED",
   "E_NODE_ENGINE",
@@ -38,6 +39,7 @@ const POLICY_CODES = new Set([
   "E_TYPESCRIPT_PIN",
 ]);
 const REQUIRED_PATHS = [
+  "AGENTS.md",
   "rust-toolchain.toml",
   ".node-version",
   "package.json",
@@ -540,6 +542,21 @@ function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
       );
     }
   }
+  for (const file of ["AGENTS.md", "CONTRIBUTING.md"]) {
+    const contributorGuide = files.get(file);
+    for (const command of [
+      "cargo fmt --all -- --check",
+      "cargo clippy --locked --all-targets --all-features -- -D warnings",
+      "cargo test --all --locked",
+    ]) {
+      if (!contributorGuide.includes(command)) {
+        reject(
+          "E_CONTRIBUTOR_RUST_GATE",
+          `${file}: standard Rust gate must include: ${command}`,
+        );
+      }
+    }
+  }
 }
 
 function validatePolicy(files) {
@@ -700,6 +717,13 @@ function fixtureFiles() {
 - run: bash scripts/ir-witness.sh
 `;
   return new Map([
+    [
+      "AGENTS.md",
+      `cargo fmt --all -- --check
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --all --locked
+`,
+    ],
     [".github/workflows/ci.yml", primaryWorkflow],
     [
       ".github/workflows/compatibility.yml",
@@ -748,6 +772,9 @@ jobs:
       "CONTRIBUTING.md",
       `Evidence Rust ${rustVersion}; Node ${nodeVersion}; TypeScript ${typeScriptVersion}.
 The evidence compiler is not the minimum supported Rust version (MSRV).
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --all --locked
 `,
     ],
     [
@@ -1239,6 +1266,34 @@ The evidence compiler is not the minimum supported Rust version (MSRV).
         );
       },
       "E_POLICY_DOC",
+    ],
+    [
+      "unlocked contributor Rust gate",
+      (files) =>
+        files.set(
+          "CONTRIBUTING.md",
+          files
+            .get("CONTRIBUTING.md")
+            .replace(
+              "cargo test --all --locked",
+              "cargo test --all",
+            ),
+        ),
+      "E_CONTRIBUTOR_RUST_GATE",
+    ],
+    [
+      "unlocked agent Rust gate",
+      (files) =>
+        files.set(
+          "AGENTS.md",
+          files
+            .get("AGENTS.md")
+            .replace(
+              "cargo clippy --locked --all-targets --all-features -- -D warnings",
+              "cargo clippy --all-targets --all-features -- -D warnings",
+            ),
+        ),
+      "E_CONTRIBUTOR_RUST_GATE",
     ],
   ];
   const testedCodes = new Set(cases.map(([, , expectedCode]) => expectedCode));

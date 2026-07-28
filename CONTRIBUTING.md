@@ -346,12 +346,20 @@ omitted attribute without that reviewed record fails CI.
 
 ## Local Checks
 
+Install the exact mutation-testing tool used by the blocking IR validator
+evidence:
+
+```bash
+cargo install --locked cargo-mutants --version 27.0.0
+```
+
 Once crates exist, run the standard Rust gate before opening a pull request:
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --all --locked
+bash scripts/check-ir-validator-mutants.sh
 ```
 
 For documentation changes:

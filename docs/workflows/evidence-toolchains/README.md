@@ -13,11 +13,17 @@ These checked-in versions are the reproducibility oracle:
 | Rust | 1.97.1 | `rust-toolchain.toml` |
 | Node | 22.23.1 | `.node-version` |
 | TypeScript | 5.9.3 | root and VS Code `package.json` / `package-lock.json` pairs |
+| cargo-mutants | 27.0.0 | `scripts/check-ir-validator-mutants.sh` |
 
 `rust-toolchain.toml` selects the compiler, `rustfmt`, `clippy`, and the
 `wasm32-wasip1` target for a rustup-enabled source checkout. Primary CI and the
 release workflow select Rust 1.97.1 explicitly. Their Node steps read
 `.node-version`.
+
+The blocking IR validator mutation gate installs the exact `cargo-mutants`
+release named above and rejects any other version before generating or running
+the reviewed corpus. Its scope and exclusions live in `.cargo/mutants.toml`;
+the IR topic owns the behavioral evidence.
 
 Run the root install before the IR witness so it uses the repository compiler
 rather than an ambient `tsc`:
