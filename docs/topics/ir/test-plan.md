@@ -631,12 +631,14 @@ Requirements:
   duplicate/unknown tuples, missing predecessors, cycles, unsupported policy
   decisions, empty evidence, and a current workspace identity absent from the
   manifest. *Evidence type:* declarative manifest plus deterministic Node
-  mutation tests. *Planned evidence:*
+  mutation tests. *Evidence:*
   `contracts/colorful/syntax-compatibility.v1.json`,
   `scripts/check-ir-compatibility.mjs`, and
-  `scripts/check-ir-compatibility.test.mjs`. *Tracking:*
+  `scripts/check-ir-compatibility.test.mjs`
+  `manifest validation rejects each compatibility-authority mutation` /
+  `the canonical manifest records every supported wire generation`. *Tracking:*
   [#221](https://github.com/flyingrobots/colorful-language/issues/221).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-22b** — *Requirement:* IR-22. *Behavior:* independent runtime admission
   selects generation behavior from the full identity tuple rather than a
   release tag or a hand-authored `openClassKindField` switch, admits both
@@ -644,12 +646,15 @@ Requirements:
   only a profile release label does not change the selected generation;
   changing any identity member rejects the profile before artifact admission.
   *Evidence type:* standalone consumer regressions and clean-copy witness.
-  *Planned evidence:*
+  *Evidence:*
   `consumers/independent-ir-report/compatibility.v1.json`,
   `consumers/independent-ir-report/src/profile.mjs`, and
-  `consumers/independent-ir-report/test/consumer.test.mjs`. *Tracking:*
+  `consumers/independent-ir-report/test/consumer.test.mjs`
+  `wire behavior derives from identity, never a release label or switch` /
+  `a self-consistent but unknown identity tuple is rejected`;
+  `scripts/check-independent-consumer.sh`. *Tracking:*
   [#221](https://github.com/flyingrobots/colorful-language/issues/221).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-22c** — *Requirement:* IR-22. *Behavior:* regeneration, CI, package
   witness, and release preparation require the canonical compatibility
   manifest, packaged Rust copy, and independent-consumer copy to agree
@@ -657,11 +662,13 @@ Requirements:
   decision plus existing migration-evidence paths. *Oracle:* a stale copy or an
   unregistered schema/vocabulary identity fails before package or release
   publication. *Evidence type:* drift gate integrated into CI and release
-  scripts. *Planned evidence:* `scripts/check-ir-compatibility.mjs`,
-  `scripts/package-witness.sh`, `scripts/release-prep.sh`, and
+  scripts. *Evidence:* `scripts/check-ir-compatibility.mjs`,
+  `scripts/gen-ir.sh`, `scripts/package-witness.sh`,
+  `scripts/release-prep.sh`, `colorful-ir`
+  `tests::packaged_compatibility_manifest_names_the_current_identity`, and
   `.github/workflows/ci.yml`. *Tracking:*
   [#221](https://github.com/flyingrobots/colorful-language/issues/221).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps / risks
 
@@ -678,9 +685,8 @@ Requirements:
   code is deliberate follow-up debt in
   [#222](https://github.com/flyingrobots/colorful-language/issues/222); the
   measured correctness advantage does not justify expanding the wire contract.
-- The `v0.2.1` and `v0.3.0` schema generations share one
-  `colorful.syntax/v1` label. IR-19 uses their full identity tuples to fail
-  closed, but the compatibility meaning of an intra-v1 schema change remains
-  implicit and release-tag-oriented;
-  [#221](https://github.com/flyingrobots/colorful-language/issues/221) owns the
-  generated/declarative compatibility authority.
+- The `v0.2.1`, `v0.3.0`, and current workspace generations share one
+  `colorful.syntax/v1` family. IR-22 makes their full identity tuples and
+  directional compatibility explicit; generated portable admission remains
+  follow-up work in
+  [#222](https://github.com/flyingrobots/colorful-language/issues/222).

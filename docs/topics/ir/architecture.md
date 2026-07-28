@@ -136,6 +136,24 @@ language server, and the graft consumer all derive their colors from it rather
 than each keeping a private copy. A consumer can compare its manifest hash to an
 artifact's `vocabularyHash` to detect vocabulary drift.
 
+### Wire generations are selected by identity
+
+`colorful.syntax/v1` is a contract family, not sufficient evidence of one wire
+shape. The canonical
+`contracts/colorful/syntax-compatibility.v1.json` manifest selects a supported
+generation by the complete contract-version, schema-hash, and vocabulary-hash
+tuple. It records the raw-SDL `v0.2.1` and `v0.3.0` identities plus the current
+description-normalized schema identity, their predecessor edges, the exact hash
+mode, their wire-shape adapter, and executable migration evidence.
+
+Description-only SDL changes preserve a generation. A nullable field,
+vocabulary identity, or schema-hash algorithm change requires a new explicit
+generation inside v1. A required field, field removal or reinterpretation, or
+enum change requires a new contract version. This makes compatibility a
+reviewed decision instead of an inference from a release tag. The standalone
+consumer treats release names as provenance and derives `openClassKind`
+presence only from the matched manifest generation.
+
 ## Product-evidence gate
 
 The independent-consumer proof
@@ -156,9 +174,10 @@ The generated integration-effort ledger records:
 | ANSI | 49 | 0 | 4 | 1 |
 | LSP | 305 | 0 | 5 | 2 |
 
-Shared profile loading and report rendering account for another 282 nonblank
-lines and are excluded from every adapter equally. The exact source, fixtures,
-assertions, dependencies, and process steps behind these counts live in
+Shared profile loading, compatibility selection, and report rendering account
+for another 383 nonblank lines and are excluded from every adapter equally. The
+exact source, fixtures, assertions, dependencies, and process steps behind
+these counts live in
 `consumers/independent-ir-report/evidence/integration-effort.json`.
 The LSP count includes its JSON-RPC acquisition client; IR and ANSI use the
 same CLI process boundary, so neither count includes that shared invocation.
@@ -175,11 +194,11 @@ The result is **retain stable v1**: 424 IR lines are 1.20 times the alternatives
 combined 354 lines, within the two-times bound, while only the IR authenticates
 all five wire identities. The result is not permission to expand the contract.
 Consumer admission remains the cost to reduce; replayable provenance, CNL, and
-Edict fields remain frozen until new evidence justifies them. The fact that two
-schema generations share the `colorful.syntax/v1` label is tracked explicitly
-in [#221](https://github.com/flyingrobots/colorful-language/issues/221), which
-must replace release-tag branching with an authored compatibility policy.
-[#222](https://github.com/flyingrobots/colorful-language/issues/222) then owns
+Edict fields remain frozen until new evidence justifies them. The three
+supported `colorful.syntax/v1` identities now have the authored compatibility
+policy delivered by
+[#221](https://github.com/flyingrobots/colorful-language/issues/221).
+[#222](https://github.com/flyingrobots/colorful-language/issues/222) owns
 replacing duplicated hand-written structural admission with generated portable
 validation while preserving explicitly semantic checks. A worthwhile
 simplification that cannot preserve v1 bytes still requires a deliberately

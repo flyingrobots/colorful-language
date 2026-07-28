@@ -438,7 +438,7 @@ test("IR admission rejects unknown fields in every document record", () => {
   }
 });
 
-test("release profiles project every classified visual role", (context) => {
+test("a registered release profile must project every classified visual role", (context) => {
   const directory = mkdtempSync(path.join(tmpdir(), "colorful-profile-"));
   context.after(() => rmSync(directory, { recursive: true }));
   const fixtureDirectory = path.join(FIXTURES, "releases", "v0.3.0");
@@ -463,6 +463,17 @@ test("release profiles project every classified visual role", (context) => {
   metadata.vocabularyHash = `sha256:${createHash("sha256")
     .update(vocabularyText, "utf8")
     .digest("hex")}`;
+  const compatibility = JSON.parse(
+    readFileSync(path.join(ROOT, "compatibility.v1.json"), "utf8"),
+  );
+  compatibility.generations.push({
+    ...structuredClone(compatibility.generations[1]),
+    id: "test-missing-projection",
+    identity: {
+      ...compatibility.generations[1].identity,
+      vocabularyHash: metadata.vocabularyHash,
+    },
+  });
   writeFileSync(path.join(directory, "syntax.v1.graphql"), syntax);
   writeFileSync(path.join(directory, "vocabulary.v1.json"), vocabularyText);
   writeFileSync(
@@ -470,7 +481,13 @@ test("release profiles project every classified visual role", (context) => {
     `${JSON.stringify(metadata, null, 2)}\n`,
   );
 
-  expectConsumerError("E_PROFILE", () => loadProfile(directory));
+  assert.throws(
+    () => loadProfile(directory, compatibility),
+    (error) =>
+      error instanceof ConsumerError &&
+      error.code === "E_PROFILE" &&
+      /has no projection/u.test(error.message),
+  );
 });
 
 test("IR admission enforces derivation trace identity", () => {

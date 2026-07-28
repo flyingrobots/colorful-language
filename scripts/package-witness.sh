@@ -8,6 +8,7 @@ cd "$root"
 
 echo "Checking package-local contract copies..."
 for contract in \
+  syntax-compatibility.v1.json \
   syntax.v1.graphql \
   vocabulary.v1.graphql \
   vocabulary.v1.json \

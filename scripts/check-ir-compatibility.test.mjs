@@ -7,16 +7,21 @@ import { fileURLToPath } from "node:url";
 import {
   IrCompatibilityError,
   selectCompatibilityGeneration,
+  validateCompatibilityCopies,
   validateCompatibilityManifest,
   workspaceIdentity,
 } from "./check-ir-compatibility.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const EVIDENCE = "docs/topics/ir/test-plan.md";
-const HASH_A = `sha256:${"a".repeat(64)}`;
-const HASH_B = `sha256:${"b".repeat(64)}`;
-const HASH_C = `sha256:${"c".repeat(64)}`;
-const HASH_D = `sha256:${"d".repeat(64)}`;
+const HASH_A =
+  "sha256:acf86cf0f9d31f5b02df8e546e8b968a6c8e78d94761a5bbe81750f219101a58";
+const HASH_B =
+  "sha256:c3709c173d632bd18385b991f63dc3ac09cdba582bc05550f0376db24117bbe1";
+const HASH_C =
+  "sha256:f090e7ee24920d7b8c55e8da34e0f70d863414d8ba0c20b52a5913c3d0884c20";
+const HASH_D =
+  "sha256:c4f1a36f839ba6e56955c60c8fa45f8d6692685fd137eed2a084416f52531461";
 const HASH_E = `sha256:${"e".repeat(64)}`;
 
 function identity(schemaHash, vocabularyHash) {
@@ -47,6 +52,12 @@ function manifestFixture() {
         id: "v0.2.1",
         identity: identity(HASH_A, HASH_B),
         schemaHashMode: "raw-sdl-sha256",
+        artifacts: {
+          schema:
+            "consumers/independent-ir-report/fixtures/releases/v0.2.1/syntax.v1.graphql",
+          vocabulary:
+            "consumers/independent-ir-report/fixtures/releases/v0.2.1/vocabulary.v1.json",
+        },
         predecessor: null,
         compatibilityDecision: "origin",
         changeKinds: [],
@@ -57,6 +68,12 @@ function manifestFixture() {
         id: "v0.3.0",
         identity: identity(HASH_C, HASH_D),
         schemaHashMode: "raw-sdl-sha256",
+        artifacts: {
+          schema:
+            "consumers/independent-ir-report/fixtures/releases/v0.3.0/syntax.v1.graphql",
+          vocabulary:
+            "consumers/independent-ir-report/fixtures/releases/v0.3.0/vocabulary.v1.json",
+        },
         predecessor: "v0.2.1",
         compatibilityDecision: "adapter-required",
         changeKinds: ["nullable-field", "vocabulary"],
@@ -131,6 +148,18 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
       },
     ],
     [
+      "E_DECISION",
+      (manifest) => {
+        manifest.generations[1].changeKinds = ["required-field"];
+      },
+    ],
+    [
+      "E_ARTIFACT_HASH",
+      (manifest) => {
+        manifest.generations[0].identity.schemaHash = HASH_E;
+      },
+    ],
+    [
       "E_EVIDENCE",
       (manifest) => {
         manifest.generations[1].migrationEvidence = [];
@@ -154,6 +183,17 @@ test("manifest validation rejects each compatibility-authority mutation", () => 
       }),
     );
   }
+});
+
+test("compatibility copies fail closed on byte drift", () => {
+  validateCompatibilityCopies("canonical\n", [
+    { label: "matching copy", text: "canonical\n" },
+  ]);
+  expectCompatibilityError("E_COPY_DRIFT", () =>
+    validateCompatibilityCopies("canonical\n", [
+      { label: "stale copy", text: "stale\n" },
+    ]),
+  );
 });
 
 test("the canonical manifest records every supported wire generation", () => {

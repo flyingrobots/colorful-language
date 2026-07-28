@@ -1,0 +1,96 @@
+{
+  "version": "colorful.syntax-compatibility/v1",
+  "contractFamily": "colorful.syntax/v1",
+  "currentIdentity": {
+    "contractVersion": "colorful.syntax/v1",
+    "schemaHash": "sha256:4404256591b2fbaaf4a7a3fb2ae03fd4256afb4557b605a19c0b966ee287e122",
+    "vocabularyHash": "sha256:c4f1a36f839ba6e56955c60c8fa45f8d6692685fd137eed2a084416f52531461"
+  },
+  "policy": {
+    "description-only": "preserve-generation",
+    "nullable-field": "explicit-generation",
+    "vocabulary": "explicit-generation",
+    "schema-hash-algorithm": "explicit-generation",
+    "required-field": "new-contract-version",
+    "field-removal": "new-contract-version",
+    "field-reinterpretation": "new-contract-version",
+    "enum-change": "new-contract-version"
+  },
+  "generations": [
+    {
+      "id": "v0.2.1",
+      "identity": {
+        "contractVersion": "colorful.syntax/v1",
+        "schemaHash": "sha256:acf86cf0f9d31f5b02df8e546e8b968a6c8e78d94761a5bbe81750f219101a58",
+        "vocabularyHash": "sha256:c3709c173d632bd18385b991f63dc3ac09cdba582bc05550f0376db24117bbe1"
+      },
+      "schemaHashMode": "raw-sdl-sha256",
+      "artifacts": {
+        "schema": "consumers/independent-ir-report/fixtures/releases/v0.2.1/syntax.v1.graphql",
+        "vocabulary": "consumers/independent-ir-report/fixtures/releases/v0.2.1/vocabulary.v1.json"
+      },
+      "predecessor": null,
+      "compatibilityDecision": "origin",
+      "changeKinds": [],
+      "wireShape": {
+        "openClassKind": "absent"
+      },
+      "migrationEvidence": [
+        "consumers/independent-ir-report/fixtures/expected/v0.2.1.md",
+        "consumers/independent-ir-report/test/consumer.test.mjs"
+      ]
+    },
+    {
+      "id": "v0.3.0",
+      "identity": {
+        "contractVersion": "colorful.syntax/v1",
+        "schemaHash": "sha256:f090e7ee24920d7b8c55e8da34e0f70d863414d8ba0c20b52a5913c3d0884c20",
+        "vocabularyHash": "sha256:c4f1a36f839ba6e56955c60c8fa45f8d6692685fd137eed2a084416f52531461"
+      },
+      "schemaHashMode": "raw-sdl-sha256",
+      "artifacts": {
+        "schema": "consumers/independent-ir-report/fixtures/releases/v0.3.0/syntax.v1.graphql",
+        "vocabulary": "consumers/independent-ir-report/fixtures/releases/v0.3.0/vocabulary.v1.json"
+      },
+      "predecessor": "v0.2.1",
+      "compatibilityDecision": "adapter-required",
+      "changeKinds": [
+        "nullable-field",
+        "vocabulary"
+      ],
+      "wireShape": {
+        "openClassKind": "nullable"
+      },
+      "migrationEvidence": [
+        "consumers/independent-ir-report/fixtures/expected/v0.3.0.md",
+        "consumers/independent-ir-report/test/consumer.test.mjs"
+      ]
+    },
+    {
+      "id": "workspace-v0.4.0",
+      "identity": {
+        "contractVersion": "colorful.syntax/v1",
+        "schemaHash": "sha256:4404256591b2fbaaf4a7a3fb2ae03fd4256afb4557b605a19c0b966ee287e122",
+        "vocabularyHash": "sha256:c4f1a36f839ba6e56955c60c8fa45f8d6692685fd137eed2a084416f52531461"
+      },
+      "schemaHashMode": "descriptions-stripped-sdl-sha256",
+      "artifacts": {
+        "schema": "contracts/colorful/syntax.v1.graphql",
+        "vocabulary": "contracts/colorful/vocabulary.v1.json"
+      },
+      "predecessor": "v0.3.0",
+      "compatibilityDecision": "identity-only",
+      "changeKinds": [
+        "schema-hash-algorithm"
+      ],
+      "wireShape": {
+        "openClassKind": "nullable"
+      },
+      "migrationEvidence": [
+        "crates/colorful-ir/src/lib.rs",
+        "consumers/graft-projection.test.mjs",
+        "scripts/ir-witness.sh"
+      ]
+    }
+  ]
+}

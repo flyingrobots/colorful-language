@@ -31,8 +31,12 @@ wesley emit rust       --schema "$contracts/vocabulary.v1.graphql" --out "$gen_r
 wesley emit typescript --schema "$contracts/syntax.v1.graphql"     --out "$gen_ts/syntax_v1.ts"
 wesley emit typescript --schema "$contracts/vocabulary.v1.graphql" --out "$gen_ts/vocabulary_v1.ts"
 cp "$contracts/syntax.v1.graphql" "$crate_contracts/syntax.v1.graphql"
+cp "$contracts/syntax-compatibility.v1.json" \
+  "$crate_contracts/syntax-compatibility.v1.json"
 cp "$contracts/vocabulary.v1.graphql" "$crate_contracts/vocabulary.v1.graphql"
 cp "$contracts/vocabulary.v1.json" "$crate_contracts/vocabulary.v1.json"
+cp "$contracts/syntax-compatibility.v1.json" \
+  "$root/consumers/independent-ir-report/compatibility.v1.json"
 node "$root/scripts/generate-vocabulary-validators.mjs"
 
-echo "Regenerated DTOs and vocabulary validators (wesley $required_wesley_version). Review the diff and commit."
+echo "Regenerated DTOs, compatibility copies, and vocabulary validators (wesley $required_wesley_version). Review the diff and commit."

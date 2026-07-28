@@ -282,6 +282,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: ".node-version"
+      - run: node --test scripts/check-ir-compatibility.test.mjs
+      - run: node scripts/check-ir-compatibility.mjs
       - run: bash scripts/check-generated-ir-drift.sh
       - run: bash scripts/check-generated-vocabulary-drift.sh
 

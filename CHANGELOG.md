@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Explicit `colorful.syntax/v1` wire-generation authority.** One canonical
+  manifest now records the exact `v0.2.1`, `v0.3.0`, and current workspace
+  contract/schema/vocabulary tuples, schema-hash modes, predecessors,
+  compatibility decisions, wire-shape adapters, and migration evidence. A
+  deterministic mutation gate rejects duplicate identities, missing
+  predecessors, cycles, unsupported decisions, missing evidence, stale copies,
+  and an unregistered current identity. The standalone consumer no longer
+  trusts a release label or profile-local `openClassKindField` switch; it
+  derives wire behavior from the full tuple and rejects self-consistent unknown
+  generations. Regeneration, CI, Cargo packaging, and release preparation
+  enforce byte-identical Rust-package and independent-consumer copies.
 - **Independent `colorful.syntax/v1` consumer evidence.** A zero-dependency Node
   package now validates contract, schema, vocabulary, source, shape, axes, and
   UTF-8 ranges before rendering deterministic Markdown role spans. Real

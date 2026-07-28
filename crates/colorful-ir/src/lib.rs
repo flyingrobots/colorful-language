@@ -26,6 +26,8 @@ pub const CONTRACT_VERSION: &str = "colorful.syntax/v1";
 pub const WESLEY_VERSION: &str = "0.1.1";
 
 const SYNTAX_V1_SDL: &str = include_str!("../contracts/syntax.v1.graphql");
+#[cfg(test)]
+const SYNTAX_COMPATIBILITY_V1: &str = include_str!("../contracts/syntax-compatibility.v1.json");
 
 /// Canonical JSON: compact, with object keys sorted lexicographically. Both the
 /// Rust and TS sides use this exact form so a round-trip is byte-for-byte.
@@ -1532,6 +1534,16 @@ mod tests {
         let hash = syntax_schema_hash();
         assert!(hash.starts_with("sha256:"));
         assert_eq!(hash, syntax_schema_hash());
+    }
+
+    #[test]
+    fn packaged_compatibility_manifest_names_the_current_identity() {
+        let manifest: serde_json::Value = serde_json::from_str(SYNTAX_COMPATIBILITY_V1).unwrap();
+        let current = &manifest["currentIdentity"];
+        assert_eq!(current["contractVersion"], CONTRACT_VERSION);
+        assert_eq!(current["schemaHash"], syntax_schema_hash());
+        assert_eq!(current["vocabularyHash"], vocabulary_hash());
+        assert_eq!(manifest["generations"].as_array().unwrap().len(), 3);
     }
 
     #[test]
