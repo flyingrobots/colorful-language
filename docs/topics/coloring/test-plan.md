@@ -299,6 +299,15 @@ Requirements:
   *Tracking:*
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
   *Status:* implemented.
+- **COL-17d** — *Requirement:* COL-17. *Behavior:* the mandatory borrowed
+  classification-validation boundary runs separately over each fixed corpus
+  after parsing and annotation, without charging repeated-input cloning to the
+  validator. *Oracle:* the cross-stage report requires one latency, throughput,
+  and allocation row for `classification-validation` per corpus. *Evidence
+  type:* release benchmark stage and deterministic report-contract assertion.
+  *Tracking:*
+  [#135](https://github.com/flyingrobots/colorful-language/issues/135).
+  *Status:* planned.
 - **COL-18a** — *Requirement:* COL-18. *Behavior:* a bounded seeded corpus
   generates valid Unicode plus malformed public trees and IR mutations and
   exercises parser, annotator, projection, validation, and UTF-16 indexing.
