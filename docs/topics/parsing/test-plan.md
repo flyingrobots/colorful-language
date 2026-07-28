@@ -111,12 +111,12 @@ lives in `crates/colorful-parse/src/lib.rs`.
   256 cases from one checked-in 32-byte seed through a weighted valid-Unicode
   generator that always includes astral code points, combining marks,
   zero-width characters, and `LF`, `CR`, or `CRLF` line endings. The same
-  invariant helper is callable from a time-based parser fuzz target outside the
-  correctness gate. *Oracle:* parsing and annotation do not panic; every
-  accepted tree/token span is non-empty, ordered, in bounds, and on a character
-  boundary; independently concatenating source gaps and spans reproduces the
-  source byte-for-byte. *Evidence type:* seeded property test, fuzz target, and
-  deterministic regression corpus. *Evidence:*
+  invariant is enforced independently by a time-based parser fuzz target
+  outside the correctness gate. *Oracle:* parsing and annotation do not panic;
+  every accepted tree/token span is non-empty, ordered, in bounds, and on a
+  character boundary; independently concatenating source gaps and spans
+  reproduces the source byte-for-byte. *Evidence type:* seeded property test,
+  fuzz target, and deterministic regression corpus. *Evidence:*
   `crates/colorful-cli/tests/property_boundaries.rs`
   `seeded_unicode_parser_and_annotator_ranges_are_legal_and_round_trip`;
   `fuzz/fuzz_targets/parser.rs`; `fuzz/fuzz_targets/annotator.rs`;

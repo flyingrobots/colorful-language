@@ -151,11 +151,12 @@ and path.
 
 For an equivalent generated finding, the corpus independently counts both
 human-facing Unicode-scalar columns and LSP UTF-16 code units. It then requires
-the CLI report and LSP diagnostic to identify the same line and span under
-their documented 1-based and 0-based coordinate conventions. Four separate
-parser, annotator, IR-projection, and coordinate fuzz targets are available for
-manual time-based investigation; CI never substitutes a timing budget for the
-seeded correctness oracle.
+the CLI report and LSP diagnostic to identify the same finding start under
+their documented 1-based and 0-based coordinate conventions, and requires the
+LSP range end to map back to the selected byte-span end. Four separate parser,
+annotator, IR-projection, and coordinate fuzz targets are available for manual
+time-based investigation; CI never substitutes a timing budget for the seeded
+correctness oracle.
 
 ## Performance
 
