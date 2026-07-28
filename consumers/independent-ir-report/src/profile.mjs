@@ -18,6 +18,27 @@ function axisKey(tokenKind, lexicalClass, openClassKind) {
   ]);
 }
 
+function enumValues(syntax, name, optional = false) {
+  const match = new RegExp(
+    `(?:^|\\n)enum ${name} \\{([\\s\\S]*?)\\n\\}`,
+    "u",
+  ).exec(syntax);
+  if (!match) {
+    if (optional) return null;
+    fail("E_PROFILE", `profile SDL is missing enum ${name}`);
+  }
+  const values = new Set(
+    match[1]
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter((line) => /^[_A-Z][_0-9A-Z]*$/u.test(line)),
+  );
+  if (values.size === 0) {
+    fail("E_PROFILE", `profile SDL enum ${name} has no values`);
+  }
+  return values;
+}
+
 export function loadProfile(directory) {
   const metadata = parseJson(
     readFileSync(path.join(directory, "profile.json"), "utf8"),
@@ -126,6 +147,18 @@ export function loadProfile(directory) {
     schemaHash,
     vocabularyHash,
     openClassKindField: metadata.openClassKindField,
+    enums: Object.freeze({
+      tokenKind: enumValues(syntax, "TokenKind"),
+      lexicalClass: enumValues(syntax, "LexicalClass"),
+      functionKind: enumValues(syntax, "FunctionKind"),
+      openClassKind: enumValues(
+        syntax,
+        "OpenClassKind",
+        !metadata.openClassKindField,
+      ),
+      outlineKind: enumValues(syntax, "OutlineKind"),
+      diagnosticSeverity: enumValues(syntax, "DiagnosticSeverity"),
+    }),
     rolesByAxes,
     projectionsByRole,
     rolesByAnsi,

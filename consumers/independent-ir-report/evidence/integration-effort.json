@@ -10,14 +10,14 @@
     "dependencies": "runtime package dependencies required by an adapter",
     "processSteps": "distinct external or decoding stages for the same job"
   },
-  "sharedNonblankLines": 229,
+  "sharedNonblankLines": 261,
   "adapters": {
     "ir": {
       "sources": [
         "src/ir.mjs"
       ],
-      "nonblankAdapterLines": 239,
-      "migrationSpecificLines": 43,
+      "nonblankAdapterLines": 278,
+      "migrationSpecificLines": 48,
       "stableErrorCategories": [
         "E_JSON",
         "E_SHAPE",
@@ -37,7 +37,7 @@
         "sourceHash"
       ],
       "fixtureCount": 6,
-      "reviewedAssertions": 21,
+      "reviewedAssertions": 24,
       "runtimeDependencies": 0,
       "processSteps": [
         "emit IR",

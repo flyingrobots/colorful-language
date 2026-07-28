@@ -88,7 +88,7 @@ release tags prove migration across two released `colorful.syntax/v1`
 generations, and the v0.3.0 IR, ANSI, and LSP adapters produce byte-identical
 reports for the same Unicode source.
 
-The executable burden ledger measures 239 nonblank IR adapter lines versus 49
+The executable burden ledger measures 278 nonblank IR adapter lines versus 49
 for ANSI and 264 for LSP including its JSON-RPC acquisition client. The IR is
 smaller than the alternatives' combined 313 lines, alone verifies all five wire
 identities, and stays below the reviewed limit of twice their combined size.

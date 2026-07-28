@@ -234,7 +234,7 @@ v0.3 must handle the `Option` result.
   witness proves the package needs no repository build artifacts or ambient
   `node_modules`.
 
-  The generated burden ledger measures 239 nonblank IR adapter lines, including
+  The generated burden ledger measures 278 nonblank IR adapter lines, including
   43 migration-specific lines, versus 49 for ANSI and 264 for LSP including its
   JSON-RPC acquisition client. Because the IR alone authenticates all five wire
   identities and is smaller than the alternatives' combined 313 lines, the
@@ -260,8 +260,8 @@ v0.3 must handle the `Option` result.
   input/output ids, a real `compilerBuildHash`, and artifact hashes are not
   implemented. Expanding that surface is evidence-gated rather than assumed.
 - Independent admission is deliberately strict but not yet compact: the
-  measured IR adapter is nearly as large as the complete LSP protocol and
-  decoding adapter. Further contract expansion remains frozen while that
+  measured IR adapter is larger than the complete LSP protocol and decoding
+  adapter. Further contract expansion remains frozen while that
   implementation cost is reduced through
   [#222](https://github.com/flyingrobots/colorful-language/issues/222) without
   weakening validation or changing v1 bytes.

@@ -152,11 +152,11 @@ The generated integration-effort ledger records:
 
 | Adapter | Nonblank adapter lines | Migration lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: | ---: |
-| IR | 239 | 43 | 9 | 5 |
+| IR | 278 | 43 | 9 | 5 |
 | ANSI | 49 | 0 | 4 | 1 |
 | LSP | 264 | 0 | 5 | 2 |
 
-Shared profile loading and report rendering account for another 229 nonblank
+Shared profile loading and report rendering account for another 261 nonblank
 lines and are excluded from every adapter equally. The exact source, fixtures,
 assertions, dependencies, and process steps behind these counts live in
 `consumers/independent-ir-report/evidence/integration-effort.json`.
@@ -169,7 +169,7 @@ larger than twice the ANSI and LSP adapters combined, or when the IR is the
 smallest adapter. Otherwise the project preserves compatibility but simplifies
 implementation or optional surface area before adding contract fields.
 
-The result is **retain stable v1**: 239 IR lines are 0.77 times the alternatives'
+The result is **retain stable v1**: 278 IR lines are 0.89 times the alternatives'
 combined 313 lines, within the two-times bound, while only the IR authenticates
 all five wire identities. The result is not permission to expand the contract.
 Consumer admission remains the cost to reduce; replayable provenance, CNL, and

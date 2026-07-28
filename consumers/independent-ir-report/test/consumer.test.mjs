@@ -46,7 +46,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
-  assert.equal(ledger.adapters.ir.reviewedAssertions, 21);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 24);
 });
 
 function releaseFixture(release) {
@@ -181,6 +181,45 @@ test("IR admission rejects malformed and incompatible artifacts by category", ()
   for (const [code, artifactJson] of cases) {
     expectConsumerError(code, () =>
       consumeIr({ source: SOURCE, artifactJson, profiles }),
+    );
+  }
+});
+
+test("IR admission enforces enum members from the selected schema", () => {
+  const currentFixture = releaseFixture("v0.3.0");
+  const baseline = JSON.parse(currentFixture.ir);
+  const cases = [
+    {
+      ...baseline,
+      tokens: baseline.tokens.map((token, index) =>
+        index === 1 ? { ...token, functionKind: "BOGUS" } : token,
+      ),
+    },
+    {
+      ...baseline,
+      structure: baseline.structure.map((node, index) =>
+        index === 0 ? { ...node, kind: "BOGUS" } : node,
+      ),
+    },
+    {
+      ...baseline,
+      diagnostics: [
+        {
+          byteRange: baseline.tokens[0].byteRange,
+          severity: "BOGUS",
+          code: "test",
+          message: "test",
+        },
+      ],
+    },
+  ];
+  for (const document of cases) {
+    expectConsumerError("E_SHAPE", () =>
+      consumeIr({
+        source: SOURCE,
+        artifactJson: JSON.stringify(document),
+        profiles: [currentFixture.profile],
+      }),
     );
   }
 });

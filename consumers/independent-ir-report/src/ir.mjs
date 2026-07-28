@@ -52,6 +52,22 @@ function requireNullableString(record, field, label) {
   return record[field];
 }
 
+function requireEnum(record, field, label, values) {
+  const value = requireString(record, field, label);
+  if (!values.has(value)) {
+    fail("E_SHAPE", `${label}.${field} is not a supported enum member`);
+  }
+  return value;
+}
+
+function requireNullableEnum(record, field, label, values) {
+  const value = requireNullableString(record, field, label);
+  if (value !== null && !values.has(value)) {
+    fail("E_SHAPE", `${label}.${field} is not a supported enum member`);
+  }
+  return value;
+}
+
 function requireRange(value, label, sourceLength, boundaries) {
   const range = requireRecord(value, label);
   const startUtf8 = requireInteger(range, "startUtf8", label);
@@ -107,7 +123,7 @@ function selectProfile(document, profiles) {
   // effort:migration:end
 }
 
-function validateAuxiliaryShape(document, sourceLength, boundaries) {
+function validateAuxiliaryShape(document, sourceLength, boundaries, profile) {
   for (const [index, nodeValue] of requireArray(
     document.structure,
     "structure",
@@ -115,7 +131,7 @@ function validateAuxiliaryShape(document, sourceLength, boundaries) {
     const label = `structure[${index}]`;
     const node = requireRecord(nodeValue, label);
     requireInteger(node, "nodeId", label);
-    requireString(node, "kind", label);
+    requireEnum(node, "kind", label, profile.enums.outlineKind);
     requireInteger(node, "depth", label);
     requireRange(node.byteRange, `${label}.byteRange`, sourceLength, boundaries);
     for (const [childIndex, child] of requireArray(
@@ -143,7 +159,12 @@ function validateAuxiliaryShape(document, sourceLength, boundaries) {
       sourceLength,
       boundaries,
     );
-    requireString(diagnostic, "severity", label);
+    requireEnum(
+      diagnostic,
+      "severity",
+      label,
+      profile.enums.diagnosticSeverity,
+    );
     requireString(diagnostic, "code", label);
     requireString(diagnostic, "message", label);
   }
@@ -220,9 +241,24 @@ export function consumeIr({ source, artifactJson, profiles }) {
       fail("E_RANGE", `${label}.byteRange must be ordered and non-empty`);
     }
     previousEnd = range.endUtf8;
-    const tokenKind = requireString(token, "tokenKind", label);
-    const lexicalClass = requireNullableString(token, "lexicalClass", label);
-    const functionKind = requireNullableString(token, "functionKind", label);
+    const tokenKind = requireEnum(
+      token,
+      "tokenKind",
+      label,
+      profile.enums.tokenKind,
+    );
+    const lexicalClass = requireNullableEnum(
+      token,
+      "lexicalClass",
+      label,
+      profile.enums.lexicalClass,
+    );
+    const functionKind = requireNullableEnum(
+      token,
+      "functionKind",
+      label,
+      profile.enums.functionKind,
+    );
     // effort:migration:start
     if (profile.openClassKindField !== Object.hasOwn(token, "openClassKind")) {
       fail(
@@ -231,7 +267,12 @@ export function consumeIr({ source, artifactJson, profiles }) {
       );
     }
     const openClassKind = profile.openClassKindField
-      ? requireNullableString(token, "openClassKind", label)
+      ? requireNullableEnum(
+          token,
+          "openClassKind",
+          label,
+          profile.enums.openClassKind,
+        )
       : null;
     // effort:migration:end
     if (
@@ -252,6 +293,6 @@ export function consumeIr({ source, artifactJson, profiles }) {
     }
   }
 
-  validateAuxiliaryShape(document, actualLength, boundaries);
+  validateAuxiliaryShape(document, actualLength, boundaries, profile);
   return renderReport(normalizeSpans(source, spans, "E_RANGE"));
 }
