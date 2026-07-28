@@ -7,6 +7,10 @@ import { parse as parseYaml } from "yaml";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const REPOSITORY_URL = "https://github.com/flyingrobots/colorful-language";
+const CHECKOUT_ACTION =
+  "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+const RUST_TOOLCHAIN_ACTION =
+  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
 const CARGO_DENY_ACTION =
   "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
 const DEPENDENCY_REVIEW_ACTION =
@@ -342,6 +346,18 @@ function stepWithUse(job, value) {
   return job?.steps?.find((step) => step?.uses === value);
 }
 
+function requireAction(job, action, path) {
+  const step = stepWithUse(job, action);
+  if (step === undefined) {
+    reject(
+      "E_SECURITY_ACTION_PIN",
+      path,
+      `must use ${action}`,
+    );
+  }
+  return step;
+}
+
 function hasRun(job, command) {
   return (
     Array.isArray(job?.steps) &&
@@ -360,7 +376,9 @@ function validateRustSecurityJob(workflow) {
   const path = ".github/workflows/security.yml:jobs.rust-dependency-policy";
   const job = workflow?.jobs?.["rust-dependency-policy"];
   requireObject(job, "E_SECURITY_WORKFLOW", path);
-  const install = stepWithUse(job, CARGO_DENY_ACTION);
+  requireAction(job, CHECKOUT_ACTION, `${path}:steps`);
+  requireAction(job, RUST_TOOLCHAIN_ACTION, `${path}:steps`);
+  const install = requireAction(job, CARGO_DENY_ACTION, `${path}:steps`);
   if (install?.with?.tool !== CARGO_DENY_VERSION) {
     reject(
       "E_CARGO_DENY_PIN",
@@ -428,6 +446,7 @@ function validateCodeQl(workflow) {
   const path = ".github/workflows/security.yml:jobs.codeql";
   const job = workflow?.jobs?.codeql;
   requireObject(job, "E_CODEQL_WORKFLOW", path);
+  requireAction(job, CHECKOUT_ACTION, `${path}:steps`);
   if (
     job.permissions?.contents !== "read" ||
     job.permissions?.["security-events"] !== "write"
