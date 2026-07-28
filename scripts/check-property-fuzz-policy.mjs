@@ -33,6 +33,8 @@ const INPUT_PATHS = Object.freeze({
   rootLock: "Cargo.lock",
   cliManifest: "crates/colorful-cli/Cargo.toml",
   propertyTest: "crates/colorful-cli/tests/property_boundaries.rs",
+  coordinateSupport:
+    "crates/colorful-cli/tests/support/property_coordinates.rs",
   fuzzManifest: "fuzz/Cargo.toml",
   fuzzLock: "fuzz/Cargo.lock",
   workflow: ".github/workflows/ci.yml",
@@ -232,7 +234,6 @@ export function validatePropertyFuzzPolicy(snapshot) {
       "the property runner must use the reviewed case constant and ChaCha seed",
     );
   }
-
   if (
     !exactTomlVersion(
       snapshot.fuzzManifest,
@@ -273,6 +274,26 @@ export function validatePropertyFuzzPolicy(snapshot) {
         `${target} must contain a libFuzzer entry point`,
       );
     }
+  }
+  const sharedModule = /^[ \t]*mod[ \t]+property_coordinates;[ \t]*$/mu;
+  const localCoordinateDefinition =
+    /^[ \t]*(?:pub[ \t]+)?(?:struct[ \t]+FixedFinding|fn[ \t]+oracle_position)\b/mu;
+  if (
+    !sharedModule.test(snapshot.propertyTest) ||
+    !sharedModule.test(snapshot.fuzzTargets.coordinates) ||
+    localCoordinateDefinition.test(snapshot.propertyTest) ||
+    localCoordinateDefinition.test(snapshot.fuzzTargets.coordinates) ||
+    !/^[ \t]*pub[ \t]+struct[ \t]+FixedFinding\b/mu.test(
+      snapshot.coordinateSupport,
+    ) ||
+    !/^[ \t]*pub[ \t]+fn[ \t]+oracle_position\b/mu.test(
+      snapshot.coordinateSupport,
+    )
+  ) {
+    reject(
+      "E_COORDINATE_SUPPORT",
+      "property and fuzz coordinates must share one test-support oracle",
+    );
   }
   const declared = manifestTargets(snapshot.fuzzManifest);
   if (

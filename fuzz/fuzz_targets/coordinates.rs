@@ -1,60 +1,16 @@
 #![forbid(unsafe_code)]
 #![no_main]
 
+#[path = "../../crates/colorful-cli/tests/support/property_coordinates.rs"]
+mod property_coordinates;
+
 use colorful_cli::line_col;
-use colorful_core::{Analyzer, Finding, Rule, Severity, Span, Token, Tree};
+use colorful_core::Span;
 use colorful_lexicon::ContextualOpenClassAnnotator;
 use colorful_lsp::compute_diagnostics;
 use colorful_parse::ProseParser;
 use libfuzzer_sys::fuzz_target;
-
-struct FixedFinding(Span);
-
-impl Analyzer for FixedFinding {
-    fn analyze(&self, _source: &str, _tree: &Tree, _tokens: &[Token]) -> Vec<Finding> {
-        vec![Finding {
-            span: self.0,
-            rule: Rule::WeakWord,
-            severity: Severity::Info,
-            message: "fuzz finding".to_string(),
-        }]
-    }
-}
-
-fn oracle_position(source: &str, byte: usize) -> (usize, usize, u32) {
-    let mut line = 0usize;
-    let mut scalar_column = 0usize;
-    let mut utf16_column = 0u32;
-    let mut previous_was_cr = false;
-    for (index, character) in source.char_indices() {
-        if index >= byte {
-            break;
-        }
-        if previous_was_cr && character == '\n' {
-            previous_was_cr = false;
-            continue;
-        }
-        previous_was_cr = false;
-        match character {
-            '\n' => {
-                line += 1;
-                scalar_column = 0;
-                utf16_column = 0;
-            }
-            '\r' => {
-                line += 1;
-                scalar_column = 0;
-                utf16_column = 0;
-                previous_was_cr = true;
-            }
-            _ => {
-                scalar_column += 1;
-                utf16_column += character.len_utf16() as u32;
-            }
-        }
-    }
-    (line, scalar_column, utf16_column)
-}
+use property_coordinates::{oracle_position, FixedFinding};
 
 fuzz_target!(|prefix: &str| {
     let start = prefix.len();
@@ -64,7 +20,7 @@ fuzz_target!(|prefix: &str| {
         &source,
         &ProseParser::new(),
         &ContextualOpenClassAnnotator::default(),
-        &FixedFinding(span),
+        &FixedFinding::new(span),
     )
     .expect("built-in LSP classification");
     let diagnostic = &diagnostics[0];

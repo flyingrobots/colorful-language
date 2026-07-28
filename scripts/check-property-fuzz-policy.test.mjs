@@ -34,6 +34,8 @@ path = "tests/property_boundaries.rs"
 test = false
 `,
   propertyTest: `
+#[path = "support/property_coordinates.rs"]
+mod property_coordinates;
 const PROPERTY_CASES: u32 = 256;
 const PROPERTY_SEED: [u8; 32] = [
     0x13, 0x04, 0x13, 0x04, 0x13, 0x04, 0x13, 0x04,
@@ -76,8 +78,13 @@ version = "0.4.13"
     parser: "#![no_main]\nfuzz_target!(|source: &str| {});\n",
     annotator: "#![no_main]\nfuzz_target!(|source: &str| {});\n",
     ir_projection: "#![no_main]\nfuzz_target!(|source: &str| {});\n",
-    coordinates: "#![no_main]\nfuzz_target!(|source: &str| {});\n",
+    coordinates:
+      '#![no_main]\n#[path = "../../crates/colorful-cli/tests/support/property_coordinates.rs"]\nmod property_coordinates;\nfuzz_target!(|source: &str| {});\n',
   }),
+  coordinateSupport: `
+pub struct FixedFinding;
+pub fn oracle_position() {}
+`,
   workflow: `
 jobs:
   rust:
@@ -261,6 +268,45 @@ test("rejects multiple bounded property runner invocations", () => {
       ),
     },
     "E_PROPERTY_RUNNER",
+  );
+});
+
+test("rejects a property test that bypasses shared coordinate support", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      propertyTest: VALID_SNAPSHOT.propertyTest.replace(
+        "mod property_coordinates;",
+        "",
+      ),
+    },
+    "E_COORDINATE_SUPPORT",
+  );
+});
+
+test("rejects a coordinate fuzz target that bypasses shared support", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      fuzzTargets: {
+        ...VALID_SNAPSHOT.fuzzTargets,
+        coordinates: VALID_SNAPSHOT.fuzzTargets.coordinates.replace(
+          "mod property_coordinates;",
+          "",
+        ),
+      },
+    },
+    "E_COORDINATE_SUPPORT",
+  );
+});
+
+test("rejects a reintroduced local coordinate oracle copy", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      propertyTest: `${VALID_SNAPSHOT.propertyTest}\nfn oracle_position() {}\n`,
+    },
+    "E_COORDINATE_SUPPORT",
   );
 });
 

@@ -1,6 +1,9 @@
+#[path = "support/property_coordinates.rs"]
+mod property_coordinates;
+
 use colorful_cli::{line_col, lint_report};
 use colorful_core::{
-    Analyzer, ClassificationError, Finding, Node, PosClass, Rule, Severity, Span, Token, Tree,
+    ClassificationError, Finding, Node, PosClass, Rule, Severity, Span, Token, Tree,
     ValidatedClassification,
 };
 use colorful_ir::validate_document;
@@ -8,6 +11,7 @@ use colorful_lexicon::ContextualOpenClassAnnotator;
 use colorful_lsp::compute_diagnostics;
 use colorful_parse::ProseParser;
 use colorful_projection::build_document;
+use property_coordinates::{oracle_position, FixedFinding};
 use proptest::{
     collection::vec,
     prelude::*,
@@ -326,57 +330,6 @@ fn mutate_ir(
     }
 }
 
-#[derive(Clone)]
-struct FixedFinding {
-    span: Span,
-}
-
-impl Analyzer for FixedFinding {
-    fn analyze(&self, _source: &str, _tree: &Tree, _tokens: &[Token]) -> Vec<Finding> {
-        vec![Finding {
-            span: self.span,
-            rule: Rule::WeakWord,
-            severity: Severity::Info,
-            message: "property finding".to_string(),
-        }]
-    }
-}
-
-fn oracle_position(source: &str, byte: usize) -> (usize, usize, u32) {
-    let mut line = 0usize;
-    let mut scalar_column = 0usize;
-    let mut utf16_column = 0u32;
-    let mut previous_was_cr = false;
-    for (index, character) in source.char_indices() {
-        if index >= byte {
-            break;
-        }
-        if previous_was_cr && character == '\n' {
-            previous_was_cr = false;
-            continue;
-        }
-        previous_was_cr = false;
-        match character {
-            '\n' => {
-                line += 1;
-                scalar_column = 0;
-                utf16_column = 0;
-            }
-            '\r' => {
-                line += 1;
-                scalar_column = 0;
-                utf16_column = 0;
-                previous_was_cr = true;
-            }
-            _ => {
-                scalar_column += 1;
-                utf16_column += character.len_utf16() as u32;
-            }
-        }
-    }
-    (line, scalar_column, utf16_column)
-}
-
 fn report_position(report: &str) -> Result<(usize, usize), TestCaseError> {
     let mut fields = report.splitn(4, ':');
     let _name = fields.next();
@@ -457,7 +410,7 @@ fn assert_cli_and_lsp_coordinate_property(prefix: &str) -> Result<(), TestCaseEr
         &source,
         &ProseParser::new(),
         &ContextualOpenClassAnnotator::default(),
-        &FixedFinding { span },
+        &FixedFinding::new(span),
     )
     .map_err(|error| TestCaseError::fail(error.to_string()))?;
     let diagnostic = diagnostics
