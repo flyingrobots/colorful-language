@@ -46,10 +46,11 @@ Use a two-stage boundary:
    port for the same source identity.
 
 The adapter invokes no network operation and never runs `vale sync`. It removes
-ambient Vale configuration overrides, disables global configuration, and uses
-only the caller's explicit configuration. Missing, incompatible, timed-out,
-cancelled, failed, oversized, or malformed executions are adapter errors; none
-becomes an empty finding list or a fallback to `ProseLinter`.
+the inherited child environment, disables global configuration, and uses only
+the caller's explicit configuration. Unix receives a fixed system executable
+path; Windows retains only its system-root variables. Missing, incompatible,
+timed-out, cancelled, failed, oversized, or malformed executions are adapter
+errors; none becomes an empty finding list or a fallback to `ProseLinter`.
 
 External check identities become validated, namespaced diagnostic rule codes.
 Vale suggestions map to Colorful `Info`; Vale warnings and errors map to

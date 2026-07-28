@@ -67,6 +67,10 @@ explicit `.vale.ini`. Discovery accepts major version 3, and analysis invokes
 Vale with JSON output, stdin using a caller-selected document extension
 (`.txt` by default), no global configuration, a bounded output capture, and a
 caller-cancellable timeout. It never runs `vale sync` or downloads a style.
+Each child starts from an empty environment. Unix receives only the fixed
+`/usr/bin:/bin` executable path; Windows retains `SystemRoot` and `WINDIR` when
+present so the selected executable can use platform services. User `HOME`, XDG,
+proxy, and Vale override variables are not inherited.
 On Unix, each invocation owns a dedicated process group so timeout and
 cancellation terminate configured wrappers and their descendants before
 joining captured output. Other targets retain direct-child termination.

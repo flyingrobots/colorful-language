@@ -332,11 +332,14 @@ Implemented and planned cases are listed below.
 - **LINT-13i** — *Requirement:* LINT-13. *Behavior:* discovery and analysis do
   not inherit ambient user configuration, home, XDG, or proxy variables while
   retaining the minimum platform environment required to execute the
-  explicitly selected engine. *Oracle:* a fake executable records its
-  environment and proves documented allowlist equality for both phases.
-  *Evidence type:* process-environment contract test. *Tracking:*
+  explicitly selected engine. *Oracle:* a fake executable rejects any ambient
+  variable or executable path outside the documented allowlist in both phases.
+  *Evidence type:* process-environment contract test. *Evidence:*
+  `colorful-vale`
+  `vale_adapter::discovery_is_explicit_versioned_and_ambient_config_free`.
+  *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered

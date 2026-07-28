@@ -56,11 +56,10 @@ pub(crate) fn run_process(
     }
 
     let mut command = Command::new(executable);
+    isolate_environment(&mut command);
     command
         .args(arguments)
         .current_dir(working_directory)
-        .env_remove("VALE_CONFIG_PATH")
-        .env_remove("VALE_STYLES_PATH")
         .stdin(if matches!(&input, ProcessInput::Bytes(_)) {
             Stdio::piped()
         } else {
@@ -160,6 +159,18 @@ pub(crate) fn run_process(
         stdout: stdout.bytes,
         stderr: stderr.bytes,
     })
+}
+
+fn isolate_environment(command: &mut Command) {
+    command.env_clear();
+    #[cfg(unix)]
+    command.env("PATH", "/usr/bin:/bin");
+    #[cfg(windows)]
+    for name in ["SystemRoot", "WINDIR"] {
+        if let Some(value) = std::env::var_os(name) {
+            command.env(name, value);
+        }
+    }
 }
 
 #[cfg(unix)]
