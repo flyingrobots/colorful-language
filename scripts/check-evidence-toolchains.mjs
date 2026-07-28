@@ -22,6 +22,7 @@ const POLICY_CODES = new Set([
   "E_COMPAT_RUST_OVERRIDE",
   "E_COMPAT_RUST_SELECTOR",
   "E_COMPAT_TRIGGER",
+  "E_CONTRIBUTOR_RUST_GATE",
   "E_JSON",
   "E_MSRV_UNVERIFIED",
   "E_NODE_ENGINE",
@@ -540,6 +541,19 @@ function assertPolicyDocs(files, rustVersion, nodeVersion, typeScriptVersion) {
       );
     }
   }
+  const contributorGuide = files.get("CONTRIBUTING.md");
+  for (const command of [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --all-targets --all-features -- -D warnings",
+    "cargo test --all --locked",
+  ]) {
+    if (!contributorGuide.includes(command)) {
+      reject(
+        "E_CONTRIBUTOR_RUST_GATE",
+        `CONTRIBUTING.md: standard Rust gate must include: ${command}`,
+      );
+    }
+  }
 }
 
 function validatePolicy(files) {
@@ -748,6 +762,9 @@ jobs:
       "CONTRIBUTING.md",
       `Evidence Rust ${rustVersion}; Node ${nodeVersion}; TypeScript ${typeScriptVersion}.
 The evidence compiler is not the minimum supported Rust version (MSRV).
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --all --locked
 `,
     ],
     [
@@ -1239,6 +1256,20 @@ The evidence compiler is not the minimum supported Rust version (MSRV).
         );
       },
       "E_POLICY_DOC",
+    ],
+    [
+      "unlocked contributor Rust gate",
+      (files) =>
+        files.set(
+          "CONTRIBUTING.md",
+          files
+            .get("CONTRIBUTING.md")
+            .replace(
+              "cargo test --all --locked",
+              "cargo test --all",
+            ),
+        ),
+      "E_CONTRIBUTOR_RUST_GATE",
     ],
   ];
   const testedCodes = new Set(cases.map(([, , expectedCode]) => expectedCode));
