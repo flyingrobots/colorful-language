@@ -210,9 +210,16 @@ fn claimed_corpus_is_consistent(report: &Value) -> bool {
 }
 
 fn lsp_envelope_example_runs_tests(manifest: &str) -> bool {
-    manifest.contains(
-        "[[example]]\nname = \"lsp_envelope\"\npath = \"examples/lsp_envelope.rs\"\ntest = true",
-    )
+    toml::from_str::<toml::Value>(manifest)
+        .ok()
+        .and_then(|manifest| manifest["example"].as_array().cloned())
+        .is_some_and(|examples| {
+            examples.iter().any(|example| {
+                example["name"].as_str() == Some("lsp_envelope")
+                    && example["path"].as_str() == Some("examples/lsp_envelope.rs")
+                    && example["test"].as_bool() == Some(true)
+            })
+        })
 }
 
 #[test]
