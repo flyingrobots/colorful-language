@@ -121,7 +121,8 @@ impl ValeAnalyzer {
             ));
         }
         let json = output.stdout_text()?;
-        let findings = parse_findings(source, json)?;
+        let expected_source = format!("stdin{}", self.config.extension());
+        let findings = parse_findings(source, &expected_source, json)?;
         Ok(PreparedValeAnalysis::new(source, findings))
     }
 }

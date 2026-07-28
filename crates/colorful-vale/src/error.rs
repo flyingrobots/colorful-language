@@ -23,7 +23,7 @@ pub enum ValeErrorKind {
     MalformedOutput,
     /// A Vale alert carried an invalid field, rule, severity, or coordinate.
     InvalidAlert,
-    /// A prepared analysis was bound to different source text.
+    /// Vale named another source or a prepared analysis was rebound to new text.
     SourceMismatch,
 }
 

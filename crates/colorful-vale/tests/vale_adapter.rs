@@ -347,6 +347,11 @@ fn malformed_outputs_fail_closed_by_category() {
             24,
             ValeErrorKind::OutputTooLarge,
         ),
+        (
+            "printf '%s' '{\"other.txt\":[]}'",
+            ValeConfig::default_output_limit(),
+            ValeErrorKind::SourceMismatch,
+        ),
     ];
 
     for (body, limit, expected) in fixtures {

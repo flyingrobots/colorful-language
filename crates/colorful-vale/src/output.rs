@@ -40,7 +40,11 @@ struct ValeAlert {
     line: i64,
 }
 
-pub(crate) fn parse_findings(source: &str, json: &str) -> Result<Vec<Finding>, ValeError> {
+pub(crate) fn parse_findings(
+    source: &str,
+    expected_source: &str,
+    json: &str,
+) -> Result<Vec<Finding>, ValeError> {
     let value: Value = serde_json::from_str(json).map_err(|error| {
         ValeError::new(
             ValeErrorKind::MalformedOutput,
@@ -68,6 +72,14 @@ pub(crate) fn parse_findings(source: &str, json: &str) -> Result<Vec<Finding>, V
                 files.len()
             ),
         ));
+    }
+    if let Some(actual_source) = files.keys().next() {
+        if actual_source != expected_source {
+            return Err(ValeError::new(
+                ValeErrorKind::SourceMismatch,
+                format!("Vale returned source key {actual_source:?}; expected {expected_source:?}"),
+            ));
+        }
     }
 
     let mut findings = Vec::new();

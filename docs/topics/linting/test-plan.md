@@ -252,9 +252,10 @@ Implemented and planned cases are listed below.
   *Status:* implemented.
 - **LINT-13c** — *Requirement:* LINT-13. *Behavior:* timeout, cancellation,
   non-zero process failure, oversized output, invalid UTF-8, malformed JSON,
-  and invalid Vale alert fields fail explicitly without fallback findings or a
-  panic. *Oracle:* one exact typed error category per fault; a synchronized
-  cancellation witness proves an already-started child is terminated.
+  an unexpected JSON source key, and invalid Vale alert fields fail explicitly
+  without fallback findings or a panic. *Oracle:* one exact typed error
+  category per fault; a synchronized cancellation witness proves an
+  already-started child is terminated.
   *Evidence type:* deterministic process and parser fault matrix. *Evidence:*
   `colorful-vale`
   `vale_adapter::{pre_cancelled_analysis_does_not_start_a_process,
