@@ -480,11 +480,19 @@ Requirements:
   *Status:* implemented.
 - **IR-18b** — *Requirement:* IR-18. *Behavior:* the validator complexity budget
   is enforced by a reproducible tool or explicitly retired with documented
-  rationale. *Oracle:* a deliberate over-budget fixture fails the named check,
-  or the policy and CI remove the unsupported claim together. *Evidence type:*
-  source-policy test or reviewed policy deletion. *Tracking:*
+  rationale. The configured Clippy score is treated as a Rust
+  1.97.1-toolchain-bound source-shape heuristic, not a standardized
+  human-comprehension metric. *Oracle:* a deliberate over-budget fixture fails
+  the named check, the current reference names the evidence toolchain and
+  limitation, or the policy and CI remove the unsupported claim together.
+  *Evidence type:* source-policy test or reviewed policy deletion. *Evidence:*
+  the root `clippy.toml` threshold, the production-only
+  `clippy::cognitive_complexity` opt-in in `colorful-ir`,
+  `scripts/check-validator-complexity.sh`, its deliberate over-budget fixture
+  under `scripts/fixtures/validator-complexity/`, the blocking CI Rust job, and
+  `scripts/release-prep.sh`. *Tracking:*
   [#81](https://github.com/flyingrobots/colorful-language/issues/81).
-  *Status:* planned.
+  *Status:* implemented.
 - **IR-18c** — *Requirement:* IR-18. *Behavior:* bounded deterministic mutation
   runs prove the validator tests kill reviewed invariant-breaking mutations and
   seed useful survivors into normal regression tests. *Oracle:* the pinned
@@ -528,7 +536,7 @@ Requirements:
   and `ruleId` now name a real, validated producer identity (IR-8), but
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
-- Complexity-policy and mutation evidence remains open in IR-18b and IR-18c.
+- Bounded deterministic mutation evidence remains open in IR-18c.
 - The independent two-version consumer and
   [product-evidence decision](architecture.md#product-evidence-gate) remains
   open in IR-19a.

@@ -80,7 +80,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — make validator quality enforceable** | Validator maintainability has an executable complexity budget before broader mutation and fuzz campaigns. | Advance #81 before #82 and #134; keep the delivered measurement lanes advisory until their environments are stable. |
+| **Now — test validator strength** | Bounded mutation evidence measures whether the validator suite kills reviewed invariant-breaking changes before the broader fuzz campaign. | Advance #82 before #134; keep the delivered measurement lanes advisory until their environments are stable. |
 | **Next — prove validator and consumer value** | Mutation, fuzzing, independent-consumer, and analyzer-adapter evidence expose real gaps without expanding the cathedral. | Complete #82, #134, #156, and #157 in dependency order. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -156,8 +156,10 @@ covered; new code cannot silently lower the accepted baseline.
 **User job:** an adapter or independent consumer can reject malformed data
 deterministically and use valid data without reverse-engineering Colorful.
 
-- **Delivered foundation:** centralize validation error metadata
-  ([#80](https://github.com/flyingrobots/colorful-language/issues/80)); enforce
+- **Delivered foundation:** centralize validation error metadata and enforce the
+  production validator complexity budget
+  ([#80](https://github.com/flyingrobots/colorful-language/issues/80),
+  [#81](https://github.com/flyingrobots/colorful-language/issues/81)); enforce
   strict graph, token, adapter, and classification boundaries
   ([#126](https://github.com/flyingrobots/colorful-language/issues/126),
   [#142](https://github.com/flyingrobots/colorful-language/issues/142),
@@ -170,14 +172,13 @@ deterministically and use valid data without reverse-engineering Colorful.
   ([#148](https://github.com/flyingrobots/colorful-language/issues/148)); and
   preserve the historical v0.2.0 packet with its dated Graft correction
   ([#149](https://github.com/flyingrobots/colorful-language/issues/149)).
-- **Open validator confidence:** make the complexity budget enforceable or
-  explicitly retire it
-  [#81](https://github.com/flyingrobots/colorful-language/issues/81), use real
-  mutation evidence where it pays for itself
+  <!-- roadmap-primary: delivered #81 -->
+- **Open validator confidence:** use real mutation evidence where it pays for
+  itself
   [#82](https://github.com/flyingrobots/colorful-language/issues/82), and fuzz
   parser, projection, validation, and coordinate invariants
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
-  <!-- roadmap-primary: active #81 #82 #134 -->
+  <!-- roadmap-primary: active #82 #134 -->
 - **Open consumer honesty:** prove independent consumer value and migration
   across two contract versions
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
@@ -395,9 +396,9 @@ Boundary integrity, stale-result protection, required merge checks, dependency
 governance, executable roadmap reconciliation, conservative coverage
 ratcheting, runnable public-API examples, the measured LSP capacity envelope,
 and cross-stage performance/allocation evidence are now delivered foundations.
-The active maturity critical path is an enforceable validator complexity budget
-([#81](https://github.com/flyingrobots/colorful-language/issues/81)), followed
-by mutation and fuzz evidence rather than more manually reasoned coverage.
+The active maturity critical path is bounded validator mutation evidence
+([#82](https://github.com/flyingrobots/colorful-language/issues/82)), followed
+by fuzz evidence rather than more manually reasoned coverage.
 Distribution follows that operational proof; independent product validation
 follows real distribution. The CNL, Edict, provenance, Ouroboros, and
 semantic-closure phases remain in place behind the explicit deep-end evidence
