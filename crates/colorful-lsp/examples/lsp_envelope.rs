@@ -348,18 +348,28 @@ fn semantic_token_count(message: &Value) -> u64 {
     u64::try_from(data.len() / 5).expect("semantic-token count fits u64")
 }
 
-fn diagnostic_code(message: &Value) -> Option<&str> {
+fn refusal_diagnostic_code(message: &Value) -> Option<&str> {
     message["params"]["diagnostics"]
         .as_array()
-        .and_then(|diagnostics| diagnostics.first())
+        .and_then(|diagnostics| {
+            diagnostics.iter().find(|diagnostic| {
+                diagnostic["code"].as_str() == Some("colorful/document-too-large")
+            })
+        })
         .and_then(|diagnostic| diagnostic["code"].as_str())
 }
 
 fn stale_publication_count(versions: &[i64]) -> usize {
-    versions
-        .iter()
-        .filter(|version| ![1_i64, 2, 6].contains(version))
-        .count()
+    let mut latest = None;
+    let mut stale = 0;
+    for &version in versions {
+        if latest.is_some_and(|latest| version < latest) {
+            stale += 1;
+        } else if latest.is_none_or(|latest| version > latest) {
+            latest = Some(version);
+        }
+    }
+    stale
 }
 
 fn initialize(server: &mut LspProcess) {
@@ -431,7 +441,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         message["method"] == "textDocument/publishDiagnostics" && message["params"]["version"] == 1
     });
     let open_diagnostics_ms = milliseconds(response_duration(open_started, &open_diagnostics));
-    let first_diagnostic_code = diagnostic_code(&open_diagnostics.value).map(str::to_owned);
+    let first_diagnostic_code = refusal_diagnostic_code(&open_diagnostics.value).map(str::to_owned);
     let outcome_category =
         if first_diagnostic_code.as_deref() == Some("colorful/document-too-large") {
             "document-too-large"
@@ -464,7 +474,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
         &incremental_diagnostics,
     ));
     let incremental_diagnostic_code =
-        diagnostic_code(&incremental_diagnostics.value).map(str::to_owned);
+        refusal_diagnostic_code(&incremental_diagnostics.value).map(str::to_owned);
 
     let incremental_tokens_started = Instant::now();
     server.send(json!({
@@ -508,7 +518,8 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
     });
     let time_to_latest_diagnostics_ms =
         milliseconds(response_duration(overload_started, &latest_diagnostics));
-    let overload_diagnostic_code = diagnostic_code(&latest_diagnostics.value).map(str::to_owned);
+    let overload_diagnostic_code =
+        refusal_diagnostic_code(&latest_diagnostics.value).map(str::to_owned);
 
     let mut semantic_result_ids = Vec::new();
     let mut semantic_token_counts = Vec::new();
@@ -863,7 +874,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        corpus, diagnostic_code, parse_peak_rss, stale_publication_count, TimeFlavor, CORPUS_LINE,
+        corpus, parse_peak_rss, refusal_diagnostic_code, stale_publication_count, TimeFlavor,
+        CORPUS_LINE,
     };
 
     #[test]
@@ -906,7 +918,7 @@ mod tests {
         });
 
         assert_eq!(
-            diagnostic_code(&message),
+            refusal_diagnostic_code(&message),
             Some("colorful/document-too-large")
         );
     }
