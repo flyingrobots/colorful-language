@@ -1,4 +1,13 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 
 import {
@@ -6,6 +15,13 @@ import {
   validatePublicApiDoctestPolicy,
 } from "./check-public-api-doctests.mjs";
 
+const script = resolve("scripts/check-public-api-doctests.mjs");
+const INPUT_PATHS = Object.freeze({
+  core: "crates/colorful-core/src/lib.rs",
+  projection: "crates/colorful-projection/src/lib.rs",
+  vocabulary: "crates/colorful-ir/src/vocabulary.rs",
+  workflow: ".github/workflows/ci.yml",
+});
 const VALID_SNAPSHOT = Object.freeze({
   core: `
 /// # Examples
@@ -53,8 +69,19 @@ jobs:
   rust:
     steps:
       - run: cargo test --doc --workspace --locked
-`,
+  `,
 });
+
+function writeSnapshot(root, omitted) {
+  for (const [key, relativePath] of Object.entries(INPUT_PATHS)) {
+    if (key === omitted) {
+      continue;
+    }
+    const target = join(root, relativePath);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, VALID_SNAPSHOT[key], "utf8");
+  }
+}
 
 function expectPolicyError(snapshot, code, detail) {
   assert.throws(
@@ -70,6 +97,28 @@ function expectPolicyError(snapshot, code, detail) {
 
 test("accepts every named doctest and the explicit CI command", () => {
   assert.doesNotThrow(() => validatePublicApiDoctestPolicy(VALID_SNAPSHOT));
+});
+
+test("reports a missing policy input without a raw stack trace", () => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-doctest-policy-"));
+  try {
+    writeSnapshot(root, "projection");
+    const result = spawnSync(
+      process.execPath,
+      [script, "--root", root],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout, "");
+    assert.equal(
+      result.stderr,
+      "E_API_DOCTEST_INPUT: crates/colorful-projection/src/lib.rs: cannot read expected policy input\n",
+    );
+    assert.doesNotMatch(result.stderr, /\n\s+at /u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 for (const [file, marker] of [
