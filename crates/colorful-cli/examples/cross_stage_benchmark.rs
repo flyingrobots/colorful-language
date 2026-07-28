@@ -134,9 +134,38 @@ fn graft_projection_measurements(node: &str) -> Value {
     report
 }
 
+fn resolve_metadata_value(
+    override_value: Option<String>,
+    probed_value: Option<String>,
+    variable: &str,
+) -> Result<String, String> {
+    let value = override_value
+        .or(probed_value)
+        .ok_or_else(|| format!("set {variable} explicitly on this platform"))?;
+    if value.trim().is_empty() {
+        return Err(format!("{variable} must not be empty"));
+    }
+    Ok(value)
+}
+
+fn command_backed_metadata(variable: &str, program: &str, args: &[&str]) -> String {
+    let override_value = std::env::var(variable).ok();
+    let probed_value =
+        if override_value.is_none() && (cfg!(target_os = "macos") || cfg!(target_os = "linux")) {
+            Some(command_output(program, args))
+        } else {
+            None
+        };
+    resolve_metadata_value(override_value, probed_value, variable)
+        .unwrap_or_else(|error| panic!("{error}"))
+}
+
 fn generated_at() -> String {
-    let value = std::env::var("COLORFUL_BENCHMARK_GENERATED_AT")
-        .unwrap_or_else(|_| command_output("date", &["-u", "+%Y-%m-%dT%H:%M:%SZ"]));
+    let value = command_backed_metadata(
+        "COLORFUL_BENCHMARK_GENERATED_AT",
+        "date",
+        &["-u", "+%Y-%m-%dT%H:%M:%SZ"],
+    );
     assert!(
         is_utc_timestamp(&value),
         "generatedAt must use YYYY-MM-DDTHH:MM:SSZ"
@@ -156,28 +185,24 @@ fn is_utc_timestamp(value: &str) -> bool {
 }
 
 fn hardware() -> String {
-    let architecture = command_output("uname", &["-m"]);
-    let processor = if let Ok(value) = std::env::var("COLORFUL_BENCHMARK_PROCESSOR") {
-        assert!(
-            !value.trim().is_empty(),
-            "COLORFUL_BENCHMARK_PROCESSOR must not be empty"
-        );
-        value
+    let architecture = command_backed_metadata("COLORFUL_BENCHMARK_ARCHITECTURE", "uname", &["-m"]);
+    let override_value = std::env::var("COLORFUL_BENCHMARK_PROCESSOR").ok();
+    let probed_value = if override_value.is_some() {
+        None
     } else if cfg!(target_os = "macos") {
-        command_output("sysctl", &["-n", "machdep.cpu.brand_string"])
+        Some(command_output(
+            "sysctl",
+            &["-n", "machdep.cpu.brand_string"],
+        ))
     } else if cfg!(target_os = "linux") {
         let cpuinfo = std::fs::read_to_string("/proc/cpuinfo").expect("read /proc/cpuinfo");
-        parse_linux_processor(&cpuinfo)
-            .unwrap_or_else(|| {
-                panic!(
-                    "identify the Linux processor from /proc/cpuinfo; \
-                     set COLORFUL_BENCHMARK_PROCESSOR explicitly"
-                )
-            })
-            .to_owned()
+        parse_linux_processor(&cpuinfo).map(str::to_owned)
     } else {
-        panic!("set COLORFUL_BENCHMARK_PROCESSOR on platforms without a built-in processor probe");
+        None
     };
+    let processor =
+        resolve_metadata_value(override_value, probed_value, "COLORFUL_BENCHMARK_PROCESSOR")
+            .unwrap_or_else(|error| panic!("{error}"));
     format!("{processor}; {architecture}")
 }
 
@@ -220,6 +245,10 @@ fn total_memory_bytes() -> u64 {
     };
     assert!(bytes > 0, "total memory must be positive");
     bytes
+}
+
+fn operating_system() -> String {
+    command_backed_metadata("COLORFUL_BENCHMARK_OPERATING_SYSTEM", "uname", &["-srm"])
 }
 
 fn median_nanoseconds(mut samples: Vec<u64>) -> u64 {
@@ -397,7 +426,7 @@ fn main() {
         "measurement": {
             "generatedAt": generated_at(),
             "hardware": hardware(),
-            "operatingSystem": command_output("uname", &["-srm"]),
+            "operatingSystem": operating_system(),
             "rustc": command_output("rustc", &["--version"]),
             "node": command_output(&node, &["--version"]),
             "profile": "release",
@@ -491,14 +520,12 @@ mod tests {
             ),
             Ok("native probe".to_owned())
         );
-        assert!(
-            resolve_metadata_value(
-                Some("  ".to_owned()),
-                Some("native probe".to_owned()),
-                "COLORFUL_BENCHMARK_FIELD",
-            )
-            .is_err()
-        );
+        assert!(resolve_metadata_value(
+            Some("  ".to_owned()),
+            Some("native probe".to_owned()),
+            "COLORFUL_BENCHMARK_FIELD",
+        )
+        .is_err());
         assert_eq!(
             resolve_metadata_value(None, None, "COLORFUL_BENCHMARK_FIELD"),
             Err("set COLORFUL_BENCHMARK_FIELD explicitly on this platform".to_owned())

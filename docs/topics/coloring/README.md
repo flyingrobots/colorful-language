@@ -188,6 +188,14 @@ cargo run --locked --release -p colorful-cli \
   --example cross_stage_benchmark > /tmp/colorful-cross-stage.json
 ```
 
+macOS and Linux supply automatic date, processor, architecture, operating
+system, and memory probes. On another host, set
+`COLORFUL_BENCHMARK_GENERATED_AT` (`YYYY-MM-DDTHH:MM:SSZ`),
+`COLORFUL_BENCHMARK_PROCESSOR`, `COLORFUL_BENCHMARK_ARCHITECTURE`,
+`COLORFUL_BENCHMARK_OPERATING_SYSTEM`, and
+`COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES` before running the same command. Empty
+or missing overrides are rejected instead of producing incomplete metadata.
+
 Run it from a clean worktree so the report can bind itself to the exact source
 commit. Review the temporary report before updating
 [`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).

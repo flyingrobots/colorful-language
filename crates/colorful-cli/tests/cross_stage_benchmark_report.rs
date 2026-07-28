@@ -354,6 +354,18 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
             None,
             "performance reference must render the reviewed report exactly"
         );
+        for variable in [
+            "COLORFUL_BENCHMARK_GENERATED_AT",
+            "COLORFUL_BENCHMARK_PROCESSOR",
+            "COLORFUL_BENCHMARK_ARCHITECTURE",
+            "COLORFUL_BENCHMARK_OPERATING_SYSTEM",
+            "COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES",
+        ] {
+            assert!(
+                readme.contains(variable),
+                "performance reference must document the {variable} host override"
+            );
+        }
         let test_plan = std::fs::read_to_string(root.join("docs/topics/coloring/test-plan.md"))
             .expect("read test plan");
         assert!(
