@@ -105,6 +105,7 @@ function workflow() {
     jobs: {
       coverage: {
         name: "Rust coverage",
+        "runs-on": "ubuntu-latest",
         steps: [
           { uses: CHECKOUT_ACTION },
           {
@@ -137,7 +138,7 @@ function workflow() {
           },
           {
             name: "Render browsable coverage",
-            run: "cargo llvm-cov report --html --output-dir target/llvm-cov/html",
+            run: "cargo llvm-cov report --html --output-dir target/llvm-cov",
           },
           {
             name: "Enforce coverage policy",
@@ -252,7 +253,7 @@ test("rejects an increase in uncovered transport lines", () => {
     "E_COVERAGE_FILE_RATCHET",
     () => {},
     (candidate) => {
-      candidate.data[0].files[1].summary.lines = lineSummary(65, 61);
+      candidate.data[0].files[1].summary.lines = lineSummary(70, 66);
     },
   );
 });

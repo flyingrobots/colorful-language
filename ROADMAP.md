@@ -116,11 +116,13 @@ observe public-contract regressions before they ship.
   delivered through
   [PR #184](https://github.com/flyingrobots/colorful-language/pull/184)).
   <!-- roadmap-primary: delivered #187 #202 -->
-- **Open public-contract evidence:** add conservative coverage floors
-  [#137](https://github.com/flyingrobots/colorful-language/issues/137) and
-  runnable public API doctests
+- **Delivered coverage evidence:** enforce conservative workspace and binary-
+  transport floors plus uncovered-line ratchets
+  [#137](https://github.com/flyingrobots/colorful-language/issues/137).
+  <!-- roadmap-primary: delivered #137 -->
+- **Open public-API evidence:** add runnable public API doctests
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
-  <!-- roadmap-primary: active #137 #140 -->
+  <!-- roadmap-primary: active #140 -->
 - **Queued evidence hygiene:** derive the cross-stage allocation-profiler
   identity from the resolved dependency authority
   [#207](https://github.com/flyingrobots/colorful-language/issues/207) after

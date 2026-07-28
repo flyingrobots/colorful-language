@@ -202,9 +202,11 @@ roadmap-to-issue reconciliation is tracked in
   upload action; the coverage command names `--workspace`, `--all-features`,
   and `--all-targets`; the report artifact has an explicit retention period.
   *Evidence type:* workflow/configuration mutation tests and hosted artifact.
-  *Tracking:*
+  *Evidence:* `.github/workflows/ci.yml`,
+  `.github/coverage-policy.json`, and
+  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-10b — Conservative ratcheting floors.** *Requirement:* RM-10.
   *Behavior:* a versioned policy records a freshly measured workspace line
   baseline, a conservative initial floor below it, and separate floors for the
@@ -213,9 +215,11 @@ roadmap-to-issue reconciliation is tracked in
   workspace or transport regression below its floor, rejects missing files and
   malformed/non-finite counters, and requires a policy edit to lower any
   accepted floor. *Evidence type:* checked-in policy, report-summary parser,
-  and one minimal mutation per invariant. *Tracking:*
+  and one minimal mutation per invariant. *Evidence:*
+  `.github/coverage-policy.json`, `scripts/check-coverage-policy.mjs`, and
+  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-10c — Honest baseline and ratchet reference.** *Requirement:* RM-10.
   *Behavior:* the maintenance reference records the exact toolchain, command,
   source commit, observed workspace and transport percentages, floor-selection
@@ -223,9 +227,12 @@ roadmap-to-issue reconciliation is tracked in
   floor. *Oracle:* policy tests reject stale or incomplete reference values,
   while lowering a floor remains a visible source-controlled change rather
   than an automatic side effect of adding uncovered code. *Evidence type:*
-  deterministic documentation-policy parity test. *Tracking:*
+  deterministic documentation-policy parity test. *Evidence:*
+  `docs/workflows/repository-maintenance/README.md`,
+  `.github/coverage-policy.json`, and
+  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Hosted evidence boundary
 

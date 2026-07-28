@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Ratcheted Rust coverage evidence.** A required, full-SHA-pinned CI job now
+  measures the workspace with all features and targets, uploads machine-readable
+  JSON plus browsable HTML, and enforces a conservative 92% workspace line
+  floor. Exact uncovered-line ceilings ratchet the 95.36% measured baseline,
+  while separate CLI and LSP transport floors prevent a high workspace average
+  from hiding binary-boundary regressions. The versioned policy excludes no
+  generated or authored Rust source and can change only through review.
 - **Cross-stage performance and allocation evidence.** A release-mode harness
   now measures parsing, contextual annotation, mandatory classification
   validation, lint analysis, guarded IR projection, canonical serialization,

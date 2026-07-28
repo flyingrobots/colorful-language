@@ -37,6 +37,7 @@ node --test scripts/check-dependency-update-policy.test.mjs
 node scripts/check-dependency-update-policy.mjs
 node --test scripts/check-repository-maintenance.test.mjs
 node scripts/check-repository-maintenance.mjs
+node --test scripts/check-coverage-policy.test.mjs
 node --test scripts/check-roadmap-inventory.test.mjs
 node scripts/check-roadmap-inventory.mjs
 bash scripts/check-rust-dependency-policy.test.sh

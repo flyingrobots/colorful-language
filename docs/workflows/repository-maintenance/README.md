@@ -131,6 +131,49 @@ maintenance workflow checks default-branch state without a pull-request
 transition. GitHub authentication and availability are therefore explicit
 hosted oracles, not hidden prerequisites of the local correctness gate.
 
+## Rust coverage ratchet
+
+The required `Rust coverage` job runs the same workspace surface used by the
+normal Rust gate, with all features and all targets:
+
+```bash
+cargo llvm-cov \
+  --workspace \
+  --all-features \
+  --all-targets \
+  --locked
+```
+
+CI pins Rust 1.97.1 and `cargo-llvm-cov` 0.8.7, emits a summary-only LLVM JSON
+report, renders a browsable HTML report from the same profiles, and retains both
+as the `rust-coverage` artifact for 14 days. The machine report is checked
+against [`.github/coverage-policy.json`](../../../.github/coverage-policy.json)
+by [`check-coverage-policy.mjs`](../../../scripts/check-coverage-policy.mjs)
+before the required job can pass.
+
+The initial baseline was measured at source commit
+`da766e7f5dc6ceacf0141bf048594af4d6b87999` with the pinned command above:
+
+| Surface | Measured lines | Measured coverage | Minimum | Maximum uncovered |
+| --- | ---: | ---: | ---: | ---: |
+| Workspace | 5,757 / 6,037 | 95.36% | 92% | 280 |
+| `colorful-cli/src/lib.rs` | 651 / 716 | 90.92% | 90% | 65 |
+| `colorful-cli/src/main.rs` | 7 / 7 | 100% | 100% | 0 |
+| `colorful-lsp/src/lib.rs` | 499 / 500 | 99.80% | 99% | 1 |
+| `colorful-lsp/src/main.rs` | 61 / 64 | 95.31% | 94% | 3 |
+
+The 92% workspace percentage is deliberately below the earlier 92.16%
+observation and the fresh 95.36% measurement. The uncovered-line ceilings are
+the ratchet: adding an uncovered workspace or monitored transport line fails
+even while the percentage remains above its conservative floor. All authored
+and generated Rust source remains in the report; the policy has no exclusions.
+
+When coverage improves, raise the recorded measurements and lower uncovered-
+line ceilings from a fresh pinned report. Lowering a percentage floor or
+increasing an uncovered-line ceiling requires an explicit policy and reference
+change with a reviewed rationale. The checker never rewrites the policy from a
+failing report, so new code cannot silently redefine its own baseline.
+
 ## Evidence
 
 The requirements, exact oracles, and mutation coverage live in the

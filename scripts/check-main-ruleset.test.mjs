@@ -142,6 +142,7 @@ test("prints an update payload without local manifest metadata", () => {
     [
       "Docs & whitespace",
       "Rust (fmt, clippy, test)",
+      "Rust coverage",
       "Cargo package witness",
       "IR cross-language round-trip witness",
       "Editor integrations (compile)",
