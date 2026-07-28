@@ -934,7 +934,8 @@ pub fn validate_classification(
 /// ```
 /// # // public-api-doctest: analyzer
 /// use colorful_core::{
-///     Analyzer, Finding, PosClass, Rule, Severity, Span, Token, Tree,
+///     Analyzer, Finding, Node, PosClass, Rule, Severity, Span, Token, Tree,
+///     ValidatedClassification,
 /// };
 ///
 /// struct FlagFirstToken;
@@ -954,11 +955,26 @@ pub fn validate_classification(
 ///     }
 /// }
 ///
+/// let span = Span::new(0, 4);
 /// let token = Token {
-///     span: Span::new(0, 4),
+///     span,
 ///     class: PosClass::Content,
 /// };
-/// let findings = FlagFirstToken.analyze("word", &Tree::document(Vec::new()), &[token]);
+/// let tree = Tree::document(vec![Node::Sentence {
+///     span,
+///     parts: vec![Node::Word { span }],
+/// }]);
+/// let classification = ValidatedClassification::new(
+///     "word",
+///     tree,
+///     vec![token],
+/// )
+/// .unwrap();
+/// let findings = FlagFirstToken.analyze(
+///     classification.source(),
+///     classification.tree(),
+///     classification.tokens(),
+/// );
 /// assert_eq!(findings[0].rule.code(), "weak-word");
 /// assert_eq!(findings[0].severity, Severity::Info);
 /// assert_eq!(findings[0].span, Span::new(0, 4));
