@@ -587,8 +587,9 @@ Requirements:
 - **IR-19d** — *Requirement:* IR-19. *Behavior:* the proof runs from a clean
   copy containing only the independent package, with no repository
   `Cargo.toml`, `target/`, built Colorful binary, or ambient `node_modules`.
-  *Oracle:* `npm ci` and the package's full test/report command pass in the
-  temporary copy, and a guard fails if any path escapes that package root.
+  *Oracle:* repository-level burden measurement passes before isolation;
+  `npm ci` and the package's test command then pass in the temporary copy, and a
+  guard fails if any path escapes that package root.
   *Evidence type:* clean-environment shell witness in CI and release
   preparation. *Evidence:* `scripts/check-independent-consumer.sh`, CI
   `ir-witness`, and `scripts/release-prep.sh`. *Tracking:*

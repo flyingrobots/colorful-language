@@ -39,8 +39,9 @@ bash scripts/check-independent-consumer.sh
 ```
 
 The witness copies only this package to a temporary directory, rejects
-workspace and build artifacts, installs from the lockfile, and runs the full
-test and measurement gate.
+workspace and build artifacts, verifies the repository-level two-copy burden
+ledger before isolation, installs the package from its lockfile, and runs the
+standalone test gate without a repository escape.
 
 ## Evidence
 

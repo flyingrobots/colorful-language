@@ -239,9 +239,9 @@ workspace.
 - **CONSUMER-11c** — *Requirement:* CONSUMER-11. *Behavior:* the clean-room
   package ships its generated runtime with no dependency or repository escape,
   migrates both released fixtures, and reports authored and generated burden
-  separately. *Oracle:* isolated copy `npm ci && npm run check`, exact ledger
-  regeneration, and refusal of missing or byte-divergent committed generated
-  copies. *Evidence type:* clean-room process witness and measured
+  separately. *Oracle:* exact repository-level ledger regeneration refuses
+  missing or byte-divergent committed generated copies before isolated-copy
+  `npm ci && npm run check`. *Evidence type:* clean-room process witness and measured
   report. *Evidence:* `scripts/check-independent-consumer.sh` and
   `consumers/independent-ir-report/evidence/integration-effort.json`;
   `portable admission measurement rejects missing or drifted copies`;

@@ -4,8 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 package_root="$root/consumers/independent-ir-report"
 work="$(mktemp -d)"
-copy="$work/repository/consumers/independent-ir-report"
-graft_generated="$work/repository/consumers/generated"
+copy="$work/independent-ir-report"
 
 cleanup() {
   rm -rf "$work"
@@ -21,13 +20,11 @@ command -v npm >/dev/null 2>&1 || fail "npm is required"
 [[ -f "$package_root/package-lock.json" ]] ||
   fail "independent package lockfile is missing"
 
+node "$package_root/src/measure.mjs" --check
+
 mkdir -p "$copy"
 tar -C "$package_root" --exclude=node_modules -cf - . |
   tar -C "$copy" -xf -
-mkdir -p "$graft_generated"
-cp \
-  "$root/consumers/generated/syntax-admission-v1.mjs" \
-  "$graft_generated/syntax-admission-v1.mjs"
 
 [[ ! -e "$copy/node_modules" ]] ||
   fail "clean copy unexpectedly contains ambient node_modules"
@@ -45,4 +42,4 @@ fi
   npm run check
 )
 
-echo "check-independent-consumer passed: Node-only proof is clean-room reproducible"
+echo "check-independent-consumer passed: repository burden and standalone Node proof are reproducible"
