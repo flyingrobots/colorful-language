@@ -284,6 +284,8 @@ function runGitHub(arguments_, description) {
       encoding: "utf8",
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
+      timeout: 30_000,
+      maxBuffer: 16 * 1024 * 1024,
     });
   } catch (error) {
     const stderr = error?.stderr?.trim();
