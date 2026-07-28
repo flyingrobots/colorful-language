@@ -219,6 +219,14 @@ test("the repository wires offline and live reconciliation into distinct lanes",
     );
   }
   assert.match(ci, /--closing-pr "\$PULL_REQUEST"/u);
+  assert.match(
+    ci,
+    /^\s*issues:\s*read\s*# Live issue snapshot reconciliation\.\s*$/mu,
+  );
+  assert.match(
+    ci,
+    /^\s*pull-requests:\s*read\s*# Closing-issue references\.\s*$/mu,
+  );
   assert.match(maintenance, /^\s*schedule:\s*$/mu);
   assert.match(maintenance, /^\s*workflow_dispatch:\s*$/mu);
   assert.doesNotMatch(maintenance, /^\s*pull_request:\s*$/mu);
@@ -227,6 +235,14 @@ test("the repository wires offline and live reconciliation into distinct lanes",
     /^concurrency:\s*\n\s+group:\s*roadmap-issue-reconciliation\s*\n\s+cancel-in-progress:\s*false\s*$/mu,
   );
   assert.match(maintenance, /^\s*persist-credentials:\s*false\s*$/mu);
+  assert.match(
+    maintenance,
+    /^\s*contents:\s*read\s*# Repository checkout\.\s*$/mu,
+  );
+  assert.match(
+    maintenance,
+    /^\s*issues:\s*read\s*# Live issue snapshot reconciliation\.\s*$/mu,
+  );
   assert.match(
     maintenance,
     /node scripts\/check-roadmap-inventory\.mjs\s+--live\s+--repo "\$REPOSITORY"/u,
