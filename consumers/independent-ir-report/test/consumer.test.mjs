@@ -23,6 +23,7 @@ import {
 } from "../src/index.mjs";
 import { renderReport } from "../src/common.mjs";
 import { buildLspFixture } from "../src/lsp-fixture.mjs";
+import { validateRoleCoverage } from "../src/profile.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FIXTURES = path.join(ROOT, "fixtures");
@@ -146,6 +147,10 @@ test("wire behavior derives from identity, never a release label or switch", (t)
   const renamed = loadProfile(copy);
   assert.equal(renamed.generationId, "v0.2.1");
   assert.equal(renamed.openClassKindField, false);
+
+  metadata.openClassKindField = true;
+  writeFileSync(profilePath, `${JSON.stringify(metadata, null, 2)}\n`);
+  expectConsumerError("E_PROFILE", () => loadProfile(copy));
 });
 
 test("a self-consistent but unknown identity tuple is rejected", (t) => {
@@ -169,6 +174,20 @@ test("a self-consistent but unknown identity tuple is rejected", (t) => {
   writeFileSync(profilePath, `${JSON.stringify(metadata, null, 2)}\n`);
 
   expectConsumerError("E_PROFILE", () => loadProfile(copy));
+  const forgedCompatibility = JSON.parse(
+    readFileSync(path.join(ROOT, "compatibility.v1.json"), "utf8"),
+  );
+  forgedCompatibility.generations.push({
+    ...structuredClone(forgedCompatibility.generations[1]),
+    id: "caller-forged-generation",
+    identity: {
+      ...forgedCompatibility.generations[1].identity,
+      schemaHash: metadata.schemaHash,
+    },
+  });
+  expectConsumerError("E_PROFILE", () =>
+    loadProfile(copy, forgedCompatibility)
+  );
 });
 
 function expectConsumerError(code, operation) {
@@ -438,51 +457,15 @@ test("IR admission rejects unknown fields in every document record", () => {
   }
 });
 
-test("a registered release profile must project every classified visual role", (context) => {
-  const directory = mkdtempSync(path.join(tmpdir(), "colorful-profile-"));
-  context.after(() => rmSync(directory, { recursive: true }));
+test("a registered release profile must project every classified visual role", () => {
   const fixtureDirectory = path.join(FIXTURES, "releases", "v0.3.0");
-  const syntax = readFileSync(
-    path.join(fixtureDirectory, "syntax.v1.graphql"),
-    "utf8",
-  );
-  const vocabulary = JSON.parse(
-    readFileSync(
-      path.join(fixtureDirectory, "vocabulary.v1.json"),
-      "utf8",
-    ),
-  );
-  const missingRole = vocabulary.classRoles[0].visualRole;
-  vocabulary.roleProjections = vocabulary.roleProjections.filter(
-    (projection) => projection.visualRole !== missingRole,
-  );
-  const vocabularyText = `${JSON.stringify(vocabulary, null, 2)}\n`;
-  const metadata = JSON.parse(
-    readFileSync(path.join(fixtureDirectory, "profile.json"), "utf8"),
-  );
-  metadata.vocabularyHash = `sha256:${createHash("sha256")
-    .update(vocabularyText, "utf8")
-    .digest("hex")}`;
-  const compatibility = JSON.parse(
-    readFileSync(path.join(ROOT, "compatibility.v1.json"), "utf8"),
-  );
-  compatibility.generations.push({
-    ...structuredClone(compatibility.generations[1]),
-    id: "test-missing-projection",
-    identity: {
-      ...compatibility.generations[1].identity,
-      vocabularyHash: metadata.vocabularyHash,
-    },
-  });
-  writeFileSync(path.join(directory, "syntax.v1.graphql"), syntax);
-  writeFileSync(path.join(directory, "vocabulary.v1.json"), vocabularyText);
-  writeFileSync(
-    path.join(directory, "profile.json"),
-    `${JSON.stringify(metadata, null, 2)}\n`,
-  );
+  const profile = loadProfile(fixtureDirectory);
+  const missingRole = profile.rolesByAxes.values().next().value;
+  const missingProjection = new Map(profile.projectionsByRole);
+  missingProjection.delete(missingRole);
 
   assert.throws(
-    () => loadProfile(directory, compatibility),
+    () => validateRoleCoverage(profile.rolesByAxes, missingProjection),
     (error) =>
       error instanceof ConsumerError &&
       error.code === "E_PROFILE" &&

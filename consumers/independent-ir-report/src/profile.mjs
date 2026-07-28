@@ -133,7 +133,18 @@ function enumValues(syntax, name, optional = false) {
   return values;
 }
 
-export function loadProfile(directory, compatibility = COMPATIBILITY) {
+export function validateRoleCoverage(rolesByAxes, projectionsByRole) {
+  for (const [axes, role] of rolesByAxes) {
+    if (!projectionsByRole.has(role)) {
+      fail(
+        "E_PROFILE",
+        `profile class role ${role} for axes ${axes} has no projection`,
+      );
+    }
+  }
+}
+
+export function loadProfile(directory) {
   const metadata = parseJson(
     readFileSync(path.join(directory, "profile.json"), "utf8"),
     "E_PROFILE",
@@ -165,7 +176,7 @@ export function loadProfile(directory, compatibility = COMPATIBILITY) {
       schemaHash: declaredSchemaHash,
       vocabularyHash: declaredVocabularyHash,
     },
-    compatibility,
+    COMPATIBILITY,
   );
   const schemaHash = profileSchemaHash(syntax, generation.schemaHashMode);
   const vocabularyHash = sha256(vocabularyText);
@@ -241,14 +252,7 @@ export function loadProfile(directory, compatibility = COMPATIBILITY) {
       lspLegend.push(projection.lspTokenType);
     }
   }
-  for (const [axes, role] of rolesByAxes) {
-    if (!projectionsByRole.has(role)) {
-      fail(
-        "E_PROFILE",
-        `profile class role ${role} for axes ${axes} has no projection`,
-      );
-    }
-  }
+  validateRoleCoverage(rolesByAxes, projectionsByRole);
 
   return Object.freeze({
     directory,
@@ -280,12 +284,10 @@ export function loadProfile(directory, compatibility = COMPATIBILITY) {
   });
 }
 
-export function loadProfiles(directory, compatibility = COMPATIBILITY) {
+export function loadProfiles(directory) {
   return readdirSync(directory, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) =>
-      loadProfile(path.join(directory, entry.name), compatibility)
-    )
+    .map((entry) => loadProfile(path.join(directory, entry.name)))
     .sort((left, right) =>
       left.release < right.release ? -1 : Number(left.release > right.release),
     );
