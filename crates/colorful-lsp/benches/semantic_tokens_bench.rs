@@ -13,11 +13,11 @@
 //! delay, cancellation, lint analysis, cache coordination, diagnostic
 //! publication, and JSON-RPC transport. Run it with
 //! `cargo bench -p colorful-lsp`. See `docs/topics/coloring/README.md` for the
-//! measured helper figures and the
+//! measured helper figures,
 //! [#122](https://github.com/flyingrobots/colorful-language/issues/122)
-//! production-overload and
+//! for the production overload envelope, and
 //! [#135](https://github.com/flyingrobots/colorful-language/issues/135)
-//! cross-stage benchmark gaps.
+//! for the delivered cross-stage comparison.
 
 use colorful_lexicon::ContextualOpenClassAnnotator;
 use colorful_parse::ProseParser;

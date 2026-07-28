@@ -93,7 +93,7 @@ requirement only after a second trusted human can satisfy it.
 `ROADMAP.md` gives each open non-epic `slice` issue one invisible primary marker:
 
 ```markdown
-<!-- roadmap-primary: active #122 #135 -->
+<!-- roadmap-primary: active #NN #MM -->
 ```
 
 The accepted dispositions are:

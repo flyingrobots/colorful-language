@@ -138,9 +138,9 @@ diagnostics and cached semantic tokens. An accepted oversized generation
 bypasses parsing, classification, and linting while caching the limit diagnostic
 and empty tokens. A semantic-token request waits for that generation's cached
 value in either case rather than starting another parse. The release-mode SLO
-and overload harness for this combined production path remain tracked by
+and overload harness for this combined production path are published by
 [#122](https://github.com/flyingrobots/colorful-language/issues/122), while
-broader cross-stage benchmarks remain tracked by
+the broader cross-stage comparison is published by
 [#135](https://github.com/flyingrobots/colorful-language/issues/135). See the
 [coloring performance reference](../coloring/README.md#performance) and the
 [linting test plan](test-plan.md) for the current evidence.
