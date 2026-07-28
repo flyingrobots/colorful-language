@@ -69,6 +69,183 @@ fn object_string<'a>(value: &'a Value, key: &str) -> &'a str {
         .unwrap_or_else(|| panic!("{key} must be a string"))
 }
 
+fn grouped_integer(value: u64) -> String {
+    let digits = value.to_string();
+    let mut grouped = String::with_capacity(digits.len() + digits.len() / 3);
+    for (index, byte) in digits.bytes().enumerate() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            grouped.push(',');
+        }
+        grouped.push(char::from(byte));
+    }
+    grouped
+}
+
+fn display_duration(nanoseconds: u64) -> String {
+    if nanoseconds < 100_000 {
+        format!("{:.1} µs", nanoseconds as f64 / 1_000.0)
+    } else if nanoseconds < 1_000_000 {
+        format!("{:.0} µs", nanoseconds as f64 / 1_000.0)
+    } else {
+        format!("{:.2} ms", nanoseconds as f64 / 1_000_000.0)
+    }
+}
+
+fn display_throughput(bytes_per_second: u64) -> String {
+    format!("{:.1} MB/s", bytes_per_second as f64 / 1_000_000.0)
+}
+
+fn display_bytes(bytes: u64) -> String {
+    const MEBIBYTE: u64 = 1024 * 1024;
+    if bytes >= MEBIBYTE {
+        format!("{:.2} MiB", bytes as f64 / MEBIBYTE as f64)
+    } else {
+        format!("{:.1} KiB", bytes as f64 / 1024.0)
+    }
+}
+
+fn report_measurement<'a>(measurements: &'a [Value], stage: &str, corpus: &str) -> &'a Value {
+    measurements
+        .iter()
+        .find(|measurement| {
+            measurement["stage"].as_str() == Some(stage)
+                && measurement["corpus"].as_str() == Some(corpus)
+        })
+        .unwrap_or_else(|| panic!("missing report measurement for {stage}/{corpus}"))
+}
+
+fn readme_report_mismatch(readme: &str, report: &Value) -> Option<String> {
+    let metadata = &report["measurement"];
+    let generated_at = object_string(metadata, "generatedAt");
+    let rustc = object_string(metadata, "rustc");
+    let rustc_summary = rustc
+        .split_whitespace()
+        .take(2)
+        .collect::<Vec<_>>()
+        .join(" ");
+    let node = object_string(metadata, "node")
+        .strip_prefix('v')
+        .unwrap_or_else(|| object_string(metadata, "node"));
+    let hardware = object_string(metadata, "hardware");
+    let (processor, architecture) = hardware
+        .rsplit_once("; ")
+        .unwrap_or_else(|| panic!("hardware must end in a semicolon-delimited architecture"));
+    let gibibytes = metadata["totalMemoryBytes"]
+        .as_u64()
+        .expect("totalMemoryBytes must be an integer") as f64
+        / (1024_u64.pow(3)) as f64;
+    let memory = if gibibytes.fract() == 0.0 {
+        format!("{gibibytes:.0} GiB RAM")
+    } else {
+        format!("{gibibytes:.1} GiB RAM")
+    };
+    let metadata_fragments = [
+        &generated_at[..10],
+        object_string(metadata, "sourceCommit"),
+        &rustc_summary,
+        node,
+        object_string(metadata, "allocationCounter"),
+        processor,
+        architecture,
+        &memory,
+        object_string(metadata, "operatingSystem"),
+    ];
+    for fragment in metadata_fragments {
+        if !readme.contains(fragment) {
+            return Some(format!("README is missing benchmark metadata: {fragment}"));
+        }
+    }
+
+    let measurements = report["measurements"]
+        .as_array()
+        .expect("measurements must be an array");
+    let stage_labels = [
+        ("parsing", "Parsing"),
+        ("annotation", "Contextual annotation"),
+        ("lint", "Lint analysis"),
+        ("ir-projection", "Guarded IR projection"),
+        ("ir-serialization", "Canonical IR serialization"),
+        ("ir-validation", "Fail-closed IR validation"),
+    ];
+    for (stage, label) in stage_labels {
+        let small = report_measurement(measurements, stage, "small");
+        let medium = report_measurement(measurements, stage, "medium");
+        let row = format!(
+            "| {label} | {} | {} / {} | {} | {} | {} / {} |",
+            display_duration(
+                small["medianNanoseconds"]
+                    .as_u64()
+                    .expect("small median must be an integer")
+            ),
+            grouped_integer(
+                small["allocationCount"]
+                    .as_u64()
+                    .expect("small allocation count must be an integer")
+            ),
+            display_bytes(
+                small["allocatedBytes"]
+                    .as_u64()
+                    .expect("small allocated bytes must be an integer")
+            ),
+            display_duration(
+                medium["medianNanoseconds"]
+                    .as_u64()
+                    .expect("medium median must be an integer")
+            ),
+            display_throughput(
+                medium["throughputBytesPerSecond"]
+                    .as_u64()
+                    .expect("medium throughput must be an integer")
+            ),
+            grouped_integer(
+                medium["allocationCount"]
+                    .as_u64()
+                    .expect("medium allocation count must be an integer")
+            ),
+            display_bytes(
+                medium["allocatedBytes"]
+                    .as_u64()
+                    .expect("medium allocated bytes must be an integer")
+            ),
+        );
+        if !readme.contains(&row) {
+            return Some(format!("README is missing benchmark row: {row}"));
+        }
+    }
+
+    let graft = &report["linkedMeasurements"][0]["measurements"];
+    let graft = graft
+        .as_array()
+        .expect("Graft measurements must be an array");
+    let small = graft
+        .iter()
+        .find(|measurement| measurement["corpus"] == "small")
+        .expect("small Graft measurement");
+    let medium = graft
+        .iter()
+        .find(|measurement| measurement["corpus"] == "medium")
+        .expect("medium Graft measurement");
+    let graft_row = format!(
+        "| Graft projection | {} | unavailable | {} | {} | unavailable |",
+        display_duration(
+            small["medianNanoseconds"]
+                .as_u64()
+                .expect("small Graft median must be an integer")
+        ),
+        display_duration(
+            medium["medianNanoseconds"]
+                .as_u64()
+                .expect("medium Graft median must be an integer")
+        ),
+        display_throughput(
+            medium["throughputBytesPerSecond"]
+                .as_u64()
+                .expect("medium Graft throughput must be an integer")
+        ),
+    );
+    (!readme.contains(&graft_row)).then(|| format!("README is missing benchmark row: {graft_row}"))
+}
+
 #[test]
 fn cross_stage_benchmark_report_is_complete_and_advisory() {
     let manifest_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");

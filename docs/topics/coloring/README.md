@@ -201,7 +201,7 @@ commit. Review the temporary report before updating
 | Parsing | 5.0 µs | 43 / 17.8 KiB | 250 µs | 180.1 MB/s | 2,009 / 915.8 KiB |
 | Contextual annotation | 15.4 µs | 136 / 12.7 KiB | 585 µs | 77.0 MB/s | 6,463 / 807.0 KiB |
 | Lint analysis | 7.0 µs | 144 / 9.4 KiB | 300 µs | 150.2 MB/s | 7,059 / 485.6 KiB |
-| Guarded IR projection | 79.3 µs | 1,063 / 75.3 KiB | 1.98 ms | 22.7 MB/s | 49,172 / 3.20 MiB |
+| Guarded IR projection | 79.2 µs | 1,063 / 75.3 KiB | 1.98 ms | 22.7 MB/s | 49,172 / 3.20 MiB |
 | Canonical IR serialization | 183 µs | 2,342 / 330.7 KiB | 8.87 ms | 5.1 MB/s | 114,264 / 16.87 MiB |
 | Fail-closed IR validation | 58.3 µs | 1,009 / 59.2 KiB | 1.78 ms | 25.3 MB/s | 48,414 / 2.60 MiB |
 | Graft projection | 744 µs | unavailable | 7.47 ms | 6.0 MB/s | unavailable |
