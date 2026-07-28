@@ -79,6 +79,8 @@ each page's own status note before trusting a specific finding.
 
 ## Topics
 
+- [CLI](topics/cli/README.md) — command dispatch, shared input behavior, and the
+  public `colorful-cli` library boundary.
 - [parsing](topics/parsing/README.md) — how prose is lexed and shaped into
   structure (the `Parser` port).
 - [lexicon](topics/lexicon/README.md) — the closed-class word set and

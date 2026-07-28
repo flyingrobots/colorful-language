@@ -192,22 +192,30 @@ against [`.github/coverage-policy.json`](../../../.github/coverage-policy.json)
 by [`check-coverage-policy.mjs`](../../../scripts/check-coverage-policy.mjs)
 before the required job can pass.
 
-The initial baseline was measured at source commit
-`da766e7f5dc6ceacf0141bf048594af4d6b87999` with the pinned command above:
+The current module-layout baseline was measured at source commit
+`38366a40a9ba4bf81e8a3eff1131a06ae3f727be` with the pinned command above:
 
 | Surface | Measured lines | Measured coverage | Minimum | Maximum uncovered |
 | --- | ---: | ---: | ---: | ---: |
-| Workspace | 5,757 / 6,037 | 95.36% | 92% | 280 |
-| `crates/colorful-cli/src/lib.rs` | 651 / 716 | 90.92% | 90% | 65 |
+| Workspace | 5,457 / 5,731 | 95.22% | 92% | 274 |
+| `crates/colorful-cli/src/cli/args.rs` | 74 / 83 | 89.16% | 88% | 9 |
+| `crates/colorful-cli/src/cli/color.rs` | 65 / 71 | 91.55% | 90% | 6 |
+| `crates/colorful-cli/src/cli/diagnose.rs` | 129 / 169 | 76.33% | 75% | 40 |
+| `crates/colorful-cli/src/cli/lint.rs` | 65 / 70 | 92.86% | 92% | 5 |
 | `crates/colorful-cli/src/main.rs` | 7 / 7 | 100% | 100% | 0 |
 | `crates/colorful-lsp/src/lib.rs` | 499 / 500 | 99.80% | 99% | 1 |
 | `crates/colorful-lsp/src/main.rs` | 61 / 64 | 95.31% | 94% | 3 |
 
 The 92% workspace percentage is deliberately below the earlier 92.16%
-observation and the fresh 95.36% measurement. The uncovered-line ceilings are
+observation and the fresh 95.22% measurement. The uncovered-line ceilings are
 the ratchet: adding an uncovered workspace or monitored transport line fails
 even while the percentage remains above its conservative floor. All authored
 and generated Rust source remains in the report; the policy has no exclusions.
+
+The CLI crate root is a declarative facade and therefore has no executable lines
+in LLVM's report. Its per-file transport floors follow the four private
+implementation modules plus the binary entrypoint; moving a responsibility
+requires updating the exact inventory and recording a fresh pinned report.
 
 When coverage improves, raise the recorded measurements and lower uncovered-
 line ceilings from a fresh pinned report. Lowering a percentage floor or

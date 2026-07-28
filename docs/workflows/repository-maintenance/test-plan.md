@@ -247,6 +247,19 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/check-coverage-policy.test.mjs`. *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
   *Status:* implemented.
+- **RM-10d — Coverage follows transport source ownership.** *Requirement:*
+  RM-10. *Behavior:* when CLI transport responsibilities move behind the
+  crate-root facade, the per-file ratchet follows every executable source owner
+  and does not require the declarative facade to appear in LLVM's report.
+  *Oracle:* the deterministic policy test requires the exact CLI transport
+  module inventory and rejects a stale `src/lib.rs` entry. *Evidence type:*
+  checked-in policy inventory test plus the hosted LLVM summary. *Evidence:*
+  `.github/coverage-policy.json`;
+  `scripts/check-coverage-policy.test.mjs`
+  `coverage follows every executable CLI source owner`; and CI run
+  `30395535174`'s `rust-coverage` artifact. *Tracking:*
+  [#223](https://github.com/flyingrobots/colorful-language/issues/223).
+  *Status:* implemented.
 - **RM-11a — Explicit workspace doctest evidence.** *Requirement:* RM-11.
   *Behavior:* the normal Rust CI job runs
   `cargo test --doc --workspace --locked` as a visible, unconditional, blocking

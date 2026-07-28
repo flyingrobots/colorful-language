@@ -5,24 +5,48 @@
     "cargoLlvmCov": "0.8.7"
   },
   "measurement": {
-    "sourceCommit": "da766e7f5dc6ceacf0141bf048594af4d6b87999",
+    "sourceCommit": "38366a40a9ba4bf81e8a3eff1131a06ae3f727be",
     "command": "cargo llvm-cov --workspace --all-features --all-targets --locked"
   },
   "workspace": {
-    "measuredLines": 6037,
-    "measuredCoveredLines": 5757,
-    "measuredLinePercent": 95.36193473579593,
+    "measuredLines": 5731,
+    "measuredCoveredLines": 5457,
+    "measuredLinePercent": 95.218984470424,
     "minimumLinePercent": 92,
-    "maximumUncoveredLines": 280
+    "maximumUncoveredLines": 274
   },
   "files": [
     {
-      "path": "crates/colorful-cli/src/lib.rs",
-      "measuredLines": 716,
-      "measuredCoveredLines": 651,
-      "measuredLinePercent": 90.9217877094972,
+      "path": "crates/colorful-cli/src/cli/args.rs",
+      "measuredLines": 83,
+      "measuredCoveredLines": 74,
+      "measuredLinePercent": 89.1566265060241,
+      "minimumLinePercent": 88,
+      "maximumUncoveredLines": 9
+    },
+    {
+      "path": "crates/colorful-cli/src/cli/color.rs",
+      "measuredLines": 71,
+      "measuredCoveredLines": 65,
+      "measuredLinePercent": 91.54929577464789,
       "minimumLinePercent": 90,
-      "maximumUncoveredLines": 65
+      "maximumUncoveredLines": 6
+    },
+    {
+      "path": "crates/colorful-cli/src/cli/diagnose.rs",
+      "measuredLines": 169,
+      "measuredCoveredLines": 129,
+      "measuredLinePercent": 76.33136094674556,
+      "minimumLinePercent": 75,
+      "maximumUncoveredLines": 40
+    },
+    {
+      "path": "crates/colorful-cli/src/cli/lint.rs",
+      "measuredLines": 70,
+      "measuredCoveredLines": 65,
+      "measuredLinePercent": 92.85714285714286,
+      "minimumLinePercent": 92,
+      "maximumUncoveredLines": 5
     },
     {
       "path": "crates/colorful-cli/src/main.rs",

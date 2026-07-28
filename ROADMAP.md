@@ -83,8 +83,8 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — validate boundaries with fuzzing** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | #134 now builds on delivered #82 with a pinned seeded correctness corpus and four manual fuzz targets; measurement lanes remain advisory until their environments are stable. |
 | **Delivered — prove independent-consumer value** | Mutation, fuzzing, and a standalone consumer exposed real boundary cost without expanding the cathedral. | #156 retains stable v1 under its reviewed correctness/cost rule; delivered #82 and #134 supply the mutation and fuzz baselines. |
 | **Delivered — explicit wire generations** | The independent proof exposed two schema/vocabulary generations under one `colorful.syntax/v1` label. | #221 authors three exact identity generations, migration evidence, and fail-closed tuple selection. |
-| **Now — decompose god-files without API drift** | IR and CLI contributors should not cross unrelated responsibilities to change one validator or output adapter. | Complete #223 with black-box characterization and unchanged public re-exports. |
-| **Next — generate portable admission** | Consumers should not hand-maintain structural wire validation after generation compatibility and module ownership are explicit. | Complete #222 after #223, retaining named semantic checks and measured before/after burden. |
+| **Delivered — decompose god-files without API drift** | IR and CLI contributors no longer cross unrelated responsibilities to change one validator or output adapter. | #223 preserves the public facades and assigns hashing, projection, path, validation, argument, color, diagnosis, and lint behavior one source owner each. |
+| **Now — generate portable admission** | Consumers should not hand-maintain structural wire validation after generation compatibility and module ownership are explicit. | Complete #222 after #223, retaining named semantic checks and measured before/after burden. |
 | **Then — test analyzer substitution** | An optional external-analyzer adapter tests whether the pure port provides useful substitution without making an external engine mandatory. | Complete #157 with built-in/external CLI and LSP parity. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -140,12 +140,12 @@ observe public-contract regressions before they ship.
   [#213](https://github.com/flyingrobots/colorful-language/issues/213) after
   the workflow-security gate.
   <!-- roadmap-primary: delivered #213 -->
-- **Active structural decomposition:** split the IR and CLI god-files along
+- **Delivered structural decomposition:** split the IR and CLI god-files along
   existing responsibilities without changing public APIs, canonical bytes, or
   behavior
   [#223](https://github.com/flyingrobots/colorful-language/issues/223), after
   the wire-generation policy and before generated portable admission.
-  <!-- roadmap-primary: active #223 -->
+  <!-- roadmap-primary: delivered #223 -->
 - **Parked compatibility diagnostics:** decide how total compatibility wrappers
   expose classification failures without adding hidden stderr side effects to
   library calls
@@ -166,6 +166,11 @@ observe public-contract regressions before they ship.
   [#210](https://github.com/flyingrobots/colorful-language/issues/210) without
   creating a second coverage gate.
   <!-- roadmap-primary: parked #210 -->
+- **Parked public-rustdoc hygiene:** replace public API links to private lexicon
+  tables with stable public-facing documentation before making rustdoc warnings
+  a workspace gate
+  [#230](https://github.com/flyingrobots/colorful-language/issues/230).
+  <!-- roadmap-primary: parked #230 -->
 
 **Exit signal:** the documented local gate and the protected-branch gate name
 the same reproducible evidence; public binary transport and API examples are
@@ -211,11 +216,11 @@ deterministically and use valid data without reverse-engineering Colorful.
   by full tuple, and binds every transition to migration evidence
   [#221](https://github.com/flyingrobots/colorful-language/issues/221).
   <!-- roadmap-primary: delivered #221 -->
-- **Queued portable admission:** generate structural runtime validation from
+- **Active portable admission:** generate structural runtime validation from
   one contract authority, preserving named semantic checks and the stable
   refusal boundary, after the compatibility policy
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
-  <!-- roadmap-primary: parked #222 -->
+  <!-- roadmap-primary: active #222 -->
 
 **Exit signal:** invalid spans, graphs, identities, hashes, versions, vocabulary,
 and source relationships fail closed with stable categories; successful

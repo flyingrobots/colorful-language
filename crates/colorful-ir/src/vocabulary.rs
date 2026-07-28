@@ -196,7 +196,8 @@ pub fn visual_role(
 /// to `Some`; callers must nevertheless handle this v0.4 `Option` signature.
 #[must_use]
 pub fn visual_role_for(class: PosClass) -> Option<VisualRole> {
-    let (token_kind, lexical_class, _function_kind, open_class_kind) = crate::token_axes(class);
+    let (token_kind, lexical_class, _function_kind, open_class_kind) =
+        crate::projection::token_axes(class);
     visual_role(
         &token_kind,
         lexical_class.as_ref(),
