@@ -195,16 +195,28 @@ function parseArguments(argv) {
 
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
+    const optionValue = () => {
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        fail(
+          "E_ROADMAP_USAGE",
+          "arguments",
+          `${argument} requires a value`,
+        );
+      }
+      index += 1;
+      return value;
+    };
     if (argument === "--live") {
       options.live = true;
     } else if (argument === "--roadmap") {
-      options.roadmapPath = argv[++index];
+      options.roadmapPath = optionValue();
     } else if (argument === "--issues") {
-      options.issuePath = argv[++index];
+      options.issuePath = optionValue();
     } else if (argument === "--repo") {
-      options.repo = argv[++index];
+      options.repo = optionValue();
     } else if (argument === "--closing-pr") {
-      options.closingPr = argv[++index];
+      options.closingPr = optionValue();
     } else {
       fail(
         "E_ROADMAP_USAGE",
