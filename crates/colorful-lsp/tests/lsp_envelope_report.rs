@@ -160,6 +160,11 @@ fn baseline_covers_the_reviewed_supported_envelope() {
         baseline["measurement"]["serverSourceGitCommit"],
         baseline["source"]["gitCommit"]
     );
+    assert_eq!(baseline["measurement"]["runsPerScenario"], 1);
+    assert_eq!(
+        baseline["measurement"]["measuredPlatform"],
+        "darwin-aarch64"
+    );
     assert!(baseline["measurement"]["serverSha256"]
         .as_str()
         .is_some_and(|hash| hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit())));
