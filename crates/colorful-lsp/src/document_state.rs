@@ -351,8 +351,11 @@ impl DocumentStore {
                 .max_queue_delay_micros
                 .fetch_max(queue_delay_micros, Ordering::AcqRel);
             let oversized = work.snapshot.len_bytes() > store.max_document_bytes;
-            let analysis = if oversized {
-                oversized_analysis(work.snapshot.len_bytes(), store.max_document_bytes)
+            let (analysis, accepted_result) = if oversized {
+                (
+                    oversized_analysis(work.snapshot.len_bytes(), store.max_document_bytes),
+                    true,
+                )
             } else {
                 store
                     .metrics
@@ -364,13 +367,13 @@ impl DocumentStore {
                 match tokio::task::spawn_blocking(move || compute(snapshot.to_string(), generation))
                     .await
                 {
-                    Ok(analysis) => analysis,
+                    Ok(analysis) => (analysis, true),
                     Err(_) => {
                         store
                             .metrics
                             .analysis_failures
                             .fetch_add(1, Ordering::AcqRel);
-                        failed_analysis()
+                        (failed_analysis(), false)
                     }
                 }
             };
@@ -397,10 +400,12 @@ impl DocumentStore {
             state.cached = Some(Arc::clone(&cached));
             state.updates.send_replace(Some(Arc::clone(&cached)));
             drop(state);
-            store
-                .metrics
-                .accepted_results
-                .fetch_add(1, Ordering::AcqRel);
+            if accepted_result {
+                store
+                    .metrics
+                    .accepted_results
+                    .fetch_add(1, Ordering::AcqRel);
+            }
 
             if oversized {
                 store
