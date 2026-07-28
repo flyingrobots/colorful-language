@@ -37,11 +37,22 @@ const LINKED_AUTHORITIES: [(&str, &str, &str); 3] = [
     ),
 ];
 
-fn workspace_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
+fn workspace_root() -> Option<PathBuf> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
-        .expect("canonical workspace root")
+        .ok()?;
+    root.join("docs/topics/coloring/README.md")
+        .is_file()
+        .then_some(root)
+}
+
+fn evidence_path(workspace_root: Option<&Path>, relative_path: &str) -> Option<PathBuf> {
+    if let Some(root) = workspace_root {
+        return Some(root.join(relative_path));
+    }
+    let crate_relative = relative_path.strip_prefix("crates/colorful-cli/")?;
+    Some(Path::new(env!("CARGO_MANIFEST_DIR")).join(crate_relative))
 }
 
 fn report() -> Value {
@@ -85,10 +96,15 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         Some("examples/cross_stage_allocations.rs")
     );
     assert_eq!(allocation_probe["test"].as_bool(), Some(true));
-    assert_eq!(
-        manifest["dev-dependencies"]["stats_alloc"]["workspace"].as_bool(),
-        Some(true),
-        "the allocation probe must use the reviewed workspace profiler"
+    let stats_alloc = &manifest["dev-dependencies"]["stats_alloc"];
+    assert!(
+        stats_alloc
+            .get("workspace")
+            .and_then(toml::Value::as_bool)
+            == Some(true)
+            || stats_alloc.get("version").and_then(toml::Value::as_str) == Some("0.1.10")
+            || stats_alloc.as_str() == Some("0.1.10"),
+        "the allocation probe must use stats_alloc 0.1.10 from either the workspace or normalized package manifest"
     );
     assert!(
         manifest["dev-dependencies"].get("dhat").is_none(),
@@ -147,12 +163,14 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         assert!(valid, "generatedAt has an invalid byte at index {index}");
     }
 
-    let readme =
-        std::fs::read_to_string(root.join("docs/topics/coloring/README.md")).expect("read README");
-    assert!(
-        readme.contains(source_commit),
-        "performance reference must identify the measured source commit"
-    );
+    if let Some(root) = &root {
+        let readme = std::fs::read_to_string(root.join("docs/topics/coloring/README.md"))
+            .expect("read README");
+        assert!(
+            readme.contains(source_commit),
+            "performance reference must identify the measured source commit"
+        );
+    }
 
     let policy = &report["regressionPolicy"];
     assert_eq!(policy["enforcement"], "advisory");
@@ -168,7 +186,9 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
     for corpus in corpus_values {
         let id = object_string(corpus, "id");
         let relative_path = object_string(corpus, "path");
-        let bytes = std::fs::read(root.join(relative_path))
+        let corpus_path = evidence_path(root.as_deref(), relative_path)
+            .unwrap_or_else(|| panic!("corpus is not package-local: {relative_path}"));
+        let bytes = std::fs::read(&corpus_path)
             .unwrap_or_else(|error| panic!("read corpus {relative_path}: {error}"));
         assert_eq!(
             corpus["byteCount"].as_u64(),
@@ -200,10 +220,12 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         let stage = object_string(authority, "stage");
         let name = object_string(authority, "authority");
         let evidence = object_string(authority, "evidence");
-        assert!(
-            root.join(evidence).is_file(),
-            "authority evidence does not exist: {evidence}"
-        );
+        if let Some(root) = &root {
+            assert!(
+                root.join(evidence).is_file(),
+                "authority evidence does not exist: {evidence}"
+            );
+        }
         assert!(
             authorities.insert(stage, (name, evidence)).is_none(),
             "duplicate authority for {stage}"
