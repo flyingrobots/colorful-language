@@ -377,11 +377,11 @@ function reportRelativePath(filename, workspaceRoot) {
     "E_COVERAGE_REPORT",
     "coverage report filename",
   );
-  const absolute = resolve(normalizedFilename);
-  const relativePath = relative(resolve(workspaceRoot), absolute).replaceAll(
-    "\\",
-    "/",
-  );
+  const absolute = isAbsolute(normalizedFilename)
+    ? resolve(normalizedFilename)
+    : resolve(workspaceRoot, normalizedFilename);
+  const relativePath = relative(resolve(workspaceRoot), absolute)
+    .replaceAll("\\", "/");
   if (relativePath.startsWith("../") || isAbsolute(relativePath)) {
     reject(
       "E_COVERAGE_REPORT",
