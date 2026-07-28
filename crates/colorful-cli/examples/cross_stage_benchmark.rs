@@ -429,4 +429,21 @@ mod tests {
         );
         assert_eq!(parse_linux_memory_bytes("MemFree: 2 kB\n"), None);
     }
+
+    #[test]
+    fn linux_processor_parser_handles_x86_and_arm_metadata() {
+        assert_eq!(
+            parse_linux_processor("model name\t: AMD EPYC 7763\n"),
+            Some("AMD EPYC 7763")
+        );
+        assert_eq!(
+            parse_linux_processor("Processor\t: ARMv8 Processor rev 1\nHardware : Ampere Altra\n"),
+            Some("ARMv8 Processor rev 1")
+        );
+        assert_eq!(
+            parse_linux_processor("Hardware\t: Raspberry Pi 5 Model B Rev 1.0\n"),
+            Some("Raspberry Pi 5 Model B Rev 1.0")
+        );
+        assert_eq!(parse_linux_processor("CPU implementer\t: 0x41\n"), None);
+    }
 }
