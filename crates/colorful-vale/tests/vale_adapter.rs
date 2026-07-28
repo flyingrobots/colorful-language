@@ -84,13 +84,17 @@ impl FakeVale {
 
         let script = format!(
             r#"#!/bin/sh
-if [ "${{1-}}" = "--version" ]; then
-  printf '%s\n' 'vale version {version}'
-  exit 0
-fi
 if [ "${{VALE_CONFIG_PATH+x}}" = x ] || [ "${{VALE_STYLES_PATH+x}}" = x ]; then
   printf '%s\n' 'ambient Vale configuration leaked into adapter' >&2
   exit 91
+fi
+if [ "${{1-}}" = "--version" ]; then
+  if [ "$#" -ne 1 ]; then
+    printf '%s\n' 'Vale discovery received unexpected arguments' >&2
+    exit 92
+  fi
+  printf '%s\n' 'vale version {version}'
+  exit 0
 fi
 printf '%s\n' "$@" > '{arguments}'
 cat > '{captured_input}'
