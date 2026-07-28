@@ -155,6 +155,19 @@ test("rejects a changed deterministic case bound", () => {
   );
 });
 
+test("rejects a case bound that exists only in a comment", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      propertyTest: VALID_SNAPSHOT.propertyTest.replace(
+        "const PROPERTY_CASES: u32 = 256;",
+        "// const PROPERTY_CASES: u32 = 256;",
+      ),
+    },
+    "E_PROPERTY_CASES",
+  );
+});
+
 test("rejects a seed that is not exactly 32 bytes", () => {
   expectPolicyError(
     {
@@ -162,6 +175,23 @@ test("rejects a seed that is not exactly 32 bytes", () => {
       propertyTest: VALID_SNAPSHOT.propertyTest.replace(
         "    0x13, 0x04, 0x13, 0x04, 0x13, 0x04, 0x13, 0x04,\n];",
         "];",
+      ),
+    },
+    "E_PROPERTY_SEED",
+  );
+});
+
+test("rejects a reviewed seed declaration that exists only in comments", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      propertyTest: VALID_SNAPSHOT.propertyTest.replace(
+        /const PROPERTY_SEED:[\s\S]*?\n\];/u,
+        (declaration) =>
+          declaration
+            .split("\n")
+            .map((line) => `// ${line}`)
+            .join("\n"),
       ),
     },
     "E_PROPERTY_SEED",

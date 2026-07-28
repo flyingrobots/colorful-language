@@ -81,7 +81,7 @@ function lockHasPackage(source, name, version) {
 
 function propertySeed(source) {
   const body = source.match(
-    /const PROPERTY_SEED:\s*\[u8;\s*32\]\s*=\s*\[([\s\S]*?)\];/u,
+    /^[ \t]*const[ \t]+PROPERTY_SEED:[ \t]*\[u8;[ \t]*32\][ \t]*=[ \t]*\[([\s\S]*?)^[ \t]*\];[ \t]*$/mu,
   )?.[1];
   if (body === undefined) {
     return null;
@@ -186,7 +186,7 @@ export function validatePropertyFuzzPolicy(snapshot) {
 
   const cases = Number(
     snapshot.propertyTest.match(
-      /const PROPERTY_CASES:\s*u32\s*=\s*(\d+);/u,
+      /^[ \t]*const[ \t]+PROPERTY_CASES:[ \t]*u32[ \t]*=[ \t]*(\d+);[ \t]*$/mu,
     )?.[1],
   );
   if (cases !== PROPERTY_CASES) {
@@ -203,8 +203,10 @@ export function validatePropertyFuzzPolicy(snapshot) {
     );
   }
   if (
-    !/^\s*cases:\s*PROPERTY_CASES,\s*$/mu.test(snapshot.propertyTest) ||
-    !/^\s*TestRng::from_seed\(RngAlgorithm::ChaCha,\s*&PROPERTY_SEED\)[,;]\s*$/mu.test(
+    !/^[ \t]*cases:[ \t]*PROPERTY_CASES,[ \t]*$/mu.test(
+      snapshot.propertyTest,
+    ) ||
+    !/^[ \t]*TestRng::from_seed\(RngAlgorithm::ChaCha,[ \t]*&PROPERTY_SEED\)[,;][ \t]*$/mu.test(
       snapshot.propertyTest,
     )
   ) {
