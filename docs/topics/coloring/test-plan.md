@@ -320,9 +320,10 @@ Requirements:
   finding span so the CLI's 1-based scalar column and the LSP's 0-based UTF-16
   range can be compared with an independent oracle. *Oracle:* no panic; legal
   ordered ranges and source round-trip for accepted data; exact typed
-  rejection for malformed data; CLI/LSP line parity and their documented
-  scalar-versus-UTF-16 column relationship. *Evidence type:* seeded property
-  tests, fuzz targets, and a 256-case deterministic CI corpus. *Evidence:*
+  rejection for malformed data across all nine public `ClassificationError`
+  variants; CLI/LSP line parity and their documented scalar-versus-UTF-16
+  column relationship. *Evidence type:* seeded property tests, fuzz targets,
+  and a 256-case deterministic CI corpus. *Evidence:*
   `crates/colorful-cli/tests/property_boundaries.rs`; all four targets under
   `fuzz/fuzz_targets/`; `scripts/check-property-fuzz-policy.mjs`; the explicit
   `property_boundaries` command in `.github/workflows/ci.yml`. *Tracking:*

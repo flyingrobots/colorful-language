@@ -537,7 +537,7 @@ Requirements:
 - **IR-21a** — *Requirement:* IR-21. *Behavior:* one seeded generator chooses a
   valid Unicode source plus a declarative public-tree or received-IR mutation.
   Valid built-in projection must pass `validate_document`; malformed tree
-  shapes and span layouts are rejected by the typed classification boundary;
+  shapes and span layouts reach all nine typed `ClassificationError` variants;
   received-IR mutations are rejected for the selected `ValidationError` code
   and structured path, not merely for any error. Time-based projection and
   validation fuzz targets reuse the same public entry points outside the

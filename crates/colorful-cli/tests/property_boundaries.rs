@@ -142,6 +142,14 @@ fn malformed_classification(
     mutation: u8,
 ) -> (Tree, Vec<Token>, &'static str, &'static str) {
     let (mut tree, mut tokens) = valid_tree_and_token();
+    let first_end = source
+        .char_indices()
+        .nth(1)
+        .map_or(source.len(), |(index, _)| index);
+    let second_end = source
+        .char_indices()
+        .nth(2)
+        .map_or(source.len(), |(index, _)| index);
     let (variant, path) = match mutation {
         0 => {
             tree.root = Node::Word {
@@ -182,9 +190,91 @@ fn malformed_classification(
                 "tree.root.sentences[0].parts[0].span.start",
             )
         }
-        _ => {
+        4 => {
             tokens.clear();
             ("TreeTokenCountMismatch", "tokens")
+        }
+        5 => {
+            tree = Tree::document(vec![Node::Sentence {
+                span: Span::new(0, second_end),
+                parts: vec![
+                    Node::Word {
+                        span: Span::new(first_end, second_end),
+                    },
+                    Node::Word {
+                        span: Span::new(0, first_end),
+                    },
+                ],
+            }]);
+            tokens = vec![
+                Token {
+                    span: Span::new(first_end, second_end),
+                    class: PosClass::Content,
+                },
+                Token {
+                    span: Span::new(0, first_end),
+                    class: PosClass::Content,
+                },
+            ];
+            ("UnsortedSpan", "tree.root.sentences[0].parts[1].span.start")
+        }
+        6 => {
+            tree = Tree::document(vec![Node::Sentence {
+                span: Span::new(0, second_end),
+                parts: vec![
+                    Node::Word {
+                        span: Span::new(0, first_end),
+                    },
+                    Node::Word {
+                        span: Span::new(0, second_end),
+                    },
+                ],
+            }]);
+            tokens = vec![
+                Token {
+                    span: Span::new(0, first_end),
+                    class: PosClass::Content,
+                },
+                Token {
+                    span: Span::new(0, second_end),
+                    class: PosClass::Content,
+                },
+            ];
+            (
+                "OverlappingSpan",
+                "tree.root.sentences[0].parts[1].span.start",
+            )
+        }
+        7 => {
+            tree = Tree::document(vec![Node::Sentence {
+                span: Span::new(0, first_end),
+                parts: vec![
+                    Node::Word {
+                        span: Span::new(0, first_end),
+                    },
+                    Node::Word {
+                        span: Span::new(first_end, second_end),
+                    },
+                ],
+            }]);
+            tokens = vec![
+                Token {
+                    span: Span::new(0, first_end),
+                    class: PosClass::Content,
+                },
+                Token {
+                    span: Span::new(first_end, second_end),
+                    class: PosClass::Content,
+                },
+            ];
+            (
+                "ChildSpanOutsideParent",
+                "tree.root.sentences[0].parts[1].span",
+            )
+        }
+        _ => {
+            tokens[0].span = Span::new(0, second_end);
+            ("TreeTokenSpanMismatch", "tokens[0].span")
         }
     };
     (tree, tokens, variant, path)
@@ -392,7 +482,7 @@ fn assert_cli_and_lsp_coordinate_property(prefix: &str) -> Result<(), TestCaseEr
 fn seeded_property_boundaries_hold_for_each_generated_case() {
     runner()
         .run(
-            &(unicode_source(), 0u8..5, 0u8..6),
+            &(unicode_source(), 0u8..9, 0u8..6),
             |(source, classification_mutation, ir_mutation)| {
                 assert_parser_and_annotator_property(&source)?;
                 assert_public_tree_mutation(&source, classification_mutation)?;
@@ -401,6 +491,45 @@ fn seeded_property_boundaries_hold_for_each_generated_case() {
             },
         )
         .expect("seeded property boundary corpus");
+}
+
+#[test]
+fn classification_mutation_matrix_covers_every_error_variant() {
+    let source = "é😀e\u{301}";
+    let expected = [
+        ("UnexpectedNodeKind", "tree.root"),
+        ("ReversedSpan", "tree.root.sentences[0].parts[0].span"),
+        (
+            "SpanOutOfBounds",
+            "tree.root.sentences[0].parts[0].span.end",
+        ),
+        (
+            "SpanNotOnCharBoundary",
+            "tree.root.sentences[0].parts[0].span.start",
+        ),
+        ("TreeTokenCountMismatch", "tokens"),
+        ("UnsortedSpan", "tree.root.sentences[0].parts[1].span.start"),
+        (
+            "OverlappingSpan",
+            "tree.root.sentences[0].parts[1].span.start",
+        ),
+        (
+            "ChildSpanOutsideParent",
+            "tree.root.sentences[0].parts[1].span",
+        ),
+        ("TreeTokenSpanMismatch", "tokens[0].span"),
+    ];
+
+    for (mutation, (expected_variant, expected_path)) in expected.into_iter().enumerate() {
+        let (tree, tokens, declared_variant, declared_path) =
+            malformed_classification(source, mutation as u8);
+        assert_eq!(declared_variant, expected_variant);
+        assert_eq!(declared_path, expected_path);
+        let error = ValidatedClassification::new(source, tree, tokens)
+            .expect_err("selected malformed classification must fail");
+        assert_eq!(classification_variant(&error), expected_variant);
+        assert_eq!(error.path().to_string(), expected_path);
+    }
 }
 
 #[test]
