@@ -33,6 +33,10 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-13** The locked VS Code runtime dependency graph must exclude known
   high- and critical-severity advisory ranges, and the extension's declared
   VS Code floor must satisfy the language client's runtime requirement.
+- **EDIT-14** A bounded seeded Unicode corpus must prove that CLI human
+  coordinates and LSP UTF-16 coordinates identify the same finding span across
+  astral code points, combining marks, zero-width characters, and mixed line
+  endings.
 
 ## Cases
 
@@ -117,6 +121,16 @@ Verification for editor adapters and the `colorful-lsp` surface.
   editor CI job. *Tracking:*
   [#185](https://github.com/flyingrobots/colorful-language/issues/185).
   *Status:* implemented.
+- **EDIT-14a** — *Requirement:* EDIT-14. *Behavior:* a generated valid-Unicode
+  prefix and selected source span are emitted once as a CLI finding and once as
+  an LSP diagnostic. The corpus is bounded to 256 cases under one checked-in
+  seed and guarantees astral, combining, zero-width, `LF`, `CR`, and `CRLF`
+  coverage. *Oracle:* both surfaces identify the same zero-based line and byte
+  span; CLI columns equal Unicode scalar counts plus one, while LSP columns
+  equal UTF-16 code-unit counts. *Evidence type:* cross-surface seeded property
+  test and coordinate fuzz target. *Tracking:*
+  [#134](https://github.com/flyingrobots/colorful-language/issues/134).
+  *Status:* planned.
 - **EDIT-5a** — *Requirement:* EDIT-5. *Behavior:* recipe docs state that
   marketplace packages are not published and that custom open-class token types
   may need theme rules. *Oracle:* documentation review. *Evidence:*

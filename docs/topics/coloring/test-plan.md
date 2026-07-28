@@ -316,10 +316,13 @@ Requirements:
 - **COL-18a** — *Requirement:* COL-18. *Behavior:* a bounded seeded corpus
   generates valid Unicode plus malformed public trees and IR mutations and
   exercises parser, annotator, projection, validation, and UTF-16 indexing.
-  *Oracle:* no panic; legal ordered ranges and source round-trip for accepted
-  data; deterministic rejection for malformed data; CLI/LSP coordinate parity.
-  *Evidence type:* property tests, fuzz targets, and a deterministic CI corpus.
-  *Tracking:*
+  Every generated source includes at least one chosen character-boundary
+  finding span so the CLI's 1-based scalar column and the LSP's 0-based UTF-16
+  range can be compared with an independent oracle. *Oracle:* no panic; legal
+  ordered ranges and source round-trip for accepted data; exact typed
+  rejection for malformed data; CLI/LSP line parity and their documented
+  scalar-versus-UTF-16 column relationship. *Evidence type:* seeded property
+  tests, fuzz targets, and a 256-case deterministic CI corpus. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
   *Status:* planned.
 - **COL-20a** — *Requirement:* COL-20. *Behavior:* the pure core constructs a
