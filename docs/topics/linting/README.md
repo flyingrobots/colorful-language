@@ -70,11 +70,11 @@ caller-cancellable timeout. It never runs `vale sync` or downloads a style.
 On Unix, each invocation owns a dedicated process group so timeout and
 cancellation terminate configured wrappers and their descendants before
 joining captured output. Other targets retain direct-child termination.
-Missing configuration, an unavailable or incompatible engine, timeout,
-cancellation, process failure, excessive output, invalid UTF-8, malformed JSON,
-invalid alert data, and source-identity mismatch are different `ValeErrorKind`
-values; none silently becomes an empty result or a fallback to the built-in
-rules.
+Missing configuration, an unavailable engine, unrecognized version output, an
+incompatible engine, timeout, cancellation, process failure, excessive output,
+invalid UTF-8, malformed JSON, invalid alert data, and source-identity mismatch
+are different `ValeErrorKind` values; none silently becomes an empty result or
+a fallback to the built-in rules.
 
 ```rust
 use colorful_vale::{CancellationToken, ValeAnalyzer, ValeConfig};

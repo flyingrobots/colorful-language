@@ -7,7 +7,9 @@ pub enum ValeErrorKind {
     Configuration,
     /// The configured executable could not be started.
     Unavailable,
-    /// Vale did not report a supported major version.
+    /// Vale version output did not contain a parseable stable semantic version.
+    UnrecognizedVersion,
+    /// Vale reported a parseable but unsupported major version.
     IncompatibleVersion,
     /// The process exceeded its configured deadline.
     Timeout,

@@ -15,10 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process, selects an explicit stdin document extension, validates its
   JSON/Unicode coordinates, and prepares deterministic namespaced Colorful
   findings for the existing pure `Analyzer` port. Missing
-  configuration, unavailable/incompatible engines, timeout, cancellation,
-  process failure, excessive output, invalid UTF-8, malformed alerts, and
-  source mismatch remain distinct typed failures with no silent built-in
-  fallback. Unix invocations own dedicated process groups so timeout and
+  configuration, unavailable engines, unrecognized version output, incompatible
+  engines, timeout, cancellation, process failure, excessive output, invalid
+  UTF-8, malformed alerts, and source mismatch remain distinct typed failures
+  with no silent built-in fallback. Unix invocations own dedicated process
+  groups so timeout and
   cancellation terminate configured wrappers and their descendants before
   captured output is joined. Process fixtures prove CLI/LSP parity and
   semantic-token/canonical-IR non-interference; a retained checksum-verified

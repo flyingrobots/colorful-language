@@ -170,7 +170,7 @@ impl ValeCapabilities {
             .find_map(parse_version_token)
             .ok_or_else(|| {
                 ValeError::new(
-                    ValeErrorKind::IncompatibleVersion,
+                    ValeErrorKind::UnrecognizedVersion,
                     format!("Vale version output did not contain semantic version: {output:?}"),
                 )
             })?;
@@ -178,7 +178,12 @@ impl ValeCapabilities {
             .split('.')
             .next()
             .and_then(|part| part.parse::<u64>().ok())
-            .expect("parse_version_token validated the major component");
+            .ok_or_else(|| {
+                ValeError::new(
+                    ValeErrorKind::UnrecognizedVersion,
+                    format!("Vale major version is not representable: {version:?}"),
+                )
+            })?;
         if major != SUPPORTED_VALE_MAJOR {
             return Err(ValeError::new(
                 ValeErrorKind::IncompatibleVersion,
