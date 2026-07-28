@@ -184,6 +184,16 @@ test("rejects malformed issue JSON with a stable snapshot error", () => {
   );
 });
 
+test("bounds live GitHub calls by time and response size", () => {
+  const checker = readFileSync(
+    new URL("./check-roadmap-inventory.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(checker, /timeout:\s*30_000/u);
+  assert.match(checker, /maxBuffer:\s*16 \* 1024 \* 1024/u);
+});
+
 test("the repository wires offline and live reconciliation into distinct lanes", () => {
   const ci = readFileSync(
     new URL("../.github/workflows/ci.yml", import.meta.url),
