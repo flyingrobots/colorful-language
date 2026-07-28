@@ -116,19 +116,15 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
         20,
         "generatedAt must use YYYY-MM-DDTHH:MM:SSZ"
     );
-    assert_eq!(&generated_at[4..5], "-");
-    assert_eq!(&generated_at[7..8], "-");
-    assert_eq!(&generated_at[10..11], "T");
-    assert_eq!(&generated_at[13..14], ":");
-    assert_eq!(&generated_at[16..17], ":");
-    assert_eq!(&generated_at[19..20], "Z");
     for (index, byte) in generated_at.bytes().enumerate() {
-        if ![4, 7, 10, 13, 16, 19].contains(&index) {
-            assert!(
-                byte.is_ascii_digit(),
-                "generatedAt contains a non-digit component"
-            );
-        }
+        let valid = match index {
+            4 | 7 => byte == b'-',
+            10 => byte == b'T',
+            13 | 16 => byte == b':',
+            19 => byte == b'Z',
+            _ => byte.is_ascii_digit(),
+        };
+        assert!(valid, "generatedAt has an invalid byte at index {index}");
     }
 
     let readme =

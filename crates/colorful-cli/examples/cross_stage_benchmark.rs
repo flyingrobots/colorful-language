@@ -118,23 +118,24 @@ fn parse_linux_memory_bytes(meminfo: &str) -> Option<u64> {
 }
 
 fn total_memory_bytes() -> u64 {
-    if let Ok(value) = std::env::var("COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES") {
-        return value
+    let bytes = if let Ok(value) = std::env::var("COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES") {
+        value
             .parse()
-            .expect("COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES must be a u64");
-    }
-    if cfg!(target_os = "macos") {
-        return command_output("sysctl", &["-n", "hw.memsize"])
+            .expect("COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES must be a u64")
+    } else if cfg!(target_os = "macos") {
+        command_output("sysctl", &["-n", "hw.memsize"])
             .parse()
-            .expect("sysctl hw.memsize must be a u64");
-    }
-    if cfg!(target_os = "linux") {
+            .expect("sysctl hw.memsize must be a u64")
+    } else if cfg!(target_os = "linux") {
         let meminfo = std::fs::read_to_string("/proc/meminfo").expect("read /proc/meminfo");
-        return parse_linux_memory_bytes(&meminfo).expect("parse MemTotal from /proc/meminfo");
-    }
-    panic!(
-        "set COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES on platforms without a built-in memory probe"
-    );
+        parse_linux_memory_bytes(&meminfo).expect("parse MemTotal from /proc/meminfo")
+    } else {
+        panic!(
+            "set COLORFUL_BENCHMARK_TOTAL_MEMORY_BYTES on platforms without a built-in memory probe"
+        );
+    };
+    assert!(bytes > 0, "total memory must be positive");
+    bytes
 }
 
 fn median_nanoseconds(mut samples: Vec<u64>) -> u64 {
