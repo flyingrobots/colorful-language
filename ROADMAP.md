@@ -108,12 +108,14 @@ observe public-contract regressions before they ship.
   and solo-safe ownership
   ([#152](https://github.com/flyingrobots/colorful-language/issues/152)); and
   executable roadmap-to-issue reconciliation
-  ([#187](https://github.com/flyingrobots/colorful-language/issues/187)); and
+  ([#187](https://github.com/flyingrobots/colorful-language/issues/187)) with
+  honestly typed malformed-fixture evidence
+  ([#202](https://github.com/flyingrobots/colorful-language/issues/202)); and
   required green checks on the protected branch
   ([#150](https://github.com/flyingrobots/colorful-language/issues/150),
   delivered through
   [PR #184](https://github.com/flyingrobots/colorful-language/pull/184)).
-  <!-- roadmap-primary: delivered #187 -->
+  <!-- roadmap-primary: delivered #187 #202 -->
 - **Open public-contract evidence:** add conservative coverage floors
   [#137](https://github.com/flyingrobots/colorful-language/issues/137) and
   runnable public API doctests

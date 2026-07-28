@@ -184,9 +184,10 @@ roadmap-to-issue reconciliation is tracked in
   valid document. *Oracle:* the regression fixture retains its malformed bytes
   and still produces `E_ROADMAP_INVALID_ISSUE_SNAPSHOT`, while its path uses an
   explicit non-JSON fixture extension. *Evidence type:* deterministic Node test
-  and malformed text fixture. *Planned evidence:*
+  and malformed text fixture. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs` and
-  `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:* planned.
+  `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:*
+  implemented.
 
 ## Hosted evidence boundary
 
