@@ -105,6 +105,7 @@ pub(crate) fn run_process(
     };
 
     let started = Instant::now();
+    let mut status = None;
     let process_result = loop {
         if cancellation.is_cancelled() {
             terminate(&mut child);
@@ -113,24 +114,35 @@ pub(crate) fn run_process(
                 "Vale process was cancelled",
             ));
         }
-        match child.try_wait() {
-            Ok(Some(status)) => break Ok(status),
-            Ok(None) if started.elapsed() >= timeout => {
-                terminate(&mut child);
-                break Err(ValeError::new(
-                    ValeErrorKind::Timeout,
-                    format!("Vale process exceeded {} ms", timeout.as_millis()),
-                ));
-            }
-            Ok(None) => thread::sleep(POLL_INTERVAL),
-            Err(error) => {
-                terminate(&mut child);
-                break Err(ValeError::new(
-                    ValeErrorKind::ProcessFailure,
-                    format!("could not poll Vale process: {error}"),
-                ));
+        if status.is_none() {
+            match child.try_wait() {
+                Ok(Some(completed)) => status = Some(completed),
+                Ok(None) => {}
+                Err(error) => {
+                    terminate(&mut child);
+                    break Err(ValeError::new(
+                        ValeErrorKind::ProcessFailure,
+                        format!("could not poll Vale process: {error}"),
+                    ));
+                }
             }
         }
+        let input_finished = stdin_writer
+            .as_ref()
+            .is_none_or(thread::JoinHandle::is_finished);
+        if let Some(status) = status.filter(|_| {
+            input_finished && stdout_reader.is_finished() && stderr_reader.is_finished()
+        }) {
+            break Ok(status);
+        }
+        if started.elapsed() >= timeout {
+            terminate(&mut child);
+            break Err(ValeError::new(
+                ValeErrorKind::Timeout,
+                format!("Vale process exceeded {} ms", timeout.as_millis()),
+            ));
+        }
+        thread::sleep(POLL_INTERVAL);
     };
 
     let input_result = stdin_writer.map(join_writer).transpose();

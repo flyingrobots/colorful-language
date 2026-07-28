@@ -73,7 +73,9 @@ present so the selected executable can use platform services. User `HOME`, XDG,
 proxy, and Vale override variables are not inherited.
 On Unix, each invocation owns a dedicated process group so timeout and
 cancellation terminate configured wrappers and their descendants before
-joining captured output. Other targets retain direct-child termination.
+joining captured output. The same deadline and cancellation token remain active
+while stdin and captured output drain, including after a wrapper exits while a
+descendant still owns its pipes. Other targets retain direct-child termination.
 Missing configuration, an unavailable engine, unrecognized version output, an
 incompatible engine, timeout, cancellation, process failure, excessive output,
 invalid UTF-8, malformed JSON, invalid alert data, and source-identity mismatch

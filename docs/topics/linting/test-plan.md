@@ -347,11 +347,11 @@ Implemented and planned cases are listed below.
   recording a finite-lived descendant that retains the capture pipes; analysis
   returns the exact timeout category and terminates the descendant rather than
   waiting for pipe closure. *Evidence type:* process-lifecycle regression test.
-  *Evidence:* planned in `colorful-vale`
+  *Evidence:* `colorful-vale`
   `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
