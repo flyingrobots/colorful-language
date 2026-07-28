@@ -174,12 +174,12 @@ update this table when the hot path changes meaningfully.
 
 ### Supported LSP envelope
 
-The process-level harness builds and drives the real release server at exact
-100 KiB, 1 MiB, 5 MiB, and 10 MiB sizes. For each size it measures open through
-diagnostics, cached semantic tokens, one single-character replacement through
-diagnostics and tokens, then four rapid replacements observed by four
-concurrent full-token requests. It records peak server RSS through
-`/usr/bin/time`, queue delay and stale/cancellation counters through
+The process-level workflow builds the real release server, then the harness
+drives it at exact 100 KiB, 1 MiB, 5 MiB, and 10 MiB sizes. For each size it
+measures open through diagnostics, cached semantic tokens, one single-character
+replacement through diagnostics and tokens, then four rapid replacements
+observed by four concurrent full-token requests. It records peak server RSS
+through `/usr/bin/time`, queue delay and stale/cancellation counters through
 `colorful/metrics`, corpus hashes, process status, and exact host/toolchain
 identity.
 
@@ -204,17 +204,17 @@ below 512 MiB RSS.
 
 | Size | Outcome | Open diagnostics | Edit diagnostics | Cached tokens | Four-request burst | Peak RSS |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| 100 KiB | analyzed | 5.3 ms | 60.8 ms | 0.7 ms | 57.7 ms | 10.6 MiB |
-| 1 MiB | analyzed | 48.5 ms | 101.1 ms | 4.9 ms | 111.3 ms | 67.0 MiB |
-| 5 MiB | analyzed | 248.2 ms | 279.8 ms | 26.7 ms | 350.4 ms | 339.0 MiB |
-| 10 MiB | document too large | 19.7 ms | 60.3 ms | 0.1 ms | 79.2 ms | 109.6 MiB |
+| 100 KiB | analyzed | 6.4 ms | 65.6 ms | 0.6 ms | 60.4 ms | 10.0 MiB |
+| 1 MiB | analyzed | 49.0 ms | 104.8 ms | 5.2 ms | 119.1 ms | 66.4 MiB |
+| 5 MiB | analyzed | 263.1 ms | 294.8 ms | 27.9 ms | 359.3 ms | 331.7 MiB |
+| 10 MiB | document too large | 20.8 ms | 62.0 ms | 0.1 ms | 83.3 ms | 109.7 MiB |
 
 Every scenario met its predeclared SLO, returned process status zero, and
-published only diagnostic version 6 after the rapid-edit burst. The accepted
-sizes recorded three cancelled debounced generations, zero stale results, zero
-stale publications, and approximately 52–56 ms maximum queue delay. The exact
-machine-readable evidence, including all four response timings and corpus
-SHA-256 values, is
+ended on diagnostic version 6 without regressing to an older publication. The
+accepted sizes recorded three cancelled debounced generations, zero stale
+results, zero stale publications, and approximately 56–61 ms maximum queue
+delay. The exact machine-readable evidence, including all four response timings
+and corpus SHA-256 values, is
 [`lsp-envelope-baseline.json`](../../../crates/colorful-lsp/benchmarks/lsp-envelope-baseline.json).
 The report contract is checked in deterministic CI, but the wall-clock
 benchmark is not rerun or used as a noisy correctness gate.
