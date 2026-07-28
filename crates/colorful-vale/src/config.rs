@@ -248,6 +248,7 @@ mod tests {
     #[test]
     fn relative_paths_are_resolved_before_the_process_changes_directory() {
         let current = std::env::current_dir().expect("current directory");
+        fs::create_dir_all(current.join("target")).expect("create ignored test parent");
         let (relative_root, absolute_root) = loop {
             let id = FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
             let relative = std::path::PathBuf::from("target")
