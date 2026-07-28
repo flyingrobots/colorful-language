@@ -10,6 +10,10 @@ const BOUNDED_COMMAND =
   "cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads=1";
 const FUZZ_CHECK_COMMAND =
   "cargo check --manifest-path fuzz/Cargo.toml --locked --bins";
+const FUZZ_FMT_COMMAND =
+  "cargo fmt --manifest-path fuzz/Cargo.toml --all -- --check";
+const FUZZ_CLIPPY_COMMAND =
+  "cargo clippy --manifest-path fuzz/Cargo.toml --locked --bins -- -D warnings";
 const VALID_SNAPSHOT = Object.freeze({
   rootManifest: `
 [workspace.dependencies]
@@ -73,9 +77,17 @@ jobs:
   rust:
     steps:
       - run: ${BOUNDED_COMMAND}
+      - run: ${FUZZ_FMT_COMMAND}
+      - run: ${FUZZ_CLIPPY_COMMAND}
       - run: ${FUZZ_CHECK_COMMAND}
 `,
-  releasePrep: `${BOUNDED_COMMAND}\n${FUZZ_CHECK_COMMAND}\n`,
+  releasePrep: [
+    BOUNDED_COMMAND,
+    FUZZ_FMT_COMMAND,
+    FUZZ_CLIPPY_COMMAND,
+    FUZZ_CHECK_COMMAND,
+    "",
+  ].join("\n"),
   reference: `
 cargo install cargo-fuzz --version 0.13.2 --locked
 cargo +nightly fuzz run parser -- -max_total_time=60
@@ -350,6 +362,26 @@ test("rejects a missing blocking fuzz-target compilation", () => {
   );
 });
 
+test("rejects missing blocking fuzz-workspace formatting", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      workflow: VALID_SNAPSHOT.workflow.replace(FUZZ_FMT_COMMAND, ""),
+    },
+    "E_FUZZ_FMT_CI",
+  );
+});
+
+test("rejects missing blocking fuzz-workspace Clippy", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      workflow: VALID_SNAPSHOT.workflow.replace(FUZZ_CLIPPY_COMMAND, ""),
+    },
+    "E_FUZZ_CLIPPY_CI",
+  );
+});
+
 test("rejects a missing release-preparation command", () => {
   expectPolicyError(
     { ...VALID_SNAPSHOT, releasePrep: "" },
@@ -367,6 +399,29 @@ test("rejects missing release-preparation fuzz-target compilation", () => {
       ),
     },
     "E_FUZZ_RELEASE_GATE",
+  );
+});
+
+test("rejects missing release-preparation fuzz formatting", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      releasePrep: VALID_SNAPSHOT.releasePrep.replace(FUZZ_FMT_COMMAND, ""),
+    },
+    "E_FUZZ_FMT_RELEASE_GATE",
+  );
+});
+
+test("rejects missing release-preparation fuzz Clippy", () => {
+  expectPolicyError(
+    {
+      ...VALID_SNAPSHOT,
+      releasePrep: VALID_SNAPSHOT.releasePrep.replace(
+        FUZZ_CLIPPY_COMMAND,
+        "",
+      ),
+    },
+    "E_FUZZ_CLIPPY_RELEASE_GATE",
   );
 });
 

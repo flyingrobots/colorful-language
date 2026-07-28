@@ -41,10 +41,12 @@ cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads
 
 `cargo test --all --locked` also discovers the integration test. The explicit
 command is retained so the bounded corpus remains visible and policy-checkable
-as a first-class gate. CI and release preparation also compile every standalone
-fuzz binary without executing a time-based session:
+as a first-class gate. CI and release preparation format, lint, and compile
+every standalone fuzz binary without executing a time-based session:
 
 ```bash
+cargo fmt --manifest-path fuzz/Cargo.toml --all -- --check
+cargo clippy --manifest-path fuzz/Cargo.toml --locked --bins -- -D warnings
 cargo check --manifest-path fuzz/Cargo.toml --locked --bins
 ```
 

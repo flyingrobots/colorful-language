@@ -123,6 +123,8 @@ jobs:
       - run: bash scripts/check-validator-complexity.sh
       - run: cargo test --all --locked
       - run: cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads=1
+      - run: cargo fmt --manifest-path fuzz/Cargo.toml --all -- --check
+      - run: cargo clippy --manifest-path fuzz/Cargo.toml --locked --bins -- -D warnings
       - run: cargo check --manifest-path fuzz/Cargo.toml --locked --bins
       - run: cargo test --doc --workspace --locked
       - run: bash scripts/check-ir-validator-mutants.sh

@@ -34,6 +34,8 @@ cargo clippy --locked --all-targets --all-features -- -D warnings
 bash scripts/check-validator-complexity.sh
 cargo test --all --locked
 cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads=1
+cargo fmt --manifest-path fuzz/Cargo.toml --all -- --check
+cargo clippy --manifest-path fuzz/Cargo.toml --locked --bins -- -D warnings
 cargo check --manifest-path fuzz/Cargo.toml --locked --bins
 cargo test --doc --workspace --locked
 bash scripts/check-ir-validator-mutants.sh

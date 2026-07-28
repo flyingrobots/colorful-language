@@ -16,6 +16,10 @@ const PROPERTY_SEED = Object.freeze([
 ]);
 const BOUNDED_COMMAND =
   "cargo test --locked -p colorful-cli --test property_boundaries -- --test-threads=1";
+const FUZZ_FMT_COMMAND =
+  "cargo fmt --manifest-path fuzz/Cargo.toml --all -- --check";
+const FUZZ_CLIPPY_COMMAND =
+  "cargo clippy --manifest-path fuzz/Cargo.toml --locked --bins -- -D warnings";
 const FUZZ_CHECK_COMMAND =
   "cargo check --manifest-path fuzz/Cargo.toml --locked --bins";
 const FUZZ_TARGETS = Object.freeze([
@@ -278,6 +282,18 @@ export function validatePropertyFuzzPolicy(snapshot) {
       `the unconditional blocking Rust job must run: ${FUZZ_CHECK_COMMAND}`,
     );
   }
+  if (!blockingRustStep(snapshot.workflow, FUZZ_FMT_COMMAND)) {
+    reject(
+      "E_FUZZ_FMT_CI",
+      `the unconditional blocking Rust job must run: ${FUZZ_FMT_COMMAND}`,
+    );
+  }
+  if (!blockingRustStep(snapshot.workflow, FUZZ_CLIPPY_COMMAND)) {
+    reject(
+      "E_FUZZ_CLIPPY_CI",
+      `the unconditional blocking Rust job must run: ${FUZZ_CLIPPY_COMMAND}`,
+    );
+  }
   if (/\bcargo(?:\s+\+\S+)?\s+fuzz\b/u.test(snapshot.workflow)) {
     reject(
       "E_FUZZ_IN_CI",
@@ -294,6 +310,18 @@ export function validatePropertyFuzzPolicy(snapshot) {
     reject(
       "E_FUZZ_RELEASE_GATE",
       `release preparation must run: ${FUZZ_CHECK_COMMAND}`,
+    );
+  }
+  if (!exactLine(snapshot.releasePrep, FUZZ_FMT_COMMAND)) {
+    reject(
+      "E_FUZZ_FMT_RELEASE_GATE",
+      `release preparation must run: ${FUZZ_FMT_COMMAND}`,
+    );
+  }
+  if (!exactLine(snapshot.releasePrep, FUZZ_CLIPPY_COMMAND)) {
+    reject(
+      "E_FUZZ_CLIPPY_RELEASE_GATE",
+      `release preparation must run: ${FUZZ_CLIPPY_COMMAND}`,
     );
   }
 
