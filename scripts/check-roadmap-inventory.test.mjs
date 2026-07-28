@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   closingIssueNumbersForRepository,
   InventoryError,
+  run,
   validateRoadmapInventory,
 } from "./check-roadmap-inventory.mjs";
 
@@ -140,6 +141,19 @@ test("ignores closing references to a different repository", () => {
       "flyingrobots/colorful-language",
     ),
     new Set([101]),
+  );
+});
+
+test("rejects a missing option value with a stable usage error", () => {
+  assert.throws(
+    () => run(["--roadmap"]),
+    (error) => {
+      assert.ok(error instanceof InventoryError);
+      assert.equal(error.category, "E_ROADMAP_USAGE");
+      assert.match(error.message, /arguments/u);
+      assert.match(error.message, /--roadmap/u);
+      return true;
+    },
   );
 });
 
