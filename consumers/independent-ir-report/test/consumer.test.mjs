@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { spawnSync } from "node:child_process";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -38,6 +44,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp.mjs",
     "scripts/capture-lsp.mjs",
   ]);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 21);
 });
 
 function releaseFixture(release) {
@@ -53,6 +60,74 @@ function expectConsumerError(code, operation) {
     operation,
     (error) => error instanceof ConsumerError && error.code === code,
   );
+}
+
+function irMutationCases() {
+  const oldFixture = releaseFixture("v0.2.1");
+  const currentFixture = releaseFixture("v0.3.0");
+  const baseline = JSON.parse(currentFixture.ir);
+  return {
+    profiles: [oldFixture.profile, currentFixture.profile],
+    cases: [
+      ["E_JSON", "{"],
+      [
+        "E_CONTRACT_VERSION",
+        JSON.stringify({ ...baseline, contractVersion: "colorful.syntax/v2" }),
+      ],
+      [
+        "E_SCHEMA_HASH",
+        JSON.stringify({ ...baseline, schemaHash: "sha256:wrong" }),
+      ],
+      [
+        "E_VOCABULARY_HASH",
+        JSON.stringify({
+          ...baseline,
+          vocabularyHash: oldFixture.profile.vocabularyHash,
+        }),
+      ],
+      [
+        "E_SOURCE_LENGTH",
+        JSON.stringify({
+          ...baseline,
+          source: { ...baseline.source, utf8ByteLength: 1 },
+        }),
+      ],
+      [
+        "E_SOURCE_HASH",
+        JSON.stringify({
+          ...baseline,
+          source: { ...baseline.source, contentHash: "sha256:wrong" },
+        }),
+      ],
+      [
+        "E_SHAPE",
+        JSON.stringify({ ...baseline, tokens: [{ occurrenceId: 0 }] }),
+      ],
+      [
+        "E_RANGE",
+        JSON.stringify({
+          ...baseline,
+          tokens: baseline.tokens.map((token, index) =>
+            index === 0
+              ? {
+                  ...token,
+                  byteRange: { ...token.byteRange, startUtf8: 1 },
+                }
+              : token,
+          ),
+        }),
+      ],
+      [
+        "E_AXES",
+        JSON.stringify({
+          ...baseline,
+          tokens: baseline.tokens.map((token, index) =>
+            index === 1 ? { ...token, functionKind: null } : token,
+          ),
+        }),
+      ],
+    ],
+  };
 }
 
 test("both released IR generations migrate into reviewed reports", () => {
@@ -100,71 +175,8 @@ test("IR, ANSI CLI text, and LSP tokens render the same v0.3.0 job", () => {
 });
 
 test("IR admission rejects malformed and incompatible artifacts by category", () => {
-  const oldFixture = releaseFixture("v0.2.1");
-  const currentFixture = releaseFixture("v0.3.0");
-  const profiles = [oldFixture.profile, currentFixture.profile];
-  const baseline = JSON.parse(currentFixture.ir);
-  const mutationCases = [
-    ["E_JSON", "{"],
-    [
-      "E_CONTRACT_VERSION",
-      JSON.stringify({ ...baseline, contractVersion: "colorful.syntax/v2" }),
-    ],
-    [
-      "E_SCHEMA_HASH",
-      JSON.stringify({ ...baseline, schemaHash: "sha256:wrong" }),
-    ],
-    [
-      "E_VOCABULARY_HASH",
-      JSON.stringify({
-        ...baseline,
-        vocabularyHash: oldFixture.profile.vocabularyHash,
-      }),
-    ],
-    [
-      "E_SOURCE_LENGTH",
-      JSON.stringify({
-        ...baseline,
-        source: { ...baseline.source, utf8ByteLength: 1 },
-      }),
-    ],
-    [
-      "E_SOURCE_HASH",
-      JSON.stringify({
-        ...baseline,
-        source: { ...baseline.source, contentHash: "sha256:wrong" },
-      }),
-    ],
-    [
-      "E_SHAPE",
-      JSON.stringify({ ...baseline, tokens: [{ occurrenceId: 0 }] }),
-    ],
-    [
-      "E_RANGE",
-      JSON.stringify({
-        ...baseline,
-        tokens: baseline.tokens.map((token, index) =>
-          index === 0
-            ? {
-                ...token,
-                byteRange: { ...token.byteRange, startUtf8: 1 },
-              }
-            : token,
-        ),
-      }),
-    ],
-    [
-      "E_AXES",
-      JSON.stringify({
-        ...baseline,
-        tokens: baseline.tokens.map((token, index) =>
-          index === 1 ? { ...token, functionKind: null } : token,
-        ),
-      }),
-    ],
-  ];
-
-  for (const [code, artifactJson] of mutationCases) {
+  const { cases, profiles } = irMutationCases();
+  for (const [code, artifactJson] of cases) {
     expectConsumerError(code, () =>
       consumeIr({ source: SOURCE, artifactJson, profiles }),
     );
@@ -223,24 +235,35 @@ test("LSP refusal cases cover every stable adapter category", () => {
   }
 });
 
-test("the process boundary emits no report for an invalid artifact", () => {
-  const result = spawnSync(
-    process.execPath,
-    [
-      path.join(ROOT, "bin", "report.mjs"),
-      "--format",
-      "ir",
-      "--source",
-      path.join(FIXTURES, "source.txt"),
-      "--input",
-      path.join(FIXTURES, "negative", "wrong-contract.json"),
-      "--profiles",
-      path.join(FIXTURES, "releases"),
-    ],
-    { encoding: "utf8" },
-  );
+test("the IR process refuses every stable category without output", (context) => {
+  const directory = mkdtempSync(path.join(tmpdir(), "colorful-ir-refusal-"));
+  context.after(() => rmSync(directory, { recursive: true }));
 
-  assert.equal(result.status, 1);
-  assert.equal(result.stdout, "");
-  assert.match(result.stderr, /^independent-ir-report: E_CONTRACT_VERSION:/);
+  for (const [index, [code, artifactJson]] of irMutationCases().cases.entries()) {
+    const input = path.join(directory, `${index}.json`);
+    writeFileSync(input, artifactJson);
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(ROOT, "bin", "report.mjs"),
+        "--format",
+        "ir",
+        "--source",
+        path.join(FIXTURES, "source.txt"),
+        "--input",
+        input,
+        "--profiles",
+        path.join(FIXTURES, "releases"),
+      ],
+      { encoding: "utf8" },
+    );
+
+    assert.equal(result.status, 1, code);
+    assert.equal(result.stdout, "", code);
+    assert.match(
+      result.stderr,
+      new RegExp(`^independent-ir-report: ${code}:`),
+      code,
+    );
+  }
 });

@@ -522,7 +522,8 @@ Requirements:
   consumer tests. *Evidence:*
   `consumers/independent-ir-report/src/{common,profile,ir}.mjs`,
   `consumers/independent-ir-report/bin/report.mjs`, and
-  `consumers/independent-ir-report/test/consumer.test.mjs`. *Tracking:*
+  `consumer.test.mjs`
+  `the IR process refuses every stable category without output`. *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* implemented.
 - **IR-19b** — *Requirement:* IR-19. *Behavior:* the consumer accepts

@@ -37,7 +37,7 @@
         "sourceHash"
       ],
       "fixtureCount": 6,
-      "reviewedAssertions": 13,
+      "reviewedAssertions": 21,
       "runtimeDependencies": 0,
       "processSteps": [
         "emit IR",
