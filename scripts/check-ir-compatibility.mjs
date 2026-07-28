@@ -12,6 +12,8 @@ import { fileURLToPath } from "node:url";
 const MANIFEST_VERSION = "colorful.syntax-compatibility/v1";
 const CONTRACT_FAMILY = "colorful.syntax/v1";
 const HASH_PATTERN = /^sha256:[0-9a-f]{64}$/u;
+const OPTIONAL_FIELD_PATTERN =
+  /^[A-Za-z][A-Za-z0-9]*(?:\[\])?(?:\.[A-Za-z][A-Za-z0-9]*(?:\[\])?)*$/u;
 const SCHEMA_HASH_MODES = new Set([
   "raw-sdl-sha256",
   "descriptions-stripped-sdl-sha256",
@@ -259,17 +261,26 @@ function validateGenerationShape(generation, index) {
   }
   assertExactFields(
     generation.wireShape,
-    ["openClassKind"],
+    ["optionalFields"],
     "E_MANIFEST_SHAPE",
     `${context}.wireShape`,
   );
   if (
-    generation.wireShape.openClassKind !== "absent" &&
-    generation.wireShape.openClassKind !== "nullable"
+    !Array.isArray(generation.wireShape.optionalFields) ||
+    new Set(generation.wireShape.optionalFields).size !==
+      generation.wireShape.optionalFields.length ||
+    generation.wireShape.optionalFields.some(
+      (field) =>
+        typeof field !== "string" || !OPTIONAL_FIELD_PATTERN.test(field),
+    ) ||
+    generation.wireShape.optionalFields.some(
+      (field, fieldIndex, fields) =>
+        fieldIndex > 0 && fields[fieldIndex - 1] >= field,
+    )
   ) {
     fail(
       "E_MANIFEST_SHAPE",
-      `${context}.wireShape.openClassKind must be absent or nullable`,
+      `${context}.wireShape.optionalFields must be sorted unique field paths`,
     );
   }
   assertExactFields(
@@ -399,12 +410,27 @@ function validateAcyclic(generationsById) {
 function validateTransition(generation, predecessor, index) {
   const context = `generations[${index}]`;
   const changes = new Set(generation.changeKinds);
+  const predecessorOptionalFields = new Set(
+    predecessor.wireShape.optionalFields,
+  );
+  const optionalFieldsRemoved =
+    predecessor.wireShape.optionalFields.some(
+      (field) => !generation.wireShape.optionalFields.includes(field),
+    );
+  if (optionalFieldsRemoved) {
+    fail(
+      "E_TRANSITION",
+      `${context} removes an optional field and therefore requires a new contract version`,
+    );
+  }
+  const optionalFieldsAdded = generation.wireShape.optionalFields.some(
+    (field) => !predecessorOptionalFields.has(field),
+  );
   const checks = [
     [
       "nullable-field",
-      generation.wireShape.openClassKind !==
-        predecessor.wireShape.openClassKind,
-      "wireShape.openClassKind",
+      optionalFieldsAdded,
+      "wireShape.optionalFields",
     ],
     [
       "vocabulary",

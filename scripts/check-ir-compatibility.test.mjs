@@ -66,7 +66,7 @@ function manifestFixture() {
         predecessor: null,
         compatibilityDecision: "origin",
         changeKinds: [],
-        wireShape: { openClassKind: "absent" },
+        wireShape: { optionalFields: [] },
         migrationEvidence: [EVIDENCE],
       },
       {
@@ -82,7 +82,7 @@ function manifestFixture() {
         predecessor: "v0.2.1",
         compatibilityDecision: "adapter-required",
         changeKinds: ["nullable-field", "vocabulary"],
-        wireShape: { openClassKind: "nullable" },
+        wireShape: { optionalFields: ["tokens[].openClassKind"] },
         migrationEvidence: [EVIDENCE],
       },
     ],
@@ -113,6 +113,15 @@ test("a valid compatibility family selects only exact identity tuples", () => {
   expectCompatibilityError("E_UNSUPPORTED_IDENTITY", () =>
     selectCompatibilityGeneration(manifest, identity(HASH_A, HASH_E)),
   );
+});
+
+test("wire shape represents nullable fields without a field-specific schema", () => {
+  const manifest = manifestFixture();
+
+  validateCompatibilityManifest(manifest, {
+    currentIdentity: manifest.currentIdentity,
+    repositoryRoot: ROOT,
+  });
 });
 
 test("manifest validation rejects each compatibility-authority mutation", () => {
@@ -199,7 +208,9 @@ test("transition decisions must match their predecessor deltas", () => {
       manifest.generations[1].changeKinds.push("schema-hash-algorithm");
     },
     (manifest) => {
-      manifest.generations[0].wireShape.openClassKind = "nullable";
+      manifest.generations[0].wireShape.optionalFields = [
+        "tokens[].openClassKind",
+      ];
       manifest.generations[1].changeKinds = ["vocabulary"];
     },
     (manifest) => {
@@ -209,7 +220,7 @@ test("transition decisions must match their predecessor deltas", () => {
       manifest.currentIdentity = identity(HASH_C, HASH_B);
     },
     (manifest) => {
-      manifest.generations[1].wireShape.openClassKind = "absent";
+      manifest.generations[1].wireShape.optionalFields = [];
     },
   ];
 

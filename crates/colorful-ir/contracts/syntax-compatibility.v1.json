@@ -33,7 +33,7 @@
       "compatibilityDecision": "origin",
       "changeKinds": [],
       "wireShape": {
-        "openClassKind": "absent"
+        "optionalFields": []
       },
       "migrationEvidence": [
         "consumers/independent-ir-report/fixtures/expected/v0.2.1.md",
@@ -59,7 +59,9 @@
         "vocabulary"
       ],
       "wireShape": {
-        "openClassKind": "nullable"
+        "optionalFields": [
+          "tokens[].openClassKind"
+        ]
       },
       "migrationEvidence": [
         "consumers/independent-ir-report/fixtures/expected/v0.3.0.md",
@@ -84,7 +86,9 @@
         "schema-hash-algorithm"
       ],
       "wireShape": {
-        "openClassKind": "nullable"
+        "optionalFields": [
+          "tokens[].openClassKind"
+        ]
       },
       "migrationEvidence": [
         "crates/colorful-ir/src/lib.rs",

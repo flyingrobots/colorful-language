@@ -175,7 +175,7 @@ The generated integration-effort ledger records:
 | LSP | 305 | 0 | 5 | 2 |
 
 Shared profile loading, compatibility selection, and report rendering account
-for another 384 nonblank lines and are excluded from every adapter equally. The
+for another 389 nonblank lines and are excluded from every adapter equally. The
 exact source, fixtures, assertions, dependencies, and process steps behind
 these counts live in
 `consumers/independent-ir-report/evidence/integration-effort.json`.

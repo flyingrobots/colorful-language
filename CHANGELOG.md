@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Explicit `colorful.syntax/v1` wire-generation authority.** One canonical
   manifest now records the exact `v0.2.1`, `v0.3.0`, and current workspace
   contract/schema/vocabulary tuples, schema-hash modes, predecessors,
-  compatibility decisions, wire-shape adapters, and migration evidence. A
+  compatibility decisions, sorted optional-field wire shapes, and migration
+  evidence. A
   deterministic mutation gate rejects duplicate identities, missing
   predecessors, cycles, unsupported decisions, missing evidence, stale copies,
   and an unregistered current identity. The standalone consumer no longer

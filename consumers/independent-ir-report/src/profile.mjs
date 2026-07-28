@@ -64,9 +64,10 @@ function selectGeneration(metadata, compatibility) {
   if (
     typeof generation.id !== "string" ||
     !isRecord(generation.wireShape) ||
-    !(
-      generation.wireShape.openClassKind === "absent" ||
-      generation.wireShape.openClassKind === "nullable"
+    !Array.isArray(generation.wireShape.optionalFields) ||
+    generation.wireShape.optionalFields.some(
+      (field) =>
+        field !== "tokens[].openClassKind",
     ) ||
     !(
       generation.schemaHashMode === "raw-sdl-sha256" ||
@@ -178,6 +179,10 @@ export function loadProfile(directory) {
     },
     COMPATIBILITY,
   );
+  const openClassKindField =
+    generation.wireShape.optionalFields.includes(
+      "tokens[].openClassKind",
+    );
   const schemaHash = profileSchemaHash(syntax, generation.schemaHashMode);
   const vocabularyHash = sha256(vocabularyText);
   if (schemaHash !== declaredSchemaHash) {
@@ -263,7 +268,7 @@ export function loadProfile(directory) {
     contractVersion,
     schemaHash,
     vocabularyHash,
-    openClassKindField: generation.wireShape.openClassKind === "nullable",
+    openClassKindField,
     enums: Object.freeze({
       tokenKind: enumValues(syntax, "TokenKind"),
       lexicalClass: enumValues(syntax, "LexicalClass"),
@@ -271,7 +276,7 @@ export function loadProfile(directory) {
       openClassKind: enumValues(
         syntax,
         "OpenClassKind",
-        generation.wireShape.openClassKind === "absent",
+        !openClassKindField,
       ),
       outlineKind: enumValues(syntax, "OutlineKind"),
       diagnosticSeverity: enumValues(syntax, "DiagnosticSeverity"),
