@@ -201,7 +201,7 @@ workspace.
   repository keeps only the reference consumer witness.
 - The independent proof retains stable v1 because the IR uniquely verifies five
   identities within its reviewed two-times adapter-size bound. The remaining
-  risk is implementation cost: its 284-line adapter is larger than the
+  risk is implementation cost: its 349-line adapter is larger than the
   264-line LSP protocol and decoding adapter, so contract expansion stays
   frozen while
   [#222](https://github.com/flyingrobots/colorful-language/issues/222)

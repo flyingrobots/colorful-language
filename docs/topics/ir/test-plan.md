@@ -614,7 +614,7 @@ Requirements:
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
-  correctness rule. Its 284-line IR adapter is larger than the 264-line
+  correctness rule. Its 349-line IR adapter is larger than the 264-line
   LSP protocol and decoding adapter, so reducing duplicate consumer admission
   code is deliberate follow-up debt in
   [#222](https://github.com/flyingrobots/colorful-language/issues/222); the

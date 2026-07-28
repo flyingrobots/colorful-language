@@ -46,7 +46,7 @@ test("the effort ledger counts protocol-specific acquisition code", () => {
     "src/lsp-fixture.mjs",
     "scripts/capture-lsp.mjs",
   ]);
-  assert.equal(ledger.adapters.ir.reviewedAssertions, 25);
+  assert.equal(ledger.adapters.ir.reviewedAssertions, 31);
 });
 
 function releaseFixture(release) {
@@ -240,6 +240,33 @@ test("IR admission enforces the signed GraphQL Int range", () => {
       profiles: [currentFixture.profile],
     }),
   );
+});
+
+test("IR admission rejects malformed structure graphs", () => {
+  const currentFixture = releaseFixture("v0.3.0");
+  const baseline = JSON.parse(currentFixture.ir);
+  const [paragraph, sentence] = baseline.structure;
+  const cases = [
+    [{ ...paragraph, childNodeIds: [999] }, sentence],
+    [paragraph, { ...sentence, nodeId: paragraph.nodeId }],
+    [{ ...paragraph, depth: 1 }, sentence],
+    [paragraph, { ...sentence, childNodeIds: [paragraph.nodeId] }],
+    [{ ...paragraph, byteRange: { startUtf8: 0, endUtf8: 57 } }, sentence],
+    [
+      paragraph,
+      sentence,
+      { ...paragraph, nodeId: 2, childNodeIds: [sentence.nodeId] },
+    ],
+  ];
+  for (const structure of cases) {
+    expectConsumerError("E_SHAPE", () =>
+      consumeIr({
+        source: SOURCE,
+        artifactJson: JSON.stringify({ ...baseline, structure }),
+        profiles: [currentFixture.profile],
+      }),
+    );
+  }
 });
 
 test("ANSI refusal cases cover every stable adapter category", () => {

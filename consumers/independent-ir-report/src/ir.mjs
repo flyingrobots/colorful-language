@@ -41,15 +41,19 @@ function requireString(record, field, label) {
   return record[field];
 }
 
-function requireInteger(record, field, label) {
+function requireWireInteger(value, label) {
   if (
-    !Number.isSafeInteger(record[field]) ||
-    record[field] < WIRE_INT_MIN ||
-    record[field] > WIRE_INT_MAX
+    !Number.isSafeInteger(value) ||
+    value < WIRE_INT_MIN ||
+    value > WIRE_INT_MAX
   ) {
-    fail("E_SHAPE", `${label}.${field} must be a signed GraphQL Int`);
+    fail("E_SHAPE", `${label} must be a signed GraphQL Int`);
   }
-  return record[field];
+  return value;
+}
+
+function requireInteger(record, field, label) {
+  return requireWireInteger(record[field], `${label}.${field}`);
 }
 
 function requireNullableString(record, field, label) {
@@ -130,30 +134,94 @@ function selectProfile(document, profiles) {
   // effort:migration:end
 }
 
-function validateAuxiliaryShape(document, sourceLength, boundaries, profile) {
-  for (const [index, nodeValue] of requireArray(
-    document.structure,
-    "structure",
-  ).entries()) {
+function validateStructure(document, sourceLength, boundaries, profile) {
+  const structure = requireArray(document.structure, "structure");
+  const nodeIndices = new Map();
+  const nodes = [];
+  for (const [index, nodeValue] of structure.entries()) {
     const label = `structure[${index}]`;
     const node = requireRecord(nodeValue, label);
-    requireInteger(node, "nodeId", label);
-    requireEnum(node, "kind", label, profile.enums.outlineKind);
-    requireInteger(node, "depth", label);
-    requireRange(node.byteRange, `${label}.byteRange`, sourceLength, boundaries);
-    for (const [childIndex, child] of requireArray(
+    const nodeId = requireInteger(node, "nodeId", label);
+    if (nodeIndices.has(nodeId)) {
+      fail("E_SHAPE", `${label}.nodeId must be unique`);
+    }
+    nodeIndices.set(nodeId, index);
+    const kind = requireEnum(node, "kind", label, profile.enums.outlineKind);
+    const depth = requireInteger(node, "depth", label);
+    const expectedDepth = kind === "PARAGRAPH" ? 0 : 1;
+    if (depth !== expectedDepth) {
+      fail("E_SHAPE", `${label}.depth does not match ${kind}`);
+    }
+    const byteRange = requireRange(
+      node.byteRange,
+      `${label}.byteRange`,
+      sourceLength,
+      boundaries,
+    );
+    const childNodeIds = requireArray(
       node.childNodeIds,
       `${label}.childNodeIds`,
-    ).entries()) {
-      if (!Number.isSafeInteger(child)) {
+    );
+    for (const [childIndex, child] of childNodeIds.entries()) {
+      requireWireInteger(child, `${label}.childNodeIds[${childIndex}]`);
+    }
+    nodes.push({ nodeId, byteRange, childNodeIds });
+  }
+
+  const parents = new Map();
+  for (const [index, node] of nodes.entries()) {
+    for (const [childIndex, childId] of node.childNodeIds.entries()) {
+      const childIndexInStructure = nodeIndices.get(childId);
+      if (childIndexInStructure === undefined) {
         fail(
           "E_SHAPE",
-          `${label}.childNodeIds[${childIndex}] must be a safe integer`,
+          `structure[${index}].childNodeIds[${childIndex}] is dangling`,
         );
+      }
+      const firstParent = parents.get(childId);
+      if (firstParent !== undefined && firstParent !== node.nodeId) {
+        fail("E_SHAPE", `structure child ${childId} has multiple parents`);
+      }
+      if (firstParent === undefined) parents.set(childId, node.nodeId);
+      const child = nodes[childIndexInStructure];
+      if (
+        child.byteRange.startUtf8 < node.byteRange.startUtf8 ||
+        child.byteRange.endUtf8 > node.byteRange.endUtf8
+      ) {
+        fail("E_SHAPE", `structure child ${childId} leaves its parent range`);
       }
     }
   }
 
+  const colors = new Uint8Array(nodes.length);
+  for (let root = 0; root < nodes.length; root += 1) {
+    if (colors[root] !== 0) continue;
+    colors[root] = 1;
+    const stack = [{ nodeIndex: root, edgeIndex: 0 }];
+    while (stack.length > 0) {
+      const frame = stack.at(-1);
+      const node = nodes[frame.nodeIndex];
+      if (frame.edgeIndex === node.childNodeIds.length) {
+        colors[frame.nodeIndex] = 2;
+        stack.pop();
+        continue;
+      }
+      const childId = node.childNodeIds[frame.edgeIndex];
+      frame.edgeIndex += 1;
+      const childIndex = nodeIndices.get(childId);
+      if (colors[childIndex] === 1) {
+        fail("E_SHAPE", `structure edge to ${childId} closes a cycle`);
+      }
+      if (colors[childIndex] === 0) {
+        colors[childIndex] = 1;
+        stack.push({ nodeIndex: childIndex, edgeIndex: 0 });
+      }
+    }
+  }
+}
+
+function validateAuxiliaryShape(document, sourceLength, boundaries, profile) {
+  validateStructure(document, sourceLength, boundaries, profile);
   for (const [index, diagnosticValue] of requireArray(
     document.diagnostics,
     "diagnostics",

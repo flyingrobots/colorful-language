@@ -234,12 +234,12 @@ v0.3 must handle the `Option` result.
   witness proves the package needs no repository build artifacts or ambient
   `node_modules`.
 
-  The generated burden ledger measures 284 nonblank IR adapter lines, including
+  The generated burden ledger measures 349 nonblank IR adapter lines, including
   43 migration-specific lines, versus 49 for ANSI and 264 for LSP including its
   JSON-RPC acquisition client. Because the IR alone authenticates all five wire
-  identities and is smaller than the alternatives' combined 313 lines, the
-  decision is to retain stable v1. This preserves current bytes; it does not
-  authorize new contract fields.
+  identities and remains below the reviewed two-times limit against the
+  alternatives' combined 313 lines, the decision is to retain stable v1. This
+  preserves current bytes; it does not authorize new contract fields.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust

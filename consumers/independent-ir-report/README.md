@@ -43,16 +43,17 @@ reviewed comparison:
 
 | Adapter | Nonblank adapter lines | Stable failures | Verified identities |
 | --- | ---: | ---: | ---: |
-| IR | 284 | 9 | 5 |
+| IR | 349 | 9 | 5 |
 | ANSI | 49 | 4 | 1 |
 | LSP | 264 | 5 | 2 |
 
 The LSP count includes its JSON-RPC acquisition client; the CLI-backed IR and
-ANSI paths share the same trivial process boundary. The IR adapter is smaller
-than the alternatives' combined 313 lines and uniquely verifies the contract,
-schema, vocabulary, source length, and source digest. The resulting decision is
-to retain stable v1, simplify consumer admission cost where possible, make the
-currently hash-selected generation policy explicit in
+ANSI paths share the same trivial process boundary. The IR adapter is larger
+than the alternatives' combined 313 lines but uniquely verifies the contract,
+schema, vocabulary, source length, and source digest and stays below the
+reviewed two-times bound. The resulting decision is to retain stable v1,
+simplify consumer admission cost where possible, make the currently
+hash-selected generation policy explicit in
 [#221](https://github.com/flyingrobots/colorful-language/issues/221), generate
 shared portable admission through
 [#222](https://github.com/flyingrobots/colorful-language/issues/222), and avoid
