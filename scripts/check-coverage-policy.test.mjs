@@ -121,8 +121,16 @@ function workflow() {
       coverage: {
         name: "Rust coverage",
         "runs-on": "ubuntu-latest",
+        permissions: {
+          contents: "read",
+        },
         steps: [
-          { uses: CHECKOUT_ACTION },
+          {
+            uses: CHECKOUT_ACTION,
+            with: {
+              "persist-credentials": false,
+            },
+          },
           {
             uses: RUST_TOOLCHAIN_ACTION,
             with: {
@@ -233,6 +241,10 @@ function namedWorkflowStep(candidate, name) {
   return candidate.jobs.coverage.steps.find((step) => step.name === name);
 }
 
+function actionWorkflowStep(candidate, action) {
+  return candidate.jobs.coverage.steps.find((step) => step.uses === action);
+}
+
 test("accepts the reviewed workspace and transport coverage", () => {
   assert.doesNotThrow(() =>
     validateCoveragePolicy(policy(), report(), {
@@ -341,6 +353,20 @@ test("rejects generated-source exclusions", () => {
 
 test("accepts the pinned coverage workflow", () => {
   assert.doesNotThrow(() => validateCoverageWorkflow(workflow(), policy()));
+});
+
+test("rejects coverage jobs without explicit read-only permissions", () => {
+  expectWorkflowError("E_COVERAGE_WORKFLOW", (candidate) => {
+    delete candidate.jobs.coverage.permissions;
+  });
+});
+
+test("rejects checkout credential persistence in the coverage job", () => {
+  expectWorkflowError("E_COVERAGE_ACTION", (candidate) => {
+    delete actionWorkflowStep(candidate, CHECKOUT_ACTION).with[
+      "persist-credentials"
+    ];
+  });
 });
 
 test("rejects a workflow that omits clean-checkout output preparation", () => {
