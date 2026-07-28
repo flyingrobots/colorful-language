@@ -191,6 +191,49 @@ test("generated admission rejects missing, unknown, primitive, and enum drift", 
   );
 });
 
+test("generated rejection exposes stable machine and display metadata", async (t) => {
+  const outputRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-syntax-rejection-metadata-"),
+  );
+  t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
+  generateSyntaxAdmission(outputRoot);
+  const runtime = await import(
+    pathToFileURL(path.join(outputRoot, GRAFT_OUTPUT)).href
+  );
+
+  const document = currentDocument();
+  document.unexpected = true;
+  assert.throws(
+    () =>
+      runtime.validateSyntaxShape(
+        document,
+        runtime.CURRENT_SYNTAX_GENERATION,
+      ),
+    (error) =>
+      error?.name === "SyntaxAdmissionError" &&
+      error.code === "E_SYNTAX_SHAPE" &&
+      error.reasonCode ===
+        runtime.SYNTAX_ADMISSION_REASON_CODES.UNKNOWN_FIELD &&
+      error.location === "unexpected",
+  );
+
+  let callbackError;
+  assert.throws(
+    () =>
+      runtime.validateSyntaxShape(
+        document,
+        runtime.CURRENT_SYNTAX_GENERATION,
+        (_path, _reason, error) => {
+          callbackError = error;
+          throw error;
+        },
+      ),
+    (error) => error === callbackError,
+  );
+  assert.equal(callbackError.reasonCode, "UNKNOWN_FIELD");
+  assert.equal(callbackError.location, "unexpected");
+});
+
 test("prototype properties cannot impersonate syntax generation ids", async (t) => {
   const outputRoot = mkdtempSync(
     path.join(tmpdir(), "colorful-syntax-generation-id-"),

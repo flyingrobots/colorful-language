@@ -4,6 +4,10 @@
 
 export const CURRENT_SYNTAX_GENERATION = "workspace-v0.4.0";
 export const SYNTAX_GENERATION_IDS = Object.freeze(["v0.2.1","v0.3.0","workspace-v0.4.0"]);
+export const SYNTAX_ADMISSION_REASON_CODES = Object.freeze({
+  INVALID_VALUE: "INVALID_VALUE",
+  UNKNOWN_FIELD: "UNKNOWN_FIELD",
+});
 
 const ROOT_FIELDS = new Set(["contractVersion","schemaHash","vocabularyHash","source","tokens","structure","diagnostics","derivation"]);
 const GENERATIONS = {
@@ -653,21 +657,33 @@ const GRAPHQL_INT_MIN = -2147483648;
 const GRAPHQL_INT_MAX = 2147483647;
 
 export class SyntaxAdmissionError extends Error {
-  constructor(path, reason) {
+  constructor(
+    path,
+    reason,
+    reasonCode = SYNTAX_ADMISSION_REASON_CODES.INVALID_VALUE,
+  ) {
     const location = path.length === 0 ? "artifact" : path;
     super(`${location} ${reason}`);
     this.name = "SyntaxAdmissionError";
     this.code = "E_SYNTAX_SHAPE";
     this.path = path;
+    this.location = location;
+    this.reasonCode = reasonCode;
   }
 }
 
-function defaultReject(path, reason) {
-  throw new SyntaxAdmissionError(path, reason);
+function defaultReject(_path, _reason, error) {
+  throw error;
 }
 
-function rejectWith(reject, path, reason) {
-  reject(path, reason);
+function rejectWith(
+  reject,
+  path,
+  reason,
+  reasonCode = SYNTAX_ADMISSION_REASON_CODES.INVALID_VALUE,
+) {
+  const error = new SyntaxAdmissionError(path, reason, reasonCode);
+  reject(path, reason, error);
   throw new TypeError("syntax admission rejection callback must throw");
 }
 
@@ -783,7 +799,12 @@ function validateNamed(value, name, schema, path, reject) {
   }
   for (const field of Object.keys(value)) {
     if (!definition.fieldNames.has(field)) {
-      rejectWith(reject, fieldPath(path, field), "is not part of the contract");
+      rejectWith(
+        reject,
+        fieldPath(path, field),
+        "is not part of the contract",
+        SYNTAX_ADMISSION_REASON_CODES.UNKNOWN_FIELD,
+      );
     }
   }
   for (const [field, parsedReference] of definition.fields) {
@@ -829,7 +850,12 @@ export function validateSyntaxEnvelope(value, reject = defaultReject) {
   }
   for (const field of Object.keys(value)) {
     if (!ROOT_FIELDS.has(field)) {
-      rejectWith(reject, field, "is not part of the contract");
+      rejectWith(
+        reject,
+        field,
+        "is not part of the contract",
+        SYNTAX_ADMISSION_REASON_CODES.UNKNOWN_FIELD,
+      );
     }
   }
   for (const field of ["contractVersion", "schemaHash", "vocabularyHash"]) {

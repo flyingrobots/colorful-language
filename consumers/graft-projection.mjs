@@ -26,6 +26,7 @@ import {
 } from "./generated/vocabulary-validator-v1.mjs";
 import {
   CURRENT_SYNTAX_GENERATION,
+  SYNTAX_ADMISSION_REASON_CODES,
   validateSyntaxShape,
 } from "./generated/syntax-admission-v1.mjs";
 
@@ -345,16 +346,22 @@ function validateGeneratedShape(ir) {
   validateSyntaxShape(
     ir,
     CURRENT_SYNTAX_GENERATION,
-    (path, reason) => {
-      if (reason === "is not part of the contract") {
+    (path, reason, rejection) => {
+      if (
+        rejection.reasonCode ===
+        SYNTAX_ADMISSION_REASON_CODES.UNKNOWN_FIELD
+      ) {
         const nested = path.includes(".") || path.includes("[");
         const message = nested
           ? `unknown field: ${path}`
           : `unknown top-level field: ${path}`;
         fail("E_ARTIFACT_SHAPE", message, { path });
       }
-      const label = path.length === 0 ? "artifact" : path;
-      fail("E_ARTIFACT_SHAPE", `${label} ${reason}`, { path });
+      fail(
+        "E_ARTIFACT_SHAPE",
+        `${rejection.location} ${reason}`,
+        { path },
+      );
     },
   );
 }
