@@ -444,6 +444,27 @@ wait"#,
     assert_worker_terminated(&fixture);
 }
 
+#[test]
+fn timeout_remains_active_while_descendants_hold_output_pipes() {
+    let fixture = FakeVale::new(
+        "3.14.2",
+        r#"(
+  trap '' HUP TERM
+  /bin/sleep 0.5
+) &
+printf '%s\n' "$!" > '{FAKE_VALE_WORKER_PID}'
+exit 0"#,
+    );
+    let analyzer = ValeAnalyzer::discover(fixture.config().with_timeout(Duration::from_millis(50)))
+        .expect("discover exited-wrapper fixture");
+
+    let error = analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect_err("inherited output pipes must remain under the timeout");
+    assert_eq!(error.kind(), ValeErrorKind::Timeout);
+    assert_worker_terminated(&fixture);
+}
+
 fn assert_worker_terminated(fixture: &FakeVale) {
     let worker_pid: u32 = fs::read_to_string(&fixture.worker_pid)
         .expect("wrapper must record worker PID")
