@@ -174,6 +174,23 @@ increasing an uncovered-line ceiling requires an explicit policy and reference
 change with a reviewed rationale. The checker never rewrites the policy from a
 failing report, so new code cannot silently redefine its own baseline.
 
+## Public API doctests
+
+The public `Parser`, `Annotator`, `Analyzer`, IR producer, and vocabulary
+boundaries each carry one concise, runnable rustdoc example. The normal Rust CI
+job and release preparation run them explicitly:
+
+```bash
+cargo test --doc --workspace --locked
+```
+
+[`check-public-api-doctests.mjs`](../../../scripts/check-public-api-doctests.mjs)
+guards the five named examples and the visible CI command. Its mutation suite
+rejects a missing or duplicate example marker, a missing or misspelled workspace
+doctest command, execution guards, and non-blocking error handling on the Rust
+job or doctest step. Rustdoc compilation remains the authority for whether the
+examples actually build and run.
+
 ## Evidence
 
 The requirements, exact oracles, and mutation coverage live in the

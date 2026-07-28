@@ -16,6 +16,8 @@ Requirements:
 - **PAR-8** A bounded deterministic fuzz/property corpus covers arbitrary valid
   Unicode, range legality, and source round-trip without profile-dependent
   stack assumptions.
+- **PAR-9** The public `Parser` port has a concise runnable example that shows
+  total parsing without duplicating the parsing reference.
 
 ## Cases
 
@@ -113,6 +115,14 @@ lives in `crates/colorful-parse/src/lib.rs`.
   and deterministic regression corpus. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
   *Status:* planned.
+- **PAR-9a** — *Requirement:* PAR-9. *Behavior:* a public `Parser` implementation
+  parses source into inspectable structure in a compiled rustdoc example.
+  *Oracle:* `cargo test --doc --workspace` compiles and runs the example with an
+  exact structural assertion. *Evidence type:* public API doctest. *Evidence:*
+  `colorful-core` `Parser` rustdoc and
+  `scripts/check-public-api-doctests.mjs`. *Tracking:*
+  [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* implemented.
 
 ## Known gaps
 

@@ -66,6 +66,9 @@ Requirements:
   where it provides value.
 - **IR-19** An independent non-Rust consumer proves two-version migration and
   whether the IR reduces downstream effort relative to CLI text or LSP tokens.
+- **IR-20** Public IR projection and vocabulary APIs have concise runnable
+  examples that demonstrate their fallible boundaries without duplicating the
+  IR reference.
 
 ## Cases
 
@@ -499,6 +502,22 @@ Requirements:
   consumer and measured migration report. *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
   *Status:* planned.
+- **IR-20a** — *Requirement:* IR-20. *Behavior:* the public producer front door
+  projects valid source and demonstrates typed failure handling in a compiled
+  rustdoc example. *Oracle:* `cargo test --doc --workspace` runs the success
+  assertion and compiles explicit `ProjectionError` handling. *Evidence type:*
+  public API doctest. *Evidence:* `colorful-projection` `build_document`
+  rustdoc and `scripts/check-public-api-doctests.mjs`. *Tracking:*
+  [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* implemented.
+- **IR-20b** — *Requirement:* IR-20. *Behavior:* public vocabulary lookups
+  demonstrate both an authored mapping and an uncovered caller-supplied
+  combination. *Oracle:* `cargo test --doc --workspace` runs exact `Some` and
+  `None` assertions. *Evidence type:* public API doctest. *Evidence:*
+  `colorful-ir` `vocabulary::visual_role` rustdoc and
+  `scripts/check-public-api-doctests.mjs`. *Tracking:*
+  [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* implemented.
 
 ## Known gaps / risks
 

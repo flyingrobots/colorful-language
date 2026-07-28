@@ -303,6 +303,48 @@ impl PassIdentity {
 }
 
 /// Port: turn source text into shallow structure. Knows nothing about meaning.
+///
+/// # Examples
+///
+/// A parser adapter owns segmentation policy while returning the shared core
+/// tree:
+///
+/// ```
+/// # // public-api-doctest: parser
+/// use colorful_core::{Node, Parser, Span, Tree};
+///
+/// struct WholeSourceParser;
+///
+/// impl Parser for WholeSourceParser {
+///     fn parse(&self, text: &str) -> Tree {
+///         if text.is_empty() {
+///             return Tree::document(Vec::new());
+///         }
+///         let span = Span::new(0, text.len());
+///         Tree::document(vec![Node::Sentence {
+///             span,
+///             parts: vec![Node::Word { span }],
+///         }])
+///     }
+/// }
+///
+/// assert_eq!(WholeSourceParser.parse(""), Tree::document(Vec::new()));
+/// let source = "colorful";
+/// let tree = WholeSourceParser.parse(source);
+/// assert_eq!(
+///     tree,
+///     Tree::document(vec![Node::Sentence {
+///         span: Span::new(0, 8),
+///         parts: vec![Node::Word {
+///             span: Span::new(0, 8),
+///         }],
+///     }]),
+/// );
+/// ```
+///
+/// See the [parsing topic] for the shipped parser's behavior.
+///
+/// [parsing topic]: https://github.com/flyingrobots/colorful-language/blob/main/docs/topics/parsing/README.md
 pub trait Parser {
     /// Parse `text` into a [`Tree`]. Implementations must be total: any input,
     /// including malformed or adversarial text, yields a tree without panicking.
@@ -335,6 +377,48 @@ pub trait Lexicon {
 /// future contextual or machine-learning annotator can replace it behind this
 /// port — distinguishing noun from verb using the surrounding [`Tree`] — without
 /// touching the parser, the CLI, or the language server.
+///
+/// # Examples
+///
+/// An annotator reads parsed structure and emits source-ordered classifications:
+///
+/// ```
+/// # // public-api-doctest: annotator
+/// use colorful_core::{Annotator, Node, PosClass, Span, Token, Tree};
+///
+/// struct FirstWordAnnotator;
+///
+/// impl Annotator for FirstWordAnnotator {
+///     fn annotate(&self, _source: &str, tree: &Tree) -> Vec<Token> {
+///         let Node::Document(sentences) = &tree.root else {
+///             return Vec::new();
+///         };
+///         let Some(Node::Sentence { parts, .. }) = sentences.first() else {
+///             return Vec::new();
+///         };
+///         let Some(Node::Word { span }) = parts.first() else {
+///             return Vec::new();
+///         };
+///         vec![Token {
+///             span: *span,
+///             class: PosClass::Content,
+///         }]
+///     }
+/// }
+///
+/// let span = Span::new(0, 4);
+/// let tree = Tree::document(vec![Node::Sentence {
+///     span,
+///     parts: vec![Node::Word { span }],
+/// }]);
+/// let tokens = FirstWordAnnotator.annotate("word", &tree);
+/// assert_eq!(tokens[0].class, PosClass::Content);
+/// assert_eq!(tokens[0].span.slice("word"), "word");
+/// ```
+///
+/// See the [coloring topic] for the shipped annotator's behavior.
+///
+/// [coloring topic]: https://github.com/flyingrobots/colorful-language/blob/main/docs/topics/coloring/README.md
 pub trait Annotator {
     /// Produce the classified tokens for `source`, given its parsed `tree`, in
     /// source order.
@@ -842,6 +926,63 @@ pub fn validate_classification(
 /// without re-parsing. Like the other ports it performs no I/O; the rule pack
 /// that implements it is an adapter (the `colorful-lint` crate), so new rules
 /// never touch the parser, the lexicon, or the surfaces.
+///
+/// # Examples
+///
+/// An analyzer can implement one deterministic rule without depending on I/O:
+///
+/// ```
+/// # // public-api-doctest: analyzer
+/// use colorful_core::{
+///     Analyzer, Finding, Node, PosClass, Rule, Severity, Span, Token, Tree,
+///     ValidatedClassification,
+/// };
+///
+/// struct FlagFirstToken;
+///
+/// impl Analyzer for FlagFirstToken {
+///     fn analyze(&self, _source: &str, _tree: &Tree, tokens: &[Token]) -> Vec<Finding> {
+///         tokens
+///             .first()
+///             .map(|token| Finding {
+///                 span: token.span,
+///                 rule: Rule::WeakWord,
+///                 severity: Severity::Info,
+///                 message: "review the first token".to_owned(),
+///             })
+///             .into_iter()
+///             .collect()
+///     }
+/// }
+///
+/// let span = Span::new(0, 4);
+/// let token = Token {
+///     span,
+///     class: PosClass::Content,
+/// };
+/// let tree = Tree::document(vec![Node::Sentence {
+///     span,
+///     parts: vec![Node::Word { span }],
+/// }]);
+/// let classification = ValidatedClassification::new(
+///     "word",
+///     tree,
+///     vec![token],
+/// )
+/// .unwrap();
+/// let findings = FlagFirstToken.analyze(
+///     classification.source(),
+///     classification.tree(),
+///     classification.tokens(),
+/// );
+/// assert_eq!(findings[0].rule.code(), "weak-word");
+/// assert_eq!(findings[0].severity, Severity::Info);
+/// assert_eq!(findings[0].span, Span::new(0, 4));
+/// ```
+///
+/// See the [linting topic] for the shipped analyzer and rule behavior.
+///
+/// [linting topic]: https://github.com/flyingrobots/colorful-language/blob/main/docs/topics/linting/README.md
 pub trait Analyzer {
     /// Produce the findings for `source`, given its parsed `tree` and the
     /// classified `tokens`, in source order.

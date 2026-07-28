@@ -60,6 +60,8 @@ Requirements:
   UTF-8, operand rejection, exit statuses, `NO_COLOR`, and canonical IR output.
 - **COL-20** Output from public `Parser` and `Annotator` ports crosses one pure,
   typed validation boundary before an LSP or IR adapter interprets its spans.
+- **COL-21** The public `Annotator` port has a concise runnable example that
+  classifies parsed structure without duplicating the coloring reference.
 
 ## Cases
 
@@ -345,6 +347,14 @@ Requirements:
   `tests::golden_colored_output`.
   *Tracking:*
   [#142](https://github.com/flyingrobots/colorful-language/issues/142).
+  *Status:* implemented.
+- **COL-21a** — *Requirement:* COL-21. *Behavior:* a public `Annotator`
+  implementation classifies a parsed tree in a compiled rustdoc example.
+  *Oracle:* `cargo test --doc --workspace` compiles and runs the example with an
+  exact token-class assertion. *Evidence type:* public API doctest. *Evidence:*
+  `colorful-core` `Annotator` rustdoc and
+  `scripts/check-public-api-doctests.mjs`. *Tracking:*
+  [#140](https://github.com/flyingrobots/colorful-language/issues/140).
   *Status:* implemented.
 
 ## Known gaps
