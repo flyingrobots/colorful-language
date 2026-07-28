@@ -344,8 +344,8 @@ impl DocumentStore {
                 return;
             }
 
-            let queue_delay_micros =
-                u64::try_from(work.scheduled_at.elapsed().as_micros()).unwrap_or(u64::MAX);
+            let queue_delay = work.scheduled_at.elapsed().saturating_sub(delay);
+            let queue_delay_micros = u64::try_from(queue_delay.as_micros()).unwrap_or(u64::MAX);
             store
                 .metrics
                 .max_queue_delay_micros
