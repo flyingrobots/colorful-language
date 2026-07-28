@@ -34,15 +34,22 @@ test("portable admission burden is synchronized across current references", () =
 test("a stale current-reference burden count fails with its path", () => {
   const inputs = currentInputs();
   const target = "docs/topics/ir/README.md";
+  const authored = inputs.ledger.adapters.ir.nonblankAdapterLines;
+  const currentClaim = `${authored} authored nonblank IR adapter lines`;
+  assert.equal(inputs.documents.get(target).includes(currentClaim), true);
   inputs.documents.set(
     target,
     inputs.documents.get(target).replace(
-      "249 authored nonblank IR adapter lines",
-      "999 authored nonblank IR adapter lines",
+      currentClaim,
+      `${authored + 1} authored nonblank IR adapter lines`,
     ),
   );
   assert.throws(
     () => checkPortableAdmissionDocs(inputs),
-    new RegExp(`portable admission documentation drift: ${target}`, "u"),
+    (error) =>
+      error instanceof Error &&
+      error.message.startsWith(
+        `portable admission documentation drift: ${target}`,
+      ),
   );
 });
