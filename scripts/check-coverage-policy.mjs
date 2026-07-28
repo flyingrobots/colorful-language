@@ -340,7 +340,7 @@ export function validateCoverageReference(reference, policy) {
     coverageReferenceRow("Workspace", checked.workspace),
     ...[...checked.files].map(([path, baseline]) =>
       coverageReferenceRow(
-        `\`${path.replace(/^crates\//u, "")}\``,
+        `\`${path}\``,
         baseline,
       ),
     ),

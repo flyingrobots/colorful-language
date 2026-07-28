@@ -157,10 +157,10 @@ The initial baseline was measured at source commit
 | Surface | Measured lines | Measured coverage | Minimum | Maximum uncovered |
 | --- | ---: | ---: | ---: | ---: |
 | Workspace | 5,757 / 6,037 | 95.36% | 92% | 280 |
-| `colorful-cli/src/lib.rs` | 651 / 716 | 90.92% | 90% | 65 |
-| `colorful-cli/src/main.rs` | 7 / 7 | 100% | 100% | 0 |
-| `colorful-lsp/src/lib.rs` | 499 / 500 | 99.80% | 99% | 1 |
-| `colorful-lsp/src/main.rs` | 61 / 64 | 95.31% | 94% | 3 |
+| `crates/colorful-cli/src/lib.rs` | 651 / 716 | 90.92% | 90% | 65 |
+| `crates/colorful-cli/src/main.rs` | 7 / 7 | 100% | 100% | 0 |
+| `crates/colorful-lsp/src/lib.rs` | 499 / 500 | 99.80% | 99% | 1 |
+| `crates/colorful-lsp/src/main.rs` | 61 / 64 | 95.31% | 94% | 3 |
 
 The 92% workspace percentage is deliberately below the earlier 92.16%
 observation and the fresh 95.36% measurement. The uncovered-line ceilings are
