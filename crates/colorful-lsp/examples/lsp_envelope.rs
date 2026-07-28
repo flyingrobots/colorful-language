@@ -863,6 +863,14 @@ fn operating_system() -> String {
     }
 }
 
+fn measured_platform() -> String {
+    let operating_system = match std::env::consts::OS {
+        "macos" => "darwin",
+        other => other,
+    };
+    format!("{operating_system}-{}", std::env::consts::ARCH)
+}
+
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -971,6 +979,8 @@ fn main() {
             "rapidEditCount": RAPID_EDIT_COUNT
         },
         "measurement": {
+            "runsPerScenario": 1,
+            "measuredPlatform": measured_platform(),
             "serverExecutable": server_executable,
             "serverProvenance": server_provenance,
             "serverSha256": server_sha256,

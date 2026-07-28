@@ -197,7 +197,8 @@ full-token requests: open or one edit must reach latest diagnostics within
 burst within 8 seconds; queue delay must remain below 250 ms and server RSS
 below 1,536 MiB. A 10 MiB document is deliberately outside the envelope: it
 must return `colorful/document-too-large` and empty tokens within 1 second,
-below 512 MiB RSS.
+below 512 MiB RSS. The checked-in baseline is one reviewed run per scenario on
+Darwin/aarch64, not a cross-platform variance study.
 
 **2026-07-28, `rustc 1.97.1`, Node 22.23.1, Apple M1 Pro, 16 GiB RAM, macOS
 26.3 arm64, release profile:**
