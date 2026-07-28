@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
 import {
+  cpSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -109,6 +110,66 @@ function releaseFixture(release) {
     ir: readFileSync(path.join(directory, "ir.json"), "utf8"),
   };
 }
+
+test("wire behavior derives from identity, never a release label or switch", (t) => {
+  for (const [
+    release,
+    expectedGeneration,
+    expectedOpenClassKind,
+  ] of [
+    ["v0.2.1", "v0.2.1", false],
+    ["v0.3.0", "v0.3.0", true],
+  ]) {
+    const directory = path.join(FIXTURES, "releases", release);
+    const metadata = JSON.parse(
+      readFileSync(path.join(directory, "profile.json"), "utf8"),
+    );
+    assert.equal(Object.hasOwn(metadata, "openClassKindField"), false);
+
+    const profile = loadProfile(directory);
+    assert.equal(profile.generationId, expectedGeneration);
+    assert.equal(profile.openClassKindField, expectedOpenClassKind);
+  }
+
+  const temporaryRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-release-label-"),
+  );
+  t.after(() => rmSync(temporaryRoot, { recursive: true, force: true }));
+  const source = path.join(FIXTURES, "releases", "v0.2.1");
+  const copy = path.join(temporaryRoot, "renamed-release");
+  cpSync(source, copy, { recursive: true });
+  const profilePath = path.join(copy, "profile.json");
+  const metadata = JSON.parse(readFileSync(profilePath, "utf8"));
+  metadata.release = "not-a-semantic-version";
+  writeFileSync(profilePath, `${JSON.stringify(metadata, null, 2)}\n`);
+
+  const renamed = loadProfile(copy);
+  assert.equal(renamed.generationId, "v0.2.1");
+  assert.equal(renamed.openClassKindField, false);
+});
+
+test("a self-consistent but unknown identity tuple is rejected", (t) => {
+  const temporaryRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-unknown-generation-"),
+  );
+  t.after(() => rmSync(temporaryRoot, { recursive: true, force: true }));
+  const source = path.join(FIXTURES, "releases", "v0.3.0");
+  const copy = path.join(temporaryRoot, "unknown-generation");
+  cpSync(source, copy, { recursive: true });
+
+  const syntaxPath = path.join(copy, "syntax.v1.graphql");
+  const syntax = `${readFileSync(syntaxPath, "utf8")}\n# unknown generation\n`;
+  writeFileSync(syntaxPath, syntax);
+
+  const profilePath = path.join(copy, "profile.json");
+  const metadata = JSON.parse(readFileSync(profilePath, "utf8"));
+  metadata.schemaHash = `sha256:${createHash("sha256")
+    .update(syntax)
+    .digest("hex")}`;
+  writeFileSync(profilePath, `${JSON.stringify(metadata, null, 2)}\n`);
+
+  expectConsumerError("E_PROFILE", () => loadProfile(copy));
+});
 
 function expectConsumerError(code, operation) {
   assert.throws(
