@@ -4,13 +4,14 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc,
 };
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use colorful_lsp::{apply_change, DocumentAnalysis};
 use dashmap::DashMap;
 use ropey::Rope;
 use serde::Serialize;
 use tokio::sync::{watch, Mutex};
+use tokio::time::Instant;
 use tower_lsp::lsp_types::{
     Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range, SemanticToken,
     TextDocumentContentChangeEvent, Url,
@@ -705,6 +706,10 @@ mod tests {
             [1, 3]
         );
         assert_eq!(store.metrics().stale_results, 0);
+        assert!(
+            store.metrics().max_queue_delay_micros < 10_000,
+            "the intentional debounce is not scheduler queue delay"
+        );
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
