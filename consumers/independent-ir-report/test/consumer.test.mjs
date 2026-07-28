@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { EventEmitter } from "node:events";
 import {
   mkdtempSync,
   readFileSync,
@@ -525,6 +526,48 @@ test("LSP capture rejects unsuccessful responses before serialization", () => {
       { jsonrpc: "2.0", id: 2, result: { data: [0] } },
     ),
   );
+});
+
+test("LSP capture bounds child-process exit", async () => {
+  const { waitForChildExit } = await import("../src/lsp-fixture.mjs");
+  let expiration;
+  let killCount = 0;
+  const child = new EventEmitter();
+  child.exitCode = null;
+  child.signalCode = null;
+  child.kill = () => {
+    killCount += 1;
+  };
+  const waiting = waitForChildExit(child, {
+    schedule(callback) {
+      expiration = callback;
+      return 1;
+    },
+    cancel() {},
+    timeoutMs: 5_000,
+  });
+  expiration();
+  await assert.rejects(waiting, /did not exit after the exit notification/u);
+  assert.equal(killCount, 1);
+
+  let cancelled = false;
+  const exitingChild = new EventEmitter();
+  exitingChild.exitCode = null;
+  exitingChild.signalCode = null;
+  exitingChild.kill = () => assert.fail("normal exit must not be killed");
+  const exited = waitForChildExit(exitingChild, {
+    schedule() {
+      return 2;
+    },
+    cancel(timer) {
+      assert.equal(timer, 2);
+      cancelled = true;
+    },
+    timeoutMs: 5_000,
+  });
+  exitingChild.emit("exit", 0, null);
+  await exited;
+  assert.equal(cancelled, true);
 });
 
 test("the IR process refuses every stable category without output", (context) => {

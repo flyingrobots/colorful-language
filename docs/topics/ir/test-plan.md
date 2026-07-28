@@ -531,6 +531,7 @@ Requirements:
   `release profiles project every classified visual role`,
   `IR admission enforces derivation trace identity`,
   `Markdown reports escape table delimiters inside code spans`,
+  `LSP capture bounds child-process exit`,
   `the retention rule honors both documented decision branches`.
   *Tracking:*
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
@@ -623,7 +624,7 @@ Requirements:
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
-  correctness rule. Its 424-line IR adapter is larger than the 264-line
+  correctness rule. Its 424-line IR adapter is larger than the 305-line
   LSP protocol and decoding adapter, so reducing duplicate consumer admission
   code is deliberate follow-up debt in
   [#222](https://github.com/flyingrobots/colorful-language/issues/222); the

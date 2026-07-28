@@ -97,7 +97,7 @@ const definitions = {
     stableErrorCategories: LSP_ERROR_CODES,
     verifiedIdentities: ["serverVersion", "semanticTokenLegend"],
     fixtures: ["fixtures/releases/v0.3.0/lsp.json"],
-    reviewedAssertions: 9,
+    reviewedAssertions: 11,
     processSteps: [
       "initialize server",
       "open document",

@@ -237,10 +237,10 @@ v0.3 must handle the `Option` result.
   `node_modules`.
 
   The generated burden ledger measures 424 nonblank IR adapter lines, including
-  48 migration-specific lines, versus 49 for ANSI and 264 for LSP including its
+  48 migration-specific lines, versus 49 for ANSI and 305 for LSP including its
   JSON-RPC acquisition client. Because the IR alone authenticates all five wire
   identities and remains below the reviewed two-times limit against the
-  alternatives' combined 313 lines, the decision is to retain stable v1. This
+  alternatives' combined 354 lines, the decision is to retain stable v1. This
   preserves current bytes; it does not authorize new contract fields.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode

@@ -55,11 +55,11 @@ reviewed comparison:
 | --- | ---: | ---: | ---: |
 | IR | 424 | 11 | 5 |
 | ANSI | 49 | 4 | 1 |
-| LSP | 264 | 5 | 2 |
+| LSP | 305 | 5 | 2 |
 
 The LSP count includes its JSON-RPC acquisition client; the CLI-backed IR and
 ANSI paths share the same trivial process boundary. The IR adapter is larger
-than the alternatives' combined 313 lines but uniquely verifies the contract,
+than the alternatives' combined 354 lines but uniquely verifies the contract,
 schema, vocabulary, source length, and source digest and stays below the
 reviewed two-times bound. The resulting decision is to retain stable v1,
 simplify consumer admission cost where possible, make the currently
@@ -72,6 +72,8 @@ The executable decision records both policy branches explicitly: the IR may be
 retained for its bounded correctness advantage or because it is the smallest
 adapter. The checked-in result records which branch the current measurements
 actually satisfy.
+The LSP acquisition path bounds every response wait and the final child-process
+exit; a non-terminating server is killed and fails deterministically.
 
 Refresh the tagged fixtures only by building the real releases:
 
