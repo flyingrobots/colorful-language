@@ -69,6 +69,14 @@ in [#197](https://github.com/flyingrobots/colorful-language/issues/197).
   release-preparation execution. *Evidence:*
   `.github/workflows/security.yml`, `scripts/release-prep.sh`, and
   `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
+- **RM-1c — Narrow advisory exception parity.** *Requirements:* RM-1, RM-7.
+  *Behavior:* every ignored RustSec ID has exactly one metadata record with a
+  named owner, reviewed reason, and explicit removal trigger; stale metadata,
+  duplicate IDs, bare ignores, and incomplete records fail. *Oracle:* the
+  maintenance mutation suite accepts one complete synthetic exception and
+  rejects each malformed or mismatched variant with
+  `E_RUST_ADVISORY_EXCEPTION`. *Evidence type:* checked-in empty exception
+  registry and deterministic metadata/TOML parity tests. *Status:* planned.
 - **RM-3a — Reproducible issue forms and routing.** *Requirement:* RM-3.
   *Behavior:* the bug form requires reproduction, observed and expected
   behavior, version, and environment; the feature form requires the problem,
