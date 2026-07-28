@@ -298,6 +298,33 @@ Implemented and planned cases are listed below.
   timeout_terminates_wrapper_process_group}`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
+- **LINT-13g** — *Requirement:* LINT-13. *Behavior:* external rule identifiers
+  enforce their exact ASCII length and namespace boundaries; malformed or
+  overflowing version output returns a typed discovery error without panic;
+  process-failure detail is bounded; and a bound analyzer mismatch does not
+  expose either source document. *Oracle:* exact boundary matrices and error
+  categories, a maximum failure-message length, and a panic payload that omits
+  both source strings. *Evidence type:* public-contract and process-error
+  regression tests. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
+- **LINT-13h** — *Requirement:* LINT-13. *Behavior:* Vale's JSON result is
+  admitted in one typed deserialization pass; required alert text is validated
+  before coordinate work; documented one-based inclusive rune spans preserve
+  their exact Unicode source slice; and severity collapse is explicit.
+  *Oracle:* syntax failures, non-object roots, typed shape failures, empty
+  fields, astral/combining endpoints, and every supported severity have stable
+  results. *Evidence type:* JSON and coordinate contract matrix. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
+- **LINT-13i** — *Requirement:* LINT-13. *Behavior:* discovery and analysis do
+  not inherit ambient user configuration, home, XDG, or proxy variables while
+  retaining the minimum platform environment required to execute the
+  explicitly selected engine. *Oracle:* a fake executable records its
+  environment and proves documented allowlist equality for both phases.
+  *Evidence type:* process-environment contract test. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
