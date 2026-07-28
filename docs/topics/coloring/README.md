@@ -175,13 +175,13 @@ update this table when the hot path changes meaningfully.
 ### Cross-stage comparison
 
 The cross-stage release harness uses those same two corpora to separate parsing,
-contextual annotation, lint analysis, guarded IR projection, canonical
-serialization, and fail-closed IR validation. It measures nine timing samples
-per stage/corpus pair on the normal system allocator, invokes a separate
-instrumented process for one allocation sample, then emits a versioned JSON
-report. Allocation count includes allocator allocation and reallocation calls;
-allocated bytes include fresh allocation bytes plus positive net reallocation
-growth:
+contextual annotation, mandatory classification validation, lint analysis,
+guarded IR projection, canonical serialization, and fail-closed IR validation.
+It measures nine timing samples per stage/corpus pair on the normal system
+allocator, invokes a separate instrumented process for one allocation sample,
+then emits a versioned JSON report. Allocation count includes allocator
+allocation and reallocation calls; allocated bytes include fresh allocation
+bytes plus positive net reallocation growth:
 
 ```bash
 cargo run --locked --release -p colorful-cli \
@@ -192,19 +192,20 @@ Run it from a clean worktree so the report can bind itself to the exact source
 commit. Review the temporary report before updating
 [`cross-stage-baseline.json`](../../../crates/colorful-cli/benchmarks/cross-stage-baseline.json).
 
-**2026-07-28, source `e23b8fece1bd605af0627cb3cc1d6fc2e2e8f1ca`,
+**2026-07-28, source `d3613fc2a9c5dfcb41fadceb56bf7b1319636541`,
 `rustc 1.97.1`, Node 22.23.1, `stats_alloc 0.1.10`, Apple M1 Pro,
 16 GiB RAM, macOS Darwin 25.3.0 arm64, release profile:**
 
 | Stage | 899 B median | 899 B allocations | 45 KB median | 45 KB throughput | 45 KB allocations |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Parsing | 5.0 µs | 43 / 17.8 KiB | 250 µs | 180.1 MB/s | 2,009 / 915.8 KiB |
-| Contextual annotation | 15.4 µs | 136 / 12.7 KiB | 585 µs | 77.0 MB/s | 6,463 / 807.0 KiB |
-| Lint analysis | 7.0 µs | 144 / 9.4 KiB | 300 µs | 150.2 MB/s | 7,059 / 485.6 KiB |
-| Guarded IR projection | 79.2 µs | 1,063 / 75.3 KiB | 1.98 ms | 22.7 MB/s | 49,172 / 3.20 MiB |
-| Canonical IR serialization | 183 µs | 2,342 / 330.7 KiB | 8.87 ms | 5.1 MB/s | 114,264 / 16.87 MiB |
-| Fail-closed IR validation | 58.3 µs | 1,009 / 59.2 KiB | 1.78 ms | 25.3 MB/s | 48,414 / 2.60 MiB |
-| Graft projection | 744 µs | unavailable | 7.47 ms | 6.0 MB/s | unavailable |
+| Parsing | 5.4 µs | 43 / 17.8 KiB | 250 µs | 179.7 MB/s | 2,009 / 915.8 KiB |
+| Contextual annotation | 14.8 µs | 136 / 12.7 KiB | 562 µs | 80.1 MB/s | 6,463 / 807.0 KiB |
+| Classification validation | 28.9 µs | 753 / 75.0 KiB | 1.08 ms | 41.8 MB/s | 37,215 / 3.94 MiB |
+| Lint analysis | 7.8 µs | 144 / 9.4 KiB | 328 µs | 137.0 MB/s | 7,059 / 485.6 KiB |
+| Guarded IR projection | 82.6 µs | 1,063 / 75.3 KiB | 1.96 ms | 22.9 MB/s | 49,172 / 3.20 MiB |
+| Canonical IR serialization | 163 µs | 2,342 / 330.7 KiB | 8.26 ms | 5.4 MB/s | 114,264 / 16.87 MiB |
+| Fail-closed IR validation | 56.7 µs | 1,009 / 59.2 KiB | 1.76 ms | 25.6 MB/s | 48,414 / 2.60 MiB |
+| Graft projection | 653 µs | unavailable | 7.13 ms | 6.3 MB/s | unavailable |
 
 Guarded IR projection uses the public `from_validated_classification()` boundary,
 so its number includes the mandatory successful-document validation

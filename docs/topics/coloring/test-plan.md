@@ -307,7 +307,10 @@ Requirements:
   type:* release benchmark stage and deterministic report-contract assertion.
   *Tracking:*
   [#135](https://github.com/flyingrobots/colorful-language/issues/135).
-  *Status:* planned.
+  *Evidence:* `cross_stage_support::Stage::ClassificationValidation`;
+  `crates/colorful-cli/benchmarks/cross-stage-baseline.json`;
+  `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
+  *Status:* implemented.
 - **COL-18a** — *Requirement:* COL-18. *Behavior:* a bounded seeded corpus
   generates valid Unicode plus malformed public trees and IR mutations and
   exercises parser, annotator, projection, validation, and UTF-16 indexing.

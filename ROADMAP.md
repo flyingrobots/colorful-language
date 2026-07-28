@@ -174,9 +174,9 @@ CLI/LSP findings agree without hiding ambiguity.
   a release-mode service envelope with versioned queue/stale/limit metrics,
   exact 100 KiB–10 MiB process evidence, and a passing 5 MiB SLO
   ([#122](https://github.com/flyingrobots/colorful-language/issues/122));
-  fixed-corpus release evidence for parsing, annotation, lint, guarded IR
-  projection, serialization, validation, and the existing semantic-token,
-  incremental-edit, and Graft authorities
+  fixed-corpus release evidence for parsing, annotation, classification
+  validation, lint, guarded IR projection, serialization, IR validation, and
+  the existing semantic-token, incremental-edit, and Graft authorities
   ([#135](https://github.com/flyingrobots/colorful-language/issues/135));
   Unicode and mixed-line-ending CLI/LSP coordinate parity
   ([#125](https://github.com/flyingrobots/colorful-language/issues/125)); and

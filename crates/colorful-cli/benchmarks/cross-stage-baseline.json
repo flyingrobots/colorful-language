@@ -13,6 +13,11 @@
     {
       "authority": "cross-stage-release",
       "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
+      "stage": "classification-validation"
+    },
+    {
+      "authority": "cross-stage-release",
+      "evidence": "crates/colorful-cli/examples/cross_stage_benchmark.rs",
       "stage": "lint"
     },
     {
@@ -67,17 +72,17 @@
         {
           "corpus": "small",
           "inputBytes": 899,
-          "medianNanoseconds": 744333,
+          "medianNanoseconds": 652791,
           "spanCount": 144,
-          "throughputBytesPerSecond": 1207792,
+          "throughputBytesPerSecond": 1377163,
           "tokenCount": 144
         },
         {
           "corpus": "medium",
           "inputBytes": 44999,
-          "medianNanoseconds": 7465791,
+          "medianNanoseconds": 7131584,
           "spanCount": 7200,
-          "throughputBytesPerSecond": 6027358,
+          "throughputBytesPerSecond": 6309818,
           "tokenCount": 7200
         }
       ],
@@ -88,13 +93,13 @@
   "measurement": {
     "allocationCounter": "stats_alloc 0.1.10",
     "allocationSamplesPerStage": 1,
-    "generatedAt": "2026-07-28T09:43:29Z",
+    "generatedAt": "2026-07-28T10:01:15Z",
     "hardware": "Apple M1 Pro; arm64",
     "node": "v22.23.1",
     "operatingSystem": "Darwin 25.3.0 arm64",
     "profile": "release",
     "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-    "sourceCommit": "e23b8fece1bd605af0627cb3cc1d6fc2e2e8f1ca",
+    "sourceCommit": "d3613fc2a9c5dfcb41fadceb56bf7b1319636541",
     "throughputBasis": "source-utf8-bytes",
     "timingSamplesPerStage": 9,
     "totalMemoryBytes": 17179869184
@@ -105,108 +110,126 @@
       "allocationCount": 43,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 5042,
+      "medianNanoseconds": 5375,
       "stage": "parsing",
-      "throughputBytesPerSecond": 178302261
+      "throughputBytesPerSecond": 167255813
     },
     {
       "allocatedBytes": 12993,
       "allocationCount": 136,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 15417,
+      "medianNanoseconds": 14791,
       "stage": "annotation",
-      "throughputBytesPerSecond": 58312252
+      "throughputBytesPerSecond": 60780204
+    },
+    {
+      "allocatedBytes": 76768,
+      "allocationCount": 753,
+      "corpus": "small",
+      "inputBytes": 899,
+      "medianNanoseconds": 28917,
+      "stage": "classification-validation",
+      "throughputBytesPerSecond": 31088978
     },
     {
       "allocatedBytes": 9635,
       "allocationCount": 144,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 6958,
+      "medianNanoseconds": 7792,
       "stage": "lint",
-      "throughputBytesPerSecond": 129203794
+      "throughputBytesPerSecond": 115374743
     },
     {
       "allocatedBytes": 77062,
       "allocationCount": 1063,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 79250,
+      "medianNanoseconds": 82625,
       "stage": "ir-projection",
-      "throughputBytesPerSecond": 11343848
+      "throughputBytesPerSecond": 10880484
     },
     {
       "allocatedBytes": 338616,
       "allocationCount": 2342,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 182625,
+      "medianNanoseconds": 162917,
       "stage": "ir-serialization",
-      "throughputBytesPerSecond": 4922655
+      "throughputBytesPerSecond": 5518147
     },
     {
       "allocatedBytes": 60602,
       "allocationCount": 1009,
       "corpus": "small",
       "inputBytes": 899,
-      "medianNanoseconds": 58333,
+      "medianNanoseconds": 56667,
       "stage": "ir-validation",
-      "throughputBytesPerSecond": 15411516
+      "throughputBytesPerSecond": 15864612
     },
     {
       "allocatedBytes": 937760,
       "allocationCount": 2009,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 249792,
+      "medianNanoseconds": 250417,
       "stage": "parsing",
-      "throughputBytesPerSecond": 180145881
+      "throughputBytesPerSecond": 179696266
     },
     {
       "allocatedBytes": 826386,
       "allocationCount": 6463,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 584750,
+      "medianNanoseconds": 562125,
       "stage": "annotation",
-      "throughputBytesPerSecond": 76954253
+      "throughputBytesPerSecond": 80051589
+    },
+    {
+      "allocatedBytes": 4127472,
+      "allocationCount": 37215,
+      "corpus": "medium",
+      "inputBytes": 44999,
+      "medianNanoseconds": 1076792,
+      "stage": "classification-validation",
+      "throughputBytesPerSecond": 41789872
     },
     {
       "allocatedBytes": 497206,
       "allocationCount": 7059,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 299667,
+      "medianNanoseconds": 328458,
       "stage": "lint",
-      "throughputBytesPerSecond": 150163347
+      "throughputBytesPerSecond": 137000773
     },
     {
       "allocatedBytes": 3360200,
       "allocationCount": 49172,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 1982750,
+      "medianNanoseconds": 1961625,
       "stage": "ir-projection",
-      "throughputBytesPerSecond": 22695246
+      "throughputBytesPerSecond": 22939654
     },
     {
       "allocatedBytes": 17686668,
       "allocationCount": 114264,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 8873708,
+      "medianNanoseconds": 8257333,
       "stage": "ir-serialization",
-      "throughputBytesPerSecond": 5071048
+      "throughputBytesPerSecond": 5449580
     },
     {
       "allocatedBytes": 2724491,
       "allocationCount": 48414,
       "corpus": "medium",
       "inputBytes": 44999,
-      "medianNanoseconds": 1778000,
+      "medianNanoseconds": 1760625,
       "stage": "ir-validation",
-      "throughputBytesPerSecond": 25308773
+      "throughputBytesPerSecond": 25558537
     }
   ],
   "regressionPolicy": {
