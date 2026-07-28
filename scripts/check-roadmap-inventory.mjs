@@ -278,6 +278,14 @@ function runGitHub(arguments_, description) {
   }
 }
 
+function parseJson(source, category, location) {
+  try {
+    return JSON.parse(source);
+  } catch (error) {
+    fail(category, location, `invalid JSON: ${error.message}`);
+  }
+}
+
 function loadLiveIssues(repo) {
   const output = runGitHub(
     [
@@ -294,15 +302,11 @@ function loadLiveIssues(repo) {
     ],
     `github:${repo}:issues`,
   );
-  try {
-    return JSON.parse(output);
-  } catch {
-    fail(
-      "E_ROADMAP_GITHUB",
-      `github:${repo}:issues`,
-      "GitHub CLI returned invalid JSON",
-    );
-  }
+  return parseJson(
+    output,
+    "E_ROADMAP_GITHUB",
+    `github:${repo}:issues`,
+  );
 }
 
 export function closingIssueNumbersForRepository(references, repo) {
@@ -338,19 +342,15 @@ function loadClosingIssueNumbers(repo, pullRequest) {
     ],
     `github:${repo}:pulls/${pullRequest}`,
   );
-  try {
-    const parsed = JSON.parse(output);
-    return closingIssueNumbersForRepository(
-      parsed.closingIssuesReferences ?? [],
-      repo,
-    );
-  } catch {
-    fail(
-      "E_ROADMAP_GITHUB",
-      `github:${repo}:pulls/${pullRequest}`,
-      "GitHub CLI returned invalid JSON",
-    );
-  }
+  const parsed = parseJson(
+    output,
+    "E_ROADMAP_GITHUB",
+    `github:${repo}:pulls/${pullRequest}`,
+  );
+  return closingIssueNumbersForRepository(
+    parsed.closingIssuesReferences ?? [],
+    repo,
+  );
 }
 
 export function run(argv = process.argv.slice(2)) {
@@ -370,7 +370,11 @@ export function run(argv = process.argv.slice(2)) {
 
   const issues = options.live
     ? loadLiveIssues(options.repo)
-    : JSON.parse(readFileSync(resolve(options.issuePath), "utf8"));
+    : parseJson(
+        readFileSync(resolve(options.issuePath), "utf8"),
+        "E_ROADMAP_INVALID_ISSUE_SNAPSHOT",
+        options.issuePath,
+      );
   const closingIssueNumbers = options.live
     ? loadClosingIssueNumbers(options.repo, options.closingPr)
     : new Set();
