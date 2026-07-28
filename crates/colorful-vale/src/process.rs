@@ -130,17 +130,17 @@ pub(crate) fn run_process(
         let input_finished = stdin_writer
             .as_ref()
             .is_none_or(thread::JoinHandle::is_finished);
-        if let Some(status) = status.filter(|_| {
-            input_finished && stdout_reader.is_finished() && stderr_reader.is_finished()
-        }) {
-            break Ok(status);
-        }
         if started.elapsed() >= timeout {
             terminate(&mut child);
             break Err(ValeError::new(
                 ValeErrorKind::Timeout,
                 format!("Vale process exceeded {} ms", timeout.as_millis()),
             ));
+        }
+        if let Some(status) = status.filter(|_| {
+            input_finished && stdout_reader.is_finished() && stderr_reader.is_finished()
+        }) {
+            break Ok(status);
         }
         thread::sleep(POLL_INTERVAL);
     };
