@@ -170,7 +170,7 @@ test("rejects a missing option value with a stable usage error", () => {
 test("rejects malformed issue JSON with a stable snapshot error", () => {
   const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
   const issuePath = fileURLToPath(
-    new URL("invalid-issues.json", fixtureRoot),
+    new URL("invalid-issues.txt", fixtureRoot),
   );
 
   assert.throws(
@@ -178,7 +178,7 @@ test("rejects malformed issue JSON with a stable snapshot error", () => {
     (error) => {
       assert.ok(error instanceof InventoryError);
       assert.equal(error.category, "E_ROADMAP_INVALID_ISSUE_SNAPSHOT");
-      assert.match(error.message, /invalid-issues\.json/u);
+      assert.match(error.message, /invalid-issues\.txt/u);
       return true;
     },
   );
