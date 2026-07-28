@@ -533,7 +533,7 @@ Requirements:
   and `ruleId` now name a real, validated producer identity (IR-8), but
   `compilerBuildHash` is still a stand-in, and node-level input/output ids and
   artifact hashes are deferred.
-- Complexity-policy and mutation evidence remains open in IR-18b and IR-18c.
+- Bounded deterministic mutation evidence remains open in IR-18c.
 - The independent two-version consumer and
   [product-evidence decision](architecture.md#product-evidence-gate) remains
   open in IR-19a.
