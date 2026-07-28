@@ -223,6 +223,22 @@ v0.3 must handle the `Option` result.
   validation code and structured path. Manual parser, annotator, projection,
   and coordinate fuzz targets complement that deterministic gate without
   adding time-based fuzzing to correctness CI.
+- **Independent consumer proof.** The zero-dependency
+  `consumers/independent-ir-report` Node package admits real artifacts from the
+  immutable `v0.2.1` and `v0.3.0` tags without linking the Rust workspace. It
+  recomputes the contract schema and vocabulary identities, verifies source
+  length and digest, validates required shape, axes, and UTF-8 ranges, and
+  renders one deterministic Markdown role-span report. Invalid input fails with
+  a stable category and empty stdout. The v0.3.0 IR, ANSI, and LSP adapters
+  produce byte-identical reports over the same Unicode source; an isolated-copy
+  witness proves the package needs no repository build artifacts or ambient
+  `node_modules`.
+
+  The generated burden ledger measures 239 nonblank IR adapter lines, including
+  43 migration-specific lines, versus 49 for ANSI and 109 for LSP. Because the
+  IR alone authenticates all five wire identities and remains below the
+  reviewed two-times cost bound, the decision is to retain stable v1. This
+  preserves current bytes; it does not authorize new contract fields.
 - **Cross-language validator parity.** One shared 25-case declarative mutation
   matrix starts both validators from the same canonical Rust-produced Unicode
   document, then requires each mutation to produce its named Rust
@@ -242,6 +258,15 @@ v0.3 must handle the `Option` result.
   and `ruleId` now name a real, validated producer identity, but node-level
   input/output ids, a real `compilerBuildHash`, and artifact hashes are not
   implemented. Expanding that surface is evidence-gated rather than assumed.
+- Independent admission is deliberately strict but not yet compact: the
+  measured IR adapter is larger than the ANSI and LSP adapters combined.
+  Further contract expansion remains frozen while that implementation cost is
+  reduced without weakening validation or changing v1 bytes.
+- `v0.2.1` and `v0.3.0` carry distinct schema/vocabulary identity tuples under
+  the same `colorful.syntax/v1` label. The independent consumer admits those
+  exact tuples, but [#221](https://github.com/flyingrobots/colorful-language/issues/221)
+  still needs to replace release-tag-specific profiles with one explicit
+  generation-compatibility authority.
 - GraphQL `Int` lowers to `i32`, bounding documents to ~2 GB.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior and the

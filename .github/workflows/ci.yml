@@ -226,6 +226,7 @@ jobs:
           node-version-file: ".node-version"
       - run: npm ci
       - run: bash scripts/ir-witness.sh
+      - run: bash scripts/check-independent-consumer.sh
       - name: graft reference consumer coordinate test
         run: node consumers/graft-projection.test.mjs
 

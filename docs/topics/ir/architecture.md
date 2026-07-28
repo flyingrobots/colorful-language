@@ -138,22 +138,45 @@ artifact's `vocabularyHash` to detect vocabulary drift.
 
 ## Product-evidence gate
 
-Stage 1 compatibility is preserved while the project tests whether the wire
-contract lowers real downstream cost. The independent-consumer proof
+The independent-consumer proof
 [#156](https://github.com/flyingrobots/colorful-language/issues/156) compares
-the same consumer job across `colorful.syntax/v1`, CLI text, and LSP semantic
-tokens, including validation, migration, adapter code, and failure handling.
+one deterministic Markdown role-span report across `colorful.syntax/v1`, ANSI
+CLI output, and LSP semantic tokens. The standalone Node package has no Cargo
+workspace or third-party runtime dependency. It admits real artifacts from the
+immutable `v0.2.1` and `v0.3.0` release tags, normalizes their additive
+`openClassKind` generation boundary, and fails closed on incompatible
+identities. Both releases use `colorful.syntax/v1`; this is migration across
+two released contract generations, not an invented v2.
 
-The decision rule is:
+The generated integration-effort ledger records:
 
-- retain the contract when the independent consumer shows a material
-  correctness, integration, or migration advantage;
-- simplify implementation or optional surface area without changing public v1
-  bytes when the same job can be served more cheaply;
-- introduce a deliberately versioned contract, with migration evidence, when a
-  worthwhile simplification cannot preserve v1 bytes;
-- do not add replayable provenance, CNL, or Edict fields merely to make the
-  contract look more complete.
+| Adapter | Nonblank adapter lines | Migration lines | Stable failures | Verified identities |
+| --- | ---: | ---: | ---: | ---: |
+| IR | 239 | 43 | 9 | 5 |
+| ANSI | 49 | 0 | 4 | 1 |
+| LSP | 109 | 0 | 5 | 2 |
+
+Shared profile loading and report rendering account for another 229 nonblank
+lines and are excluded from every adapter equally. The exact source, fixtures,
+assertions, dependencies, and process steps behind these counts live in
+`consumers/independent-ir-report/evidence/integration-effort.json`.
+
+The reviewed rule retains stable v1 when the IR uniquely verifies the contract,
+schema, vocabulary, source length, and source digest and its adapter is no
+larger than twice the ANSI and LSP adapters combined, or when the IR is the
+smallest adapter. Otherwise the project preserves compatibility but simplifies
+implementation or optional surface area before adding contract fields.
+
+The result is **retain stable v1**: 239 IR lines are 1.51 times the alternatives'
+combined 158 lines, within the two-times bound, while only the IR authenticates
+all five wire identities. The result is not permission to expand the contract.
+Consumer admission remains the cost to reduce; replayable provenance, CNL, and
+Edict fields remain frozen until new evidence justifies them. The fact that two
+schema generations share the `colorful.syntax/v1` label is tracked explicitly
+in [#221](https://github.com/flyingrobots/colorful-language/issues/221), which
+must replace release-tag branching with an authored compatibility policy. A
+worthwhile simplification that cannot preserve v1 bytes still requires a
+deliberately versioned contract and fresh migration evidence.
 
 The broader [deep-end evidence gate](../../../ROADMAP.md#deep-end-evidence-gate)
 controls when new provenance, CNL, and Edict surface area resumes. It preserves

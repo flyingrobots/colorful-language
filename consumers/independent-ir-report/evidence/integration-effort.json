@@ -1,0 +1,106 @@
+{
+  "reportVersion": "colorful.integration-effort/v1",
+  "targetArtifact": "deterministic Markdown highlight-span report",
+  "method": {
+    "lines": "nonblank non-comment lines in each adapter; shared profile/rendering code is reported separately",
+    "errors": "exported stable adapter error-code inventory",
+    "fixtures": "checked-in inputs read by this measurement",
+    "assertions": "reviewed black-box outcomes in test/consumer.test.mjs",
+    "migration": "nonblank lines between effort:migration markers",
+    "dependencies": "runtime package dependencies required by an adapter",
+    "processSteps": "distinct external or decoding stages for the same job"
+  },
+  "sharedNonblankLines": 229,
+  "adapters": {
+    "ir": {
+      "source": "src/ir.mjs",
+      "nonblankAdapterLines": 239,
+      "migrationSpecificLines": 43,
+      "stableErrorCategories": [
+        "E_JSON",
+        "E_SHAPE",
+        "E_CONTRACT_VERSION",
+        "E_SCHEMA_HASH",
+        "E_VOCABULARY_HASH",
+        "E_SOURCE_LENGTH",
+        "E_SOURCE_HASH",
+        "E_RANGE",
+        "E_AXES"
+      ],
+      "verifiedIdentities": [
+        "contractVersion",
+        "schemaHash",
+        "vocabularyHash",
+        "sourceLength",
+        "sourceHash"
+      ],
+      "fixtureCount": 6,
+      "reviewedAssertions": 13,
+      "runtimeDependencies": 0,
+      "processSteps": [
+        "emit IR",
+        "decode and admit",
+        "render spans"
+      ]
+    },
+    "ansi": {
+      "source": "src/ansi.mjs",
+      "nonblankAdapterLines": 49,
+      "migrationSpecificLines": 0,
+      "stableErrorCategories": [
+        "E_ANSI_ESCAPE",
+        "E_ANSI_CODE",
+        "E_ANSI_STATE",
+        "E_SOURCE_TEXT"
+      ],
+      "verifiedIdentities": [
+        "exact source text"
+      ],
+      "fixtureCount": 1,
+      "reviewedAssertions": 5,
+      "runtimeDependencies": 0,
+      "processSteps": [
+        "emit ANSI text",
+        "parse terminal escapes",
+        "reconstruct source offsets",
+        "render spans"
+      ]
+    },
+    "lsp": {
+      "source": "src/lsp.mjs",
+      "nonblankAdapterLines": 109,
+      "migrationSpecificLines": 0,
+      "stableErrorCategories": [
+        "E_LSP_JSON",
+        "E_LSP_SHAPE",
+        "E_LSP_VERSION",
+        "E_LSP_LEGEND",
+        "E_LSP_POSITION"
+      ],
+      "verifiedIdentities": [
+        "serverVersion",
+        "semanticTokenLegend"
+      ],
+      "fixtureCount": 1,
+      "reviewedAssertions": 6,
+      "runtimeDependencies": 0,
+      "processSteps": [
+        "initialize server",
+        "open document",
+        "request semantic tokens",
+        "decode delta UTF-16 coordinates",
+        "render spans"
+      ]
+    }
+  },
+  "decisionRule": {
+    "retain": "retain stable v1 when IR uniquely verifies all five wire identities and its adapter is no larger than twice the combined ANSI and LSP adapters, or when IR is the smallest adapter",
+    "simplify": "otherwise preserve compatibility but simplify implementation or optional surface before adding contract fields"
+  },
+  "result": {
+    "alternativesNonblankAdapterLines": 158,
+    "correctnessAdvantage": true,
+    "withinReviewedCostBound": true,
+    "decision": "retain-stable-v1"
+  }
+}

@@ -17,6 +17,17 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FIXTURES = path.join(ROOT, "fixtures");
 const SOURCE = readFileSync(path.join(FIXTURES, "source.txt"), "utf8");
 
+test("the independent package enforces its pinned Node engine", () => {
+  assert.equal(
+    readFileSync(path.join(ROOT, ".npmrc"), "utf8"),
+    "engine-strict=true\n",
+  );
+  const packageJson = JSON.parse(
+    readFileSync(path.join(ROOT, "package.json"), "utf8"),
+  );
+  assert.deepEqual(packageJson.engines, { node: ">=22.23.1 <23" });
+});
+
 function releaseFixture(release) {
   const directory = path.join(FIXTURES, "releases", release);
   return {
@@ -130,11 +141,72 @@ test("IR admission rejects malformed and incompatible artifacts by category", ()
         ),
       }),
     ],
+    [
+      "E_AXES",
+      JSON.stringify({
+        ...baseline,
+        tokens: baseline.tokens.map((token, index) =>
+          index === 1 ? { ...token, functionKind: null } : token,
+        ),
+      }),
+    ],
   ];
 
   for (const [code, artifactJson] of mutationCases) {
     expectConsumerError(code, () =>
       consumeIr({ source: SOURCE, artifactJson, profiles }),
+    );
+  }
+});
+
+test("ANSI refusal cases cover every stable adapter category", () => {
+  const directory = path.join(FIXTURES, "releases", "v0.3.0");
+  const profile = loadProfile(directory);
+  const baseline = readFileSync(path.join(directory, "ansi.txt"), "utf8");
+  const cases = [
+    ["E_ANSI_ESCAPE", baseline.replace("\x1b[90m", "\x1b]90m")],
+    ["E_ANSI_CODE", baseline.replace("\x1b[90m", "\x1b[99m")],
+    ["E_ANSI_STATE", baseline.replace(/\x1b\[0m$/, "")],
+    ["E_SOURCE_TEXT", baseline.replace(" \x1b[1;35mthe", "\x1b[1;35mthe")],
+  ];
+  for (const [code, ansiText] of cases) {
+    expectConsumerError(code, () =>
+      consumeAnsi({ source: SOURCE, ansiText, profile }),
+    );
+  }
+});
+
+test("LSP refusal cases cover every stable adapter category", () => {
+  const directory = path.join(FIXTURES, "releases", "v0.3.0");
+  const profile = loadProfile(directory);
+  const baseline = JSON.parse(
+    readFileSync(path.join(directory, "lsp.json"), "utf8"),
+  );
+  const cases = [
+    ["E_LSP_JSON", "{"],
+    ["E_LSP_SHAPE", JSON.stringify({ ...baseline, data: [0] })],
+    [
+      "E_LSP_VERSION",
+      JSON.stringify({
+        ...baseline,
+        serverInfo: { ...baseline.serverInfo, version: "9.0.0" },
+      }),
+    ],
+    [
+      "E_LSP_LEGEND",
+      JSON.stringify({ ...baseline, legend: [...baseline.legend].reverse() }),
+    ],
+    [
+      "E_LSP_POSITION",
+      JSON.stringify({
+        ...baseline,
+        data: baseline.data.map((value, index) => (index === 1 ? 1 : value)),
+      }),
+    ],
+  ];
+  for (const [code, responseJson] of cases) {
+    expectConsumerError(code, () =>
+      consumeLsp({ source: SOURCE, responseJson, profile }),
     );
   }
 });

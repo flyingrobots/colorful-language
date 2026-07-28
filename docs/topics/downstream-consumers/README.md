@@ -78,6 +78,23 @@ artifact for that era's own reference consumer, and that `openClassKind` is
 absent from `v0.2.1`'s output and present in `v0.3.0`'s (an additive field, not
 something an older consumer needs to specially handle).
 
+The repository also includes
+[`consumers/independent-ir-report`](../../../consumers/independent-ir-report/README.md),
+a zero-dependency Node proof that does not link the Rust workspace. It validates
+the contract, schema, vocabulary, source length, source digest, required shape,
+token axes, and UTF-8 ranges before rendering a deterministic Markdown
+role-span report. Checked-in artifacts from the real `v0.2.1` and `v0.3.0`
+release tags prove migration across two released `colorful.syntax/v1`
+generations, and the v0.3.0 IR, ANSI, and LSP adapters produce byte-identical
+reports for the same Unicode source.
+
+The executable burden ledger measures 239 nonblank IR adapter lines versus 49
+for ANSI and 109 for LSP. The IR is not the smallest adapter, but it alone
+verifies all five wire identities and stays below the reviewed limit of twice
+the alternatives' combined size. The decision is therefore to retain stable
+v1, reduce admission cost where possible, and keep new contract surface frozen
+until separate product evidence justifies it.
+
 For source-checkout development, install the CLI into a stable user directory:
 
 ```bash
@@ -92,7 +109,8 @@ Colorful owns the IR contract, vocabulary manifest, canonical JSON, and CLI
 producer. Graft owns its projection adapter and jedit integration path. jedit
 does not call Colorful directly in the current architecture.
 
-This repository's `consumers/` code is a reference consumer and compatibility
-witness. It is not the shipped Graft package.
+This repository's `consumers/` code consists of reference consumers,
+compatibility witnesses, and the independent proof package. None is the shipped
+Graft package.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

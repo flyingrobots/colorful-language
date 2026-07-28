@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Independent `colorful.syntax/v1` consumer evidence.** A zero-dependency Node
+  package now validates contract, schema, vocabulary, source, shape, axes, and
+  UTF-8 ranges before rendering deterministic Markdown role spans. Real
+  `v0.2.1` and `v0.3.0` artifacts prove migration across two released v1
+  generations; the v0.3.0 IR, ANSI, and LSP paths produce byte-identical
+  reports; and an isolated-copy CI/release witness proves the package does not
+  depend on Cargo artifacts or ambient modules. A reproducible integration-
+  effort ledger applies the reviewed cost/correctness rule and retains stable
+  v1 while keeping additional contract surface frozen.
 - **Seeded property and fuzz boundary evidence.** One pinned 256-case corpus now
   exercises valid Unicode, parser/annotator range legality and source
   reconstruction, all nine typed malformed-classification failures, successful

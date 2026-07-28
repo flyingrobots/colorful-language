@@ -81,7 +81,9 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
 | **Delivered — validate boundaries with fuzzing** | Property and fuzz evidence probes parser, projection, validation, and coordinate invariants after the bounded validator corpus proved its tests kill reviewed mutations. | #134 now builds on delivered #82 with a pinned seeded correctness corpus and four manual fuzz targets; measurement lanes remain advisory until their environments are stable. |
-| **Now — prove validator and consumer value** | Mutation, fuzzing, independent-consumer, and analyzer-adapter evidence expose real gaps without expanding the cathedral. | Complete #156 and #157 in dependency order; delivered #82 and #134 supply the mutation and fuzz baselines. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
+| **Delivered — prove independent-consumer value** | Mutation, fuzzing, and a standalone consumer exposed real boundary cost without expanding the cathedral. | #156 retains stable v1 under its reviewed correctness/cost rule; delivered #82 and #134 supply the mutation and fuzz baselines. |
+| **Now — make wire generations explicit** | The independent proof exposed two schema/vocabulary generations under one `colorful.syntax/v1` label. | Complete #221 so compatibility is authored rather than inferred from release-tag branches. |
+| **Next — test analyzer substitution** | An optional external-analyzer adapter tests whether the pure port provides useful substitution without making an external engine mandatory. | Complete #157 with built-in/external CLI and LSP parity. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -177,10 +179,21 @@ deterministically and use valid data without reverse-engineering Colorful.
   pinned seeded correctness corpus plus manual time-based targets
   ([#134](https://github.com/flyingrobots/colorful-language/issues/134)).
   <!-- roadmap-primary: delivered #81 #82 #134 -->
-- **Open consumer honesty:** prove independent consumer value and migration
-  across two contract versions
+- **Delivered consumer honesty:** a standalone zero-dependency Node consumer
+  validates five wire identities, migrates real `v0.2.1` and `v0.3.0`
+  `colorful.syntax/v1` generations, and renders the same role spans as ANSI and
+  LSP. Its 239-line IR adapter remains within the reviewed two-times bound
+  against the alternatives' combined 158 lines, so stable v1 is retained while
+  additional contract surface stays frozen
   [#156](https://github.com/flyingrobots/colorful-language/issues/156).
-  <!-- roadmap-primary: active #156 -->
+  <!-- roadmap-primary: delivered #156 -->
+- **Queued wire-generation authority:** replace release-tag-specific branching
+  with one explicit compatibility policy for the distinct `v0.2.1` and
+  `v0.3.0` schema/vocabulary identities that both declare
+  `colorful.syntax/v1`
+  [#221](https://github.com/flyingrobots/colorful-language/issues/221), after
+  the independent proof and before any new contract fields.
+  <!-- roadmap-primary: active #221 -->
 
 **Exit signal:** invalid spans, graphs, identities, hashes, versions, vocabulary,
 and source relationships fail closed with stable categories; successful
@@ -309,10 +322,10 @@ preserving the deeper destination.
 | Mechanism | Current user job | Executable consumer or evidence | Cost and compatibility obligation | Disposition |
 | --- | --- | --- | --- | --- |
 | `Parser`, `Lexicon`, `Annotator`, `Analyzer` ports | Substitute deterministic analysis adapters without coupling I/O to the domain. | CLI, LSP, built-in parser/lexicon/annotator/linter, and public-port tests. | Medium API cost; keep the four seams stable and pure. | **Keep.** They justify current CLI/LSP behavior and the optional adapter experiment. |
-| `colorful.syntax/v1` surface IR | Move structured analysis across a process/language boundary. | `colorful ir`, current Graft/jedit fixtures, and the IR witness; independent proof planned in #156. | High wire-compatibility cost; preserve v1 bytes unless a reviewed version change is worth it. | **Validate next.** Retain or simplify according to measured consumer cost. |
+| `colorful.syntax/v1` surface IR | Move structured analysis across a process/language boundary. | `colorful ir`, Graft/jedit fixtures, the IR witness, and the standalone independent consumer (#156). | High wire-compatibility cost; the measured IR adapter is 239 lines versus 158 for ANSI and LSP combined. | **Retain stable v1; simplify admission.** Five authenticated wire identities justify current bytes within the reviewed cost bound, not new fields. |
 | `colorful.vocabulary/v1` | Give every surface one versioned role/key authority. | Current ANSI, LSP, Graft projection, manifest hash checks, and schema-generated validators (#145). | High drift cost across Rust and JavaScript. | **Keep generated.** One schema authority drives both consumers. |
 | `PassIdentity` and derivation trace seed | Identify which parser and annotator produced an artifact. | `colorful-projection`, IR validation, and witness fixtures. | Existing fields are a compatibility obligation; replayable provenance would add substantial contract and cross-system cost. | **Preserve; freeze expansion.** Do not add provenance layers before the deep-end gate. |
-| Graft projection | Give agents a fail-closed structured prose projection. | `consumers/graft-projection.mjs`, parity fixtures, and process witnesses. | Boundary code must reject, never clamp or coerce, malformed artifacts. | **Boundary hardened; validate value.** #148 supplies negative witnesses; use #156 before expanding the contract. |
+| Graft projection | Give agents a fail-closed structured prose projection. | `consumers/graft-projection.mjs`, parity fixtures, process witnesses, and the independent-consumer comparison. | Boundary code must reject, never clamp or coerce, malformed artifacts. | **Boundary hardened; value supported.** #148 supplies negative witnesses and #156 supports stable v1 without authorizing expansion. |
 | `colorful-lsp` and editor adapters | Deliver live POS visualization and deterministic diagnostics while a user writes. | Current LSP binary, source VS Code/Zed adapters, and generic clients; packaged smoke tests planned in #136. | High operational cost around freshness, memory, packaging, and version drift. | **Invest now.** M2 and M3 are the shortest path to observed user value. |
 | Contract English | Express unambiguous shape declarations that can lower to canonical GraphQL SDL. | No current product consumer; the future target is Wesley. | High grammar, compatibility, and proof burden. | **Preserve as Phase 5; freeze new surface area** until the deep-end gate passes. |
 | Intent English | Express explicit effectful intent as an Edict surface AST. | No current product consumer; the future target is Edict. | High semantic and safety cost; depends on Contract English. | **Preserve as Phase 6; freeze new surface area** until Phase 5 has evidence. |
@@ -334,9 +347,11 @@ exists:
 3. **Real distribution — open:** #136 and #154 must prove clean installation,
    activation, version compatibility, useful output, and rollback from public
    artifacts.
-4. **Independent consumer value — open:** #156 must show that the IR reduces
-   downstream integration cost or improves correctness relative to CLI text
-   and LSP tokens. If it does not, simplify before extending the contract.
+4. **Independent consumer value — satisfied:** #156 proves a correctness
+   advantage over CLI text and LSP tokens by authenticating five wire
+   identities. Its 239-line adapter remains within the reviewed two-times bound
+   against the alternatives' combined 158 lines, retaining stable v1 while
+   freezing expansion and making admission-cost reduction the follow-up.
 5. **Observed product value — open:** #155 and #158 must provide held-out
    comparative and behavioral evidence for a primary user/job. If they do not,
    pause expansion and improve or narrow the existing product.
@@ -393,10 +408,12 @@ crate, and structured, path-aware `ValidationError`s — each recorded in
 Boundary integrity, stale-result protection, required merge checks, dependency
 governance, executable roadmap reconciliation, conservative coverage
 ratcheting, runnable public-API examples, the measured LSP capacity envelope,
-cross-stage performance/allocation evidence, and seeded property/fuzz boundary
-evidence are now delivered foundations. The active maturity critical path is
-independent consumer value
-([#156](https://github.com/flyingrobots/colorful-language/issues/156)), followed
+cross-stage performance/allocation evidence, seeded property/fuzz boundary
+evidence, and independent consumer value are now delivered foundations. The
+independent proof retains stable v1 under its reviewed cost/correctness rule
+([#156](https://github.com/flyingrobots/colorful-language/issues/156)). The
+active maturity critical path is explicit wire-generation compatibility
+([#221](https://github.com/flyingrobots/colorful-language/issues/221)), followed
 by the optional external-analyzer comparison
 ([#157](https://github.com/flyingrobots/colorful-language/issues/157)).
 Distribution follows that operational proof; independent product validation
