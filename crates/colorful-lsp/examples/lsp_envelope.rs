@@ -396,6 +396,10 @@ fn benchmark_server_path() -> (PathBuf, bool) {
 }
 
 fn corpus(byte_count: usize) -> String {
+    assert!(
+        CORPUS_LINE.is_ascii(),
+        "the benchmark corpus template must remain ASCII for byte truncation"
+    );
     let repetitions = byte_count.div_ceil(CORPUS_LINE.len());
     let mut text = CORPUS_LINE.repeat(repetitions);
     text.truncate(byte_count);
