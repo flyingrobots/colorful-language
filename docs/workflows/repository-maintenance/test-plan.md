@@ -48,6 +48,8 @@ roadmap-to-issue reconciliation is tracked in
   conservative workspace line floor and explicit binary-transport floors
   without excluding generated source silently or treating a historical
   percentage as current evidence.
+- **RM-11 — Public API doctest gate.** Runnable examples for the primary public
+  Rust APIs must compile and execute in one visible workspace CI step.
 
 ## Cases
 
@@ -233,6 +235,14 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/check-coverage-policy.test.mjs`. *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
   *Status:* implemented.
+- **RM-11a — Explicit workspace doctest evidence.** *Requirement:* RM-11.
+  *Behavior:* the normal Rust CI job runs `cargo test --doc --workspace` as a
+  visible step after compiling the supported workspace feature set. *Oracle:*
+  removing the command or any named public API example fails deterministic
+  policy evidence. *Evidence type:* workflow-policy test plus compiled public
+  API doctests. *Tracking:*
+  [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* planned.
 
 ## Hosted evidence boundary
 

@@ -60,6 +60,8 @@ Requirements:
   UTF-8, operand rejection, exit statuses, `NO_COLOR`, and canonical IR output.
 - **COL-20** Output from public `Parser` and `Annotator` ports crosses one pure,
   typed validation boundary before an LSP or IR adapter interprets its spans.
+- **COL-21** The public `Annotator` port has a concise runnable example that
+  classifies parsed structure without duplicating the coloring reference.
 
 ## Cases
 
@@ -346,6 +348,12 @@ Requirements:
   *Tracking:*
   [#142](https://github.com/flyingrobots/colorful-language/issues/142).
   *Status:* implemented.
+- **COL-21a** — *Requirement:* COL-21. *Behavior:* a public `Annotator`
+  implementation classifies a parsed tree in a compiled rustdoc example.
+  *Oracle:* `cargo test --doc --workspace` compiles and runs the example with an
+  exact token-class assertion. *Evidence type:* public API doctest. *Tracking:*
+  [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* planned.
 
 ## Known gaps
 
@@ -369,3 +377,4 @@ Requirements:
   benchmarked, but it is not the `didChange` handler.
 - Parser, projection, validation, and coordinate invariants do not yet have a
   bounded deterministic fuzz/property corpus in CI; COL-18a owns that evidence.
+- Public `Annotator` doctest evidence remains open in COL-21a.

@@ -39,6 +39,8 @@ Requirements:
   deterministic finding order, built-in availability, and CLI/LSP parity.
 - **LINT-14** Product-level lint quality must be measured against a pinned,
   held-out, human-oracled corpus rather than inferred from built-in fixtures.
+- **LINT-15** The public `Analyzer` port has a concise runnable example that
+  reports a finding without duplicating the linting reference.
 
 ## Cases
 
@@ -231,9 +233,17 @@ Implemented and planned cases are listed below.
   reproducible evaluation harness. *Tracking:*
   [#155](https://github.com/flyingrobots/colorful-language/issues/155).
   *Status:* planned.
+- **LINT-15a** — *Requirement:* LINT-15. *Behavior:* a public `Analyzer`
+  implementation returns an inspectable finding in a compiled rustdoc example.
+  *Oracle:* `cargo test --doc --workspace` compiles and runs the example with
+  exact rule, severity, and span assertions. *Evidence type:* public API
+  doctest. *Tracking:*
+  [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* planned.
 
 ## Open verification gaps
 
 - Optional external-analyzer parity remains open in LINT-13a.
 - Product-level comparative evidence remains open in LINT-14a; built-in rule
   fixtures are not a substitute for the held-out oracle.
+- Public `Analyzer` doctest evidence remains open in LINT-15a.
