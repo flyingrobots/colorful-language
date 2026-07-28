@@ -70,6 +70,8 @@ struct EnvironmentGuard {
     saved: Vec<(&'static str, Option<OsString>)>,
 }
 
+struct DirectoryGuard(PathBuf);
+
 impl EnvironmentGuard {
     fn set(entries: &[(&'static str, &'static str)]) -> Self {
         let saved = entries
@@ -81,6 +83,12 @@ impl EnvironmentGuard {
             })
             .collect();
         Self { saved }
+    }
+}
+
+impl Drop for DirectoryGuard {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.0);
     }
 }
 
@@ -823,4 +831,41 @@ fn fixture_paths_are_absolute_and_shell_safe() {
         assert!(Path::new(path).is_absolute());
         assert!(!path.to_string_lossy().contains('\''));
     }
+}
+
+#[test]
+fn fixture_paths_with_shell_metacharacters_are_supported() {
+    let _environment_lock = ENVIRONMENT_LOCK.lock().expect("environment lock");
+    let quoted_parent = loop {
+        let id = FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
+        let candidate = std::env::temp_dir().join(format!(
+            "colorful-vale-quoted-'path-{}-{id}",
+            std::process::id()
+        ));
+        match fs::create_dir(&candidate) {
+            Ok(()) => break candidate,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => panic!(
+                "create quoted temporary parent {}: {error}",
+                candidate.display()
+            ),
+        }
+    };
+    let _quoted_parent = DirectoryGuard(quoted_parent.clone());
+    let previous = std::env::var_os("TMPDIR");
+    std::env::set_var("TMPDIR", &quoted_parent);
+    let _environment = EnvironmentGuard {
+        saved: vec![("TMPDIR", previous)],
+    };
+
+    let fixture = success_fixture();
+    assert!(fixture.root.starts_with(&quoted_parent));
+    let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover quoted-path Vale");
+    analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect("analyze quoted-path fixture");
+    assert_eq!(
+        fs::read_to_string(&fixture.captured_input).expect("captured quoted-path input"),
+        SOURCE
+    );
 }
