@@ -360,6 +360,29 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
             !test_plan.contains("postcondition remains unmeasured"),
             "the test plan must not call delivered IR projection evidence unmeasured"
         );
+        for (path, stale_claim) in [
+            (
+                "docs/topics/linting/README.md",
+                "broader cross-stage benchmarks remain tracked by",
+            ),
+            (
+                "crates/colorful-lsp/benches/semantic_tokens_bench.rs",
+                "cross-stage benchmark gaps",
+            ),
+            (
+                "docs/workflows/repository-maintenance/README.md",
+                "roadmap-primary: active #122 #135",
+            ),
+        ] {
+            let current_reference =
+                std::fs::read_to_string(root.join(path)).unwrap_or_else(|error| {
+                    panic!("read current reference {path}: {error}");
+                });
+            assert!(
+                !current_reference.contains(stale_claim),
+                "{path} must not retain the delivered #135 claim: {stale_claim}"
+            );
+        }
     }
 
     let policy = &report["regressionPolicy"];
