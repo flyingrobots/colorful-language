@@ -130,6 +130,12 @@ observe public-contract regressions before they ship.
   [#209](https://github.com/flyingrobots/colorful-language/issues/209) after
   the public-API gate.
   <!-- roadmap-primary: active #209 -->
+- **Parked evidence diagnostics:** convert missing public-API doctest policy
+  inputs into one stable, path-addressed failure without suppressing unexpected
+  programmer errors
+  [#213](https://github.com/flyingrobots/colorful-language/issues/213) after
+  the workflow-security gate.
+  <!-- roadmap-primary: parked #213 -->
 - **Queued evidence hygiene:** derive the cross-stage allocation-profiler
   identity from the resolved dependency authority
   [#207](https://github.com/flyingrobots/colorful-language/issues/207) after
