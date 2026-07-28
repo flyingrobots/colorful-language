@@ -17,7 +17,7 @@ const CHECKOUT_ACTION =
   "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
 const RUST_TOOLCHAIN_ACTION =
   "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
-const CARGO_DENY_ACTION =
+const INSTALL_ACTION =
   "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
 const SETUP_NODE_ACTION =
   "actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444";
@@ -518,7 +518,7 @@ function validateRustSecurityJob(workflow) {
   requireBlockingJob(job, path);
   requireAction(job, CHECKOUT_ACTION, `${path}:steps`);
   requireAction(job, RUST_TOOLCHAIN_ACTION, `${path}:steps`);
-  const install = requireAction(job, CARGO_DENY_ACTION, `${path}:steps`);
+  const install = requireAction(job, INSTALL_ACTION, `${path}:steps`);
   if (install?.with?.tool !== CARGO_DENY_VERSION) {
     reject(
       "E_CARGO_DENY_PIN",
@@ -660,7 +660,7 @@ function validateWorkflowSecurityJob(workflow, policy) {
       "must use the reviewed Node version file",
     );
   }
-  const install = requireAction(job, CARGO_DENY_ACTION, `${path}:steps`);
+  const install = requireAction(job, INSTALL_ACTION, `${path}:steps`);
   if (
     install?.with?.tool !== `zizmor@${policy.analyzer.version}` ||
     install.with?.fallback !== "none"
