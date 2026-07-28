@@ -8,6 +8,13 @@ use sha2::{Digest, Sha256};
 
 const SCHEMA_VERSION: &str = "colorful.lsp.envelope/v1";
 const SUPPORTED_LIMIT_BYTES: u64 = 5 * 1024 * 1024;
+const OPEN_OR_CHANGE_DIAGNOSTICS_MS: u64 = 5_000;
+const CACHED_SEMANTIC_TOKENS_MS: u64 = 2_000;
+const OVERLOAD_COMPLETION_MS: u64 = 8_000;
+const MAX_QUEUE_DELAY_MS: u64 = 250;
+const SUPPORTED_PEAK_RSS_BYTES: u64 = 1_536 * 1024 * 1024;
+const REFUSAL_DIAGNOSTICS_MS: u64 = 1_000;
+const REFUSAL_PEAK_RSS_BYTES: u64 = 512 * 1024 * 1024;
 const SCENARIO_BYTES: [u64; 4] = [100 * 1024, 1024 * 1024, 5 * 1024 * 1024, 10 * 1024 * 1024];
 
 fn baseline() -> Value {
@@ -68,18 +75,48 @@ fn measured_slo_is_met(scenario: &Value) -> bool {
             && scenario["diagnosticCode"].is_null()
             && scenario["incremental"]["diagnosticCode"].is_null()
             && scenario["overload"]["diagnosticCode"].is_null()
-            && measurement_at_most(scenario, "open", "diagnosticsMs", 5_000.0)
-            && measurement_at_most(scenario, "incremental", "diagnosticsMs", 5_000.0)
-            && measurement_at_most(scenario, "open", "semanticTokensMs", 2_000.0)
-            && measurement_at_most(scenario, "incremental", "semanticTokensMs", 2_000.0)
-            && measurement_at_most(scenario, "overload", "timeToLatestDiagnosticsMs", 8_000.0)
-            && measurement_at_most(scenario, "overload", "slowestSemanticResponseMs", 8_000.0)
+            && measurement_at_most(
+                scenario,
+                "open",
+                "diagnosticsMs",
+                OPEN_OR_CHANGE_DIAGNOSTICS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "incremental",
+                "diagnosticsMs",
+                OPEN_OR_CHANGE_DIAGNOSTICS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "open",
+                "semanticTokensMs",
+                CACHED_SEMANTIC_TOKENS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "incremental",
+                "semanticTokensMs",
+                CACHED_SEMANTIC_TOKENS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "overload",
+                "timeToLatestDiagnosticsMs",
+                OVERLOAD_COMPLETION_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "overload",
+                "slowestSemanticResponseMs",
+                OVERLOAD_COMPLETION_MS as f64,
+            )
             && scenario["metrics"]["maxQueueDelayMicros"]
                 .as_u64()
-                .is_some_and(|delay| delay <= 250_000)
+                .is_some_and(|delay| delay <= MAX_QUEUE_DELAY_MS * 1_000)
             && scenario["peakRssBytes"]
                 .as_u64()
-                .is_some_and(|bytes| bytes <= 1_536_u64 * 1024 * 1024)
+                .is_some_and(|bytes| bytes <= SUPPORTED_PEAK_RSS_BYTES)
             && scenario["open"]["semanticTokenCount"]
                 .as_u64()
                 .is_some_and(|count| count > 0)
@@ -92,15 +129,45 @@ fn measured_slo_is_met(scenario: &Value) -> bool {
             && scenario["diagnosticCode"] == "colorful/document-too-large"
             && scenario["incremental"]["diagnosticCode"] == "colorful/document-too-large"
             && scenario["overload"]["diagnosticCode"] == "colorful/document-too-large"
-            && measurement_at_most(scenario, "open", "diagnosticsMs", 1_000.0)
-            && measurement_at_most(scenario, "open", "semanticTokensMs", 1_000.0)
-            && measurement_at_most(scenario, "incremental", "diagnosticsMs", 1_000.0)
-            && measurement_at_most(scenario, "incremental", "semanticTokensMs", 1_000.0)
-            && measurement_at_most(scenario, "overload", "timeToLatestDiagnosticsMs", 1_000.0)
-            && measurement_at_most(scenario, "overload", "slowestSemanticResponseMs", 1_000.0)
+            && measurement_at_most(
+                scenario,
+                "open",
+                "diagnosticsMs",
+                REFUSAL_DIAGNOSTICS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "open",
+                "semanticTokensMs",
+                REFUSAL_DIAGNOSTICS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "incremental",
+                "diagnosticsMs",
+                REFUSAL_DIAGNOSTICS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "incremental",
+                "semanticTokensMs",
+                REFUSAL_DIAGNOSTICS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "overload",
+                "timeToLatestDiagnosticsMs",
+                REFUSAL_DIAGNOSTICS_MS as f64,
+            )
+            && measurement_at_most(
+                scenario,
+                "overload",
+                "slowestSemanticResponseMs",
+                REFUSAL_DIAGNOSTICS_MS as f64,
+            )
             && scenario["peakRssBytes"]
                 .as_u64()
-                .is_some_and(|bytes| bytes <= 512_u64 * 1024 * 1024)
+                .is_some_and(|bytes| bytes <= REFUSAL_PEAK_RSS_BYTES)
             && scenario["open"]["semanticTokenCount"] == 0
             && scenario["incremental"]["semanticTokenCount"] == 0
             && all_counts(scenario, |count| count == 0)
@@ -192,13 +259,13 @@ fn baseline_covers_the_reviewed_supported_envelope() {
         baseline["slo"],
         serde_json::json!({
             "supportedLimitBytes": SUPPORTED_LIMIT_BYTES,
-            "openOrChangeToDiagnosticsMs": 5_000,
-            "cachedSemanticTokensMs": 2_000,
-            "overloadCompletionMs": 8_000,
-            "maxQueueDelayMs": 250,
-            "supportedPeakRssBytes": 1_536_u64 * 1024 * 1024,
-            "refusalDiagnosticsMs": 1_000,
-            "refusalPeakRssBytes": 512_u64 * 1024 * 1024,
+            "openOrChangeToDiagnosticsMs": OPEN_OR_CHANGE_DIAGNOSTICS_MS,
+            "cachedSemanticTokensMs": CACHED_SEMANTIC_TOKENS_MS,
+            "overloadCompletionMs": OVERLOAD_COMPLETION_MS,
+            "maxQueueDelayMs": MAX_QUEUE_DELAY_MS,
+            "supportedPeakRssBytes": SUPPORTED_PEAK_RSS_BYTES,
+            "refusalDiagnosticsMs": REFUSAL_DIAGNOSTICS_MS,
+            "refusalPeakRssBytes": REFUSAL_PEAK_RSS_BYTES,
             "concurrentSemanticRequests": 4,
             "rapidEditCount": 4
         })
