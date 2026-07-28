@@ -80,7 +80,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 
 | Order | Outcome | Tracks and gate |
 | --- | --- | --- |
-| **Now — make quality measurable** | LSP capacity, cross-stage analysis costs, and public API usage are explicit; workflow security has executable evidence. | Advance #209 before the remaining validator-confidence queue. Measurements remain advisory until their environment is stable. |
+| **Now — make quality measurable** | LSP capacity, cross-stage analysis costs, public API usage, and workflow security have executable evidence. | Advance #213 before the remaining validator-confidence queue. Measurements remain advisory until their environment is stable. |
 | **Next — make quality measurable** | Public APIs, performance, coverage, fuzzing, and validator maintainability have executable evidence. | Complete #81, #82, #134, #156, and #157 in dependency order. A benchmark or test may inform a decision; noisy wall-clock measurements do not become correctness gates. |
 | **Ship — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | M3, after the supported LSP envelope and packaged smoke-test oracles are credible. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
@@ -124,18 +124,18 @@ observe public-contract regressions before they ship.
   parser, annotator, analyzer, IR producer, and fallible vocabulary boundaries
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
   <!-- roadmap-primary: delivered #140 -->
-- **Queued workflow-security evidence:** complement `actionlint` with a pinned,
+- **Delivered workflow-security evidence:** complement `actionlint` with a pinned,
   deterministic analyzer that detects persisted checkout credentials and
   overbroad job permissions
   [#209](https://github.com/flyingrobots/colorful-language/issues/209) after
   the public-API gate.
-  <!-- roadmap-primary: active #209 -->
-- **Parked evidence diagnostics:** convert missing public-API doctest policy
+  <!-- roadmap-primary: delivered #209 -->
+- **Active evidence diagnostics:** convert missing public-API doctest policy
   inputs into one stable, path-addressed failure without suppressing unexpected
   programmer errors
   [#213](https://github.com/flyingrobots/colorful-language/issues/213) after
   the workflow-security gate.
-  <!-- roadmap-primary: parked #213 -->
+  <!-- roadmap-primary: active #213 -->
 - **Queued evidence hygiene:** derive the cross-stage allocation-profiler
   identity from the resolved dependency authority
   [#207](https://github.com/flyingrobots/colorful-language/issues/207) after
@@ -395,8 +395,8 @@ Boundary integrity, stale-result protection, required merge checks, dependency
 governance, executable roadmap reconciliation, conservative coverage
 ratcheting, runnable public-API examples, the measured LSP capacity envelope,
 and cross-stage performance/allocation evidence are now delivered foundations.
-The active maturity critical path is pinned workflow-security analysis
-([#209](https://github.com/flyingrobots/colorful-language/issues/209)).
+The active maturity critical path is stable public-API policy input diagnostics
+([#213](https://github.com/flyingrobots/colorful-language/issues/213)).
 Distribution follows that operational proof; independent product validation
 follows real distribution. The CNL, Edict, provenance, Ouroboros, and
 semantic-closure phases remain in place behind the explicit deep-end evidence

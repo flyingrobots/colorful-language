@@ -2,8 +2,12 @@ name: Unsafe workflow permissions
 
 on: push
 
+concurrency:
+  group: unsafe-permissions
+  cancel-in-progress: true
+
 permissions:
-  contents: write
+  contents: write # Deliberately overbroad regression fixture.
 
 jobs:
   build:

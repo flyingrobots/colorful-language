@@ -66,15 +66,31 @@ and manual recovery:
   a dependency whose license GitHub cannot identify is reported but cannot be
   failed by that action; and
 - CodeQL uses its supported build-free analysis for both Rust and
-  JavaScript/TypeScript, then uploads one result category per language.
+  JavaScript/TypeScript, then uploads one result category per language; and
+- workflow security installs `zizmor` 1.28.0 with the full-SHA-pinned installer,
+  then runs deterministic unsafe-workflow fixtures and scans every checked-in
+  workflow offline with the auditor persona and all low-or-higher findings
+  blocking.
 
 The same repository-policy mutation tests run in the required documentation job
 and release preparation. Release preparation also reruns the Rust self-test and
-live dependency scan. The mainline ruleset requires the Rust policy,
-dependency-review, and both CodeQL language contexts, so these hosted failures
-block the normal merge path. The structural checker also rejects an `if` guard
-or `continue-on-error` setting that could suppress any mandatory security job or
-step.
+live dependency scan, the workflow-security fixture suite, `actionlint` for
+workflow syntax and schema, and the pinned security analyzer for security
+semantics. The mainline ruleset requires the Rust policy, dependency-review,
+both CodeQL language contexts, and workflow-security analysis, so these hosted
+failures block the normal merge path. The structural checker also rejects an
+`if` guard or `continue-on-error` setting that could suppress any mandatory
+security job or step.
+
+The workflow-security job grants only `contents: read` and disables checkout
+credential persistence. Its versioned policy fixes the analyzer identity,
+offline workflow-only invocation, finding thresholds, and exception metadata.
+The sole exception allows `CARGO_REGISTRY_TOKEN` only at the named crates.io
+publication step while deployment ownership and a protected release environment
+remain unconfigured; the record names its owner, rationale, and removal trigger.
+Changing the secret location, broadening the exception path, weakening a
+threshold, or drifting the hosted installation from the policy fails the
+deterministic maintenance suite.
 
 ## Updates and ownership
 

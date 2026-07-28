@@ -295,6 +295,7 @@ That script runs:
 - Zed extension compile with locked Cargo metadata;
 - Markdown lint;
 - workflow lint with `actionlint`;
+- pinned, offline workflow-security analysis with `zizmor`;
 - whitespace / conflict marker check.
 
 The tag-triggered `Release` workflow repeats the release profile check, verifies

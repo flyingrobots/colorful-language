@@ -1,9 +1,9 @@
-name: Unsafe persisted checkout credentials
+name: Safe workflow
 
 on: push
 
 concurrency:
-  group: unsafe-artipacked
+  group: safe-workflow
   cancel-in-progress: true
 
 permissions:
@@ -14,4 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
       - run: cargo test
