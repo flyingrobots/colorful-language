@@ -355,6 +355,13 @@ fn diagnostic_code(message: &Value) -> Option<&str> {
         .and_then(|diagnostic| diagnostic["code"].as_str())
 }
 
+fn stale_publication_count(versions: &[i64]) -> usize {
+    versions
+        .iter()
+        .filter(|version| ![1_i64, 2, 6].contains(version))
+        .count()
+}
+
 fn initialize(server: &mut LspProcess) {
     server.send(json!({
         "jsonrpc": "2.0",
@@ -538,11 +545,7 @@ fn benchmark_scenario(server_path: &Path, label: &str, byte_count: usize) -> Val
     let process = server.shutdown();
     assert_eq!(process.status.code(), Some(0));
 
-    let stale_publication_count = process
-        .diagnostic_versions
-        .iter()
-        .filter(|version| ![1_i64, 2, 6].contains(version))
-        .count();
+    let stale_publication_count = stale_publication_count(&process.diagnostic_versions);
     let max_queue_delay_ms =
         metrics["maxQueueDelayMicros"].as_u64().unwrap_or(u64::MAX) as f64 / 1_000.0;
     let mut slo_failures = Vec::new();
@@ -857,7 +860,11 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{corpus, parse_peak_rss, TimeFlavor, CORPUS_LINE};
+    use serde_json::json;
+
+    use super::{
+        corpus, diagnostic_code, parse_peak_rss, stale_publication_count, TimeFlavor, CORPUS_LINE,
+    };
 
     #[test]
     fn corpus_generation_is_exact_and_deterministic() {
@@ -878,6 +885,29 @@ mod tests {
                 TimeFlavor::Gnu
             ),
             654_321 * 1024
+        );
+    }
+
+    #[test]
+    fn stale_publications_are_detected_by_monotonic_version_order() {
+        assert_eq!(stale_publication_count(&[1, 3, 6]), 0);
+        assert_eq!(stale_publication_count(&[1, 6, 2]), 1);
+    }
+
+    #[test]
+    fn refusal_detection_scans_all_diagnostics() {
+        let message = json!({
+            "params": {
+                "diagnostics": [
+                    {"code": "colorful/weak-word"},
+                    {"code": "colorful/document-too-large"}
+                ]
+            }
+        });
+
+        assert_eq!(
+            diagnostic_code(&message),
+            Some("colorful/document-too-large")
         );
     }
 }
