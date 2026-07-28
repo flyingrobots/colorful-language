@@ -6,6 +6,7 @@ import test from "node:test";
 import {
   CoveragePolicyError,
   validateCoveragePolicy,
+  validateCoverageRuleset,
   validateCoverageWorkflow,
 } from "./check-coverage-policy.mjs";
 
@@ -165,6 +166,24 @@ function workflow() {
   };
 }
 
+function ruleset() {
+  return {
+    rules: [
+      {
+        type: "required_status_checks",
+        parameters: {
+          required_status_checks: [
+            {
+              context: "Rust coverage",
+              integration_id: 15368,
+            },
+          ],
+        },
+      },
+    ],
+  };
+}
+
 function expectPolicyError(code, mutatePolicy, mutateReport = () => {}) {
   const candidatePolicy = policy();
   const candidateReport = report();
@@ -292,4 +311,16 @@ test("rejects an unbounded artifact retention period", () => {
   expectWorkflowError("E_COVERAGE_ARTIFACT", (candidate) => {
     delete candidate.jobs.coverage.steps[7].with["retention-days"];
   });
+});
+
+test("requires the coverage result in the protected-branch gate", () => {
+  assert.doesNotThrow(() => validateCoverageRuleset(ruleset()));
+  const candidate = ruleset();
+  candidate.rules[0].parameters.required_status_checks = [];
+  assert.throws(
+    () => validateCoverageRuleset(candidate),
+    (error) =>
+      error instanceof CoveragePolicyError &&
+      error.code === "E_COVERAGE_RULESET",
+  );
 });
