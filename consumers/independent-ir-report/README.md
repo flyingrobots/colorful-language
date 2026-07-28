@@ -70,9 +70,12 @@ ANSI paths share the same trivial process boundary. The IR adapter uniquely
 verifies the contract, schema, vocabulary, source length, and source digest and
 is now smaller than the alternatives' combined 354 lines. Its structural
 admission is generated from the compatibility-selected SDL and reported
-separately: 843 unique nonblank lines and 1,686 lines across the two
+separately: 862 unique nonblank lines and 1,724 lines across the two
 byte-identical committed copies. The generated total is not counted as authored
-adapter improvement. The resulting decision is to retain stable v1, keep the
+adapter improvement. Measurement reads both committed copies and refuses to
+emit or update the ledger when either copy is missing or differs from the
+package-local canonical bytes. The resulting decision is to retain stable v1,
+keep the
 explicit generation policy delivered by
 [#221](https://github.com/flyingrobots/colorful-language/issues/221), and avoid
 adding contract fields without new evidence.

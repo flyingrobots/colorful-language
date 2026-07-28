@@ -193,7 +193,7 @@ The generated integration-effort ledger records:
 | LSP | 305 | 0 | 5 | 2 |
 
 Shared profile loading, compatibility selection, and report rendering account
-for another 358 nonblank lines and are excluded from every adapter equally. The
+for another 363 nonblank lines and are excluded from every adapter equally. The
 exact source, fixtures, assertions, dependencies, and process steps behind
 these counts live in
 `consumers/independent-ir-report/evidence/integration-effort.json`.
@@ -201,7 +201,7 @@ The LSP count includes its JSON-RPC acquisition client; IR and ANSI use the
 same CLI process boundary, so neither count includes that shared invocation.
 
 The schema-generated JavaScript admission runtime is measured separately at
-843 unique nonblank lines and 1,686 lines across its two byte-identical
+862 unique nonblank lines and 1,724 lines across its two byte-identical
 committed copies. Those bytes are a real review and distribution cost, but they
 do not count as authored adapter code: their structural field and enum behavior
 derives from the versioned GraphQL SDLs and is guarded by regeneration drift.

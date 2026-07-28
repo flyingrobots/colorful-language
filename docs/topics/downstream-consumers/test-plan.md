@@ -239,10 +239,12 @@ workspace.
 - **CONSUMER-11c** — *Requirement:* CONSUMER-11. *Behavior:* the clean-room
   package ships its generated runtime with no dependency or repository escape,
   migrates both released fixtures, and reports authored and generated burden
-  separately. *Oracle:* isolated copy `npm ci && npm run check` and exact ledger
-  regeneration. *Evidence type:* clean-room process witness and measured
+  separately. *Oracle:* isolated copy `npm ci && npm run check`, exact ledger
+  regeneration, and refusal of missing or byte-divergent committed generated
+  copies. *Evidence type:* clean-room process witness and measured
   report. *Evidence:* `scripts/check-independent-consumer.sh` and
   `consumers/independent-ir-report/evidence/integration-effort.json`;
+  `portable admission measurement rejects missing or drifted copies`;
   `scripts/check-portable-admission-docs.test.mjs`.
   *Tracking:*
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
@@ -257,6 +259,6 @@ workspace.
 - The independent proof retains stable v1 because the IR uniquely verifies five
   identities within its reviewed two-times adapter-size bound. The remaining
   risk is implementation cost: its 249 authored lines are now smaller than the
-  alternatives' combined 354 lines, but its 843 unique generated admission
+  alternatives' combined 354 lines, but its 862 unique generated admission
   lines remain a real distribution and review burden. Contract expansion stays
   frozen until separate product evidence justifies it.

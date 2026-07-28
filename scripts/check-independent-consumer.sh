@@ -4,7 +4,8 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 package_root="$root/consumers/independent-ir-report"
 work="$(mktemp -d)"
-copy="$work/independent-ir-report"
+copy="$work/repository/consumers/independent-ir-report"
+graft_generated="$work/repository/consumers/generated"
 
 cleanup() {
   rm -rf "$work"
@@ -23,6 +24,10 @@ command -v npm >/dev/null 2>&1 || fail "npm is required"
 mkdir -p "$copy"
 tar -C "$package_root" --exclude=node_modules -cf - . |
   tar -C "$copy" -xf -
+mkdir -p "$graft_generated"
+cp \
+  "$root/consumers/generated/syntax-admission-v1.mjs" \
+  "$graft_generated/syntax-admission-v1.mjs"
 
 [[ ! -e "$copy/node_modules" ]] ||
   fail "clean copy unexpectedly contains ambient node_modules"

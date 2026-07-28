@@ -750,15 +750,17 @@ Requirements:
 - **IR-24c** — *Requirement:* IR-24. *Behavior:* the independent-consumer ledger
   separates remaining authored adapter lines from generated admission lines and
   does not claim that moving code into generation alone lowers total
-  maintenance cost. *Oracle:* measurement regeneration and documentation parity
-  reject a stale line count or decision input. *Evidence type:* deterministic
+  maintenance cost. *Oracle:* measurement regeneration refuses a missing or
+  byte-divergent committed generated copy, and documentation parity rejects a
+  stale line count or decision input. *Evidence type:* deterministic
   burden ledger. *Evidence:*
   `consumers/independent-ir-report/src/measure.mjs` and
   `consumers/independent-ir-report/evidence/integration-effort.json`;
   `scripts/check-portable-admission-docs.mjs` and
   `scripts/check-portable-admission-docs.test.mjs`;
-  `the effort ledger counts protocol-specific acquisition code`; the ledger
-  records 249 authored IR adapter lines separately from 843 unique / 1,686
+  `the effort ledger counts protocol-specific acquisition code` and
+  `portable admission measurement rejects missing or drifted copies`; the ledger
+  records 249 authored IR adapter lines separately from 862 unique / 1,724
   committed generated admission lines.
   *Tracking:*
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
@@ -775,7 +777,7 @@ Requirements:
   artifact hashes are deferred.
 - The independent consumer retains stable v1 under the reviewed cost and
   correctness rule. Its remaining 249 authored IR adapter lines are smaller
-  than the alternatives' combined 354 lines. The 843 unique generated
+  than the alternatives' combined 354 lines. The 862 unique generated
   admission lines are reported separately rather than misrepresented as an
   authored reduction; the measured correctness advantage does not justify
   expanding the wire contract.

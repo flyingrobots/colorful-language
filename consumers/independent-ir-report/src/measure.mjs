@@ -8,8 +8,10 @@ import { ANSI_ERROR_CODES } from "./ansi.mjs";
 import { decideIrContract } from "./decision.mjs";
 import { IR_ERROR_CODES } from "./ir.mjs";
 import { LSP_ERROR_CODES } from "./lsp.mjs";
+import { measurePortableAdmission } from "./measure-portable-admission.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const REPOSITORY_ROOT = path.resolve(ROOT, "../..");
 const OUTPUT = path.join(ROOT, "evidence", "integration-effort.json");
 const packageJson = JSON.parse(
   readFileSync(path.join(ROOT, "package.json"), "utf8"),
@@ -142,17 +144,39 @@ const adapters = Object.fromEntries(
     measureAdapter(definition),
   ]),
 );
-const portableAdmissionLines = nonblankSourceLines(portableAdmissionSource);
+const canonicalPortableAdmission = readFileSync(
+  path.join(ROOT, portableAdmissionSource),
+);
+const portableAdmissionCopies = portableAdmissionSources.map(
+  (relativePath) => {
+    try {
+      return {
+        path: relativePath,
+        bytes: readFileSync(path.join(REPOSITORY_ROOT, relativePath)),
+      };
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        throw new Error(
+          `generated admission copy ${relativePath} is missing`,
+          { cause: error },
+        );
+      }
+      throw error;
+    }
+  },
+);
+const portableAdmissionMeasurement = measurePortableAdmission(
+  canonicalPortableAdmission,
+  portableAdmissionCopies,
+);
 const portableAdmission = {
   authority:
     "contracts/colorful/syntax-compatibility.v1.json and its generation SDLs",
   sources: portableAdmissionSources,
   generatedCopies: portableAdmissionSources.length,
-  uniqueGeneratedNonblankLines: portableAdmissionLines,
-  committedGeneratedNonblankLines:
-    portableAdmissionLines * portableAdmissionSources.length,
+  ...portableAdmissionMeasurement,
   copyIdentityEvidence: "scripts/check-generated-syntax-admission-drift.sh",
-  reviewedGeneratorCases: 8,
+  reviewedGeneratorCases: 13,
   countedAsAuthoredAdapter: false,
   rationale:
     "generated structural admission is reported separately; only authored " +

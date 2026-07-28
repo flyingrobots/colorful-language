@@ -11,7 +11,7 @@
     "processSteps": "distinct external or decoding stages for the same job",
     "generated": "generated structural admission is reported as unique logical lines and total committed copy lines, never as authored adapter code"
   },
-  "sharedNonblankLines": 358,
+  "sharedNonblankLines": 363,
   "adapters": {
     "ir": {
       "sources": [
@@ -111,10 +111,10 @@
       "consumers/independent-ir-report/generated/syntax-admission-v1.mjs"
     ],
     "generatedCopies": 2,
-    "uniqueGeneratedNonblankLines": 843,
-    "committedGeneratedNonblankLines": 1686,
+    "uniqueGeneratedNonblankLines": 862,
+    "committedGeneratedNonblankLines": 1724,
     "copyIdentityEvidence": "scripts/check-generated-syntax-admission-drift.sh",
-    "reviewedGeneratorCases": 8,
+    "reviewedGeneratorCases": 13,
     "countedAsAuthoredAdapter": false,
     "rationale": "generated structural admission is reported separately; only authored adapter lines participate in the retain-or-simplify decision"
   },
