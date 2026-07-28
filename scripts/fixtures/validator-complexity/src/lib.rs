@@ -1,7 +1,7 @@
 #![warn(clippy::cognitive_complexity)]
 
 /// Deliberately exceeds the repository's cognitive-complexity budget.
-pub fn over_budget(value: u16) -> u16 {
+pub fn within_budget(value: u16) -> u16 {
     let mut score = 0;
     if value & (1 << 0) != 0 {
         score += 1;

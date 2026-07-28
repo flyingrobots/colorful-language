@@ -34,13 +34,21 @@ grep -Fx '#![cfg_attr(not(test), warn(clippy::cognitive_complexity))]' \
 output="$(mktemp)"
 trap 'rm -f "$output"' EXIT
 
+if ! CLIPPY_CONF_DIR="$root" CARGO_TARGET_DIR="$target" \
+  cargo clippy --manifest-path "$fixture" --locked --offline \
+  --no-default-features -- -D warnings >"$output" 2>&1; then
+  cat "$output" >&2
+  fail "the within-budget fixture unexpectedly failed"
+fi
+
+: >"$output"
 if CLIPPY_CONF_DIR="$root" CARGO_TARGET_DIR="$target" \
-  cargo clippy --manifest-path "$fixture" --locked --offline -- -D warnings \
-  >"$output" 2>&1; then
+  cargo clippy --manifest-path "$fixture" --locked --offline \
+  --features over-budget -- -D warnings >"$output" 2>&1; then
   fail "the over-budget fixture unexpectedly passed"
 fi
 
 grep -F 'cognitive_complexity' "$output" >/dev/null ||
   fail "the over-budget fixture failed without the cognitive-complexity diagnostic"
 
-printf 'validator complexity check passed: threshold 10 rejects the over-budget fixture\n'
+printf 'validator complexity check passed: threshold 10 accepts 10 and rejects 11\n'
