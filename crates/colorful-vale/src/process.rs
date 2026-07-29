@@ -317,14 +317,54 @@ fn read_capped(mut reader: impl Read, limit: usize) -> io::Result<CapturedStream
 mod tests {
     use std::cell::Cell;
     use std::ffi::OsString;
-    use std::path::Path;
-    use std::time::Duration;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::process::{Command, Stdio};
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{Duration, Instant};
 
     use super::{
-        run_process, set_before_completion_acceptance, spawn_with_executable_busy_retry,
-        ProcessInput,
+        run_process, set_after_spawn_before_deadline, set_before_completion_acceptance,
+        spawn_with_executable_busy_retry, ProcessInput,
     };
     use crate::{CancellationToken, ValeErrorKind};
+
+    static PROCESS_TREE_FIXTURE_ID: AtomicU64 = AtomicU64::new(0);
+
+    struct ProcessTreeFixture {
+        root: PathBuf,
+        worker_pid: PathBuf,
+    }
+
+    impl ProcessTreeFixture {
+        fn new() -> Self {
+            let root = loop {
+                let id = PROCESS_TREE_FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
+                let candidate = std::env::temp_dir().join(format!(
+                    "colorful-vale-process-tree-{}-{id}",
+                    std::process::id()
+                ));
+                match fs::create_dir(&candidate) {
+                    Ok(()) => break candidate,
+                    Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+                    Err(error) => {
+                        panic!(
+                            "create process-tree fixture {}: {error}",
+                            candidate.display()
+                        )
+                    }
+                }
+            };
+            let worker_pid = root.join("worker.pid");
+            Self { root, worker_pid }
+        }
+    }
+
+    impl Drop for ProcessTreeFixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
 
     #[test]
     fn cancellation_wins_at_the_completion_boundary() {
@@ -347,6 +387,96 @@ mod tests {
         };
 
         assert_eq!(error.kind(), ValeErrorKind::Cancelled);
+    }
+
+    #[test]
+    fn ready_worker_timeout_terminates_the_process_group() {
+        assert_ready_process_tree_is_terminated(
+            r#"(
+  trap '' HUP TERM
+  while :; do :; done
+) >/dev/null 2>&1 &
+printf '%s\n' "$!" > worker.pid
+wait"#,
+        );
+    }
+
+    #[test]
+    fn ready_descendant_timeout_remains_active_after_wrapper_exit() {
+        assert_ready_process_tree_is_terminated(
+            r#"(
+  trap '' HUP TERM
+  /bin/sleep 1
+) &
+printf '%s\n' "$!" > worker.pid
+exit 0"#,
+        );
+    }
+
+    fn assert_ready_process_tree_is_terminated(script: &str) {
+        let fixture = ProcessTreeFixture::new();
+        let ready_path = fixture.worker_pid.clone();
+        set_after_spawn_before_deadline(move || {
+            wait_for_worker_pid(&ready_path);
+        });
+
+        let error = match run_process(
+            Path::new("/bin/sh"),
+            &[OsString::from("-c"), OsString::from(script)],
+            &fixture.root,
+            ProcessInput::None,
+            Duration::from_millis(5),
+            1024,
+            &CancellationToken::new(),
+        ) {
+            Ok(_) => panic!("ready process tree must time out"),
+            Err(error) => error,
+        };
+
+        assert_eq!(error.kind(), ValeErrorKind::Timeout);
+        assert_worker_terminated(wait_for_worker_pid(&fixture.worker_pid));
+    }
+
+    fn wait_for_worker_pid(path: &Path) -> u32 {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            match fs::read_to_string(path) {
+                Ok(contents) => match contents.trim().parse() {
+                    Ok(pid) => return pid,
+                    Err(_) if Instant::now() < deadline => {}
+                    Err(_) => panic!("process-tree fixture recorded a non-numeric worker PID"),
+                },
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::NotFound
+                        && Instant::now() < deadline => {}
+                Err(error) => panic!("read process-tree worker PID: {error}"),
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        }
+    }
+
+    fn assert_worker_terminated(pid: u32) {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while process_exists(pid) && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let survived = process_exists(pid);
+        if survived {
+            let _ = Command::new("/bin/kill")
+                .args(["-KILL", &pid.to_string()])
+                .status();
+        }
+        assert!(!survived, "timed-out process left worker {pid} alive");
+    }
+
+    fn process_exists(pid: u32) -> bool {
+        Command::new("/bin/kill")
+            .args(["-0", &pid.to_string()])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .expect("probe process-tree worker")
+            .success()
     }
 
     #[test]
