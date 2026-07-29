@@ -496,6 +496,20 @@ Implemented and planned cases are listed below.
   unexpected_source_key_error_is_bounded_and_redacted}`. *Tracking:*
   [#235](https://github.com/flyingrobots/colorful-language/issues/235).
   *Status:* implemented.
+- **LINT-13u** — *Requirement:* LINT-13. *Behavior:* timeout process-tree
+  evidence starts its deadline only after a test-owned wrapper has spawned and
+  durably recorded its long-lived worker; scheduler delay before that readiness
+  point cannot turn the cleanup postcondition into a false failure. Production
+  deadlines remain unchanged. *Oracle:* a test-only after-spawn/before-deadline
+  seam blocks on the real PID artifact, then a deliberately short timeout
+  returns `ValeErrorKind::Timeout` and leaves the recorded worker absent. The
+  same forced ordering covers a wrapper that waits and a wrapper that exits
+  while its descendant owns the capture pipes. *Evidence type:* deterministic
+  process-lifecycle unit tests. *Planned evidence:* `colorful-vale`
+  `process::tests::{ready_worker_timeout_terminates_the_process_group,
+  ready_descendant_timeout_remains_active_after_wrapper_exit}`. *Tracking:*
+  [#240](https://github.com/flyingrobots/colorful-language/issues/240).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
