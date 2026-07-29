@@ -368,6 +368,24 @@ test("ignores accountability tables inside raw HTML blocks", () => {
   }
 });
 
+test("does not let a generic HTML tag interrupt a paragraph", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(
+        "## Architecture accountability",
+        [
+          "Ordinary paragraph text.",
+          "<custom-element>",
+          "## Architecture accountability",
+        ].join("\n"),
+      ),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("generic HTML tag matching has disjoint attribute separators", () => {
   const checkerSource = readFileSync(script, "utf8");
   assert.doesNotMatch(checkerSource, /\[\^<>"'\]\+/u);

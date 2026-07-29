@@ -258,7 +258,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   compact/multi-space/tab-padded no-leading-pipe headers, a no-leading-pipe
   continuing data row, indented code plus fenced and commented table-shaped
   examples, raw HTML block variants with boolean, unquoted, single-quoted,
-  double-quoted, and self-closing generic tags plus a source-policy guard
+  double-quoted, and self-closing generic tags, a type-7 generic tag inside an
+  open paragraph followed by a structural heading, plus a source-policy guard
   against overlapping attribute separators, an indented comment opener
   followed by a visible table, invalid backtick-fence info strings plus valid
   tilde-fence controls, multiline comments that open after visible text or an

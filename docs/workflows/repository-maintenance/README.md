@@ -246,6 +246,8 @@ The same offline structure gate applies these fail-closed rules:
   blocks, and HTML comments cannot stand in for the table. Raw-text elements,
   processing instructions, declarations, CDATA, block tags, and complete
   generic tags suspend table discovery through their CommonMark block boundary.
+  A complete generic tag inside an open paragraph remains inline HTML and
+  cannot start a type-7 raw block or hide a following structural heading.
   Generic tag attributes admit boolean, unquoted, single-quoted, and
   double-quoted values through a disjoint grammar so hostile incomplete tags
   cannot trigger ambiguous backtracking. Backtick fence openers whose info
