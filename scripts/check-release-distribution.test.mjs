@@ -171,12 +171,26 @@ function validSnapshot() {
       },
     },
     gates: {
-      ci: `- run: ${CHECK_COMMAND}\n`,
+      ci: {
+        jobs: {
+          policy: { steps: [{ run: CHECK_COMMAND }] },
+        },
+      },
       releasePrep: `${CHECK_COMMAND}\n`,
-      release: `- run: ${CHECK_COMMAND}\n`,
+      release: {
+        jobs: {
+          policy: { steps: [{ run: CHECK_COMMAND }] },
+        },
+      },
     },
     publicationVerificationGates: {
-      ci: `- run: ${PUBLICATION_SELF_TEST_COMMAND}\n`,
+      ci: {
+        jobs: {
+          policy: {
+            steps: [{ run: PUBLICATION_SELF_TEST_COMMAND }],
+          },
+        },
+      },
       releasePrep: `${PUBLICATION_SELF_TEST_COMMAND}\n`,
     },
     documentation: {

@@ -117,6 +117,23 @@ function includesCommand(source, command) {
   });
 }
 
+function workflowIncludesCommand(workflow, command) {
+  const jobs = workflow?.jobs;
+  if (typeof jobs !== "object" || jobs === null || Array.isArray(jobs)) {
+    return false;
+  }
+  return Object.values(jobs).some((job) =>
+    (Array.isArray(job?.steps) ? job.steps : []).some((step) =>
+      String(step?.run ?? "")
+        .split(/\r?\n/u)
+        .some(
+          (line) =>
+            line.trim().replace(/\s+#.*$/u, "") === command,
+        ),
+    ),
+  );
+}
+
 function validateGateCommands(gates, names, command) {
   requiredRecord(gates, "release distribution gates");
   const observed = Object.keys(gates).toSorted();
@@ -127,7 +144,11 @@ function validateGateCommands(gates, names, command) {
     );
   }
   for (const name of expected) {
-    if (!includesCommand(gates[name], command)) {
+    const includes =
+      name === "releasePrep"
+        ? includesCommand(gates[name], command)
+        : workflowIncludesCommand(gates[name], command);
+    if (!includes) {
       throw new Error(`${name} must run ${command}`);
     }
   }
@@ -554,6 +575,8 @@ export function loadRepositorySnapshot(root = ROOT) {
   };
   const packageJson = JSON.parse(read("editors/vscode/package.json"));
   const packageLock = JSON.parse(read("editors/vscode/package-lock.json"));
+  const ciWorkflow = parseYaml(read(".github/workflows/ci.yml"));
+  const releaseWorkflow = parseYaml(read(".github/workflows/release.yml"));
   const toolNames = Object.keys(EXPECTED_PUBLISHER_TOOLS);
   const publisherTools = Object.fromEntries(
     toolNames.map((name) => {
@@ -569,17 +592,17 @@ export function loadRepositorySnapshot(root = ROOT) {
 
   return {
     policy: parseRepositoryProfile(read(".continuum/release.yml")),
-    workflow: parseYaml(read(".github/workflows/release.yml")),
+    workflow: releaseWorkflow,
     publisherTools,
     repositoryLicense: read("LICENSE"),
     zedLicense: readOptional("editors/zed/LICENSE"),
     gates: {
-      ci: read(".github/workflows/ci.yml"),
+      ci: ciWorkflow,
       releasePrep: read("scripts/release-prep.sh"),
-      release: read(".github/workflows/release.yml"),
+      release: releaseWorkflow,
     },
     publicationVerificationGates: {
-      ci: read(".github/workflows/ci.yml"),
+      ci: ciWorkflow,
       releasePrep: read("scripts/release-prep.sh"),
     },
     documentation: {
