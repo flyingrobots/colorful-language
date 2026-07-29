@@ -36,6 +36,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-16** Homebrew formula generation must consume the reviewed native
   archives and checksums after they are built, without rebuilding or
   repackaging release binaries.
+- **REL-17** GitHub milestones must remain goalposts while each release train
+  uses one versioned tracking issue and packet, so a slice never loses its
+  product/architecture owner merely to join a release.
 
 ## Cases
 
@@ -254,14 +257,38 @@ Verification for release preparation, tag automation, and release witnesses.
   `.github/workflows/ci.yml`; `scripts/release-prep.sh`. *Status:* implemented
   for the GitHub Release formula; public tap publication remains planned under
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).
+- **REL-17a** — *Requirement:* REL-17. *Behavior:* repository and release
+  profiles name GitHub milestones as the goalpost axis and one versioned issue
+  as the release-train axis; contributor, agent, release, and workflow
+  references agree, and the release profile contains no competing version-
+  milestone format. *Oracle:* one mutation per axis or reference fails with a
+  stable `E_DELIVERY_TRACKING` category, while reordered profile fields remain
+  valid. *Evidence type:* deterministic repository-maintenance policy test and
+  checked-in profile validation. *Evidence:*
+  `.github/repository-profile.yml`; `.continuum/release.yml`;
+  `scripts/check-repository-maintenance.mjs`;
+  `scripts/check-repository-maintenance.test.mjs`
+  `rejects a competing release-milestone delivery axis`,
+  `rejects drift in either delivery-tracking axis`,
+  `rejects a stale delivery-tracking reference`,
+  `rejects an additive contradictory delivery-tracking reference`,
+  `rejects an incomplete v0.4.0 tracking and prep sequence`,
+  `accepts a future aligned release example without policy code edits`, and
+  `accepts reordered delivery-tracking profile fields`;
+  `scripts/release-profile-check.sh`; `AGENTS.md`; `CONTRIBUTING.md`;
+  `docs/RELEASING.md`; and
+  `docs/workflows/release-process/README.md`. *Tracking:*
+  [#261](https://github.com/flyingrobots/colorful-language/issues/261).
+  *Status:* implemented.
 
 ## Open verification gaps
 
 - The tag workflow is only exercised on release tags.
 - The repo does not yet have an autotag workflow; manual annotated tag creation
   remains the current preflighted path.
-- Issue and milestone hygiene are still verified manually rather than by a
-  profile-aware release gate.
+- Release-tracking issue existence and goalpost/slice scope hygiene are still
+  verified manually; the ownership axes and their references are enforced by
+  executable profile policy.
 - GitHub Release asset recovery is still a manual inspection path when a release
   exists but assets are missing.
 - Native platform archives, editor-registry publication, and signed provenance

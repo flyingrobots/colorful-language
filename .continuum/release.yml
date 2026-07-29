@@ -8,7 +8,7 @@ versioning:
   semver_phase: pre-1.0
   tag_format: "v{version}"
   release_branch_format: "release/v{version}"
-  milestone_format: "v{version}"
+  release_tracking_issue_format: "[release] v{version}"
   editor_adapters:
     strategy: synchronized
     server: colorful-lsp

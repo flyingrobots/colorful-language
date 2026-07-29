@@ -40,7 +40,7 @@ require_profile_text "name: colorful-language"
 require_profile_text "owner: flyingrobots"
 require_profile_text "tag_format: \"v{version}\""
 require_profile_text "release_branch_format: \"release/v{version}\""
-require_profile_text "milestone_format: \"v{version}\""
+node scripts/check-repository-maintenance.mjs
 require_profile_text "editor_adapters:"
 require_profile_text "strategy: synchronized"
 require_profile_text "server: colorful-lsp"

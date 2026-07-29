@@ -13,12 +13,13 @@ The issue chooser keeps actionable work in two forms:
 - feature proposals require a user problem, observable outcome, and alternatives
   considered.
 
-Issues and milestones are the delivery authority. Discussions are not a
-supported intake channel because no maintainer response commitment has been
-made. The repository may retain GitHub's default Discussion categories, but the
-issue chooser does not advertise Q&A or Ideas as supported routes. The
-maintenance gate rejects both Discussion claims and direct `/discussions`
-links in issue-form Markdown.
+Issues and milestones are the delivery authority. GitHub milestones are
+goalposts. Release trains use one versioned tracking issue; slice issues keep
+their goalpost milestone. Discussions are not a supported intake channel
+because no maintainer response commitment has been made. The repository may
+retain GitHub's default Discussion categories, but the issue chooser does not
+advertise Q&A or Ideas as supported routes. The maintenance gate rejects both
+Discussion claims and direct `/discussions` links in issue-form Markdown.
 
 ## Public repository and deployment posture
 

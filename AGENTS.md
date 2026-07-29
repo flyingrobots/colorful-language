@@ -54,7 +54,9 @@ Operational rules:
 
 Before starting implementation for a goalpost slice:
 
-1. Open or select the slice issue. Milestones are goalposts; issues are slices.
+1. Open or select the slice issue. GitHub milestones are goalposts. Release
+   trains use one versioned tracking issue; slice issues keep their goalpost
+   milestone.
 2. Identify the owning `docs/topics/<topic>/` or `docs/workflows/<workflow>/`
    folder.
 3. If the work creates a durable lane with no home, create a topic or workflow
@@ -168,7 +170,8 @@ implementation, honest current reference.
 
 ## Roadmap Mechanics
 
-- **Milestones = goalposts**, **issues = slices**. A slice's work closes its
+- **GitHub milestones = goalposts.** Release trains use one versioned tracking
+  issue; slice issues keep their goalpost milestone. A slice's work closes its
   issue; keep `ROADMAP.md` anchors in sync.
 - Do not describe an unbuilt goalpost as if it exists, in `ROADMAP.md` or
   anywhere else. The "Horizon" section is for directions, not commitments.

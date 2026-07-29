@@ -24,13 +24,16 @@ but it must run final preflight and must not bypass failed gates.
 
 Releases are prepared on a branch, reviewed through a pull request, merged to
 `main`, and published by pushing an annotated `vX.Y.Z` tag on `main`.
+GitHub milestones are goalposts. Release trains use one versioned tracking
+issue; slice issues keep their goalpost milestone. The tracking issue owns the
+release thesis and scope links without becoming a second product milestone.
 
 The durable runbook is [`docs/RELEASING.md`](../../RELEASING.md). It defines:
 
 - the release doctrine and lifecycle;
 - the repo profile and release signposts;
 - required release artifacts;
-- thesis, scope, milestone, and signpost discipline;
+- thesis, scope, release-tracking issue, and signpost discipline;
 - release-prep and preflight validation commands;
 - tag, publish, verification, failure handling, and retrospective steps;
 - crates.io ownership and publish constraints.

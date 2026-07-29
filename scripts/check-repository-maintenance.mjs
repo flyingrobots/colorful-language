@@ -15,6 +15,38 @@ const scriptPath = fileURLToPath(import.meta.url);
 const REPOSITORY_URL = "https://github.com/flyingrobots/colorful-language";
 const REPOSITORY_HOMEPAGE = `${REPOSITORY_URL}#readme`;
 const REPOSITORY_OWNER = "@flyingrobots";
+const DELIVERY_ISSUE_ROLES = ["release-trains", "slices"];
+const DELIVERY_MILESTONE_ROLE = "goalposts";
+const RELEASE_ISSUE_FORMAT = "[release] v{version}";
+const DELIVERY_REFERENCE_CLAIMS = [
+  "GitHub milestones are goalposts.",
+  "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
+];
+const COMPETING_DELIVERY_REFERENCE_PATTERNS = [
+  /\buse\s+GitHub milestones?\s+as\s+release buckets?\b/i,
+  /\bGitHub milestones?\s+are\s+release buckets?\b/i,
+  /\brelease trains?\s+use\s+(?:GitHub )?milestones?\b/i,
+  /\btrack\s+releases?\s+(?:in|using|with)\s+GitHub milestones?\b/i,
+  /\bassign\s+releases?\s+to\s+GitHub milestones?\b/i,
+];
+const RELEASE_TRACKING_REFERENCE_CLAIMS = [
+  "--label slice",
+  "complete and review the packet's release thesis",
+  "bash scripts/release-prep.sh",
+];
+const RELEASE_TRACKING_REFERENCE_PATTERNS = [
+  /--title "\[release\] v(?<version>\d+\.\d+\.\d+)"/u,
+  /--body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md/u,
+  /git switch -c release\/v(?<version>\d+\.\d+\.\d+)/u,
+];
+const DELIVERY_REFERENCE_PATHS = Object.freeze({
+  agents: "AGENTS.md",
+  contributing: "CONTRIBUTING.md",
+  maintenance: "docs/workflows/repository-maintenance/README.md",
+  releasing: "docs/RELEASING.md",
+  releaseProcess: "docs/workflows/release-process/README.md",
+  roadmap: "ROADMAP.md",
+});
 const DEPLOYMENT_CREDENTIALS = [
   "CARGO_REGISTRY_TOKEN",
   "OVSX_PAT",
@@ -132,7 +164,134 @@ function requireExactKeys(value, expected, code, path) {
   }
 }
 
-function validateRepositoryProfile(profile, maintenanceReference) {
+function containsKey(value, key) {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  return Object.entries(value).some(
+    ([candidate, nested]) =>
+      candidate === key || containsKey(nested, key),
+  );
+}
+
+function oneVersionMatch(reference, pattern) {
+  const matches = [
+    ...reference.matchAll(
+      new RegExp(pattern.source, `${pattern.flags}g`),
+    ),
+  ];
+  return matches.length === 1
+    ? matches[0].groups?.version
+    : undefined;
+}
+
+function normalizeReference(reference) {
+  return typeof reference === "string"
+    ? reference.replace(/`/gu, "").replace(/\s+/gu, " ")
+    : reference;
+}
+
+function validateDeliveryTracking(
+  profile,
+  releaseProfile,
+  deliveryReferences,
+) {
+  const trackerPath = ".github/repository-profile.yml:delivery_tracker";
+  requireExactKeys(
+    profile.delivery_tracker,
+    ["issue_roles", "milestone_role", "release_issue_format"],
+    "E_DELIVERY_TRACKING",
+    trackerPath,
+  );
+  if (
+    !Array.isArray(profile.delivery_tracker.issue_roles) ||
+    !sameStringSet(
+      profile.delivery_tracker.issue_roles,
+      DELIVERY_ISSUE_ROLES,
+    ) ||
+    profile.delivery_tracker.milestone_role !==
+      DELIVERY_MILESTONE_ROLE ||
+    profile.delivery_tracker.release_issue_format !==
+      RELEASE_ISSUE_FORMAT
+  ) {
+    reject(
+      "E_DELIVERY_TRACKING",
+      trackerPath,
+      "must keep slices and release trains on issues, with goalposts on milestones",
+    );
+  }
+
+  const versioning = requireObject(
+    releaseProfile?.versioning,
+    "E_DELIVERY_TRACKING",
+    ".continuum/release.yml:versioning",
+  );
+  if (
+    containsKey(versioning, "milestone_format") ||
+    versioning.release_tracking_issue_format !==
+      RELEASE_ISSUE_FORMAT
+  ) {
+    reject(
+      "E_DELIVERY_TRACKING",
+      ".continuum/release.yml:versioning",
+      "must name the versioned tracking issue without a competing release-milestone format",
+    );
+  }
+
+  requireExactKeys(
+    deliveryReferences,
+    Object.keys(DELIVERY_REFERENCE_PATHS),
+    "E_DELIVERY_TRACKING",
+    "delivery references",
+  );
+  for (const [key, path] of Object.entries(
+    DELIVERY_REFERENCE_PATHS,
+  )) {
+    const reference = normalizeReference(deliveryReferences[key]);
+    if (
+      typeof reference !== "string" ||
+      DELIVERY_REFERENCE_CLAIMS.some(
+        (claim) => !reference.includes(claim),
+      ) ||
+      COMPETING_DELIVERY_REFERENCE_PATTERNS.some((pattern) =>
+        pattern.test(reference),
+      )
+    ) {
+      reject(
+        "E_DELIVERY_TRACKING",
+        path,
+        "must distinguish goalpost milestones from versioned release-tracking issues",
+      );
+    }
+  }
+  const releasingReference = normalizeReference(
+    deliveryReferences.releasing,
+  );
+  const releaseExampleVersions =
+    RELEASE_TRACKING_REFERENCE_PATTERNS.map(
+      (pattern) => oneVersionMatch(releasingReference, pattern),
+    );
+  if (
+    RELEASE_TRACKING_REFERENCE_CLAIMS.some(
+      (claim) => !releasingReference.includes(claim),
+    ) ||
+    releaseExampleVersions.some((version) => version === undefined) ||
+    new Set(releaseExampleVersions).size !== 1
+  ) {
+    reject(
+      "E_DELIVERY_TRACKING",
+      DELIVERY_REFERENCE_PATHS.releasing,
+      "must retain one aligned release-tracking example and its preparation command",
+    );
+  }
+}
+
+function validateRepositoryProfile(
+  profile,
+  maintenanceReference,
+  releaseProfile,
+  deliveryReferences,
+) {
   const path = ".github/repository-profile.yml";
   requireExactKeys(
     profile,
@@ -147,9 +306,8 @@ function validateRepositoryProfile(profile, maintenanceReference) {
     path,
   );
   if (
-    profile.version !== 1 ||
-    profile.homepage !== REPOSITORY_HOMEPAGE ||
-    profile.delivery_tracker !== "github-issues-and-milestones"
+    profile.version !== 2 ||
+    profile.homepage !== REPOSITORY_HOMEPAGE
   ) {
     reject(
       "E_REPOSITORY_PROFILE",
@@ -157,6 +315,11 @@ function validateRepositoryProfile(profile, maintenanceReference) {
       "must retain the reviewed version, homepage, and delivery authority",
     );
   }
+  validateDeliveryTracking(
+    profile,
+    releaseProfile,
+    deliveryReferences,
+  );
 
   const discussionsPath = `${path}:discussions`;
   requireExactKeys(
@@ -249,10 +412,7 @@ function validateRepositoryProfile(profile, maintenanceReference) {
     ...DEPLOYMENT_CREDENTIALS,
     ...DEPLOYMENT_EVIDENCE,
   ];
-  const normalizedReference =
-    typeof maintenanceReference === "string"
-      ? maintenanceReference.replace(/`/gu, "").replace(/\s+/gu, " ")
-      : maintenanceReference;
+  const normalizedReference = normalizeReference(maintenanceReference);
   if (
     typeof normalizedReference !== "string" ||
     requiredReference.some(
@@ -949,6 +1109,8 @@ export function validateRepositoryMaintenance(candidate) {
   validateRepositoryProfile(
     candidate.repositoryProfile,
     candidate.maintenanceReference,
+    candidate.releaseProfile,
+    candidate.deliveryReferences,
   );
   validateIssueForm(candidate.bugForm, {
     path: ".github/ISSUE_TEMPLATE/bug.yml",
@@ -1046,6 +1208,19 @@ export function repositoryCandidate() {
     maintenanceReference: readOptional(
       "docs/workflows/repository-maintenance/README.md",
     ),
+    releaseProfile: parseOptionalYaml(".continuum/release.yml"),
+    deliveryReferences: {
+      agents: readOptional("AGENTS.md"),
+      contributing: readOptional("CONTRIBUTING.md"),
+      maintenance: readOptional(
+        "docs/workflows/repository-maintenance/README.md",
+      ),
+      releasing: readOptional("docs/RELEASING.md"),
+      releaseProcess: readOptional(
+        "docs/workflows/release-process/README.md",
+      ),
+      roadmap: readOptional("ROADMAP.md"),
+    },
     bugForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/bug.yml"),
     featureForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/feature.yml"),
     issueConfig: parseOptionalYaml(".github/ISSUE_TEMPLATE/config.yml"),
