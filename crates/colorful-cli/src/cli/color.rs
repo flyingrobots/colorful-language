@@ -82,7 +82,9 @@ fn try_colorize_for_name(
             out.push_str(source.get(prev..token.span.start).unwrap_or(""));
         }
         let text = token.span.slice(source);
-        if let Some(code) = sgr(token.class) {
+        let analysis_text = token.span.slice(&analysis_source);
+        let code = (analysis_text == text).then(|| sgr(token.class)).flatten();
+        if let Some(code) = code {
             out.push_str("\x1b[");
             out.push_str(code);
             out.push('m');

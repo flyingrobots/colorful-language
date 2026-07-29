@@ -581,8 +581,7 @@ mod tests {
 
         assert!(
             analysis.diagnostics().iter().all(|diagnostic| {
-                diagnostic.code
-                    != Some(NumberOrString::String("passive-voice".to_string()))
+                diagnostic.code != Some(NumberOrString::String("passive-voice".to_string()))
             }),
             "{analysis:?}"
         );

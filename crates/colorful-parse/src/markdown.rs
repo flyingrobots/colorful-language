@@ -5,15 +5,37 @@ use std::ops::Range;
 
 use pulldown_cmark::{Event, LinkType, Options, Parser, Tag, TagEnd};
 
+#[derive(Debug)]
+struct ExcludedRange {
+    bytes: Range<usize>,
+    separates_prose: bool,
+}
+
+impl ExcludedRange {
+    fn inline(bytes: Range<usize>) -> Self {
+        Self {
+            bytes,
+            separates_prose: false,
+        }
+    }
+
+    fn block(bytes: Range<usize>) -> Self {
+        Self {
+            bytes,
+            separates_prose: true,
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 struct MarkdownRanges {
-    excluded: Vec<Range<usize>>,
+    excluded: Vec<ExcludedRange>,
     inline_links: Vec<Range<usize>>,
     rendered: Vec<Range<usize>>,
 }
 
 /// Replace reviewed Markdown non-prose regions with coordinate-equivalent
-/// whitespace.
+/// whitespace and non-emitting sentence separators.
 ///
 /// Text outside those regions is returned byte-for-byte. The returned text has
 /// the same byte length, line endings, and UTF-16 length before every retained
@@ -27,7 +49,9 @@ struct MarkdownRanges {
 /// let masked = mask_non_prose(source);
 ///
 /// assert!(masked.starts_with("Prose.\n\n"));
-/// assert!(masked["Prose.\n\n".len()..].chars().all(char::is_whitespace));
+/// assert!(masked["Prose.\n\n".len()..]
+///     .chars()
+///     .all(|character| character.is_whitespace() || character == '.'));
 /// assert_eq!(masked.len(), source.len());
 /// assert_eq!(masked.encode_utf16().count(), source.encode_utf16().count());
 /// ```
@@ -36,7 +60,7 @@ pub fn mask_non_prose(source: &str) -> Cow<'_, str> {
     let mut ranges = parser_ranges(source);
     for link in ranges.inline_links {
         if let Some(destination) = inline_link_destination_range(source, link) {
-            ranges.excluded.push(destination);
+            ranges.excluded.push(ExcludedRange::inline(destination));
         }
     }
     let ranges = merge_ranges(source, ranges.excluded);
@@ -47,9 +71,13 @@ pub fn mask_non_prose(source: &str) -> Cow<'_, str> {
     let mut masked = String::with_capacity(source.len());
     let mut copied_until = 0usize;
     for range in ranges {
-        masked.push_str(&source[copied_until..range.start]);
-        push_coordinate_whitespace(&mut masked, &source[range.clone()]);
-        copied_until = range.end;
+        masked.push_str(&source[copied_until..range.bytes.start]);
+        push_coordinate_mask(
+            &mut masked,
+            &source[range.bytes.clone()],
+            range.separates_prose,
+        );
+        copied_until = range.bytes.end;
     }
     masked.push_str(&source[copied_until..]);
     debug_assert_eq!(masked.len(), source.len());
@@ -65,7 +93,7 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
         excluded: parser
             .reference_definitions()
             .iter()
-            .map(|(_, definition)| definition.span.clone())
+            .map(|(_, definition)| ExcludedRange::block(definition.span.clone()))
             .collect(),
         inline_links: Vec::new(),
         rendered: Vec::new(),
@@ -81,13 +109,13 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
             Event::Start(Tag::CodeBlock(_)) => code_block_start = Some(range.start),
             Event::End(TagEnd::CodeBlock) => {
                 if let Some(start) = code_block_start.take() {
-                    ranges.excluded.push(start..range.end);
+                    ranges.excluded.push(ExcludedRange::block(start..range.end));
                 }
             }
             Event::Start(Tag::MetadataBlock(_)) => metadata_block_start = Some(range.start),
             Event::End(TagEnd::MetadataBlock(_)) => {
                 if let Some(start) = metadata_block_start.take() {
-                    ranges.excluded.push(start..range.end);
+                    ranges.excluded.push(ExcludedRange::block(start..range.end));
                 }
             }
             Event::Start(
@@ -103,9 +131,12 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
             Event::Start(Tag::Link {
                 link_type: LinkType::Autolink | LinkType::Email,
                 ..
-            }) => ranges.excluded.push(range),
-            Event::Code(_) | Event::Html(_) | Event::InlineHtml(_) => {
-                ranges.excluded.push(range);
+            }) => ranges.excluded.push(ExcludedRange::inline(range)),
+            Event::Html(_) => {
+                ranges.excluded.push(ExcludedRange::block(range));
+            }
+            Event::Code(_) | Event::InlineHtml(_) => {
+                ranges.excluded.push(ExcludedRange::inline(range));
             }
             _ => {}
         }
@@ -120,7 +151,7 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
 fn hidden_reference_definition_ranges(
     source: &str,
     rendered: &mut [Range<usize>],
-) -> Vec<Range<usize>> {
+) -> Vec<ExcludedRange> {
     rendered.sort_unstable_by_key(|range| (range.start, range.end));
     let bytes = source.as_bytes();
     let mut hidden = Vec::new();
@@ -149,7 +180,7 @@ fn hidden_reference_definition_ranges(
                 let hidden_end = rendered
                     .get(next_rendered)
                     .map_or(source.len(), |range| range.start);
-                hidden.push(line_start..hidden_end);
+                hidden.push(ExcludedRange::block(line_start..hidden_end));
             }
         }
 
@@ -255,20 +286,21 @@ fn inline_link_destination_range(source: &str, link: Range<usize>) -> Option<Ran
     None
 }
 
-fn merge_ranges(source: &str, mut ranges: Vec<Range<usize>>) -> Vec<Range<usize>> {
+fn merge_ranges(source: &str, mut ranges: Vec<ExcludedRange>) -> Vec<ExcludedRange> {
     ranges.retain(|range| {
-        range.start < range.end
-            && range.end <= source.len()
-            && source.is_char_boundary(range.start)
-            && source.is_char_boundary(range.end)
+        range.bytes.start < range.bytes.end
+            && range.bytes.end <= source.len()
+            && source.is_char_boundary(range.bytes.start)
+            && source.is_char_boundary(range.bytes.end)
     });
-    ranges.sort_unstable_by_key(|range| (range.start, range.end));
+    ranges.sort_unstable_by_key(|range| (range.bytes.start, range.bytes.end));
 
-    let mut merged: Vec<Range<usize>> = Vec::with_capacity(ranges.len());
+    let mut merged: Vec<ExcludedRange> = Vec::with_capacity(ranges.len());
     for range in ranges {
         if let Some(previous) = merged.last_mut() {
-            if range.start <= previous.end {
-                previous.end = previous.end.max(range.end);
+            if range.bytes.start <= previous.bytes.end {
+                previous.bytes.end = previous.bytes.end.max(range.bytes.end);
+                previous.separates_prose |= range.separates_prose;
                 continue;
             }
         }
@@ -277,10 +309,22 @@ fn merge_ranges(source: &str, mut ranges: Vec<Range<usize>>) -> Vec<Range<usize>
     merged
 }
 
-fn push_coordinate_whitespace(output: &mut String, source: &str) {
-    for character in source.chars() {
+fn push_coordinate_mask(output: &mut String, source: &str, separates_prose: bool) {
+    let separator_offset = separates_prose
+        .then(|| {
+            source
+                .char_indices()
+                .find(|(_, character)| {
+                    !matches!(character, '\n' | '\r') && character.len_utf8() == 1
+                })
+                .map(|(offset, _)| offset)
+        })
+        .flatten();
+
+    for (offset, character) in source.char_indices() {
         match character {
             '\n' | '\r' => output.push(character),
+            _ if separator_offset == Some(offset) => output.push('.'),
             _ => match character.len_utf8() {
                 1 => output.push(' '),
                 2 => output.push('\u{00A0}'),
@@ -302,10 +346,14 @@ mod tests {
         let start = source.find(needle).expect("fixture needle");
         let end = start + needle.len();
         let masked = mask_non_prose(source);
+        let masked_needle = &masked[start..end];
         assert!(
-            masked[start..end].chars().all(char::is_whitespace),
+            masked_needle
+                .chars()
+                .all(|character| character.is_whitespace() || character == '.'),
             "{needle:?} remained analyzable in {masked:?}"
         );
+        assert!(masked_needle.matches('.').count() <= 1, "{masked:?}");
     }
 
     fn utf16_len(text: &str) -> usize {
