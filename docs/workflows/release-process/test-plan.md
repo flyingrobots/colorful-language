@@ -149,9 +149,10 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-release-distribution.mjs`;
   `scripts/check-release-distribution.test.mjs`
   `rejects every platform inventory mutation`,
-  `rejects workflow matrix drift independently of the profile`, and
+  `rejects workflow matrix drift independently of the profile`,
   `requires tag admission before provenance-producing jobs`,
-  `requires signed checksummed native archives`. *Status:* implemented in
+  `binds native dispatch and release side effects to the reviewed topology`,
+  and `requires signed checksummed native archives`. *Status:* implemented in
   workflow; hosted release evidence remains planned.
 - **REL-13a** — *Requirement:* REL-13. *Behavior:* the tag workflow runs the
   packaged VS Code smoke once, publishes that witness's exact VSIX path to both

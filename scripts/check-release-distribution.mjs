@@ -52,6 +52,16 @@ export const EXPECTED_PUBLISHER_TOOLS = Object.freeze({
   "@vscode/vsce": "3.9.2",
   ovsx: "1.0.2",
 });
+const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
+  "Check release distribution policy",
+  "Download native archives",
+  "Build and smoke editor packages",
+  "Attest editor artifacts",
+  "Verify and publish editor extension",
+  "Verify published editor bytes",
+  "Publish to crates.io",
+  "Create GitHub Release",
+]);
 
 function requiredRecord(value, context) {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -70,6 +80,23 @@ function requiredStep(steps, name, context) {
 
 function stepIndex(steps, name) {
   return steps.findIndex((step) => step?.name === name);
+}
+
+function requireStepOrder(steps, names, context) {
+  const indices = names.map((name) => {
+    requiredStep(steps, name, context);
+    return stepIndex(steps, name);
+  });
+  if (
+    indices.some(
+      (index, position) =>
+        position > 0 && index <= indices[position - 1],
+    )
+  ) {
+    throw new Error(
+      `${context} must preserve the reviewed release step order`,
+    );
+  }
 }
 
 function requirePinnedAction(step, action, context) {
@@ -160,6 +187,9 @@ function validateAdmissionJob(job) {
 
 function validateBinaryJob(job, platforms) {
   const context = ".github/workflows/release.yml:jobs.binary-artifacts";
+  if (job?.["runs-on"] !== "${{ matrix.runner }}") {
+    throw new Error(`${context} native job must dispatch through matrix.runner`);
+  }
   const needs = Array.isArray(job?.needs) ? job.needs : [job?.needs];
   if (!needs.includes("validate-release")) {
     throw new Error(`${context} must wait for validate-release`);
@@ -366,6 +396,7 @@ function validateReleaseJob(job) {
   if (!String(release.run ?? "").includes("dist/*")) {
     throw new Error(`${context} must attach every reviewed distribution asset`);
   }
+  requireStepOrder(steps, REVIEWED_RELEASE_STEP_ORDER, context);
 }
 
 function validateDocumentation(documentation) {

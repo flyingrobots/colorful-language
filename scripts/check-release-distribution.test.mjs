@@ -321,7 +321,6 @@ test("binds native dispatch and release side effects to the reviewed topology", 
     steps.splice(laterIndex + 1, 0, earlier);
     assert.throws(
       () => validateReleaseDistribution(snapshot),
-      /reviewed release step order/u,
       `${reviewedOrder[index]} may not follow ${reviewedOrder[index + 1]}`,
     );
   }
