@@ -235,6 +235,7 @@ gh issue create \
   --title "[release] v0.4.0" \
   --milestone "Product Maturity — Evidence before expansion" \
   --label documentation \
+  --label slice \
   --body "Release packet: docs/goalposts/v0.4.0/release.md"
 ```
 

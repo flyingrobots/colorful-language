@@ -24,6 +24,7 @@ const DELIVERY_REFERENCE_CLAIMS = [
 ];
 const RELEASE_TRACKING_REFERENCE_CLAIMS = [
   '--title "[release] v0.4.0"',
+  "--label slice",
   "git switch -c release/v0.4.0",
   "bash scripts/release-prep.sh",
 ];

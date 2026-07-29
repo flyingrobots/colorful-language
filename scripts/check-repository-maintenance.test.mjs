@@ -29,6 +29,7 @@ const DELIVERY_REFERENCE = [
 ].join("\n");
 const RELEASE_TRACKING_COMMANDS = [
   '--title "[release] v0.4.0"',
+  "--label slice",
   "git switch -c release/v0.4.0",
   "bash scripts/release-prep.sh",
 ];
