@@ -503,10 +503,10 @@ Implemented and planned cases are listed below.
   point cannot turn the cleanup postcondition into a false failure. Production
   deadlines remain unchanged. *Oracle:* a test-only after-spawn/before-deadline
   seam blocks on the real PID artifact, then a deliberately short timeout
-  returns `ValeErrorKind::Timeout` and leaves the recorded worker absent. The
-  same forced ordering covers a wrapper that waits and a wrapper that exits
-  while its descendant owns the capture pipes. *Evidence type:* deterministic
-  process-lifecycle unit tests. *Evidence:* `colorful-vale`
+  returns `ValeErrorKind::Timeout` and leaves the recorded worker process
+  terminated. The same forced ordering covers a wrapper that waits and a
+  wrapper that exits while its descendant owns the capture pipes. *Evidence
+  type:* deterministic process-lifecycle unit tests. *Evidence:* `colorful-vale`
   `process::tests::{ready_worker_timeout_terminates_the_process_group,
   ready_descendant_timeout_remains_active_after_wrapper_exit}`. *Tracking:*
   [#240](https://github.com/flyingrobots/colorful-language/issues/240).

@@ -356,6 +356,8 @@ mod tests {
     use crate::{CancellationToken, ValeErrorKind};
 
     static PROCESS_TREE_FIXTURE_ID: AtomicU64 = AtomicU64::new(0);
+    const READY_DEADLINE: Duration = Duration::from_secs(2);
+    const POLL_INTERVAL: Duration = Duration::from_millis(2);
 
     struct ProcessTreeFixture {
         root: PathBuf,
@@ -455,7 +457,9 @@ wait"#,
         assert_ready_process_tree_is_terminated(
             r#"(
   trap '' HUP TERM
-  /bin/sleep 1
+  while [ ! -e allow-worker-exit ]; do
+    /bin/sleep 0.01
+  done
 ) &
 printf '%s\n' "$!" > worker.pid.tmp
 mv worker.pid.tmp worker.pid
@@ -608,7 +612,10 @@ exit 0"#,
 
         assert!(survived, "fixture must exercise cleanup after failure");
         assert!(!status.success(), "cleanup must kill the surviving worker");
-        assert!(!process_exists(worker_pid), "cleaned worker must be absent");
+        assert!(
+            !process_is_running(worker_pid),
+            "cleaned worker must not be running"
+        );
     }
 
     #[test]
@@ -715,23 +722,32 @@ exit 0"#,
     }
 
     fn wait_for_wrapper_exit(child: &mut std::process::Child) -> Result<(), String> {
-        wait_for_wrapper_exit_until(child, Instant::now() + Duration::from_secs(2))
+        wait_for_wrapper_exit_until(child, Instant::now() + READY_DEADLINE)
     }
 
     fn wait_for_wrapper_exit_until(
         child: &mut std::process::Child,
         deadline: Instant,
     ) -> Result<(), String> {
+        poll_until(deadline, || {
+            checked_child_status(child.try_wait(), "wait for ready wrapper exit")
+        })?
+        .ok_or_else(|| "ready wrapper did not exit before its deadline".to_string())
+        .map(drop)
+    }
+
+    fn poll_until<T>(
+        deadline: Instant,
+        mut probe: impl FnMut() -> Result<Option<T>, String>,
+    ) -> Result<Option<T>, String> {
         loop {
-            std::thread::sleep(Duration::from_millis(2));
-            match checked_child_status(child.try_wait(), "wait for ready wrapper exit")? {
-                Some(_) => return Ok(()),
-                None => {
-                    if Instant::now() >= deadline {
-                        return Err("ready wrapper did not exit before its deadline".to_string());
-                    }
-                }
+            if let Some(value) = probe()? {
+                return Ok(Some(value));
             }
+            if Instant::now() >= deadline {
+                return Ok(None);
+            }
+            std::thread::sleep(POLL_INTERVAL);
         }
     }
 
@@ -753,44 +769,62 @@ exit 0"#,
     }
 
     fn wait_for_worker_pid(path: &Path) -> Result<u32, String> {
-        wait_for_worker_pid_until(path, Instant::now() + Duration::from_secs(2))
+        wait_for_worker_pid_until(path, Instant::now() + READY_DEADLINE)
     }
 
     fn wait_for_worker_pid_until(path: &Path, deadline: Instant) -> Result<u32, String> {
-        loop {
-            match fs::read_to_string(path) {
-                Ok(contents) => {
-                    return contents.trim().parse().map_err(|_| {
-                        "process-tree fixture recorded a non-numeric worker PID".to_string()
-                    })
-                }
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                    if Instant::now() >= deadline {
-                        return Err("process-tree worker did not become ready".to_string());
-                    }
-                }
-                Err(error) => return Err(format!("read process-tree worker PID: {error}")),
+        poll_until(deadline, || match fs::read_to_string(path) {
+            Ok(contents) => {
+                contents.trim().parse().map(Some).map_err(|_| {
+                    "process-tree fixture recorded a non-numeric worker PID".to_string()
+                })
             }
-            std::thread::sleep(Duration::from_millis(2));
-        }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
+            Err(error) => Err(format!("read process-tree worker PID: {error}")),
+        })?
+        .ok_or_else(|| "process-tree worker did not become ready".to_string())
     }
 
     fn assert_worker_terminated(pid: u32) {
-        let survived = terminate_worker_if_needed(pid, Instant::now() + Duration::from_secs(2));
+        let survived = terminate_worker_if_needed(pid, Instant::now() + READY_DEADLINE);
         assert!(!survived, "timed-out process left worker {pid} alive");
     }
 
     fn terminate_worker_if_needed(pid: u32, deadline: Instant) -> bool {
-        while process_exists(pid) && Instant::now() < deadline {
-            std::thread::sleep(Duration::from_millis(2));
-        }
-        let survived = process_exists(pid);
+        let terminated = poll_until(deadline, || Ok((!process_is_running(pid)).then_some(())))
+            .expect("process liveness probe does not return an error")
+            .is_some();
+        let survived = !terminated;
         if survived {
             let _ = Command::new("/bin/kill")
                 .args(["-KILL", &pid.to_string()])
                 .status();
         }
         survived
+    }
+
+    fn process_is_running(pid: u32) -> bool {
+        if !process_exists(pid) {
+            return false;
+        }
+        match Command::new("/bin/ps")
+            .args(["-o", "stat=", "-p", &pid.to_string()])
+            .output()
+        {
+            Ok(output) if output.status.success() => {
+                parse_process_running_state(&String::from_utf8_lossy(&output.stdout))
+                    .unwrap_or(false)
+            }
+            Ok(_) => false,
+            Err(_) => true,
+        }
+    }
+
+    fn parse_process_running_state(output: &str) -> Option<bool> {
+        output
+            .split_whitespace()
+            .next()
+            .map(|state| !state.starts_with('Z'))
     }
 
     fn process_exists(pid: u32) -> bool {
