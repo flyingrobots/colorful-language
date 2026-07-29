@@ -91,6 +91,19 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
   assert.equal(packageJson.repository?.directory, "editors/vscode");
 });
 
+test("VSIX packaging resolves the publisher binary from its package manifest", () => {
+  const source = readFileSync(
+    "editors/vscode/scripts/package-vsix.mjs",
+    "utf8",
+  );
+  assert.match(source, /@vscode\/vsce\/package\.json/u);
+  assert.match(source, /\.bin/u);
+  assert.doesNotMatch(
+    source,
+    /node_modules",\s*"@vscode",\s*"vsce",\s*"vsce"/u,
+  );
+});
+
 test("VSIX packaging is reproducible across ambient build times", () => {
   const scratch = mkdtempSync(path.join(tmpdir(), "colorful-vsix-repro-"));
   const first = path.join(scratch, "first.vsix");
