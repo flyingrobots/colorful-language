@@ -541,6 +541,25 @@ test("requires a delimiter and data row for the accountability table", () => {
   }
 });
 
+test("rejects a later table after an empty accountability table", () => {
+  const headerAndDelimiter = [
+    "| Mechanism | Current user job |",
+    "| --- | --- |",
+  ].join("\n");
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) =>
+      source.replace(
+        headerAndDelimiter,
+        [headerAndDelimiter, "", headerAndDelimiter].join("\n"),
+      ),
+    {
+      messagePattern:
+        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture\/roadmap\.md:\d+: canonical table already begins at fixture\/roadmap\.md:23$/u,
+    },
+  );
+});
+
 test("compares displayed mechanism identity across inline-code styling", () => {
   expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
     source.replace(

@@ -546,6 +546,8 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         tableCells.every((cell) => MARKDOWN_DELIMITER_CELL.test(cell))
       ) {
         accountabilityTableState = "rows";
+        accountabilityTableLocation ??=
+          candidateAccountabilityTableLocation;
         candidateAccountabilityTableColumnCount = undefined;
       } else {
         accountabilityTableState = "searching";
@@ -566,9 +568,6 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       accountabilityTableState = foundAccountabilityTable
         ? "complete"
         : "searching";
-      if (!foundAccountabilityTable) {
-        accountabilityTableLocation = undefined;
-      }
       candidateAccountabilityTableColumnCount = undefined;
       continue;
     }
@@ -589,7 +588,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
     const identity = canonicalMechanismIdentity(mechanism, location);
     if (
-      foundAccountabilityTable &&
+      accountabilityTableLocation !== undefined &&
       candidateAccountabilityTableLocation !== accountabilityTableLocation
     ) {
       fail(
