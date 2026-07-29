@@ -570,6 +570,18 @@ test("rejects an issue form that advertises an unowned Discussion", () => {
   }, "E_DISCUSSION_ROUTE");
 });
 
+test("rejects a lowercase Discussion URL in an issue form", () => {
+  expectCode(({ featureForm }) => {
+    featureForm.body.unshift({
+      type: "markdown",
+      attributes: {
+        value:
+          "Request help at https://github.com/flyingrobots/colorful-language/discussions.",
+      },
+    });
+  }, "E_DISCUSSION_ROUTE");
+});
+
 test("rejects a weakened Rust license allowlist", () => {
   expectCode((candidate) => {
     candidate.rustPolicy = candidate.rustPolicy.replace('  "Zlib",\n', "");
