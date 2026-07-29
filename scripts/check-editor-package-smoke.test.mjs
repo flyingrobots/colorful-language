@@ -314,6 +314,11 @@ test("the visual demo has a text-equivalent accessible role mapping", () => {
     readme,
     /Separate diagnostic example[\s\S]*`really`[\s\S]*`weak-word`/u,
   );
+  assert.doesNotMatch(
+    svg,
+    /(?:fill|stroke):\s*var\(/u,
+    "demo paint must render without CSS custom-property support",
+  );
 
   const surface = /--surface:\s*(#[0-9a-f]{6})/u.exec(svg)?.[1];
   assert.ok(surface, "demo must declare one semantic surface token");
