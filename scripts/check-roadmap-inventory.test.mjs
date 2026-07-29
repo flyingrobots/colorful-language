@@ -192,6 +192,12 @@ test("rejects an empty architecture-accountability mechanism", () => {
   );
 });
 
+test("rejects a backslash before a non-punctuation mechanism character", () => {
+  expectCategory("E_ROADMAP_NONCANONICAL_MECHANISM", (source) =>
+    source.replace("| Parser ports |", String.raw`| \Parser ports |`),
+  );
+});
+
 test("rejects a closed slice presented as active", () => {
   expectCategory("E_ROADMAP_CLOSED_ACTIVE", (source) =>
     source.replace(

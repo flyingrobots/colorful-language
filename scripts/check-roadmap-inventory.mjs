@@ -102,6 +102,16 @@ function markdownTableMechanism(line) {
   return undefined;
 }
 
+function isAsciiPunctuation(character) {
+  const codePoint = character.codePointAt(0);
+  return (
+    (codePoint >= 33 && codePoint <= 47) ||
+    (codePoint >= 58 && codePoint <= 64) ||
+    (codePoint >= 91 && codePoint <= 96) ||
+    (codePoint >= 123 && codePoint <= 126)
+  );
+}
+
 function canonicalMechanismIdentity(mechanism, location) {
   let identity = "";
 
@@ -113,6 +123,13 @@ function canonicalMechanismIdentity(mechanism, location) {
           "E_ROADMAP_NONCANONICAL_MECHANISM",
           location,
           "mechanism ends with an incomplete Markdown escape",
+        );
+      }
+      if (!isAsciiPunctuation(mechanism[index + 1])) {
+        fail(
+          "E_ROADMAP_NONCANONICAL_MECHANISM",
+          location,
+          "Markdown escapes are only valid before ASCII punctuation",
         );
       }
       identity += mechanism[index + 1];
