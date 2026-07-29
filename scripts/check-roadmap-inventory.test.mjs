@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
+  chmodSync,
   mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter as pathDelimiter, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +18,7 @@ import {
   run,
   validateRoadmapInventory,
 } from "./check-roadmap-inventory.mjs";
+import { GITHUB_CALL_BOUNDS } from "./roadmap-inventory-runner.mjs";
 
 const fixtureRoot = new URL("./fixtures/roadmap-inventory/", import.meta.url);
 const script = fileURLToPath(
@@ -77,6 +79,17 @@ test("accepts the canonical roadmap with CRLF line endings", () => {
   );
 });
 
+test("accepts canonical leading-pipe rows without trailing pipes", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(/ \|$/gmu, ""),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("reports identical failure addresses for LF and CRLF roadmaps", () => {
   const mechanismRow =
     "| Parser ports | Substitute deterministic adapters. |";
@@ -109,6 +122,19 @@ test("reports identical failure addresses for LF and CRLF roadmaps", () => {
 test("rejects an open slice missing from the primary inventory", () => {
   expectCategory("E_ROADMAP_MISSING_OPEN", (source) =>
     source.replace("  <!-- roadmap-primary: active #101 -->\n", ""),
+  );
+});
+
+test("ignores primary markers inside non-authoritative code blocks", () => {
+  expectCategory("E_ROADMAP_MISSING_OPEN", (source) =>
+    source.replace(
+      "  <!-- roadmap-primary: active #101 -->",
+      [
+        "  ```markdown",
+        "  <!-- roadmap-primary: active #101 -->",
+        "  ```",
+      ].join("\n"),
+    ),
   );
 });
 
@@ -381,6 +407,57 @@ test("ignores accountability tables inside raw HTML blocks", () => {
   }
 });
 
+test("does not scan comment-shaped text inside raw HTML blocks", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(
+        "## Architecture accountability",
+        [
+          "<script>",
+          "<!-- comment-shaped script text",
+          "</script>",
+          "",
+          "## Architecture accountability",
+        ].join("\n"),
+      ),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
+test("escaped comment syntax cannot hide a duplicate accountability table", () => {
+  expectCategory("E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE", (source) =>
+    [
+      source,
+      String.raw`\<!-- literal comment opener`,
+      "",
+      "| Mechanism | Current user job |",
+      "| --- | --- |",
+      "| Escaped-comment duplicate | Must remain visible. |",
+      "-->",
+    ].join("\n"),
+  );
+
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: [
+        roadmap,
+        String.raw`\\<!-- active comment opener`,
+        "",
+        "| Mechanism | Example only |",
+        "| --- | --- |",
+        "| Even-escape control | Hidden in the comment. |",
+        "-->",
+      ].join("\n"),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("does not let a generic HTML tag interrupt a paragraph", () => {
   assert.doesNotThrow(() =>
     validateRoadmapInventory({
@@ -417,9 +494,10 @@ test("keeps an incomplete accountability header inside its paragraph", () => {
   );
 });
 
-test("generic HTML tag matching has disjoint attribute separators", () => {
+test("does not reintroduce a generic HTML block grammar", () => {
   const checkerSource = readFileSync(script, "utf8");
-  assert.doesNotMatch(checkerSource, /\[\^<>"'\]\+/u);
+  assert.match(checkerSource, /from "mdast-util-from-markdown";/u);
+  assert.doesNotMatch(checkerSource, /GENERIC_HTML_(?:OPEN|CLOSE)_TAG/u);
 });
 
 test("rejects a table hidden by an invalid backtick-fence interpretation", () => {
@@ -484,6 +562,18 @@ test("resumes table scanning after a multiline comment closer", () => {
 --> | Mechanism | Second authority |
 | --- | --- |
 | Parser ports | Visible after the comment closer. |
+`,
+  );
+});
+
+test("resumes table scanning after a closed inline comment", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+<!-- explanatory note --> | Mechanism | Second authority |
+| --- | --- |
+| Parser ports | Visible after the inline comment. |
 `,
   );
 });
@@ -763,6 +853,17 @@ test("rejects a comment-altered accountability table header", () => {
       source.replace(
         "| Mechanism | Current user job |",
         "| Mech<!--note-->anism | Current user job |",
+      ),
+  );
+});
+
+test("rejects overlapping comment delimiters in a table header", () => {
+  expectCategory(
+    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+    (source) =>
+      source.replace(
+        "| Mechanism | Current user job |",
+        "<!<!--note-->-->| Mechanism | Current user job |",
       ),
   );
 });
@@ -1103,6 +1204,14 @@ test("rejects an unrecognized primary disposition", () => {
   );
 });
 
+test("rejects primary markers with trailing HTML-block content", () => {
+  expectCategory(
+    "E_ROADMAP_INVALID_MARKER",
+    (source) =>
+      `${source}\n<!-- roadmap-primary: active #101 --> trailing note\n`,
+  );
+});
+
 test("treats issues closed by the current pull request as delivered", () => {
   const transitioningRoadmap = roadmap.replace(
     "roadmap-primary: active #101",
@@ -1176,6 +1285,84 @@ test("rejects a missing option value with a stable usage error", () => {
   );
 });
 
+test("rejects duplicate runner options with a stable usage error", () => {
+  for (const argv of [
+    ["--live", "--live"],
+    ["--roadmap", "first", "--roadmap", "second", "--closing-pr", "1"],
+    ["--issues", "first", "--issues", "second", "--live", "--repo", "owner/repo"],
+    ["--repo", "owner/first", "--repo", "owner/second", "--closing-pr", "1"],
+    ["--closing-pr", "1", "--closing-pr", "2"],
+  ]) {
+    assert.throws(
+      () => run(argv),
+      (error) => {
+        assert.ok(error instanceof InventoryError);
+        assert.equal(error.category, "E_ROADMAP_USAGE");
+        assert.match(error.message, /may be specified only once/u);
+        return true;
+      },
+      argv.join(" "),
+    );
+  }
+});
+
+test("rejects malformed repository coordinates before transport", () => {
+  for (const repo of [
+    "missing-slash",
+    "/repo",
+    "owner/",
+    "owner/repo/extra",
+    "owner with space/repo",
+  ]) {
+    assert.throws(
+      () => run(["--repo", repo, "--closing-pr", "1"]),
+      (error) => {
+        assert.ok(error instanceof InventoryError);
+        assert.equal(error.category, "E_ROADMAP_USAGE");
+        assert.match(error.message, /--repo requires OWNER\/NAME/u);
+        return true;
+      },
+      repo,
+    );
+  }
+});
+
+test("categorizes unreadable roadmap and issue-snapshot paths", () => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-inputs-"));
+  const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
+  const missingRoadmap = join(root, "missing-roadmap.md");
+  const missingIssues = join(root, "missing-issues.json");
+
+  try {
+    for (const { argv, category, location } of [
+      {
+        argv: ["--roadmap", missingRoadmap],
+        category: "E_ROADMAP_UNREADABLE_ROADMAP",
+        location: missingRoadmap,
+      },
+      {
+        argv: ["--roadmap", roadmapPath, "--issues", missingIssues],
+        category: "E_ROADMAP_INVALID_ISSUE_SNAPSHOT",
+        location: missingIssues,
+      },
+    ]) {
+      assert.throws(
+        () => run(argv),
+        (error) => {
+          assert.ok(error instanceof InventoryError);
+          assert.equal(error.category, category);
+          assert.match(error.message, /unable to read/u);
+          assert.ok(error.message.includes(location));
+          return true;
+        },
+        location,
+      );
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("rejects malformed issue JSON with a stable snapshot error", () => {
   const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
   const issuePath = fileURLToPath(
@@ -1194,13 +1381,64 @@ test("rejects malformed issue JSON with a stable snapshot error", () => {
 });
 
 test("bounds live GitHub calls by time and response size", () => {
-  const checker = readFileSync(
-    new URL("./check-roadmap-inventory.mjs", import.meta.url),
-    "utf8",
-  );
+  assert.deepEqual(GITHUB_CALL_BOUNDS, {
+    timeout: 30_000,
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  assert.ok(Object.isFrozen(GITHUB_CALL_BOUNDS));
+});
 
-  assert.match(checker, /timeout:\s*30_000/u);
-  assert.match(checker, /maxBuffer:\s*16 \* 1024 \* 1024/u);
+test("fails closed when the live issue listing reaches its ceiling", () => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-live-"));
+  const fakeGh = join(root, "gh");
+  const issueOutput = join(root, "issues.json");
+  const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
+  const fillerCount = 10_000 - issues.length;
+  const liveIssues = [
+    ...issues,
+    ...Array.from({ length: fillerCount }, (_, index) => ({
+      number: 1_000_000 + index,
+      state: "CLOSED",
+      title: `historical epic ${index}`,
+      labels: ["epic"],
+    })),
+  ];
+
+  try {
+    writeFileSync(
+      fakeGh,
+      '#!/bin/sh\ncat "$ROADMAP_FAKE_ISSUES"\n',
+      "utf8",
+    );
+    chmodSync(fakeGh, 0o755);
+    writeFileSync(issueOutput, JSON.stringify(liveIssues), "utf8");
+    const result = spawnSync(
+      process.execPath,
+      [
+        script,
+        "--roadmap",
+        roadmapPath,
+        "--live",
+        "--repo",
+        "flyingrobots/colorful-language",
+      ],
+      {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${root}${pathDelimiter}${process.env.PATH}`,
+          ROADMAP_FAKE_ISSUES: issueOutput,
+        },
+      },
+    );
+
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /^E_ROADMAP_GITHUB: /u);
+    assert.match(result.stderr, /10,000-issue ceiling/u);
+    assert.equal(result.stdout, "");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("defines the canonical accountability heading in one source location", () => {
@@ -1231,6 +1469,98 @@ test("the workflow reference pins the canonical accountability heading", () => {
     reference,
     /canonical\s+`## Architecture Accountability`\s+H2/u,
   );
+});
+
+test("delegates roadmap Markdown structure to exact-pinned maintained tooling", () => {
+  const checker = readFileSync(script, "utf8");
+  const runner = readFileSync(
+    new URL("./roadmap-inventory-runner.mjs", import.meta.url),
+    "utf8",
+  );
+  const packageJson = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  const expectedParserPins = {
+    "mdast-util-from-markdown": "2.0.3",
+    "mdast-util-gfm-table": "2.0.0",
+    "mdast-util-to-string": "4.0.0",
+    "micromark-extension-gfm-table": "2.1.1",
+  };
+
+  for (const [packageName, version] of Object.entries(expectedParserPins)) {
+    assert.equal(
+      packageJson.devDependencies?.[packageName],
+      version,
+      `${packageName} must be an exact direct development dependency`,
+    );
+  }
+  assert.match(
+    checker,
+    /from "mdast-util-from-markdown";/u,
+    "the checker must delegate block interpretation to mdast",
+  );
+  for (const bespokeParserHelper of [
+    "findExactBacktickRun",
+    "keepsMarkdownParagraphOpen",
+    "markdownInlineLinkAt",
+    "markdownTableCells",
+    "rawHtmlBlockEnds",
+    "rawHtmlBlockStart",
+    "renderInlineLinkLabels",
+    "stripClosedInlineHtmlComments",
+  ]) {
+    assert.doesNotMatch(
+      checker,
+      new RegExp(`function ${bespokeParserHelper}\\(`, "u"),
+      `${bespokeParserHelper} must not recreate maintained Markdown parsing`,
+    );
+  }
+
+  const sourceLines = checker.trimEnd().split(/\r?\n/u).length;
+  const topLevelHelpers =
+    checker.match(/^(?:export )?function /gmu)?.length ?? 0;
+  assert.ok(
+    sourceLines <= 900,
+    `roadmap checker has ${sourceLines} lines; reviewed ceiling is 900`,
+  );
+  assert.ok(
+    topLevelHelpers <= 24,
+    `roadmap checker has ${topLevelHelpers} helpers; reviewed ceiling is 24`,
+  );
+  assert.doesNotMatch(
+    runner,
+    /(?:fromMarkdown|mdast|micromark)/u,
+    "the transport runner must not acquire Markdown interpretation",
+  );
+  const runnerLines = runner.match(/\n/gu)?.length ?? 0;
+  assert.ok(
+    runnerLines <= 250,
+    `roadmap transport runner has ${runnerLines} lines; reviewed ceiling is 250`,
+  );
+  const expectedMeasurement = new RegExp(
+    `${sourceLines}\\s+lines\\s+and\\s+${topLevelHelpers}\\s+top-level\\s+helpers`,
+    "u",
+  );
+  for (const referencePath of [
+    "../docs/workflows/repository-maintenance/README.md",
+    "../docs/workflows/repository-maintenance/test-plan.md",
+  ]) {
+    const reference = readFileSync(
+      new URL(referencePath, import.meta.url),
+      "utf8",
+    );
+    assert.match(
+      reference,
+      expectedMeasurement,
+      `${referencePath} must publish the source-policy measurement`,
+    );
+    assert.match(
+      reference,
+      /down from 1,429\s+lines and 38\s+(?:top-level\s+)?helpers/u,
+      `${referencePath} must publish the measured baseline`,
+    );
+    assert.doesNotMatch(reference, /34-helper baseline/u);
+  }
 });
 
 test("the repository wires offline and live reconciliation into distinct lanes", () => {
@@ -1281,6 +1611,14 @@ test("the repository wires offline and live reconciliation into distinct lanes",
   assert.match(
     maintenance,
     /^\s*issues:\s*read\s*# Live issue snapshot reconciliation\.\s*$/mu,
+  );
+  const installDependencies = maintenance.indexOf("run: npm ci");
+  const selfTest = maintenance.indexOf(
+    "run: node --test scripts/check-roadmap-inventory.test.mjs",
+  );
+  assert.ok(
+    installDependencies >= 0 && installDependencies < selfTest,
+    "the clean maintenance lane must install locked parser dependencies before use",
   );
   assert.match(
     maintenance,

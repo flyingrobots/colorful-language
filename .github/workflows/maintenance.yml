@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: ".node-version"
+      - name: Install repository policy dependencies
+        run: npm ci
       - name: Self-test roadmap inventory reconciliation
         run: node --test scripts/check-roadmap-inventory.test.mjs
       - name: Check roadmap inventory structure

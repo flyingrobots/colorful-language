@@ -70,6 +70,16 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   preserved. The gate must fail closed when the canonical section or table is
   absent and must compare displayed identities without treating examples as
   authoritative rows.
+- **RM-15 — Maintained roadmap parsing boundary.** `ROADMAP.md` must remain the
+  sole authority for primary issue dispositions and architecture-accountability
+  identities, while exact-pinned maintained CommonMark/GFM tooling owns
+  heading, block, table, and inline interpretation. Repository code must not
+  recreate a general Markdown fence, raw-HTML, paragraph, table, or inline
+  parser to enforce the roadmap policy. Narrow literal-source pipe recognition
+  may only reject table-like source that the AST cannot represent after an HTML
+  comment closer; it must never accept or establish canonical authority.
+  Preserved multiline-comment ranges must honor parser-owned code and
+  non-comment HTML exclusions plus Markdown backslash parity.
 
 ## Cases
 
@@ -209,11 +219,13 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
 - **RM-9a — Deterministic roadmap inventory.** *Requirement:* RM-9. *Behavior:*
   explicit primary-disposition markers classify each tracked slice as active,
   parked, or delivered, while ordinary historical and epic links remain
-  non-owning references. *Oracle:* a checked-in mocked issue snapshot passes;
-  one minimal mutation for a missing open slice, duplicate primary home,
-  closed active slice, open delivered slice, and unrecognized marker fails with
-  a stable path-addressed category. *Evidence type:* fixture-backed Node unit
-  tests and an offline repository command. *Evidence:*
+  non-owning references and marker-shaped code examples remain
+  non-authoritative. *Oracle:* a checked-in mocked issue snapshot passes; one
+  minimal mutation for a missing open slice, fenced-code-only marker,
+  trailing-block-content marker, duplicate primary home, closed active slice,
+  open delivered slice, unrecognized marker, and unreadable roadmap path fails
+  with a stable path-addressed category. *Evidence type:*
+  fixture-backed Node unit tests and an offline repository command. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs`, roadmap fixtures, and
   `scripts/check-roadmap-inventory.mjs`. *Status:* implemented.
 - **RM-9b — Authenticated live reconciliation.** *Requirement:* RM-9.
@@ -221,18 +233,24 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   from GitHub and applies the same deterministic inventory comparison used by
   the fixture suite. *Oracle:* the command proves every current open non-epic
   slice has one primary active or parked disposition and no closed issue is
-  presented as pending. *Evidence type:* authenticated GitHub API witness kept
-  outside the ordinary offline documentation gate. *Evidence:*
+  presented as pending; reaching the 10,000-item listing ceiling fails closed
+  instead of admitting a potentially truncated response; repeated runner
+  options and malformed `OWNER/NAME` repository coordinates fail with
+  `E_ROADMAP_USAGE` before transport. *Evidence type:* deterministic argument
+  tests in the ordinary offline documentation gate plus an authenticated GitHub
+  API witness kept outside it. The clean hosted lane installs exact root
+  lockfile dependencies before importing the parser. *Evidence:*
+  `scripts/check-roadmap-inventory.test.mjs`,
   `scripts/check-roadmap-inventory.mjs --live`,
   `.github/workflows/ci.yml`, and `.github/workflows/maintenance.yml`.
   *Status:* implemented.
 - **RM-9c — Honest malformed-fixture type.** *Requirement:* RM-9. *Behavior:*
   malformed issue-snapshot bytes used to prove JSON refusal must not carry a
   `.json` extension that invites general repository tooling to parse them as a
-  valid document. *Oracle:* the regression fixture retains its malformed bytes
-  and still produces `E_ROADMAP_INVALID_ISSUE_SNAPSHOT`, while its path uses an
-  explicit non-JSON fixture extension. *Evidence type:* deterministic Node test
-  and malformed text fixture. *Evidence:*
+  valid document. *Oracle:* unreadable snapshot paths and the regression
+  fixture's malformed bytes produce `E_ROADMAP_INVALID_ISSUE_SNAPSHOT`, while
+  the malformed fixture uses an explicit non-JSON extension. *Evidence type:*
+  deterministic Node tests and malformed text fixture. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs` and
   `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:*
   implemented.
@@ -243,10 +261,11 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   outside the authoritative table, and compares plain and inline-code labels
   by displayed identity across LF and CRLF source. Unsupported mechanism-cell
   Markdown is noncanonical. *Oracle:* a byte-equivalent CRLF success case and
-  fixture mutations cover exact duplicate rows, missing/recased or
-  code-indented headings, comment-altered and closing-hash variants in both
-  source orders, duplicate headings, comment-altered header and delimiter
-  source, plain, inline-code-styled, whole-cell and partial inline-linked,
+  a canonical leading-pipe table without trailing pipes pass; fixture mutations
+  cover exact duplicate rows, missing/recased or code-indented headings,
+  comment-altered and closing-hash variants in both source orders, duplicate
+  headings, comment-altered or overlapping-comment header and delimiter source,
+  plain, inline-code-styled, whole-cell and partial inline-linked,
   numeric-character-reference, fully styled, and partially
   asterisk-emphasized duplicate table headers plus unresolved-reference and
   intraword-underscore negative controls, incomplete plain and styled header
@@ -260,19 +279,21 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   continuing data row, duplicate final rows followed by each Setext underline
   form, indented code plus fenced and commented table-shaped examples, raw HTML
   block variants with boolean, unquoted, single-quoted, double-quoted, and
-  self-closing generic tags, a type-7 generic tag inside an open paragraph
-  followed by a structural heading, plus a source-policy guard against
-  overlapping attribute separators, an indented comment opener followed by a
-  visible table, invalid backtick-fence info strings plus valid tilde-fence
-  controls, multiline comments that open after visible text or an unmatched
-  backtick, a visible duplicate mechanism split by a closed inline HTML
-  comment, a duplicate table beginning after a multiline comment closer, a
-  multiline comment beginning on a visible table row, and post-table prose
-  controls containing a literal or inline-code pipe plus a comment-shaped
-  inline-code literal control, inline-code styling and longer internal backtick
-  runs, an empty identity, invalid escaping inside and outside inline code,
-  named/decimal/hexadecimal character references, canonically equivalent
-  Unicode, NUL/replacement-character equivalence, and unsupported emphasis.
+  self-closing generic tags, comment-shaped script text, a type-7 generic tag
+  inside an open paragraph followed by a structural heading, plus a
+  source-policy guard against reintroducing generic HTML grammar, an indented
+  comment opener followed by a visible table, an escaped comment opener followed
+  by a duplicate table plus an even-backslash active-comment control, invalid
+  backtick-fence info strings plus valid tilde-fence controls, multiline
+  comments that open after visible text or an unmatched backtick, a visible
+  duplicate mechanism split by a closed inline HTML comment, duplicate tables
+  beginning after inline and multiline comment closers, a multiline comment
+  beginning on a visible table row, and post-table prose controls containing a
+  literal or inline-code pipe plus a comment-shaped inline-code literal control,
+  inline-code styling and longer internal backtick runs, an empty identity,
+  invalid escaping inside and outside inline code, named/decimal/hexadecimal
+  character references, canonically equivalent Unicode,
+  NUL/replacement-character equivalence, and unsupported emphasis.
   They fail with
   their stable `E_ROADMAP_*` categories, including both source addresses for a
   duplicate heading, table, or mechanism and identical LF/CRLF failure
@@ -289,6 +310,31 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `scripts/check-roadmap-inventory.test.mjs`, and
   `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).
+  *Status:* implemented.
+- **RM-15a — Maintained roadmap structure interpretation.** *Requirements:*
+  RM-9, RM-14, RM-15. *Behavior:* one exact-pinned maintained CommonMark/GFM
+  parser supplies the roadmap heading, block, table, and rendered-inline
+  structure while `ROADMAP.md` remains the only disposition and mechanism
+  authority. The checker retains every existing accepted fixture and stable,
+  path-addressed `E_ROADMAP_*` failure category and source line, removes its
+  bespoke fence/raw-HTML/paragraph/table/inline state machine, and ratchets the
+  maintained checker below its 1,429-line and 38-helper baseline. *Oracle:* the
+  full existing roadmap inventory suite remains green; a source-policy
+  regression rejects the former parser helper/state signatures or a checker at
+  or above the reviewed line ceiling; dependency-policy evidence rejects
+  unpinned parser packages; rejection-only scans using `pipeCells`,
+  `isDelimiter`, and `corruptedCanonicalTableLine` cannot establish authority;
+  and the before/after responsibility inventory is recorded in the current
+  workflow reference. *Evidence type:* fixture-backed characterization suite,
+  deterministic source/dependency policy, and measured maintained-source
+  inventory. *Evidence:*
+  `scripts/check-roadmap-inventory.mjs`,
+  `scripts/roadmap-inventory-runner.mjs`,
+  `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
+  `package-lock.json`. The parser-owning checker measures 899 lines and 23
+  top-level helpers, down from 1,429 lines and 38 helpers; the transport runner
+  contains no Markdown interpretation. *Tracking:*
+  [#250](https://github.com/flyingrobots/colorful-language/issues/250).
   *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with

@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const PRIMARY_MARKER = /<!--\s*roadmap-primary:\s*([\s\S]*?)-->/gu;
+import { fromMarkdown } from "mdast-util-from-markdown";
+import { gfmTableFromMarkdown } from "mdast-util-gfm-table";
+import { toString } from "mdast-util-to-string";
+import { gfmTable } from "micromark-extension-gfm-table";
+
+import { createRoadmapInventoryRun } from "./roadmap-inventory-runner.mjs";
+
+const PRIMARY_MARKER =
+  /^<!--\s*roadmap-primary:\s*([\s\S]*?)-->$/u;
+const PRIMARY_MARKER_CANDIDATE = /^<!--\s*roadmap-primary\b/u;
 const VALID_MARKER = /^(active|parked|delivered)((?:\s+#\d+)+)$/u;
 const ACCOUNTABILITY_HEADING = "## Architecture accountability";
 const ACCOUNTABILITY_HEADING_PATTERN = ACCOUNTABILITY_HEADING.replace(
@@ -16,19 +22,11 @@ const CANONICAL_ACCOUNTABILITY_HEADING = new RegExp(
   `^ {0,3}${ACCOUNTABILITY_HEADING_PATTERN}[ \\t]*$`,
   "u",
 );
-const CLOSING_HASH_ACCOUNTABILITY_HEADING = new RegExp(
-  `^ {0,3}${ACCOUNTABILITY_HEADING_PATTERN}[ \\t]+#+[ \\t]*$`,
-  "u",
-);
-const GENERIC_HTML_OPEN_TAG =
-  /^<[A-Za-z][A-Za-z0-9-]*(?:[ \t]+[A-Za-z_:][A-Za-z0-9_.:-]*(?:[ \t]*=[ \t]*(?:[^\u0000-\u0020"'=<>`]+|"[^"]*"|'[^']*'))?)*[ \t]*\/?>[ \t]*$/u;
-const GENERIC_HTML_CLOSE_TAG =
-  /^<\/[A-Za-z][A-Za-z0-9-]*[ \t]*>[ \t]*$/u;
-const MARKDOWN_DELIMITER_CELL = /^:?-{3,}:?$/u;
-const MARKDOWN_CHARACTER_REFERENCE =
-  /^&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
+const ATX_H2 = /^ {0,3}##(?:[ \t]+|$)/u;
 const UNSUPPORTED_STYLED_MECHANISM_HEADER =
   /^(\*{1,2}|_{1,2}|~~)Mechanism\1$/u;
+const MARKDOWN_CHARACTER_REFERENCE =
+  /&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
 const NONCANONICAL_MECHANISM_MARKUP = new Set([
   "*",
   "_",
@@ -37,70 +35,6 @@ const NONCANONICAL_MECHANISM_MARKUP = new Set([
   "]",
   "<",
   ">",
-]);
-const RAW_HTML_BLOCK_TAGS = new Set([
-  "address",
-  "article",
-  "aside",
-  "base",
-  "basefont",
-  "blockquote",
-  "body",
-  "caption",
-  "center",
-  "col",
-  "colgroup",
-  "dd",
-  "details",
-  "dialog",
-  "dir",
-  "div",
-  "dl",
-  "dt",
-  "fieldset",
-  "figcaption",
-  "figure",
-  "footer",
-  "form",
-  "frame",
-  "frameset",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "head",
-  "header",
-  "hr",
-  "html",
-  "iframe",
-  "legend",
-  "li",
-  "link",
-  "main",
-  "menu",
-  "menuitem",
-  "nav",
-  "noframes",
-  "ol",
-  "optgroup",
-  "option",
-  "p",
-  "param",
-  "search",
-  "section",
-  "summary",
-  "table",
-  "tbody",
-  "td",
-  "tfoot",
-  "th",
-  "thead",
-  "title",
-  "tr",
-  "track",
-  "ul",
 ]);
 const ACTIVE_DISPOSITIONS = new Set(["active", "parked"]);
 
@@ -170,321 +104,190 @@ function normalizeIssues(issues, issuePath, closingIssueNumbers) {
   return byNumber;
 }
 
-function trimMarkdownTableCellPadding(cell) {
-  return cell.replace(/^[\t ]+|[\t ]+$/gu, "");
+function sourceLine(lines, line) {
+  return lines[line - 1]?.replace(/\r$/u, "") ?? "";
 }
 
-function markdownTableCells(line) {
-  const firstNonWhitespace = line.search(/\S/u);
+function renderedText(node) {
   if (
-    firstNonWhitespace === -1 ||
-    !/^ {0,3}$/u.test(line.slice(0, firstNonWhitespace)) ||
-    line[firstNonWhitespace] !== "|"
+    node.type === "html" &&
+    /^<!--[\s\S]*-->$/u.test(node.value)
   ) {
-    return undefined;
+    return "";
   }
-
-  const cells = [];
-  let cell = "";
-  let closedFirstCell = false;
-  for (let index = firstNonWhitespace + 1; index < line.length; index += 1) {
-    if (line[index] === "\\") {
-      cell += line[index];
-      if (index + 1 < line.length) {
-        index += 1;
-        cell += line[index];
-      }
-    } else if (line[index] === "|") {
-      cells.push(trimMarkdownTableCellPadding(cell));
-      cell = "";
-      closedFirstCell = true;
-    } else {
-      cell += line[index];
-    }
+  if (!Array.isArray(node.children)) {
+    return toString(node);
   }
-  if (!closedFirstCell) {
-    return undefined;
-  }
-  const trailingCell = trimMarkdownTableCellPadding(cell);
-  if (trailingCell.length > 0) {
-    cells.push(trailingCell);
-  }
-  return cells;
+  return node.children.map((child) => renderedText(child)).join("");
 }
 
-function isNoLeadingPipeTableRow(line) {
-  const firstNonWhitespace = line.search(/\S/u);
+function headerCellSource(source, cell) {
+  return source
+    .slice(cell.position.start.offset, cell.position.end.offset)
+    .replace(/^ {0,3}\|/u, "")
+    .replace(/\|$/u, "")
+    .replace(/^[\t ]+|[\t ]+$/gu, "");
+}
+
+function accountabilityHeaderKind(source, lines, table) {
+  const cell = table.children[0]?.children[0];
+  if (cell === undefined) {
+    return undefined;
+  }
+
+  const content = headerCellSource(source, cell);
+  const displayed = renderedText(cell);
+  const equivalent =
+    displayed === "Mechanism" ||
+    displayed.trim() === "Mechanism" ||
+    UNSUPPORTED_STYLED_MECHANISM_HEADER.test(content);
+  if (!equivalent) {
+    return undefined;
+  }
+  if (UNSUPPORTED_STYLED_MECHANISM_HEADER.test(content)) {
+    return "unsupported";
+  }
+
+  const line = sourceLine(lines, table.position.start.line);
+  if (!/^ {0,3}\|/u.test(line)) {
+    return "no-leading";
+  }
+  const child = cell.children[0];
   if (
-    firstNonWhitespace === -1 ||
-    !/^ {0,3}$/u.test(line.slice(0, firstNonWhitespace)) ||
-    line[firstNonWhitespace] === "|"
+    content === "Mechanism" &&
+    cell.children.length === 1 &&
+    child?.type === "text" &&
+    child.value === "Mechanism" &&
+    source.slice(child.position.start.offset, child.position.end.offset) ===
+      "Mechanism"
   ) {
-    return false;
+    return "canonical";
   }
-
-  const content = line.slice(firstNonWhitespace);
-  for (let index = 0; index < content.length; index += 1) {
-    if (content[index] === "\\") {
-      index += 1;
-    } else if (content[index] === "`") {
-      let delimiterLength = 1;
-      while (content[index + delimiterLength] === "`") {
-        delimiterLength += 1;
-      }
-      const contentEnd = findExactBacktickRun(
-        content,
-        index + delimiterLength,
-        delimiterLength,
-      );
-      if (contentEnd !== -1) {
-        index = contentEnd + delimiterLength - 1;
-      }
-    } else if (content[index] === "|") {
-      return true;
-    }
-  }
-  return false;
+  return "display-equivalent";
 }
 
-function isNoLeadingPipeMechanismHeader(line) {
-  const firstNonWhitespace = line.search(/\S/u);
-  return (
-    isNoLeadingPipeTableRow(line) &&
-    /^Mechanism[ \t]*\|/u.test(line.slice(firstNonWhitespace))
+function tableIsInsideSection(nodeIndex, canonicalHeadingIndex, sectionEndIndex) {
+  return nodeIndex > canonicalHeadingIndex && nodeIndex < sectionEndIndex;
+}
+
+function lineWithoutInlineComments(line, lineNumber_, commentRanges) {
+  const ranges = commentRanges.filter(
+    (range) =>
+      range.startLine === lineNumber_ && range.endLine === lineNumber_,
   );
-}
-
-function noLeadingPipeTableCells(line) {
-  if (!isNoLeadingPipeTableRow(line)) {
-    return undefined;
+  let visible = line;
+  for (let index = ranges.length - 1; index >= 0; index -= 1) {
+    const range = ranges[index];
+    visible =
+      visible.slice(0, range.startColumn) +
+      visible.slice(range.endColumn);
   }
-  const firstNonWhitespace = line.search(/\S/u);
-  return markdownTableCells(
-    `${line.slice(0, firstNonWhitespace)}|${line.slice(firstNonWhitespace)}`,
-  );
+  return {
+    visible,
+    exposedDelimiter:
+      ranges.length > 0 &&
+      (visible.includes("<!--") || visible.includes("-->")),
+  };
 }
 
-function isCanonicalAccountabilityHeading(line) {
-  return CANONICAL_ACCOUNTABILITY_HEADING.test(line);
-}
-
-function isAccountabilityHeadingWithClosingHashes(line) {
-  return CLOSING_HASH_ACCOUNTABILITY_HEADING.test(line);
-}
-
-function isRoadmapPeerOrHigherAtxHeading(line) {
-  const match = line.match(/^ {0,3}#{1,2}(?:[ \t]+|$)/u);
+function pipeCells(line) {
+  const match = line.match(/^ {0,3}\|([\s\S]*?)(?:\|[ \t]*)?$/u);
   if (match === null) {
-    return false;
+    return undefined;
   }
-  return !line.slice(match[0].length).startsWith("#");
+  return match[1]
+    .split("|")
+    .map((cell) => cell.replace(/^[\t ]+|[\t ]+$/gu, ""));
 }
 
-function isRoadmapSetextHeading(line, nextLine) {
+function isDelimiter(cells) {
   return (
-    line.trim().length > 0 &&
-    /^ {0,3}(?:=+|-+)[ \t]*$/u.test(nextLine)
+    cells !== undefined &&
+    cells.length >= 2 &&
+    cells.every((cell) => /^:?-{3,}:?$/u.test(cell))
   );
 }
 
-function keepsMarkdownParagraphOpen(line, nextLine) {
-  if (line.trim().length === 0) {
-    return false;
-  }
-  if (
-    /^ {0,3}#{1,6}(?:[ \t]+|$)/u.test(line) ||
-    isRoadmapSetextHeading(line, nextLine) ||
-    /^ {0,3}(?:>[ \t]?|(?:[*+-]|\d+[.)])(?:[ \t]+|$))/u.test(line)
-  ) {
-    return false;
-  }
-  const thematicBreak = line
-    .slice(0, 4)
-    .match(/^ {0,3}([*_-])/u)?.[1];
-  if (thematicBreak !== undefined) {
-    const content = line.trim().replaceAll(" ", "").replaceAll("\t", "");
+function corruptedCanonicalTableLine(
+  lines,
+  startLine,
+  endLine,
+  commentRanges,
+) {
+  for (let index = startLine - 1; index < endLine - 1; index += 1) {
+    const hiddenByMultilineComment = commentRanges.some(
+      (range) =>
+        range.startLine < index + 1 && index + 1 <= range.endLine,
+    );
+    if (hiddenByMultilineComment) {
+      continue;
+    }
+    const literalHeader = sourceLine(lines, index + 1);
+    const literalDelimiter = sourceLine(lines, index + 2);
+    const headerView = lineWithoutInlineComments(
+      literalHeader,
+      index + 1,
+      commentRanges,
+    );
+    const delimiterView = lineWithoutInlineComments(
+      literalDelimiter,
+      index + 2,
+      commentRanges,
+    );
+    const visibleHeaderCells = pipeCells(headerView.visible);
+    if (headerView.exposedDelimiter) {
+      return index + 1;
+    }
+    if (delimiterView.exposedDelimiter) {
+      return index + 2;
+    }
     if (
-      content.length >= 3 &&
-      [...content].every((character) => character === thematicBreak)
+      visibleHeaderCells?.[0] !== "Mechanism" ||
+      !isDelimiter(pipeCells(delimiterView.visible))
     ) {
-      return false;
+      continue;
     }
-  }
-  return true;
-}
-
-function rawHtmlBlockStart(line) {
-  const match = line.match(/^ {0,3}(\S.*)$/u);
-  if (match === null) {
-    return undefined;
-  }
-  const content = match[1];
-  const rawTextElement = content.match(
-    /^<(script|pre|style|textarea)(?:[ \t>]|$)/iu,
-  );
-  if (rawTextElement !== null) {
-    return {
-      endMarker: `</${rawTextElement[1].toLowerCase()}>`,
-      caseInsensitive: true,
-    };
-  }
-  if (content.startsWith("<?")) {
-    return { endMarker: "?>", caseInsensitive: false };
-  }
-  if (/^<![A-Z]/u.test(content)) {
-    return { endMarker: ">", caseInsensitive: false };
-  }
-  if (content.startsWith("<![CDATA[")) {
-    return { endMarker: "]]>", caseInsensitive: false };
-  }
-
-  const tag = content.match(/^<\/?([A-Za-z][A-Za-z0-9-]*)(?:[ \t/>]|$)/u);
-  if (tag !== null && RAW_HTML_BLOCK_TAGS.has(tag[1].toLowerCase())) {
-    return { endsOnBlank: true };
-  }
-  if (
-    GENERIC_HTML_OPEN_TAG.test(content) ||
-    GENERIC_HTML_CLOSE_TAG.test(content)
-  ) {
-    return { endsOnBlank: true, requiresParagraphBoundary: true };
+    if (headerView.visible !== literalHeader) {
+      return index + 1;
+    }
+    if (delimiterView.visible !== literalDelimiter) {
+      return index + 2;
+    }
   }
   return undefined;
 }
 
-function rawHtmlBlockEnds(block, line) {
-  if (block.endsOnBlank) {
-    return line.trim().length === 0;
-  }
-  const source = block.caseInsensitive ? line.toLowerCase() : line;
-  return source.includes(block.endMarker);
-}
-
-function isAsciiPunctuation(character) {
-  const codePoint = character.codePointAt(0);
-  return (
-    (codePoint >= 33 && codePoint <= 47) ||
-    (codePoint >= 58 && codePoint <= 64) ||
-    (codePoint >= 91 && codePoint <= 96) ||
-    (codePoint >= 123 && codePoint <= 126)
-  );
-}
-
-function findExactBacktickRun(source, start, length) {
-  for (let index = start; index < source.length; ) {
-    if (source[index] !== "`") {
-      index += 1;
-      continue;
-    }
-    let runLength = 1;
-    while (source[index + runLength] === "`") {
-      runLength += 1;
-    }
-    if (runLength === length) {
-      return index;
-    }
-    index += runLength;
-  }
-  return -1;
-}
-
-function stripClosedInlineHtmlComments(line) {
-  let visible = "";
-  for (let index = 0; index < line.length; ) {
-    if (line[index] === "\\") {
-      visible += line[index];
-      index += 1;
-      if (index < line.length) {
-        visible += line[index];
-        index += 1;
-      }
-      continue;
-    }
-    if (line[index] === "`") {
-      let delimiterLength = 1;
-      while (line[index + delimiterLength] === "`") {
-        delimiterLength += 1;
-      }
-      const contentEnd = findExactBacktickRun(
-        line,
-        index + delimiterLength,
-        delimiterLength,
-      );
-      if (contentEnd === -1) {
-        visible += line.slice(index, index + delimiterLength);
-        index += delimiterLength;
-        continue;
-      }
-      const spanEnd = contentEnd + delimiterLength;
-      visible += line.slice(index, spanEnd);
-      index = spanEnd;
-      continue;
-    }
-    if (line.startsWith("<!--", index)) {
-      const commentEnd = line.indexOf("-->", index + 4);
-      if (commentEnd === -1) {
-        return { visible, opensMultilineComment: true };
-      }
-      index = commentEnd + 3;
-      continue;
-    }
-    visible += line[index];
-    index += 1;
-  }
-  return { visible, opensMultilineComment: false };
-}
-
-function canonicalMechanismIdentity(mechanism, location) {
-  let identity = "";
-  const normalizedMechanism = mechanism.replaceAll("\u0000", "\uFFFD");
-
-  for (let index = 0; index < normalizedMechanism.length; index += 1) {
-    const character = normalizedMechanism[index];
+function validateTextSource(source, location) {
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
     if (character === "\\") {
-      if (index + 1 === normalizedMechanism.length) {
+      const escaped = source[index + 1];
+      if (escaped === undefined) {
         fail(
           "E_ROADMAP_NONCANONICAL_MECHANISM",
           location,
           "mechanism ends with an incomplete Markdown escape",
         );
       }
-      if (!isAsciiPunctuation(normalizedMechanism[index + 1])) {
+      const codePoint = escaped.codePointAt(0);
+      const isAsciiPunctuation =
+        (codePoint >= 33 && codePoint <= 47) ||
+        (codePoint >= 58 && codePoint <= 64) ||
+        (codePoint >= 91 && codePoint <= 96) ||
+        (codePoint >= 123 && codePoint <= 126);
+      if (!isAsciiPunctuation) {
         fail(
           "E_ROADMAP_NONCANONICAL_MECHANISM",
           location,
           "Markdown escapes are only valid before ASCII punctuation",
         );
       }
-      identity += normalizedMechanism[index + 1];
       index += 1;
-      continue;
-    }
-    if (character === "`") {
-      let delimiterLength = 1;
-      while (normalizedMechanism[index + delimiterLength] === "`") {
-        delimiterLength += 1;
-      }
-      const contentStart = index + delimiterLength;
-      const contentEnd = findExactBacktickRun(
-        normalizedMechanism,
-        contentStart,
-        delimiterLength,
-      );
-      if (contentEnd === -1) {
-        fail(
-          "E_ROADMAP_NONCANONICAL_MECHANISM",
-          location,
-          "mechanism contains an unterminated inline-code span",
-        );
-      }
-      identity += normalizedMechanism
-        .slice(contentStart, contentEnd)
-        .replaceAll("\\|", "|");
-      index = contentEnd + delimiterLength - 1;
       continue;
     }
     if (
       character === "&" &&
-      MARKDOWN_CHARACTER_REFERENCE.test(normalizedMechanism.slice(index))
+      MARKDOWN_CHARACTER_REFERENCE.test(source.slice(index))
     ) {
       fail(
         "E_ROADMAP_NONCANONICAL_MECHANISM",
@@ -499,10 +302,37 @@ function canonicalMechanismIdentity(mechanism, location) {
         "use plain text, escaped punctuation, or inline code in mechanism cells",
       );
     }
-    identity += character;
+  }
+}
+
+function canonicalMechanismIdentity(source, cell, location) {
+  for (const child of cell.children) {
+    if (child.type === "inlineCode") {
+      continue;
+    }
+    if (
+      child.type === "html" &&
+      /^<!--[\s\S]*-->$/u.test(child.value)
+    ) {
+      continue;
+    }
+    if (child.type !== "text") {
+      fail(
+        "E_ROADMAP_NONCANONICAL_MECHANISM",
+        location,
+        "use plain text, escaped punctuation, or inline code in mechanism cells",
+      );
+    }
+    validateTextSource(
+      source.slice(child.position.start.offset, child.position.end.offset),
+      location,
+    );
   }
 
-  const canonical = identity.replace(/\s+/gu, " ").trim().normalize("NFC");
+  const canonical = renderedText(cell)
+    .replace(/\s+/gu, " ")
+    .trim()
+    .normalize("NFC");
   if (canonical.length === 0) {
     fail(
       "E_ROADMAP_EMPTY_MECHANISM",
@@ -513,582 +343,408 @@ function canonicalMechanismIdentity(mechanism, location) {
   return canonical;
 }
 
-function displaysMechanismHeader(mechanism, location) {
-  try {
-    return canonicalMechanismIdentity(mechanism, location) === "Mechanism";
-  } catch (error) {
-    if (error instanceof InventoryError) {
-      return false;
-    }
-    throw error;
-  }
+function parseMarkdown(source) {
+  return fromMarkdown(source, {
+    extensions: [gfmTable()],
+    mdastExtensions: [gfmTableFromMarkdown()],
+  });
 }
 
-function markdownInlineLinkAt(source, labelStart) {
-  if (source[labelStart] !== "[") {
-    return undefined;
+function isMarkdownEscaped(source, offset) {
+  let cursor = offset;
+  while (source[cursor - 1] === "\\") cursor -= 1;
+  return (offset - cursor) % 2 === 1;
+}
+
+function markdownCommentRanges(source, tree) {
+  const excludedRanges = [];
+  const stack = [tree];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (
+      node.type === "inlineCode" ||
+      node.type === "code" ||
+      (node.type === "html" && !node.value.trimStart().startsWith("<!--"))
+    ) {
+      excludedRanges.push({
+        start: node.position.start.offset,
+        end: node.position.end.offset,
+      });
+    }
+    if (Array.isArray(node.children)) {
+      stack.push(...node.children);
+    }
   }
-  let labelEnd = -1;
-  for (let index = labelStart + 1; index < source.length; index += 1) {
-    if (source[index] === "\\") {
-      index += 1;
-    } else if (source[index] === "]") {
-      labelEnd = index;
+  const insideExcludedSyntax = (offset) =>
+    excludedRanges.some(
+      (range) => range.start <= offset && offset < range.end,
+    );
+
+  const ranges = [];
+  for (let searchFrom = 0; searchFrom < source.length; ) {
+    const start = source.indexOf("<!--", searchFrom);
+    if (start === -1) {
       break;
     }
-  }
-  if (labelEnd === -1) {
-    return undefined;
-  }
-
-  const destinationStart = labelEnd + 1;
-  if (source[destinationStart] === "(") {
-    let depth = 1;
-    for (let index = destinationStart + 1; index < source.length; index += 1) {
-      if (source[index] === "\\") {
-        index += 1;
-      } else if (source[index] === "(") {
-        depth += 1;
-      } else if (source[index] === ")") {
-        depth -= 1;
-        if (depth === 0) {
-          return {
-            label: source.slice(labelStart + 1, labelEnd),
-            end: index + 1,
-          };
-        }
-      }
-    }
-    return undefined;
-  }
-  return undefined;
-}
-
-function renderInlineLinkLabels(source) {
-  let visible = "";
-  for (let index = 0; index < source.length; ) {
-    if (source[index] === "\\") {
-      visible += source[index];
-      index += 1;
-      if (index < source.length) {
-        visible += source[index];
-        index += 1;
-      }
+    if (insideExcludedSyntax(start) || isMarkdownEscaped(source, start)) {
+      searchFrom = start + 4;
       continue;
     }
-    const link = markdownInlineLinkAt(source, index);
-    if (link !== undefined) {
-      visible += link.label;
-      index = link.end;
+
+    let closing = source.indexOf("-->", start + 4);
+    while (closing !== -1 && insideExcludedSyntax(closing)) {
+      closing = source.indexOf("-->", closing + 3);
+    }
+    const end = closing === -1 ? source.length : closing + 3;
+    ranges.push({
+      start,
+      end,
+      closing: closing === -1 ? undefined : closing,
+      startLine: lineNumber(source, start),
+      endLine: lineNumber(source, end),
+      startColumn:
+        start - (source.lastIndexOf("\n", start - 1) + 1),
+      endColumn:
+        end - (source.lastIndexOf("\n", end - 1) + 1),
+    });
+    searchFrom = end;
+  }
+  return ranges;
+}
+
+function hasStructuralPipe(line) {
+  // GFM tables are omitted: this parse only locates inline-code ranges.
+  const tree = fromMarkdown(line);
+  const inlineCodeRanges = [];
+  const stack = [tree];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (node.type === "inlineCode") {
+      inlineCodeRanges.push({
+        start: node.position.start.offset,
+        end: node.position.end.offset,
+      });
+    }
+    if (Array.isArray(node.children)) {
+      stack.push(...node.children);
+    }
+  }
+
+  for (let index = 0; index < line.length; index += 1) {
+    if (line[index] !== "|") {
       continue;
     }
-    visible += source[index];
-    index += 1;
-  }
-  return visible;
-}
-
-function decodeNumericCharacterReferences(source) {
-  return source.replace(
-    /&#(?:[Xx]([0-9A-Fa-f]+)|([0-9]+));/gu,
-    (reference, hexadecimal, decimal) => {
-      const radix = hexadecimal === undefined ? 10 : 16;
-      const codePoint = Number.parseInt(hexadecimal ?? decimal, radix);
-      if (
-        !Number.isSafeInteger(codePoint) ||
-        codePoint === 0 ||
-        codePoint > 0x10ffff ||
-        (codePoint >= 0xd800 && codePoint <= 0xdfff)
-      ) {
-        return reference;
-      }
-      return String.fromCodePoint(codePoint);
-    },
-  );
-}
-
-function removeBalancedAsteriskStyleDelimiters(source) {
-  let rendered = source;
-  while (true) {
-    const withoutOneLayer = rendered.replace(
-      /(?<!\\)(\*\*|\*)(?=\S)([\s\S]*?\S)(?<!\\)\1/gu,
-      "$2",
+    let precedingBackslashes = 0;
+    for (
+      let cursor = index - 1;
+      cursor >= 0 && line[cursor] === "\\";
+      cursor -= 1
+    ) {
+      precedingBackslashes += 1;
+    }
+    if (precedingBackslashes % 2 === 1) {
+      continue;
+    }
+    const insideInlineCode = inlineCodeRanges.some(
+      (range) => range.start <= index && index < range.end,
     );
-    if (withoutOneLayer === rendered) {
-      return rendered;
+    if (!insideInlineCode) {
+      return true;
     }
-    rendered = withoutOneLayer;
   }
-}
-
-function displaysRenderedMechanismHeader(mechanism, location) {
-  if (displaysMechanismHeader(mechanism, location)) {
-    return true;
-  }
-  const visibleSource = renderInlineLinkLabels(mechanism);
-  return (
-    decodeNumericCharacterReferences(
-      removeBalancedAsteriskStyleDelimiters(visibleSource),
-    ) === "Mechanism"
-  );
-}
-
-function accountabilityHeaderKind(mechanism, location) {
-  if (mechanism === "Mechanism") {
-    return "canonical";
-  }
-  if (UNSUPPORTED_STYLED_MECHANISM_HEADER.test(mechanism)) {
-    return "unsupported";
-  }
-  return displaysRenderedMechanismHeader(mechanism, location)
-    ? "display-equivalent"
-    : undefined;
-}
-
-function rejectDuplicateAccountabilityHeading(
-  location,
-  accountabilitySectionLocation,
-  displayEquivalentAccountabilitySectionLocation,
-) {
-  const previousLocation =
-    accountabilitySectionLocation ??
-    displayEquivalentAccountabilitySectionLocation;
-  if (previousLocation === undefined) {
-    return;
-  }
-  const previousKind =
-    accountabilitySectionLocation === undefined
-      ? "display-equivalent heading"
-      : "canonical heading";
-  fail(
-    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
-    location,
-    `${previousKind} already appears at ${previousLocation}`,
-  );
+  return false;
 }
 
 function validateArchitectureAccountability(roadmap, roadmapPath) {
-  const mechanisms = new Map();
-  let inAccountabilitySection = false;
-  let accountabilityTableState = "searching";
-  let fenceCharacter;
-  let fenceLength = 0;
-  let inHtmlComment = false;
-  let rawHtmlBlock;
-  let paragraphOpen = false;
-  let foundAccountabilitySection = false;
-  let accountabilitySectionLocation;
-  let displayEquivalentAccountabilitySectionLocation;
-  let foundAccountabilityTable = false;
-  let accountabilityTableLocation;
-  let candidateAccountabilityTableLocation;
-  let candidateAccountabilityTableColumnCount;
-  let candidateAccountabilityHeaderKind;
-  let candidateAccountabilityTableHasLeadingPipe;
-  let candidateAccountabilityTableInCanonicalSection;
-  const roadmapLines = roadmap.split("\n");
+  const tree = parseMarkdown(roadmap);
+  const lines = roadmap.split("\n");
+  const commentRanges = markdownCommentRanges(roadmap, tree);
+  const renderedHeadings = [];
+  const canonicalHeadingIndexes = [];
 
-  for (const [index, rawLine] of roadmapLines.entries()) {
-    let line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
-    const nextRawLine = roadmapLines[index + 1] ?? "";
-    const nextLine = nextRawLine.endsWith("\r")
-      ? nextRawLine.slice(0, -1)
-      : nextRawLine;
-    if (fenceCharacter !== undefined) {
-      paragraphOpen = false;
-      const closingFence = line.match(
-        /^ {0,3}(`{3,}|~{3,})[ \t]*$/u,
-      );
-      if (
-        closingFence !== null &&
-        closingFence[1][0] === fenceCharacter &&
-        closingFence[1].length >= fenceLength
-      ) {
-        fenceCharacter = undefined;
-        fenceLength = 0;
-      }
-      continue;
-    }
-    if (rawHtmlBlock !== undefined) {
-      paragraphOpen = false;
-      if (rawHtmlBlockEnds(rawHtmlBlock, line)) {
-        rawHtmlBlock = undefined;
-      }
-      continue;
-    }
-    if (inHtmlComment) {
-      paragraphOpen = false;
-      const commentEnd = line.indexOf("-->");
-      if (commentEnd === -1) {
-        continue;
-      }
-      inHtmlComment = false;
-      line = line.slice(commentEnd + 3);
-    }
-    if (/^(?: {4}|\t)/u.test(line)) {
-      if (accountabilityTableState === "rows") {
-        accountabilityTableState = "complete";
-      } else if (accountabilityTableState === "delimiter") {
-        accountabilityTableState = "searching";
-        candidateAccountabilityTableLocation = undefined;
-        candidateAccountabilityTableColumnCount = undefined;
-        candidateAccountabilityHeaderKind = undefined;
-        candidateAccountabilityTableHasLeadingPipe = undefined;
-        candidateAccountabilityTableInCanonicalSection = undefined;
-      }
-      continue;
-    }
-
-    const openingFence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/u);
+  for (const [index, node] of tree.children.entries()) {
+    const hiddenByComment = commentRanges.some(
+      (range) =>
+        range.start < node.position.start.offset &&
+        node.position.start.offset < range.end,
+    );
     if (
-      openingFence !== null &&
-      (openingFence[1][0] === "~" || !openingFence[2].includes("`"))
+      hiddenByComment ||
+      node.type !== "heading" ||
+      node.depth !== 2 ||
+      node.position.start.line !== node.position.end.line ||
+      !ATX_H2.test(sourceLine(lines, node.position.start.line)) ||
+      renderedText(node) !== "Architecture accountability"
     ) {
-      paragraphOpen = false;
-      if (accountabilityTableState === "rows") {
-        accountabilityTableState = "complete";
-      } else if (accountabilityTableState === "delimiter") {
-        accountabilityTableState = "searching";
-        candidateAccountabilityTableLocation = undefined;
-        candidateAccountabilityTableColumnCount = undefined;
-        candidateAccountabilityHeaderKind = undefined;
-        candidateAccountabilityTableHasLeadingPipe = undefined;
-        candidateAccountabilityTableInCanonicalSection = undefined;
-      }
-      fenceCharacter = openingFence[1][0];
-      fenceLength = openingFence[1].length;
       continue;
     }
-    const openingRawHtmlBlock = rawHtmlBlockStart(line);
-    if (
-      openingRawHtmlBlock !== undefined &&
-      (!openingRawHtmlBlock.requiresParagraphBoundary || !paragraphOpen)
-    ) {
-      paragraphOpen = false;
-      if (accountabilityTableState === "rows") {
-        accountabilityTableState = "complete";
-      } else if (accountabilityTableState === "delimiter") {
-        accountabilityTableState = "searching";
-        candidateAccountabilityTableLocation = undefined;
-        candidateAccountabilityTableColumnCount = undefined;
-        candidateAccountabilityHeaderKind = undefined;
-        candidateAccountabilityTableHasLeadingPipe = undefined;
-        candidateAccountabilityTableInCanonicalSection = undefined;
-      }
-      if (!rawHtmlBlockEnds(openingRawHtmlBlock, line)) {
-        rawHtmlBlock = openingRawHtmlBlock;
-      }
-      continue;
+    const literal = sourceLine(lines, node.position.start.line);
+    const canonical = CANONICAL_ACCOUNTABILITY_HEADING.test(literal);
+    renderedHeadings.push({ index, node, canonical });
+    if (canonical) {
+      canonicalHeadingIndexes.push(index);
     }
-    if (isCanonicalAccountabilityHeading(line)) {
-      paragraphOpen = false;
-      const location = `${roadmapPath}:${index + 1}`;
-      rejectDuplicateAccountabilityHeading(
-        location,
-        accountabilitySectionLocation,
-        displayEquivalentAccountabilitySectionLocation,
-      );
-      inAccountabilitySection = true;
-      foundAccountabilitySection = true;
-      accountabilitySectionLocation = location;
-      continue;
-    }
-    if (isAccountabilityHeadingWithClosingHashes(line)) {
-      paragraphOpen = false;
-      const location = `${roadmapPath}:${index + 1}`;
-      if (foundAccountabilitySection) {
-        rejectDuplicateAccountabilityHeading(
-          location,
-          accountabilitySectionLocation,
-          undefined,
-        );
-      }
-      displayEquivalentAccountabilitySectionLocation ??= location;
-      continue;
-    }
-    const literalLine = line;
-    const commentScan = stripClosedInlineHtmlComments(line);
-    if (commentScan.opensMultilineComment) {
-      paragraphOpen = false;
-      if (
-        markdownTableCells(commentScan.visible) !== undefined ||
-        isNoLeadingPipeMechanismHeader(commentScan.visible) ||
-        ((accountabilityTableState === "delimiter" ||
-          accountabilityTableState === "rows") &&
-          isNoLeadingPipeTableRow(commentScan.visible))
-      ) {
-        fail(
-          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-          `${roadmapPath}:${index + 1}`,
-          "a multiline HTML comment cannot begin on an accountability table row",
-        );
-      }
-      if (accountabilityTableState === "rows") {
-        accountabilityTableState = "complete";
-      } else if (accountabilityTableState === "delimiter") {
-        accountabilityTableState = "searching";
-        candidateAccountabilityTableLocation = undefined;
-        candidateAccountabilityTableColumnCount = undefined;
-        candidateAccountabilityHeaderKind = undefined;
-        candidateAccountabilityTableHasLeadingPipe = undefined;
-        candidateAccountabilityTableInCanonicalSection = undefined;
-      }
-      inHtmlComment = true;
-      continue;
-    }
-    line = commentScan.visible;
-
-    if (isCanonicalAccountabilityHeading(line)) {
-      paragraphOpen = false;
-      const location = `${roadmapPath}:${index + 1}`;
-      if (foundAccountabilitySection) {
-        rejectDuplicateAccountabilityHeading(
-          location,
-          accountabilitySectionLocation,
-          undefined,
-        );
-      }
-      displayEquivalentAccountabilitySectionLocation ??= location;
-      continue;
-    }
-    if (
-      inAccountabilitySection &&
-      (isRoadmapPeerOrHigherAtxHeading(line) ||
-        (accountabilityTableState !== "rows" &&
-          isRoadmapSetextHeading(line, nextLine)))
-    ) {
-      paragraphOpen = false;
-      inAccountabilitySection = false;
-      accountabilityTableState = "searching";
-      candidateAccountabilityTableLocation = undefined;
-      candidateAccountabilityTableColumnCount = undefined;
-      candidateAccountabilityHeaderKind = undefined;
-      candidateAccountabilityTableHasLeadingPipe = undefined;
-      candidateAccountabilityTableInCanonicalSection = undefined;
-      continue;
-    }
-    if (
-      accountabilityTableState === "rows" &&
-      isNoLeadingPipeTableRow(line)
-    ) {
-      fail(
-        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        `${roadmapPath}:${index + 1}`,
-        'canonical table rows must begin with "|"',
-      );
-    }
-
-    const leadingPipeTableCells = markdownTableCells(line);
-    const noLeadingTableCells =
-      leadingPipeTableCells === undefined
-        ? noLeadingPipeTableCells(line)
-        : undefined;
-    const tableCells = leadingPipeTableCells ?? noLeadingTableCells;
-    const tableHasLeadingPipe = leadingPipeTableCells !== undefined;
-    const mechanism = tableCells?.[0];
-    const mechanismLocation = `${roadmapPath}:${index + 1}`;
-    let headerKind =
-      mechanism === undefined
-        ? undefined
-        : accountabilityHeaderKind(mechanism, mechanismLocation);
-    if (
-      headerKind === "canonical" &&
-      markdownTableCells(literalLine)?.[0] !== "Mechanism"
-    ) {
-      headerKind = "display-equivalent";
-    }
-    if (headerKind !== undefined && !tableHasLeadingPipe) {
-      headerKind = "no-leading";
-    }
-    if (accountabilityTableState === "searching") {
-      if (headerKind !== undefined) {
-        paragraphOpen = true;
-        accountabilityTableState = "delimiter";
-        candidateAccountabilityTableLocation = mechanismLocation;
-        candidateAccountabilityTableColumnCount = tableCells.length;
-        candidateAccountabilityHeaderKind = headerKind;
-        candidateAccountabilityTableHasLeadingPipe = tableHasLeadingPipe;
-        candidateAccountabilityTableInCanonicalSection =
-          inAccountabilitySection;
-      } else {
-        paragraphOpen = keepsMarkdownParagraphOpen(line, nextLine);
-      }
-      continue;
-    }
-    if (accountabilityTableState === "delimiter") {
-      const matchesCandidateDelimiter = (cells, hasLeadingPipe) =>
-        cells !== undefined &&
-        hasLeadingPipe === candidateAccountabilityTableHasLeadingPipe &&
-        cells.length === candidateAccountabilityTableColumnCount &&
-        cells.every((cell) => MARKDOWN_DELIMITER_CELL.test(cell));
-      const visibleDelimiterMatches = matchesCandidateDelimiter(
-        tableCells,
-        tableHasLeadingPipe,
-      );
-      const literalLeadingPipeTableCells = markdownTableCells(literalLine);
-      const literalTableCells =
-        literalLeadingPipeTableCells ??
-        noLeadingPipeTableCells(literalLine);
-      const literalDelimiterMatches = matchesCandidateDelimiter(
-        literalTableCells,
-        literalLeadingPipeTableCells !== undefined,
-      );
-      if (visibleDelimiterMatches && !literalDelimiterMatches) {
-        fail(
-          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-          mechanismLocation,
-          "accountability table delimiter must be valid in literal source",
-        );
-      }
-      if (visibleDelimiterMatches) {
-        paragraphOpen = false;
-        accountabilityTableState = "rows";
-        if (candidateAccountabilityHeaderKind === "canonical") {
-          accountabilityTableLocation ??=
-            candidateAccountabilityTableLocation;
-        }
-        candidateAccountabilityTableColumnCount = undefined;
-      } else {
-        paragraphOpen = keepsMarkdownParagraphOpen(line, nextLine);
-        accountabilityTableState = "searching";
-        candidateAccountabilityTableLocation = undefined;
-        candidateAccountabilityTableColumnCount = undefined;
-        candidateAccountabilityHeaderKind = undefined;
-        candidateAccountabilityTableHasLeadingPipe = undefined;
-        candidateAccountabilityTableInCanonicalSection = undefined;
-      }
-      continue;
-    }
-    if (accountabilityTableState === "complete") {
-      if (headerKind !== undefined) {
-        paragraphOpen = true;
-        accountabilityTableState = "delimiter";
-        candidateAccountabilityTableLocation = mechanismLocation;
-        candidateAccountabilityTableColumnCount = tableCells.length;
-        candidateAccountabilityHeaderKind = headerKind;
-        candidateAccountabilityTableHasLeadingPipe = tableHasLeadingPipe;
-        candidateAccountabilityTableInCanonicalSection =
-          inAccountabilitySection;
-      } else {
-        paragraphOpen = keepsMarkdownParagraphOpen(line, nextLine);
-      }
-      continue;
-    }
-    if (mechanism === undefined) {
-      paragraphOpen = keepsMarkdownParagraphOpen(line, nextLine);
-      accountabilityTableState = foundAccountabilityTable
-        ? "complete"
-        : "searching";
-      candidateAccountabilityTableLocation = undefined;
-      candidateAccountabilityTableColumnCount = undefined;
-      candidateAccountabilityHeaderKind = undefined;
-      candidateAccountabilityTableHasLeadingPipe = undefined;
-      candidateAccountabilityTableInCanonicalSection = undefined;
-      continue;
-    }
-
-    const location = `${roadmapPath}:${index + 1}`;
-    if (candidateAccountabilityHeaderKind === "unsupported") {
-      fail(
-        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        candidateAccountabilityTableLocation,
-        'accountability table header must use the plain-text cell "Mechanism"',
-      );
-    }
-    if (candidateAccountabilityHeaderKind === "no-leading") {
-      fail(
-        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        candidateAccountabilityTableLocation,
-        'canonical table rows must begin with "|"',
-      );
-    }
-    if (candidateAccountabilityHeaderKind === "display-equivalent") {
-      if (accountabilityTableLocation !== undefined) {
-        fail(
-          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
-          candidateAccountabilityTableLocation,
-          `canonical table already begins at ${accountabilityTableLocation}`,
-        );
-      }
-      fail(
-        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        candidateAccountabilityTableLocation,
-        'canonical table header must use the plain-text cell "Mechanism"',
-      );
-    }
-    if (mechanism === "Mechanism") {
-      paragraphOpen = false;
-      if (foundAccountabilityTable) {
-        fail(
-          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
-          location,
-          `canonical table already begins at ${accountabilityTableLocation}`,
-        );
-      }
-      accountabilityTableState = "delimiter";
-      candidateAccountabilityTableLocation = location;
-      candidateAccountabilityTableColumnCount = tableCells.length;
-      candidateAccountabilityHeaderKind = "canonical";
-      candidateAccountabilityTableHasLeadingPipe = true;
-      candidateAccountabilityTableInCanonicalSection =
-        inAccountabilitySection;
-      continue;
-    }
-    if (
-      accountabilityTableLocation !== undefined &&
-      candidateAccountabilityTableLocation !== accountabilityTableLocation
-    ) {
-      fail(
-        "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
-        candidateAccountabilityTableLocation,
-        `canonical table already begins at ${accountabilityTableLocation}`,
-      );
-    }
-    if (!candidateAccountabilityTableInCanonicalSection) {
-      paragraphOpen = false;
-      continue;
-    }
-    paragraphOpen = false;
-    const identity = canonicalMechanismIdentity(mechanism, location);
-    foundAccountabilityTable = true;
-    accountabilityTableLocation = candidateAccountabilityTableLocation;
-    const previous = mechanisms.get(identity);
-    if (previous !== undefined) {
-      fail(
-        "E_ROADMAP_DUPLICATE_MECHANISM",
-        location,
-        `architecture-accountability mechanism "${identity}" already appears at ${previous}`,
-      );
-    }
-    mechanisms.set(identity, location);
   }
 
-  if (!foundAccountabilitySection) {
+  if (canonicalHeadingIndexes.length === 0) {
     fail(
       "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
       roadmapPath,
       `expected canonical heading "${ACCOUNTABILITY_HEADING}"`,
     );
   }
+  if (renderedHeadings.length > 1) {
+    const [previous, duplicate] = renderedHeadings;
+    const previousLocation =
+      `${roadmapPath}:${previous.node.position.start.line}`;
+    const previousKind = previous.canonical
+      ? "canonical heading"
+      : "display-equivalent heading";
+    fail(
+      "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+      `${roadmapPath}:${duplicate.node.position.start.line}`,
+      `${previousKind} already appears at ${previousLocation}`,
+    );
+  }
+
+  const canonicalHeadingIndex = canonicalHeadingIndexes[0];
+  let sectionEndIndex = tree.children.length;
+  for (
+    let index = canonicalHeadingIndex + 1;
+    index < tree.children.length;
+    index += 1
+  ) {
+    const node = tree.children[index];
+    if (node.type === "heading" && node.depth <= 2) {
+      sectionEndIndex = index;
+      break;
+    }
+  }
+
+  let accountabilityTableLocation;
+  let foundAccountabilityTable = false;
+  const mechanisms = new Map();
+
+  for (const [index, node] of tree.children.entries()) {
+    const hiddenByComment = commentRanges.some(
+      (range) =>
+        range.start < node.position.start.offset &&
+        node.position.start.offset < range.end,
+    );
+    if (hiddenByComment || node.type !== "table") {
+      continue;
+    }
+    const headerKind = accountabilityHeaderKind(roadmap, lines, node);
+    if (headerKind === undefined) {
+      continue;
+    }
+
+    const location = `${roadmapPath}:${node.position.start.line}`;
+    const delimiter = sourceLine(
+      lines,
+      node.position.start.line + 1,
+    );
+    if (
+      headerKind !== "no-leading" &&
+      !isDelimiter(pipeCells(delimiter))
+    ) {
+      continue;
+    }
+    const complete = node.children.length > 1;
+    if (!complete) {
+      if (headerKind === "canonical") {
+        accountabilityTableLocation ??= location;
+      }
+      continue;
+    }
+    if (headerKind === "unsupported") {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        location,
+        'accountability table header must use the plain-text cell "Mechanism"',
+      );
+    }
+    if (headerKind === "no-leading") {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        location,
+        'canonical table rows must begin with "|"',
+      );
+    }
+    if (headerKind === "display-equivalent") {
+      if (accountabilityTableLocation !== undefined) {
+        fail(
+          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+          location,
+          `canonical table already begins at ${accountabilityTableLocation}`,
+        );
+      }
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        location,
+        'canonical table header must use the plain-text cell "Mechanism"',
+      );
+    }
+    if (accountabilityTableLocation !== undefined) {
+      fail(
+        "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+        location,
+        `canonical table already begins at ${accountabilityTableLocation}`,
+      );
+    }
+    accountabilityTableLocation = location;
+
+    if (
+      !tableIsInsideSection(
+        index,
+        canonicalHeadingIndex,
+        sectionEndIndex,
+      )
+    ) {
+      continue;
+    }
+
+    for (const row of node.children.slice(1)) {
+      const rowLine = sourceLine(lines, row.position.start.line);
+      const rowLocation = `${roadmapPath}:${row.position.start.line}`;
+      if (!/^ {0,3}\|/u.test(rowLine)) {
+        if (!hasStructuralPipe(rowLine)) {
+          continue;
+        }
+        fail(
+          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+          rowLocation,
+          'canonical table rows must begin with "|"',
+        );
+      }
+      if (
+        rowLine.includes("<!--") &&
+        !rowLine.slice(rowLine.indexOf("<!--") + 4).includes("-->")
+      ) {
+        fail(
+          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+          rowLocation,
+          "a multiline HTML comment cannot begin on an accountability table row",
+        );
+      }
+
+      const mechanismCell = row.children[0];
+      const identity = canonicalMechanismIdentity(
+        roadmap,
+        mechanismCell,
+        rowLocation,
+      );
+      const previous = mechanisms.get(identity);
+      if (previous !== undefined) {
+        fail(
+          "E_ROADMAP_DUPLICATE_MECHANISM",
+          rowLocation,
+          `architecture-accountability mechanism "${identity}" already appears at ${previous}`,
+        );
+      }
+      mechanisms.set(identity, rowLocation);
+      foundAccountabilityTable = true;
+    }
+  }
+
+  for (const range of commentRanges) {
+    if (range.closing === undefined) {
+      continue;
+    }
+    const closingLine = sourceLine(lines, range.endLine);
+    const closingLineStart =
+      roadmap.lastIndexOf("\n", range.closing - 1) + 1;
+    const closerColumn = range.closing - closingLineStart;
+    const visibleSuffix = closingLine.slice(closerColumn + 3);
+    const header = pipeCells(visibleSuffix);
+    const delimiter = pipeCells(sourceLine(lines, range.endLine + 1));
+    const data = pipeCells(sourceLine(lines, range.endLine + 2));
+    if (
+      header?.[0] !== "Mechanism" ||
+      !isDelimiter(delimiter) ||
+      data === undefined
+    ) {
+      continue;
+    }
+    const location = `${roadmapPath}:${range.endLine}`;
+    if (accountabilityTableLocation !== undefined) {
+      fail(
+        "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+        location,
+        `canonical table already begins at ${accountabilityTableLocation}`,
+      );
+    }
+    fail(
+      "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+      location,
+      "a canonical table cannot begin on an HTML-comment closing line",
+    );
+  }
+
   if (!foundAccountabilityTable) {
+    const headingLine =
+      tree.children[canonicalHeadingIndex].position.start.line;
+    const sectionEndLine =
+      tree.children[sectionEndIndex]?.position.start.line ??
+      lines.length + 1;
+    const corruptedLine = corruptedCanonicalTableLine(
+      lines,
+      headingLine + 1,
+      sectionEndLine,
+      commentRanges,
+    );
+    if (corruptedLine !== undefined) {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        `${roadmapPath}:${corruptedLine}`,
+        "accountability table header and delimiter must be valid in literal source",
+      );
+    }
     fail(
       "E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE",
       roadmapPath,
       'expected a table whose first header cell is "Mechanism"',
     );
   }
+  return tree;
 }
 
 export function parseRoadmapInventory(
   roadmap,
   { roadmapPath = "ROADMAP.md" } = {},
 ) {
-  validateArchitectureAccountability(roadmap, roadmapPath);
+  const tree = validateArchitectureAccountability(roadmap, roadmapPath);
   const inventory = new Map();
+  const markerNodes = [];
+  const stack = [tree];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (
+      node.type === "html" &&
+      PRIMARY_MARKER_CANDIDATE.test(node.value)
+    ) {
+      markerNodes.push(node);
+    }
+    if (Array.isArray(node.children)) {
+      stack.push(...node.children);
+    }
+  }
+  markerNodes.sort(
+    (left, right) =>
+      left.position.start.offset - right.position.start.offset,
+  );
 
-  for (const match of roadmap.matchAll(PRIMARY_MARKER)) {
+  for (const node of markerNodes) {
+    const match = node.value.match(PRIMARY_MARKER);
+    const location = `${roadmapPath}:${node.position.start.line}`;
+    if (match === null) {
+      fail(
+        "E_ROADMAP_INVALID_MARKER",
+        location,
+        "roadmap-primary comment must end at its HTML comment closer",
+      );
+    }
     const marker = match[1].trim();
-    const location = `${roadmapPath}:${lineNumber(roadmap, match.index)}`;
     const parsed = marker.match(VALID_MARKER);
     if (!parsed) {
       fail(
@@ -1206,133 +862,6 @@ export function validateRoadmapInventory({
   };
 }
 
-function parseArguments(argv) {
-  const options = {
-    roadmapPath: "ROADMAP.md",
-    issuePath: undefined,
-    live: false,
-    repo: process.env.GITHUB_REPOSITORY,
-    closingPr: undefined,
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    const optionValue = () => {
-      const value = argv[index + 1];
-      if (value === undefined || value.startsWith("--")) {
-        fail(
-          "E_ROADMAP_USAGE",
-          "arguments",
-          `${argument} requires a value`,
-        );
-      }
-      index += 1;
-      return value;
-    };
-    if (argument === "--live") {
-      options.live = true;
-    } else if (argument === "--roadmap") {
-      options.roadmapPath = optionValue();
-    } else if (argument === "--issues") {
-      options.issuePath = optionValue();
-    } else if (argument === "--repo") {
-      options.repo = optionValue();
-    } else if (argument === "--closing-pr") {
-      options.closingPr = optionValue();
-    } else {
-      fail(
-        "E_ROADMAP_USAGE",
-        "arguments",
-        `unknown or incomplete argument "${argument ?? ""}"`,
-      );
-    }
-  }
-
-  if (options.live && options.issuePath) {
-    fail(
-      "E_ROADMAP_USAGE",
-      "arguments",
-      "--live and --issues are mutually exclusive",
-    );
-  }
-  if (options.closingPr && !options.live) {
-    fail(
-      "E_ROADMAP_USAGE",
-      "arguments",
-      "--closing-pr requires --live",
-    );
-  }
-  if (options.live && !options.repo) {
-    fail(
-      "E_ROADMAP_USAGE",
-      "arguments",
-      "--live requires --repo OWNER/NAME or GITHUB_REPOSITORY",
-    );
-  }
-  if (
-    options.closingPr &&
-    !/^[1-9]\d*$/u.test(String(options.closingPr))
-  ) {
-    fail(
-      "E_ROADMAP_USAGE",
-      "arguments",
-      "--closing-pr requires a positive pull-request number",
-    );
-  }
-
-  return options;
-}
-
-function runGitHub(arguments_, description) {
-  try {
-    return execFileSync("gh", arguments_, {
-      encoding: "utf8",
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-      timeout: 30_000,
-      maxBuffer: 16 * 1024 * 1024,
-    });
-  } catch (error) {
-    const stderr = error?.stderr?.trim();
-    fail(
-      "E_ROADMAP_GITHUB",
-      description,
-      stderr || error?.message || "GitHub CLI command failed",
-    );
-  }
-}
-
-function parseJson(source, category, location) {
-  try {
-    return JSON.parse(source);
-  } catch (error) {
-    fail(category, location, `invalid JSON: ${error.message}`);
-  }
-}
-
-function loadLiveIssues(repo) {
-  const output = runGitHub(
-    [
-      "issue",
-      "list",
-      "--repo",
-      repo,
-      "--state",
-      "all",
-      "--limit",
-      "10000",
-      "--json",
-      "number,state,title,labels",
-    ],
-    `github:${repo}:issues`,
-  );
-  return parseJson(
-    output,
-    "E_ROADMAP_GITHUB",
-    `github:${repo}:issues`,
-  );
-}
-
 export function closingIssueNumbersForRepository(references, repo) {
   const normalizedRepository = repo.toLowerCase();
   return new Set(
@@ -1350,71 +879,12 @@ export function closingIssueNumbersForRepository(references, repo) {
   );
 }
 
-function loadClosingIssueNumbers(repo, pullRequest) {
-  if (!pullRequest) {
-    return new Set();
-  }
-  const output = runGitHub(
-    [
-      "pr",
-      "view",
-      String(pullRequest),
-      "--repo",
-      repo,
-      "--json",
-      "closingIssuesReferences",
-    ],
-    `github:${repo}:pulls/${pullRequest}`,
-  );
-  const parsed = parseJson(
-    output,
-    "E_ROADMAP_GITHUB",
-    `github:${repo}:pulls/${pullRequest}`,
-  );
-  return closingIssueNumbersForRepository(
-    parsed.closingIssuesReferences ?? [],
-    repo,
-  );
-}
-
-export function run(argv = process.argv.slice(2)) {
-  const options = parseArguments(argv);
-  const roadmapPath = resolve(options.roadmapPath);
-  const roadmap = readFileSync(roadmapPath, "utf8");
-
-  if (!options.live && !options.issuePath) {
-    const inventory = parseRoadmapInventory(roadmap, {
-      roadmapPath: options.roadmapPath,
-    });
-    process.stdout.write(
-      `check-roadmap-inventory: ${inventory.size} primary markers are structurally valid\n`,
-    );
-    return;
-  }
-
-  const issues = options.live
-    ? loadLiveIssues(options.repo)
-    : parseJson(
-        readFileSync(resolve(options.issuePath), "utf8"),
-        "E_ROADMAP_INVALID_ISSUE_SNAPSHOT",
-        options.issuePath,
-      );
-  const closingIssueNumbers = options.live
-    ? loadClosingIssueNumbers(options.repo, options.closingPr)
-    : new Set();
-  const result = validateRoadmapInventory({
-    roadmap,
-    issues,
-    roadmapPath: options.roadmapPath,
-    issuePath: options.live
-      ? `github:${options.repo}:issues`
-      : options.issuePath,
-    closingIssueNumbers,
-  });
-  process.stdout.write(
-    `check-roadmap-inventory: ${result.openSliceCount} open slices and ${result.primaryCount} primary markers agree\n`,
-  );
-}
+export const run = createRoadmapInventoryRun({
+  InventoryError,
+  closingIssueNumbersForRepository,
+  parseRoadmapInventory,
+  validateRoadmapInventory,
+});
 
 const isMain =
   process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
