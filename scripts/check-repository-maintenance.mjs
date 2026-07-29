@@ -234,13 +234,16 @@ function validateRepositoryProfile(profile, maintenanceReference) {
   const requiredReference = [
     "Issues and milestones are the delivery authority",
     "Discussions are not a supported intake channel",
+    REPOSITORY_HOMEPAGE,
     "No GitHub deployment environment exists",
+    `${REPOSITORY_OWNER} owns release execution`,
+    "rollback decisions",
     ...DEPLOYMENT_CREDENTIALS,
     ...DEPLOYMENT_EVIDENCE,
   ];
   const normalizedReference =
     typeof maintenanceReference === "string"
-      ? maintenanceReference.replace(/\s+/gu, " ")
+      ? maintenanceReference.replace(/`/gu, "").replace(/\s+/gu, " ")
       : maintenanceReference;
   if (
     typeof normalizedReference !== "string" ||

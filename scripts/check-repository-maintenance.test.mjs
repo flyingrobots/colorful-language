@@ -219,6 +219,7 @@ allow-git = []
       "https://github.com/flyingrobots/colorful-language#readme",
       "No GitHub deployment environment exists",
       "@flyingrobots owns release execution",
+      "rollback decisions",
       "CARGO_REGISTRY_TOKEN",
       "OVSX_PAT",
       "VSCE_PAT",
