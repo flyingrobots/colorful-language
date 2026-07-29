@@ -155,7 +155,8 @@ lives in `crates/colorful-parse/src/lib.rs`.
   integration test and dependency-tree gate. *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
   *Evidence:* `crates/colorful-parse/tests/feature_boundary.rs`
-  `markdown_feature_is_opt_in_and_drivers_enable_it`. *Status:* implemented.
+  `markdown_feature_is_opt_in`, plus the CLI and LSP
+  `tests/source_policy.rs` adapter opt-in tests. *Status:* implemented.
 
 ## Known gaps
 

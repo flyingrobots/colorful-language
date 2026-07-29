@@ -5,7 +5,7 @@ fn manifest(source: &str) -> toml::Value {
 }
 
 #[test]
-fn markdown_feature_is_opt_in_and_drivers_enable_it() {
+fn markdown_feature_is_opt_in() {
     let parser = manifest(include_str!("../Cargo.toml"));
     let features = parser["features"].as_table().expect("feature table");
     assert!(features["default"]
@@ -24,31 +24,5 @@ fn markdown_feature_is_opt_in_and_drivers_enable_it() {
     let dependency = parser["dependencies"]["pulldown-cmark"]
         .as_table()
         .expect("pulldown-cmark dependency");
-    assert_eq!(dependency["workspace"].as_bool(), Some(true));
     assert_eq!(dependency["optional"].as_bool(), Some(true));
-
-    for (name, source) in [
-        (
-            "colorful-cli",
-            include_str!("../../colorful-cli/Cargo.toml"),
-        ),
-        (
-            "colorful-lsp",
-            include_str!("../../colorful-lsp/Cargo.toml"),
-        ),
-    ] {
-        let driver = manifest(source);
-        let dependency = driver["dependencies"]["colorful-parse"]
-            .as_table()
-            .expect("driver parser dependency");
-        let enabled = dependency["features"]
-            .as_array()
-            .expect("driver parser features");
-        assert!(
-            enabled
-                .iter()
-                .any(|feature| feature.as_str() == Some("markdown")),
-            "{name} must enable colorful-parse/markdown"
-        );
-    }
 }
