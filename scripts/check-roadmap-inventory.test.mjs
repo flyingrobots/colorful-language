@@ -28,6 +28,7 @@ const issues = JSON.parse(
 );
 
 function expectCategory(category, mutation, options = {}) {
+  const { messagePattern, ...validationOptions } = options;
   assert.throws(
     () =>
       validateRoadmapInventory({
@@ -35,13 +36,16 @@ function expectCategory(category, mutation, options = {}) {
         issues,
         roadmapPath: "fixture/roadmap.md",
         issuePath: "fixture/issues.json",
-        ...options,
+        ...validationOptions,
       }),
     (error) => {
       assert.ok(error instanceof InventoryError);
       assert.equal(error.category, category);
       assert.match(error.message, /^E_ROADMAP_[A-Z_]+: /u);
       assert.match(error.message, /fixture\/(?:roadmap\.md|issues\.json)/u);
+      if (messagePattern !== undefined) {
+        assert.match(error.message, messagePattern);
+      }
       return true;
     },
   );
@@ -131,6 +135,10 @@ This section separates the duplicate from the canonical authority.
 | --- | --- |
 | Parser ports | Duplicated section. |
 `,
+    {
+      messagePattern:
+        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION: fixture\/roadmap\.md:\d+: canonical heading already appears at fixture\/roadmap\.md:21$/u,
+    },
   );
 });
 
@@ -173,6 +181,10 @@ test("rejects a second architecture-accountability mechanism table", () => {
 | --- | --- |
 | Parser ports | Duplicated table. |
 `,
+    {
+      messagePattern:
+        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture\/roadmap\.md:\d+: canonical table already begins at fixture\/roadmap\.md:23$/u,
+    },
   );
 });
 
