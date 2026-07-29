@@ -165,7 +165,7 @@ function canonicalMechanismIdentity(mechanism, location) {
     identity += character;
   }
 
-  const canonical = identity.replace(/\s+/gu, " ").trim();
+  const canonical = identity.replace(/\s+/gu, " ").trim().normalize("NFC");
   if (canonical.length === 0) {
     fail(
       "E_ROADMAP_EMPTY_MECHANISM",

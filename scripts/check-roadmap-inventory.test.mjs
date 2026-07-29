@@ -202,6 +202,20 @@ test("rejects a backslash before a non-punctuation mechanism character", () => {
   );
 });
 
+test("compares canonically equivalent Unicode mechanism identities", () => {
+  const composed = "Caf\u00e9";
+  const decomposed = "Cafe\u0301";
+  expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
+    source.replace(
+      "| Parser ports | Substitute deterministic adapters. |",
+      [
+        `| ${composed} | Composed identity. |`,
+        `| ${decomposed} | Decomposed identity. |`,
+      ].join("\n"),
+    ),
+  );
+});
+
 test("rejects a closed slice presented as active", () => {
   expectCategory("E_ROADMAP_CLOSED_ACTIVE", (source) =>
     source.replace(
