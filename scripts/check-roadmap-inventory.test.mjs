@@ -248,6 +248,10 @@ This section separates the duplicate from the canonical authority.
 });
 
 test("rejects closing hashes on a duplicate accountability heading", () => {
+  const canonicalHeadingLine =
+    roadmap
+      .split("\n")
+      .findIndex((line) => line === "## Architecture accountability") + 1;
   expectCategory(
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
     (source) => `${source}
@@ -258,10 +262,20 @@ test("rejects closing hashes on a duplicate accountability heading", () => {
 | --- | --- |
 | Closing-hash authority | Must not escape duplicate detection. |
 `,
+    {
+      messagePattern: new RegExp(
+        `^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION: fixture/roadmap\\.md:\\d+: canonical heading already appears at fixture/roadmap\\.md:${canonicalHeadingLine}$`,
+        "u",
+      ),
+    },
   );
 });
 
 test("rejects a closing-hash heading before the canonical authority", () => {
+  const displayEquivalentHeadingLine =
+    roadmap
+      .split("\n")
+      .findIndex((line) => line === "## Architecture accountability") + 1;
   expectCategory(
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
     (source) => `${source.replace(
@@ -275,6 +289,12 @@ test("rejects a closing-hash heading before the canonical authority", () => {
 | --- | --- |
 | Canonical authority | Must detect the earlier rendered equivalent. |
 `,
+    {
+      messagePattern: new RegExp(
+        `^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION: fixture/roadmap\\.md:\\d+: display-equivalent heading already appears at fixture/roadmap\\.md:${displayEquivalentHeadingLine}$`,
+        "u",
+      ),
+    },
   );
 });
 
