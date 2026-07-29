@@ -477,6 +477,27 @@ test("rejects unsupported Markdown in a duplicate table header", () => {
   );
 });
 
+test("requires a complete table before rejecting a styled header", () => {
+  for (const header of [
+    "| `Mechanism` | Current user job |",
+    "| **Mechanism** | Current user job |",
+  ]) {
+    assert.doesNotThrow(() =>
+      validateRoadmapInventory({
+        roadmap: `${roadmap}
+
+${header}
+
+This header-shaped line has no delimiter or data row.
+`,
+        issues,
+        roadmapPath: "fixture/roadmap.md",
+        issuePath: "fixture/issues.json",
+      }),
+    );
+  }
+});
+
 test("rejects a no-leading-pipe accountability table explicitly", () => {
   for (const header of [
     "Mechanism | Current user job",

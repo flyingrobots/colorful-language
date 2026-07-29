@@ -337,6 +337,18 @@ function displaysMechanismHeader(mechanism, location) {
   }
 }
 
+function accountabilityHeaderKind(mechanism, location) {
+  if (mechanism === "Mechanism") {
+    return "canonical";
+  }
+  if (UNSUPPORTED_STYLED_MECHANISM_HEADER.test(mechanism)) {
+    return "unsupported";
+  }
+  return displaysMechanismHeader(mechanism, location)
+    ? "display-equivalent"
+    : undefined;
+}
+
 function validateArchitectureAccountability(roadmap, roadmapPath) {
   const mechanisms = new Map();
   let inAccountabilitySection = false;
@@ -351,6 +363,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let accountabilityTableLocation;
   let candidateAccountabilityTableLocation;
   let candidateAccountabilityTableColumnCount;
+  let candidateAccountabilityHeaderKind;
 
   for (const [index, rawLine] of roadmap.split("\n").entries()) {
     let line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
@@ -381,6 +394,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         accountabilityTableState = "searching";
         candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
+        candidateAccountabilityHeaderKind = undefined;
       }
       continue;
     }
@@ -394,7 +408,9 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         accountabilityTableState = "complete";
       } else if (accountabilityTableState === "delimiter") {
         accountabilityTableState = "searching";
+        candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
+        candidateAccountabilityHeaderKind = undefined;
       }
       fenceCharacter = openingFence[1][0];
       fenceLength = openingFence[1].length;
@@ -465,7 +481,9 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         accountabilityTableState = "complete";
       } else if (accountabilityTableState === "delimiter") {
         accountabilityTableState = "searching";
+        candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
+        candidateAccountabilityHeaderKind = undefined;
       }
       inHtmlComment = true;
       continue;
@@ -499,6 +517,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       accountabilityTableState = "searching";
       candidateAccountabilityTableLocation = undefined;
       candidateAccountabilityTableColumnCount = undefined;
+      candidateAccountabilityHeaderKind = undefined;
       continue;
     }
     if (!inAccountabilitySection && !foundAccountabilityTable) {
@@ -525,39 +544,16 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     const tableCells = markdownTableCells(line);
     const mechanism = tableCells?.[0];
     const mechanismLocation = `${roadmapPath}:${index + 1}`;
-    if (
-      mechanism !== undefined &&
-      UNSUPPORTED_STYLED_MECHANISM_HEADER.test(mechanism)
-    ) {
-      fail(
-        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        mechanismLocation,
-        'accountability table header must use the plain-text cell "Mechanism"',
-      );
-    }
-    if (
-      mechanism !== undefined &&
-      mechanism !== "Mechanism" &&
-      displaysMechanismHeader(mechanism, mechanismLocation)
-    ) {
-      if (foundAccountabilityTable) {
-        fail(
-          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
-          mechanismLocation,
-          `canonical table already begins at ${accountabilityTableLocation}`,
-        );
-      }
-      fail(
-        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        mechanismLocation,
-        'canonical table header must use the plain-text cell "Mechanism"',
-      );
-    }
+    const headerKind =
+      mechanism === undefined
+        ? undefined
+        : accountabilityHeaderKind(mechanism, mechanismLocation);
     if (accountabilityTableState === "searching") {
-      if (mechanism === "Mechanism") {
+      if (headerKind !== undefined) {
         accountabilityTableState = "delimiter";
-        candidateAccountabilityTableLocation = `${roadmapPath}:${index + 1}`;
+        candidateAccountabilityTableLocation = mechanismLocation;
         candidateAccountabilityTableColumnCount = tableCells.length;
+        candidateAccountabilityHeaderKind = headerKind;
       }
       continue;
     }
@@ -568,21 +564,25 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         tableCells.every((cell) => MARKDOWN_DELIMITER_CELL.test(cell))
       ) {
         accountabilityTableState = "rows";
-        accountabilityTableLocation ??=
-          candidateAccountabilityTableLocation;
+        if (candidateAccountabilityHeaderKind === "canonical") {
+          accountabilityTableLocation ??=
+            candidateAccountabilityTableLocation;
+        }
         candidateAccountabilityTableColumnCount = undefined;
       } else {
         accountabilityTableState = "searching";
         candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
+        candidateAccountabilityHeaderKind = undefined;
       }
       continue;
     }
     if (accountabilityTableState === "complete") {
-      if (mechanism === "Mechanism") {
+      if (headerKind !== undefined) {
         accountabilityTableState = "delimiter";
-        candidateAccountabilityTableLocation = `${roadmapPath}:${index + 1}`;
+        candidateAccountabilityTableLocation = mechanismLocation;
         candidateAccountabilityTableColumnCount = tableCells.length;
+        candidateAccountabilityHeaderKind = headerKind;
       }
       continue;
     }
@@ -590,11 +590,34 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       accountabilityTableState = foundAccountabilityTable
         ? "complete"
         : "searching";
+      candidateAccountabilityTableLocation = undefined;
       candidateAccountabilityTableColumnCount = undefined;
+      candidateAccountabilityHeaderKind = undefined;
       continue;
     }
 
     const location = `${roadmapPath}:${index + 1}`;
+    if (candidateAccountabilityHeaderKind === "unsupported") {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        candidateAccountabilityTableLocation,
+        'accountability table header must use the plain-text cell "Mechanism"',
+      );
+    }
+    if (candidateAccountabilityHeaderKind === "display-equivalent") {
+      if (accountabilityTableLocation !== undefined) {
+        fail(
+          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+          candidateAccountabilityTableLocation,
+          `canonical table already begins at ${accountabilityTableLocation}`,
+        );
+      }
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        candidateAccountabilityTableLocation,
+        'canonical table header must use the plain-text cell "Mechanism"',
+      );
+    }
     if (mechanism === "Mechanism") {
       if (foundAccountabilityTable) {
         fail(
@@ -606,6 +629,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       accountabilityTableState = "delimiter";
       candidateAccountabilityTableLocation = location;
       candidateAccountabilityTableColumnCount = tableCells.length;
+      candidateAccountabilityHeaderKind = "canonical";
       continue;
     }
     const identity = canonicalMechanismIdentity(mechanism, location);
