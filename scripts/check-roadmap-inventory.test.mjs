@@ -183,6 +183,15 @@ test("rejects noncanonical mechanism-cell Markdown", () => {
   );
 });
 
+test("rejects an empty architecture-accountability mechanism", () => {
+  expectCategory("E_ROADMAP_EMPTY_MECHANISM", (source) =>
+    source.replace(
+      "| Parser ports | Substitute deterministic adapters. |",
+      "|  | Unnamed decisions are not accountable. |",
+    ),
+  );
+});
+
 test("rejects a closed slice presented as active", () => {
   expectCategory("E_ROADMAP_CLOSED_ACTIVE", (source) =>
     source.replace(

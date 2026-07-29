@@ -148,7 +148,15 @@ function canonicalMechanismIdentity(mechanism, location) {
     identity += character;
   }
 
-  return identity.replace(/\s+/gu, " ").trim();
+  const canonical = identity.replace(/\s+/gu, " ").trim();
+  if (canonical.length === 0) {
+    fail(
+      "E_ROADMAP_EMPTY_MECHANISM",
+      location,
+      "mechanism cell must identify an architecture decision",
+    );
+  }
+  return canonical;
 }
 
 function validateArchitectureAccountability(roadmap, roadmapPath) {
