@@ -1,7 +1,8 @@
 # Evidence-toolchain test plan
 
-Verification for deterministic Rust, Node, and TypeScript evidence toolchains,
-an explicitly separate MSRV policy, and advisory forward-compatibility lanes.
+Verification for deterministic Rust, Node, TypeScript, and release-only Ruby
+evidence toolchains, an explicitly separate MSRV policy, and advisory
+forward-compatibility lanes.
 
 Canonical issues:
 [#147](https://github.com/flyingrobots/colorful-language/issues/147) and
@@ -41,6 +42,9 @@ bounded property/fuzz evidence tracked by
 - **ETC-10** Property tests and fuzz targets must pin their dependency/tool
   versions, seeds, commands, and correctness-CI limits; time-based fuzzing stays
   an explicit maintainer action outside the deterministic merge gate.
+- **ETC-11** Release-only Homebrew formula syntax evidence must select one exact
+  Ruby release through a full-SHA-pinned setup action, and deterministic policy
+  evidence must reject action, version, or input drift.
 
 ## Cases
 
@@ -132,3 +136,16 @@ bounded property/fuzz evidence tracked by
   `scripts/release-prep.sh`; the evidence-toolchain reference. *Tracking:*
   [#134](https://github.com/flyingrobots/colorful-language/issues/134).
   *Status:* implemented.
+- **ETC-9a** — *Requirement:* ETC-11. *Behavior:* the release job installs one
+  reviewed Ruby release through one exact `ruby/setup-ruby` commit before
+  parsing the generated Homebrew formula. *Oracle:* repository-snapshot
+  evidence and policy mutations reject a missing setup step, a different
+  action commit, any Ruby-version drift, or extra setup inputs. *Evidence type:*
+  release workflow, deterministic policy checker, and mutation test.
+  *Tracking:*
+  [#251](https://github.com/flyingrobots/colorful-language/issues/251).
+  *Evidence:* `.github/workflows/release.yml`,
+  `scripts/check-release-distribution.mjs`, and
+  `scripts/check-release-distribution.test.mjs`
+  `pins the Homebrew syntax parser to the reviewed Ruby release` and
+  `rejects Homebrew syntax parser runtime drift`. *Status:* implemented.

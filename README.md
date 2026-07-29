@@ -286,6 +286,10 @@ Apple Silicon and Windows x86-64 archives on the next deliberate release; those
 are not install paths until public assets exist. Use Cargo or build from source
 on macOS, Windows, and other Linux targets today.
 
+That workflow also derives an attested `colorful.rb` formula asset from the
+verified Linux x86-64 and Apple Silicon archives. No public Homebrew tap exists
+yet, so Homebrew is not a current installation path.
+
 **From git** (latest `main`):
 
 ```bash

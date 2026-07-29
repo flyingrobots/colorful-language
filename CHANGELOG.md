@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Verified Homebrew formula release asset.** Tagged releases now derive one
+  deterministic `colorful.rb` from the already-built Linux x86-64 and Apple
+  Silicon archives, require canonical SHA-256 sidecars, stream the archive bytes
+  to reject missing or mismatched inputs, syntax-check the formula, and attest
+  it with the editor artifacts. Formula syntax evidence runs on exact Ruby
+  3.4.10 through a full-SHA-pinned setup action rather than the runner's ambient
+  runtime. The formula installs the synchronized `colorful` and `colorful-lsp`
+  binaries without inventing a server CLI version flag. CI, release
+  preparation, and tag admission run the same generator and workflow-policy
+  mutations. No public tap or `brew install` claim exists yet; #37 retains
+  publication, clean-machine upgrade, and rollback proof.
 - **Governed repository public posture.** A versioned repository profile now
   keeps Issues and milestones as the delivery authority, points the public
   homepage at the maintained README, and prevents unowned Discussion categories

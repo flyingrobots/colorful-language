@@ -4,10 +4,13 @@ import { test } from "node:test";
 import {
   CHECK_COMMAND,
   EXPECTED_EDITOR_POLICY,
+  EXPECTED_FORMULA_RUBY,
+  EXPECTED_HOMEBREW_POLICY,
   EXPECTED_OWNER,
   EXPECTED_PLATFORMS,
   EXPECTED_PROVENANCE,
   EXPECTED_PUBLISHER_TOOLS,
+  HOMEBREW_SELF_TEST_COMMAND,
   PUBLICATION_SELF_TEST_COMMAND,
   loadRepositorySnapshot,
   validateReleaseDistribution,
@@ -18,6 +21,7 @@ const ADMISSION_COMMANDS = Object.freeze([
   "bash scripts/release-profile-check.sh",
   "node scripts/check-editor-version-policy.mjs",
   CHECK_COMMAND,
+  HOMEBREW_SELF_TEST_COMMAND,
   "cargo fmt --all -- --check",
   "cargo clippy --locked --all-targets --all-features -- -D warnings",
   "cargo test --all --locked",
@@ -35,6 +39,7 @@ function validSnapshot() {
       provenance: EXPECTED_PROVENANCE,
       binaries: structuredClone(EXPECTED_PLATFORMS),
       editors: structuredClone(EXPECTED_EDITOR_POLICY),
+      homebrew: structuredClone(EXPECTED_HOMEBREW_POLICY),
     },
     publisherTools: structuredClone(EXPECTED_PUBLISHER_TOOLS),
     repositoryLicense: "license\n",
@@ -128,6 +133,10 @@ function validSnapshot() {
           },
           steps: [
             {
+              name: "Set up formula syntax Ruby",
+              ...structuredClone(EXPECTED_FORMULA_RUBY),
+            },
+            {
               name: "Download native archives",
               uses: `actions/download-artifact@${ACTION_SHA}`,
               with: {
@@ -137,6 +146,16 @@ function validSnapshot() {
               },
             },
             {
+              name: "Generate Homebrew formula",
+              run:
+                "set -euo pipefail\n" +
+                'version="${GITHUB_REF_NAME#v}"\n' +
+                "node scripts/generate-homebrew-formula.mjs " +
+                '--version "$version" --dist-dir dist ' +
+                "> dist/colorful.rb\n" +
+                "ruby -c dist/colorful.rb\n",
+            },
+            {
               name: "Build and smoke editor packages",
               run:
                 "npm --prefix editors/vscode run smoke:package\n" +
@@ -144,11 +163,13 @@ function validSnapshot() {
                 "target/editor-smoke/zed-source\n",
             },
             {
-              name: "Attest editor artifacts",
+              name: "Attest Homebrew and editor artifacts",
               uses: `actions/attest@${ACTION_SHA}`,
               with: {
                 "subject-path":
-                "target/editor-smoke/*.vsix\ndist/*zed-source.tar.gz",
+                "target/editor-smoke/*.vsix\n" +
+                "dist/*zed-source.tar.gz\n" +
+                "dist/colorful.rb",
               },
             },
             {
@@ -189,13 +210,23 @@ function validSnapshot() {
     gates: {
       ci: {
         jobs: {
-          policy: { steps: [{ run: CHECK_COMMAND }] },
+          policy: {
+            steps: [
+              { run: CHECK_COMMAND },
+              { run: HOMEBREW_SELF_TEST_COMMAND },
+            ],
+          },
         },
       },
-      releasePrep: `${CHECK_COMMAND}\n`,
+      releasePrep: `${CHECK_COMMAND}\n${HOMEBREW_SELF_TEST_COMMAND}\n`,
       release: {
         jobs: {
-          policy: { steps: [{ run: CHECK_COMMAND }] },
+          policy: {
+            steps: [
+              { run: CHECK_COMMAND },
+              { run: HOMEBREW_SELF_TEST_COMMAND },
+            ],
+          },
         },
       },
     },
@@ -240,8 +271,53 @@ test("accepts the complete native and editor distribution contract", () => {
   assert.deepEqual(validateReleaseDistribution(validSnapshot()), {
     owner: EXPECTED_OWNER,
     platformCount: 3,
+    homebrewPlatformCount: 2,
     editorRegistryCount: 3,
   });
+});
+
+test("pins the Homebrew syntax parser to the reviewed Ruby release", () => {
+  const setup = releaseStep(
+    loadRepositorySnapshot(),
+    "Set up formula syntax Ruby",
+  );
+
+  assert.deepEqual(
+    {
+      uses: setup?.uses,
+      version: setup?.with?.["ruby-version"],
+    },
+    {
+      uses:
+        "ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b",
+      version: "3.4.10",
+    },
+  );
+});
+
+test("rejects Homebrew syntax parser runtime drift", () => {
+  for (const mutate of [
+    (setup) => {
+      setup.uses = "ruby/setup-ruby@v1";
+    },
+    (setup) => {
+      setup.uses =
+        "ruby/setup-ruby@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    },
+    (setup) => {
+      setup.with["ruby-version"] = "3.3.10";
+    },
+    (setup) => {
+      setup.with["bundler-cache"] = true;
+    },
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(releaseStep(snapshot, "Set up formula syntax Ruby"));
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /must use the reviewed formula syntax Ruby setup/u,
+    );
+  }
 });
 
 test("isolates each editor registry credential to its publisher step", () => {
@@ -279,6 +355,31 @@ test("rejects every platform inventory mutation", () => {
     assert.throws(
       () => validateReleaseDistribution(snapshot),
       /reviewed platform list/u,
+    );
+  }
+});
+
+test("rejects every Homebrew policy mutation", () => {
+  for (const mutate of [
+    (policy) => {
+      policy.formula = "dist/other.rb";
+    },
+    (policy) => policy.binaries.reverse(),
+    (policy) => {
+      policy.platforms[0].target = "aarch64-unknown-linux-gnu";
+    },
+    (policy) => {
+      policy.publication.authority = "external-tap";
+    },
+    (policy) => {
+      policy.publication.tracking_issue = 251;
+    },
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(snapshot.policy.homebrew);
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /Homebrew distribution policy has drifted/u,
     );
   }
 });
@@ -370,10 +471,11 @@ test("binds native dispatch and release side effects to the reviewed topology", 
   );
 
   const reviewedOrder = [
-    "Check release distribution policy",
+    "Set up formula syntax Ruby",
     "Download native archives",
+    "Generate Homebrew formula",
     "Build and smoke editor packages",
-    "Attest editor artifacts",
+    "Attest Homebrew and editor artifacts",
     "Verify and publish VS Marketplace extension",
     "Verify and publish Open VSX extension",
     "Verify published editor bytes",
@@ -386,9 +488,19 @@ test("binds native dispatch and release side effects to the reviewed topology", 
     const earlierIndex = steps.findIndex(
       (step) => step.name === reviewedOrder[index],
     );
+    assert.notEqual(
+      earlierIndex,
+      -1,
+      `${reviewedOrder[index]} must exist in the release job`,
+    );
     const [earlier] = steps.splice(earlierIndex, 1);
     const laterIndex = steps.findIndex(
       (step) => step.name === reviewedOrder[index + 1],
+    );
+    assert.notEqual(
+      laterIndex,
+      -1,
+      `${reviewedOrder[index + 1]} must exist in the release job`,
     );
     steps.splice(laterIndex + 1, 0, earlier);
     assert.throws(
@@ -451,6 +563,123 @@ test("rejects native artifact paths that can omit release assets", () => {
     () => validateReleaseDistribution(redirectedDownload),
     /download native archives into dist/u,
   );
+});
+
+test("derives and attests Homebrew formulae from downloaded native assets", () => {
+  for (const [mutation, expected] of [
+    ["missing-step", /exactly one 'Generate Homebrew formula' step/u],
+    ["wrong-dist", /exact reviewed command sequence/u],
+    ["rebuild", /exact reviewed command sequence/u],
+    ["before-download", /must preserve the reviewed release step order/u],
+    [
+      "unattested",
+      /must attest the formula, VSIX, and Zed source archive/u,
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    const steps = snapshot.workflow.jobs.release.steps;
+    const formulaIndex = steps.findIndex(
+      (step) => step.name === "Generate Homebrew formula",
+    );
+    if (mutation === "missing-step") {
+      steps.splice(formulaIndex, 1);
+    } else if (mutation === "wrong-dist") {
+      steps[formulaIndex].run = steps[formulaIndex].run.replace(
+        "--dist-dir dist",
+        "--dist-dir elsewhere",
+      );
+    } else if (mutation === "rebuild") {
+      steps[formulaIndex].run += "\ncargo build --release";
+    } else if (mutation === "before-download") {
+      const [formula] = steps.splice(formulaIndex, 1);
+      const downloadIndex = steps.findIndex(
+        (step) => step.name === "Download native archives",
+      );
+      steps.splice(downloadIndex, 0, formula);
+    } else {
+      const attest = releaseStep(
+        snapshot,
+        "Attest Homebrew and editor artifacts",
+      );
+      attest.with["subject-path"] = attest.with["subject-path"].replace(
+        "\ndist/colorful.rb",
+        "",
+      );
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${mutation} mutation must reach its specific invariant`,
+    );
+  }
+});
+
+test("rejects Homebrew command and attestation prefix bypasses", () => {
+  for (const [mutation, expected] of [
+    ["dist-prefix", /exact reviewed command sequence/u],
+    ["output-suffix", /exact reviewed command sequence/u],
+    ["duplicate-command", /exact reviewed command sequence/u],
+    [
+      "attestation-suffix",
+      /must attest the formula, VSIX, and Zed source archive/u,
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    const formula = releaseStep(snapshot, "Generate Homebrew formula");
+    if (mutation === "dist-prefix") {
+      formula.run = formula.run.replace(
+        "--dist-dir dist",
+        "--dist-dir dist-evil",
+      );
+    } else if (mutation === "output-suffix") {
+      formula.run = formula.run.replace(
+        "> dist/colorful.rb",
+        "> dist/colorful.rb.evil",
+      );
+    } else if (mutation === "duplicate-command") {
+      formula.run +=
+        "\nnode scripts/generate-homebrew-formula.mjs " +
+        '--version "$version" --dist-dir dist > dist/colorful.rb\n';
+    } else {
+      const attest = releaseStep(
+        snapshot,
+        "Attest Homebrew and editor artifacts",
+      );
+      attest.with["subject-path"] = attest.with["subject-path"].replace(
+        "dist/colorful.rb",
+        "dist/colorful.rb.evil",
+      );
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${mutation} must not satisfy the exact release policy`,
+    );
+  }
+});
+
+test("rejects non-Cargo replacement of Homebrew formula inputs", () => {
+  for (const [mutation, command] of [
+    [
+      "archive-replacement",
+      "printf tampered > " +
+        "dist/colorful-language-v0.4.0-x86_64-unknown-linux-gnu.tar.gz",
+    ],
+    [
+      "sidecar-replacement",
+      "printf tampered > " +
+        "dist/colorful-language-v0.4.0-x86_64-unknown-linux-gnu.tar.gz.sha256",
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    const formula = releaseStep(snapshot, "Generate Homebrew formula");
+    formula.run += `\n${command}`;
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /exact reviewed command sequence/u,
+      `${mutation} must not alter downloaded Homebrew inputs`,
+    );
+  }
 });
 
 test("requires publisher credential verification before crates", () => {
@@ -566,6 +795,25 @@ test("requires deterministic publication verification in local and hosted gates"
   }
 });
 
+test("requires Homebrew generator evidence in every release gate", () => {
+  for (const gate of ["ci", "release", "releasePrep"]) {
+    const snapshot = validSnapshot();
+    if (gate === "releasePrep") {
+      snapshot.gates[gate] = CHECK_COMMAND;
+    } else {
+      snapshot.gates[gate] = {
+        jobs: {
+          policy: { steps: [{ run: CHECK_COMMAND }] },
+        },
+      };
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      new RegExp(`${gate} must run ${HOMEBREW_SELF_TEST_COMMAND}`, "u"),
+    );
+  }
+});
+
 test("finds hosted gates through parsed workflow steps", () => {
   const snapshot = validSnapshot();
   snapshot.gates.ci = {
@@ -575,6 +823,12 @@ test("finds hosted gates through parsed workflow steps", () => {
           {
             name: "Check release distribution policy",
             run: `${CHECK_COMMAND} # required policy gate\n`,
+          },
+          {
+            name: "Self-test Homebrew formula generation",
+            run:
+              `${HOMEBREW_SELF_TEST_COMMAND} ` +
+              "# deterministic self-test\n",
           },
         ],
       },
@@ -694,6 +948,7 @@ test("the checked-in repository satisfies the distribution policy", () => {
   assert.deepEqual(validateReleaseDistribution(loadRepositorySnapshot()), {
     owner: EXPECTED_OWNER,
     platformCount: 3,
+    homebrewPlatformCount: 2,
     editorRegistryCount: 3,
   });
 });

@@ -76,7 +76,8 @@ that passed release prep.
 | `CHANGELOG.md` | Historical ledger of externally meaningful change. |
 | Git tag `vX.Y.Z` | Immutable public source anchor. |
 | GitHub Release | Public release surface for checksummed native archives, the exact smoke-tested VSIX, and Zed registry source. |
-| GitHub attestations | Sigstore-backed provenance for every native archive, the VSIX, and the Zed source archive. |
+| Homebrew formula | Attested GitHub Release asset derived from the exact Linux x86-64 and Apple Silicon archives; not a public tap claim. |
+| GitHub attestations | Sigstore-backed provenance for every native archive, the Homebrew formula, the VSIX, and the Zed source archive. |
 | Editor registry records | Public VS Code Marketplace, Open VSX, and Zed extension entries for the synchronized version. |
 | Retrospective | Plan-versus-actual record, fallout issues, next recommendation. |
 
@@ -144,7 +145,9 @@ publishes those exact VSIX bytes to both editor registries, publishes crates,
 and creates the GitHub Release. The workflow also packages and attests the
 exact Zed registry-source tree; submission to
 `zed-industries/extensions` remains a maintainer pull request because that
-registry owns publication.
+registry owns publication. The workflow derives and attests `colorful.rb` from
+the verified native archives; public tap publication remains a separate
+maintainer-owned channel.
 
 ### verified
 
@@ -336,6 +339,9 @@ That script runs:
 - release profile check, including `Cargo.lock` workspace crate versions;
 - synchronized editor/server compatibility and gate wiring;
 - signed native/editor distribution policy and mutation self-tests;
+- Homebrew formula generation, archive-integrity, and release-order self-tests;
+- policy enforcement that the tag workflow performs formula-syntax evidence
+  with Ruby 3.4.10 through the full-SHA-pinned `ruby/setup-ruby` action;
 - Rust format, clippy, and tests;
 - package witness;
 - release build;
@@ -489,6 +495,21 @@ Each job packages both binaries with `README.md`, `LICENSE`, `NOTICE`, and
 provenance for the archive. The release job downloads those exact archives
 instead of rebuilding them for the GitHub Release.
 
+After download, the release job runs
+`scripts/generate-homebrew-formula.mjs` against the Linux x86-64 and Apple
+Silicon archives. The generator requires canonical archive and sidecar names,
+streams both archives to verify their SHA-256 values, emits deterministic
+`colorful.rb` bytes, and checks syntax with workflow-pinned Ruby 3.4.10. The
+formula installs `colorful` and `colorful-lsp` together, tests
+`colorful --version`, and checks that the server is executable without
+inventing a `colorful-lsp --version` interface. The workflow attests the
+formula and attaches it to the GitHub Release.
+
+The generated formula is not a public tap. `.continuum/release.yml` records the
+current authority as a GitHub Release asset and leaves the tap unset. Issue #37
+owns any future tap, clean-machine `brew install`, upgrade, and rollback proof;
+do not add a Homebrew install claim until that public evidence exists.
+
 The release job runs the packaged editor smoke once. That smoke builds,
 clean-installs, and exercises one exact VSIX, then stages and compiles the Zed
 registry source. The workflow publishes the smoke witness's VSIX bytes to VS
@@ -560,6 +581,8 @@ shasum -a 256 -c ./*.sha256
 for artifact in colorful-language-vX.Y.Z-*.tar.gz colorful-language-X.Y.Z.vsix; do
   gh attestation verify "$artifact" --repo flyingrobots/colorful-language
 done
+ruby -c colorful.rb
+gh attestation verify colorful.rb --repo flyingrobots/colorful-language
 node scripts/verify-editor-publication.mjs \
   --vsix colorful-language-X.Y.Z.vsix \
   --version X.Y.Z
@@ -576,13 +599,15 @@ gh api repos/zed-industries/extensions/contents/extensions/colorful-language
 ```
 
 Download every release archive and its sidecar, recompute SHA-256, and run
-`colorful --version` plus `colorful-lsp --version` on the matching clean
-Linux, macOS, or Windows host. Download the release VSIX, verify its attestation,
-install it into an isolated VS Code profile, and rerun the packaged Plain Text,
-Markdown, diagnostics, semantic-token, incremental-edit, shutdown, and
-missing-server oracles. Zed is verified only after the external registry entry
-resolves and a clean Zed profile activates the synchronized extension/server
-pair.
+`colorful --version` on the matching clean Linux, macOS, or Windows host.
+Verify the LSP version through `initialize` response `serverInfo.version`; the
+server does not expose a CLI version flag. Syntax-check and attest
+`colorful.rb`, but do not record a Homebrew install result until a public
+channel exists. Download the release VSIX, verify its attestation, install it
+into an isolated VS Code profile, and rerun the packaged Plain Text, Markdown,
+diagnostics, semantic-token, incremental-edit, shutdown, and missing-server
+oracles. Zed is verified only after the external registry entry resolves and a
+clean Zed profile activates the synchronized extension/server pair.
 
 The packaged editor witness records an
 `installation-to-first-highlight` measurement from immediately before isolated
@@ -629,6 +654,9 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
   Do not retarget the external submodule to unreviewed or moving source.
 - **GitHub Release failed:** Do not move the tag. Rerun release creation or fix
   the workflow for the same tag.
+- **Homebrew formula generation failed:** Do not publish an unverified formula
+  or regenerate it from different bytes. Repair the generator or native
+  artifact set on `main` and patch forward; no tap currently needs rollback.
 - **Published artifact is bad:** Do not move the tag. Cut a patch release from
   `main`; yank only when safe and appropriate.
 - **Wrong commit tagged locally:** if the tag has not left the machine, fix it

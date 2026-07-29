@@ -20,6 +20,9 @@ Verification for install paths and published artifacts.
 - **DIST-7** Published editor and server artifacts must have public registry or
   release URLs, integrity evidence, clean-machine installation evidence, and
   rollback instructions.
+- **DIST-8** The repository-controlled Homebrew formula must be generated from
+  exact reviewed native-archive identities, install the synchronized CLI and
+  LSP binaries together, and fail closed before public tap publication.
 
 ## Cases
 
@@ -82,6 +85,34 @@ Verification for install paths and published artifacts.
   release-matrix witness and clean-machine process tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.
+- **DIST-8a** — *Requirement:* DIST-8. *Behavior:* an exact release version,
+  Linux x86-64 and Apple Silicon archive URLs, and their SHA-256 sidecars
+  deterministically produce one Homebrew formula that installs `colorful` and
+  `colorful-lsp`; malformed versions, checksums, missing platforms, and archive
+  name drift fail before formula output. The formula tests the supported
+  `colorful --version` contract and executable presence for `colorful-lsp`
+  without inventing a server version flag. *Oracle:* fixed inputs produce exact
+  formula bytes; one mutation per refused input produces a stable error
+  category; workflow-order evidence proves formula generation consumes the
+  already-built native artifacts rather than rebuilding them. *Evidence type:*
+  deterministic generator, archive-integrity, and release-policy mutation
+  tests. *Tracking:*
+  [#251](https://github.com/flyingrobots/colorful-language/issues/251).
+  *Evidence:* `scripts/generate-homebrew-formula.mjs`;
+  `scripts/generate-homebrew-formula.test.mjs`
+  `renders exact synchronized Homebrew formula bytes`,
+  `rejects missing native archives even when a sidecar exists`,
+  `distinguishes unreadable sidecars from missing sidecars`,
+  `rejects native bytes that do not match their sidecar`,
+  `reports invalid release inputs in fixed platform order`, and
+  `the CLI emits the verified formula on stdout only`;
+  `scripts/check-release-distribution.test.mjs`
+  `rejects every Homebrew policy mutation` and
+  `derives and attests Homebrew formulae from downloaded native assets`;
+  `.github/workflows/release.yml`; `.github/workflows/ci.yml`;
+  `scripts/release-prep.sh`. *Status:* implemented for generation, syntax, and
+  release attachment; public tap audit/install/upgrade/rollback evidence
+  remains planned in DIST-6a.
 
 ## Open verification gaps
 

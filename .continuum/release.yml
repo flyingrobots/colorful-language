@@ -127,9 +127,29 @@ publish:
       platform: editor
       contents:
         - target/editor-smoke/zed-source
+    - name: homebrew-formula
+      platform: package-recipe
+      contents:
+        - dist/colorful.rb
 distribution:
   owner: "@flyingrobots"
   provenance: github-sigstore
+  homebrew:
+    formula: dist/colorful.rb
+    binaries:
+      - colorful
+      - colorful-lsp
+    platforms:
+      - os: linux
+        arch: x86_64
+        target: x86_64-unknown-linux-gnu
+      - os: macos
+        arch: arm64
+        target: aarch64-apple-darwin
+    publication:
+      authority: github-release-asset
+      tap: null
+      tracking_issue: 37
   binaries:
     - runner: ubuntu-24.04
       target: x86_64-unknown-linux-gnu

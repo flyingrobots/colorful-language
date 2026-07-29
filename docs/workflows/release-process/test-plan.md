@@ -33,6 +33,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-15** Distribution verification and rollback must name an owner, public
   URL and integrity oracle for every channel; observational startup timing must
   remain separate from deterministic correctness gates.
+- **REL-16** Homebrew formula generation must consume the reviewed native
+  archives and checksums after they are built, without rebuilding or
+  repackaging release binaries.
 
 ## Cases
 
@@ -227,6 +230,30 @@ Verification for release preparation, tag automation, and release witnesses.
   `verifies checksums and provenance for the complete release matrix`.
   *Status:* implemented in the runbook and package witness; public rollback
   rehearsal remains planned.
+- **REL-16a** — *Requirement:* REL-16. *Behavior:* after the release job
+  downloads the native archive and checksum set, the generator verifies the
+  Linux x86-64 and Apple Silicon formula inputs and derives one deterministic
+  Homebrew formula, subjects it to release policy and the workflow-pinned Ruby
+  syntax check, and attaches it to the same immutable GitHub Release. The
+  formula installs the CLI and LSP from those archives; public tap publication
+  and clean-machine rollback proof remain separate authority. *Oracle:*
+  workflow mutations reject generation before native download, missing or
+  mismatched formula checksum inputs, rebuilt binaries, unsupported platform
+  claims, an unpinned or drifted formula-syntax Ruby, and a formula omitted
+  from release assets.
+  *Evidence type:* deterministic generator and release-policy mutation tests.
+  *Tracking:*
+  [#251](https://github.com/flyingrobots/colorful-language/issues/251).
+  *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `scripts/generate-homebrew-formula.mjs`;
+  `scripts/generate-homebrew-formula.test.mjs`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `derives and attests Homebrew formulae from downloaded native assets` and
+  `rejects Homebrew syntax parser runtime drift`;
+  `.github/workflows/ci.yml`; `scripts/release-prep.sh`. *Status:* implemented
+  for the GitHub Release formula; public tap publication remains planned under
+  [#37](https://github.com/flyingrobots/colorful-language/issues/37).
 
 ## Open verification gaps
 
