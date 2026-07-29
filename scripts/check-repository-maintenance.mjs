@@ -61,6 +61,7 @@ const DEPENDENCY_LICENSE_EXCEPTIONS = [
   "pkg:npm/@vscode/vsce-sign-linux-x64@2.0.6",
   "pkg:npm/@vscode/vsce-sign-win32-arm64@2.0.6",
   "pkg:npm/@vscode/vsce-sign-win32-x64@2.0.6",
+  "pkg:npm/ovsx@1.0.2",
   "pkg:npm/typed-rest-client@1.8.11",
   "pkg:npm/xmlbuilder@11.0.1",
 ].toSorted();

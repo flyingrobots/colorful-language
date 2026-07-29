@@ -133,12 +133,12 @@ roadmap-to-issue reconciliation is tracked in
 - **RM-4c — Editor package-tool license admission.** *Requirement:* RM-4.
   *Behavior:* standard permissive SPDX licenses introduced by the lock-backed
   editor packaging toolchain join the reviewed cross-ecosystem allowlist.
-  Scanner-only composite licenses and the restricted VSCE signing runtime use
-  exact-version npm package URLs, and no packaging-only dependency enters the
-  extension archive. *Oracle:* the maintenance checker rejects a missing,
-  unexpected, or version-broadened exception; the package smoke test proves the
-  dependency-free package boundary excludes development dependencies. *Evidence
-  type:*
+  Scanner-only composite licenses, the restricted VSCE signing runtime, and the
+  EPL-licensed Open VSX publisher use exact-version npm package URLs, and no
+  packaging-only dependency enters the extension archive. *Oracle:* the
+  maintenance checker rejects a missing, unexpected, or version-broadened
+  exception; the package smoke test proves the dependency-free package boundary
+  excludes development dependencies. *Evidence type:*
   deterministic policy mutation tests and the packaged-extension witness.
   *Evidence:* `.github/workflows/security.yml`,
   `scripts/check-repository-maintenance.test.mjs`, and
