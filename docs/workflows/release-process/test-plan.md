@@ -7,7 +7,8 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-1** A release has a packet, verification witness, changelog entry, tag,
   and GitHub Release.
 - **REL-2** A release tag must point to a commit reachable from `origin/main`.
-- **REL-3** The release workflow reruns Rust and package guards before publish.
+- **REL-3** The release workflow reruns profile, editor compatibility, Rust,
+  build, and package guards before any provenance-producing job.
 - **REL-4** Crates publish in dependency order.
 - **REL-5** The release runbook remains the canonical operational checklist.
 - **REL-6** The repo declares release mechanics in a machine-checkable profile.
@@ -44,9 +45,13 @@ Verification for release preparation, tag automation, and release witnesses.
   is not an ancestor of `origin/main`. *Oracle:* workflow source review.
   *Evidence:* `.github/workflows/release.yml`. *Status:* implemented.
 - **REL-3a** — *Requirement:* REL-3. *Behavior:* the release workflow reruns
-  `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build --release`, and the
-  package witness. *Oracle:* workflow source review. *Evidence:*
-  `.github/workflows/release.yml`. *Status:* implemented.
+  release-profile and editor-compatibility validation, `cargo fmt`,
+  `cargo clippy`, `cargo test`, `cargo build --release`, and the package
+  witness in the read-only admission job that every provenance-producing
+  native job requires. *Oracle:* workflow source and distribution-policy
+  mutation review. *Evidence:* `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires final validation before native provenance`. *Status:* implemented.
 - **REL-4a** — *Requirement:* REL-4. *Behavior:* crates publish from leaf
   dependencies to dependents. *Oracle:* workflow source review. *Evidence:*
   `.github/workflows/release.yml`; `docs/RELEASING.md`. *Status:* implemented.
@@ -151,6 +156,7 @@ Verification for release preparation, tag automation, and release witnesses.
   `rejects every platform inventory mutation`,
   `rejects workflow matrix drift independently of the profile`,
   `requires tag admission before provenance-producing jobs`,
+  `requires final validation before native provenance`,
   `binds native dispatch and release side effects to the reviewed topology`,
   and `requires signed checksummed native archives`. *Status:* implemented in
   workflow; hosted release evidence remains planned.

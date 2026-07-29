@@ -14,7 +14,8 @@ The current release path is:
 
 ```text
 release branch -> PR -> merge to main -> manual annotated tag -> tag workflow
--> native/editor build and attestation -> crates.io + editor publication
+-> final read-only admission -> native/editor build and attestation
+-> crates.io + editor publication
 -> GitHub Release -> Zed registry PR -> public verification -> retrospective
 ```
 
@@ -75,6 +76,9 @@ That policy pins the three native host/target pairs, requires checksums and
 GitHub/Sigstore provenance, requires one clean-install-tested VSIX for both
 editor registries, verifies publisher credentials before immutable
 publication, and keeps observational startup timing outside correctness gates.
+The tag workflow reruns its profile, editor compatibility, Rust, release-build,
+and package-witness guards in `validate-release`; native jobs cannot build,
+attest, or upload artifacts until that read-only admission job passes.
 
 That gate validates the canonical
 `contracts/colorful/syntax-compatibility.v1.json` authority before packaging.

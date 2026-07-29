@@ -53,7 +53,6 @@ export const EXPECTED_PUBLISHER_TOOLS = Object.freeze({
   ovsx: "1.0.2",
 });
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
-  "Check release distribution policy",
   "Download native archives",
   "Build and smoke editor packages",
   "Attest editor artifacts",
@@ -61,6 +60,16 @@ const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Verify published editor bytes",
   "Publish to crates.io",
   "Create GitHub Release",
+]);
+const REQUIRED_ADMISSION_COMMANDS = Object.freeze([
+  "bash scripts/release-profile-check.sh",
+  "node scripts/check-editor-version-policy.mjs",
+  CHECK_COMMAND,
+  "cargo fmt --all -- --check",
+  "cargo clippy --locked --all-targets --all-features -- -D warnings",
+  "cargo test --all --locked",
+  "cargo build --release --locked",
+  "bash scripts/package-witness.sh",
 ]);
 
 function requiredRecord(value, context) {
@@ -134,6 +143,17 @@ function workflowIncludesCommand(workflow, command) {
   );
 }
 
+function stepsIncludeCommand(steps, command) {
+  return steps.some((step) =>
+    String(step?.run ?? "")
+      .split(/\r?\n/u)
+      .some(
+        (line) =>
+          line.trim().replace(/\s+#.*$/u, "") === command,
+      ),
+  );
+}
+
 function validateGateCommands(gates, names, command) {
   requiredRecord(gates, "release distribution gates");
   const observed = Object.keys(gates).toSorted();
@@ -202,6 +222,13 @@ function validateAdmissionJob(job) {
   ]) {
     if (!ancestrySource.includes(required)) {
       throw new Error(`${context} ancestry admission must include ${required}`);
+    }
+  }
+  for (const command of REQUIRED_ADMISSION_COMMANDS) {
+    if (!stepsIncludeCommand(steps, command)) {
+      throw new Error(
+        `${context} admission must complete all final validation before native provenance: ${command}`,
+      );
     }
   }
 }
@@ -305,15 +332,6 @@ function validateReleaseJob(job) {
   }
 
   const steps = Array.isArray(job?.steps) ? job.steps : [];
-  const checker = requiredStep(
-    steps,
-    "Check release distribution policy",
-    context,
-  );
-  if (String(checker.run ?? "").trim() !== CHECK_COMMAND) {
-    throw new Error(`${context} must run ${CHECK_COMMAND}`);
-  }
-
   const download = requiredStep(steps, "Download native archives", context);
   requirePinnedAction(download, "actions/download-artifact", context);
   if (

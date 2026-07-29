@@ -14,6 +14,16 @@ import {
 } from "./check-release-distribution.mjs";
 
 const ACTION_SHA = "a".repeat(40);
+const ADMISSION_COMMANDS = Object.freeze([
+  "bash scripts/release-profile-check.sh",
+  "node scripts/check-editor-version-policy.mjs",
+  CHECK_COMMAND,
+  "cargo fmt --all -- --check",
+  "cargo clippy --locked --all-targets --all-features -- -D warnings",
+  "cargo test --all --locked",
+  "cargo build --release --locked",
+  "bash scripts/package-witness.sh",
+]);
 
 function validSnapshot() {
   const smokeVsix =
@@ -58,6 +68,7 @@ function validSnapshot() {
                 'git rev-parse "${GITHUB_REF_NAME}^{commit}"\n' +
                 "git merge-base --is-ancestor tag origin/main\n",
             },
+            ...ADMISSION_COMMANDS.map((run) => ({ run })),
           ],
         },
         "binary-artifacts": {
@@ -116,10 +127,6 @@ function validSnapshot() {
             attestations: "write",
           },
           steps: [
-            {
-              name: "Check release distribution policy",
-              run: CHECK_COMMAND,
-            },
             {
               name: "Download native archives",
               uses: `actions/download-artifact@${ACTION_SHA}`,
@@ -289,24 +296,15 @@ test("requires tag admission before provenance-producing jobs", () => {
 });
 
 test("requires final validation before native provenance", () => {
-  const admissionCommands = [
-    "bash scripts/release-profile-check.sh",
-    "node scripts/check-editor-version-policy.mjs",
-    CHECK_COMMAND,
-    "cargo fmt --all -- --check",
-    "cargo clippy --locked --all-targets --all-features -- -D warnings",
-    "cargo test --all --locked",
-    "cargo build --release --locked",
-    "bash scripts/package-witness.sh",
-  ];
-  for (const omitted of admissionCommands) {
+  for (const omitted of ADMISSION_COMMANDS) {
     const snapshot = validSnapshot();
-    snapshot.workflow.jobs["validate-release"].steps.push(
-      ...admissionCommands
-        .filter((command) => command !== omitted)
-        .map((run) => ({ run })),
+    snapshot.workflow.jobs["validate-release"].steps =
+      snapshot.workflow.jobs["validate-release"].steps.filter(
+        (step) => step.run !== omitted,
+      );
+    snapshot.workflow.jobs.release.steps.push(
+      { run: omitted },
     );
-    snapshot.workflow.jobs.release.steps.push({ run: omitted });
     assert.throws(
       () => validateReleaseDistribution(snapshot),
       /admission must complete all final validation/u,

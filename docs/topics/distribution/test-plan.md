@@ -40,14 +40,16 @@ Verification for install paths and published artifacts.
 - **DIST-3a** — *Requirement:* DIST-3. *Behavior:* native jobs build the CLI and
   LSP on `ubuntu-24.04` / `x86_64-unknown-linux-gnu`, `macos-15` /
   `aarch64-apple-darwin`, and `windows-2025` /
-  `x86_64-pc-windows-msvc`; every archive carries the same release metadata,
-  one SHA-256 sidecar, and GitHub/Sigstore provenance. *Oracle:* profile and
-  workflow mutations reject target drift, missing package members, absent
-  checksums, or unsigned archives. *Evidence:*
+  `x86_64-pc-windows-msvc`, only after final profile, editor compatibility,
+  Rust, build, and package admission; every archive carries the same release
+  metadata, one SHA-256 sidecar, and GitHub/Sigstore provenance. *Oracle:*
+  profile and workflow mutations reject late validation, target drift, missing
+  package members, absent checksums, or unsigned archives. *Evidence:*
   `.continuum/release.yml`; `.github/workflows/release.yml`;
   `scripts/check-release-distribution.mjs`;
-  `scripts/check-release-distribution.test.mjs`. *Status:* implemented in
-  workflow; public release evidence remains planned.
+  `scripts/check-release-distribution.test.mjs`
+  `requires final validation before native provenance`. *Status:* implemented
+  in workflow; public release evidence remains planned.
 - **DIST-4a** — *Requirement:* DIST-4. *Behavior:* `scripts/install-local.sh`
   installs `colorful` under `$COLORFUL_HOME/bin`, defaulting to
   `$HOME/.colorful-language/bin`; a smoke test installs into a fresh

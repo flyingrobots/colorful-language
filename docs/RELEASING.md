@@ -137,10 +137,12 @@ forward.
 
 Publication happens from the tag. In this repo, pushing `vX.Y.Z` triggers
 `.github/workflows/release.yml`, which checks out the tag, verifies it is on
-`main`, reruns final Rust/package guards, builds and attests the native matrix,
-clean-installs one VSIX, publishes those exact VSIX bytes to both editor
-registries, publishes crates, and creates the GitHub Release. The workflow also
-packages and attests the exact Zed registry-source tree; submission to
+`main`, and completes the release-profile, editor-compatibility, Rust, build,
+and package-witness admission gates before any provenance-producing native job
+starts. It then builds and attests the native matrix, clean-installs one VSIX,
+publishes those exact VSIX bytes to both editor registries, publishes crates,
+and creates the GitHub Release. The workflow also packages and attests the
+exact Zed registry-source tree; submission to
 `zed-industries/extensions` remains a maintainer pull request because that
 registry owns publication.
 
@@ -349,7 +351,9 @@ That script runs:
 
 The tag-triggered `Release` workflow repeats the release profile check, verifies
 release metadata matches the tag, verifies the tag is on `main`, and reruns the
-Rust and package final guards. It does not repeat every PR-only integration
+editor-compatibility, Rust, build, and package final guards in the read-only
+`validate-release` job. Native build, attestation, and artifact upload depend on
+that admission job. The workflow does not repeat every PR-only integration
 witness; those must already be green on the merged release-prep PR.
 
 ## Release-prep PR
