@@ -295,6 +295,10 @@ Verification for editor adapters and the `colorful-lsp` surface.
   *Evidence type:* public registry metadata, clean-machine visual review, and
   release witness. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Intended evidence:* the version-specific
+  `docs/goalposts/vX.Y.Z/release.md` and
+  `docs/goalposts/vX.Y.Z/verification.md` release packet after public
+  publication.
   *Status:* planned.
 - **EDIT-15a** — *Requirement:* EDIT-15. *Behavior:* a Markdown document with
   one prose weak word and the same sentence inside a fenced code block emits
