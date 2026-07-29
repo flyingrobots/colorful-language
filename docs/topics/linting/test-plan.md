@@ -483,9 +483,18 @@ Implemented and planned cases are listed below.
   `ValeErrorKind::InvalidAlert`; every message is at most 512 bytes and omits
   the complete sentinel. Existing duplicate-source and unexpected-source-key
   redaction remains exact. *Evidence type:* malformed-output boundary matrix
-  and error-budget regression. *Tracking:*
+  and error-budget regression. *Evidence:* `colorful-vale`
+  `output::tests::{oversized_check_is_bounded_and_redacted,
+  oversized_match_is_bounded_and_redacted,
+  oversized_unsupported_severity_is_bounded_and_redacted,
+  mismatched_source_slice_is_bounded_and_redacted,
+  oversized_typed_field_error_is_bounded_and_redacted,
+  invalid_external_rule_check_is_redacted,
+  invalid_alert_limit_preserves_utf8_and_the_exact_byte_budget}` and
+  `vale_adapter::{duplicate_source_key_error_is_bounded_and_redacted,
+  unexpected_source_key_error_is_bounded_and_redacted}`. *Tracking:*
   [#235](https://github.com/flyingrobots/colorful-language/issues/235).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered

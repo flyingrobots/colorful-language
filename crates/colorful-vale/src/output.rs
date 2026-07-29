@@ -7,6 +7,11 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{ValeError, ValeErrorKind};
 
+const ALERT_ERROR_DETAIL_LIMIT: usize = 512;
+const ALERT_ERROR_TRUNCATION_SUFFIX: &str = " [truncated]";
+const VALE_RULE_PREFIX: &str = "vale/";
+const MAX_EXTERNAL_RULE_CODE_BYTES: usize = 128;
+
 #[cfg(test)]
 thread_local! {
     static RESPONSE_DESERIALIZATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
@@ -140,17 +145,14 @@ pub(crate) fn parse_findings(
         ));
     }
     let parsed: ValeFiles = serde_json::from_str(json).map_err(|error| {
-        let (kind, context) = match error.classify() {
-            serde_json::error::Category::Data => (
-                ValeErrorKind::InvalidAlert,
-                "Vale JSON alert shape is invalid",
-            ),
-            _ => (
+        if error.classify() == serde_json::error::Category::Data {
+            invalid_alert("Vale JSON alert shape is invalid")
+        } else {
+            ValeError::new(
                 ValeErrorKind::MalformedOutput,
-                "Vale output is not valid JSON",
-            ),
-        };
-        ValeError::new(kind, format!("{context}: {error}"))
+                format!("Vale output is not valid JSON: {error}"),
+            )
+        }
     })?;
     if parsed.duplicate_source {
         return Err(ValeError::new(
@@ -199,29 +201,25 @@ fn normalize_alert(line_index: &LineIndex<'_>, alert: ValeAlert) -> Result<Findi
     if alert.check.is_empty() {
         return Err(invalid_alert("Vale alert check is empty"));
     }
+    let alert_context = format!("Vale alert check ({} bytes)", alert.check.len());
     if alert.message.is_empty() {
         return Err(invalid_alert(format!(
-            "{} alert message is empty",
-            alert.check
+            "{alert_context} has an empty message"
         )));
     }
     if alert.matched.is_empty() {
-        return Err(invalid_alert(format!(
-            "{} alert match is empty",
-            alert.check
-        )));
+        return Err(invalid_alert(format!("{alert_context} has an empty match")));
     }
     if alert.span.len() != 2 {
         return Err(invalid_alert(format!(
-            "{} has {} span elements; expected two",
-            alert.check,
+            "{alert_context} has {} span elements; expected two",
             alert.span.len()
         )));
     }
     let line = usize::try_from(alert.line)
         .ok()
         .filter(|line| *line > 0)
-        .ok_or_else(|| invalid_alert(format!("{} has invalid line {}", alert.check, alert.line)))?;
+        .ok_or_else(|| invalid_alert(format!("{alert_context} has invalid line {}", alert.line)))?;
     let start_column = usize::try_from(alert.span[0])
         .ok()
         .filter(|column| *column > 0);
@@ -232,55 +230,56 @@ fn normalize_alert(line_index: &LineIndex<'_>, alert: ValeAlert) -> Result<Findi
         (Some(start), Some(end)) if start <= end => (start, end),
         _ => {
             return Err(invalid_alert(format!(
-                "{} has invalid inclusive columns {:?}",
-                alert.check, alert.span
+                "{alert_context} has invalid inclusive columns ({}, {})",
+                alert.span[0], alert.span[1]
             )))
         }
     };
     let (line_start, line_end) = line_index.bounds(line).ok_or_else(|| {
         invalid_alert(format!(
-            "{} line {} is outside the source",
-            alert.check, alert.line
+            "{alert_context} line {} is outside the source",
+            alert.line
         ))
     })?;
     let line_source = &source[line_start..line_end];
     let start = scalar_boundary(line_source, start_column - 1).ok_or_else(|| {
         invalid_alert(format!(
-            "{} start column {} is outside line {}",
-            alert.check, start_column, line
+            "{alert_context} start column {start_column} is outside line {line}"
         ))
     })?;
     let end = scalar_boundary(line_source, end_column).ok_or_else(|| {
         invalid_alert(format!(
-            "{} end column {} is outside line {}",
-            alert.check, end_column, line
+            "{alert_context} end column {end_column} is outside line {line}"
         ))
     })?;
     if start == end {
         return Err(invalid_alert(format!(
-            "{} has an empty normalized span",
-            alert.check
+            "{alert_context} has an empty normalized span"
         )));
     }
     let span = Span::new(line_start + start, line_start + end);
     if span.slice(source) != alert.matched {
         return Err(invalid_alert(format!(
-            "{} match {:?} does not equal source slice {:?}",
-            alert.check,
-            alert.matched,
-            span.slice(source)
+            "{alert_context} match length {} does not equal source slice length {}",
+            alert.matched.len(),
+            span.len()
         )));
     }
-    let rule = Rule::external(format!("vale/{}", alert.check))
-        .map_err(|error| invalid_alert(error.to_string()))?;
+    if alert.check.len() > MAX_EXTERNAL_RULE_CODE_BYTES - VALE_RULE_PREFIX.len() {
+        return Err(invalid_alert(format!(
+            "{alert_context} cannot form an external rule code"
+        )));
+    }
+    let rule = Rule::external(format!("{VALE_RULE_PREFIX}{}", alert.check))
+        .map_err(|_| invalid_alert(format!("{alert_context} cannot form an external rule code")))?;
     let severity = match alert.severity.as_str() {
         "suggestion" => Severity::Info,
         // Colorful has no error tier; Warning is its highest editorial severity.
         "warning" | "error" => Severity::Warning,
-        other => {
+        _ => {
             return Err(invalid_alert(format!(
-                "{} has unsupported severity {other:?}",
-                alert.check
+                "{alert_context} has unsupported severity ({} bytes)",
+                alert.severity.len()
             )))
         }
     };
@@ -310,16 +309,26 @@ fn severity_rank(severity: Severity) -> u8 {
 }
 
 fn invalid_alert(message: impl Into<String>) -> ValeError {
+    let mut message = message.into();
+    if message.len() > ALERT_ERROR_DETAIL_LIMIT {
+        let mut end = ALERT_ERROR_DETAIL_LIMIT - ALERT_ERROR_TRUNCATION_SUFFIX.len();
+        while !message.is_char_boundary(end) {
+            end -= 1;
+        }
+        message.truncate(end);
+        message.push_str(ALERT_ERROR_TRUNCATION_SUFFIX);
+    }
     ValeError::new(ValeErrorKind::InvalidAlert, message)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_findings, LineIndex, LINE_INDEX_CONSTRUCTIONS, RESPONSE_DESERIALIZATIONS};
+    use super::{
+        invalid_alert, parse_findings, LineIndex, ALERT_ERROR_DETAIL_LIMIT,
+        ALERT_ERROR_TRUNCATION_SUFFIX, LINE_INDEX_CONSTRUCTIONS, RESPONSE_DESERIALIZATIONS,
+    };
     use crate::{ValeError, ValeErrorKind};
     use serde_json::json;
-
-    const ALERT_ERROR_LIMIT: usize = 512;
 
     fn alert_json(
         check: &str,
@@ -351,8 +360,8 @@ mod tests {
     fn assert_bounded_redacted(error: &ValeError, sentinel: &str) {
         assert_eq!(error.kind(), ValeErrorKind::InvalidAlert);
         assert!(
-            error.message().len() <= ALERT_ERROR_LIMIT,
-            "invalid-alert detail used {} bytes; expected at most {ALERT_ERROR_LIMIT}",
+            error.message().len() <= ALERT_ERROR_DETAIL_LIMIT,
+            "invalid-alert detail used {} bytes; expected at most {ALERT_ERROR_DETAIL_LIMIT}",
             error.message().len()
         );
         assert!(
@@ -406,6 +415,52 @@ mod tests {
         let error = rejected_alert(&source, &json);
 
         assert_bounded_redacted(&error, &source);
+    }
+
+    #[test]
+    fn oversized_typed_field_error_is_bounded_and_redacted() {
+        let line = "LINE-SENTINEL-".repeat(256);
+        let json = json!({
+            "stdin.txt": [{
+                "Action": {"Name": "", "Params": null},
+                "Span": [1, 1],
+                "Check": "Style.Safe",
+                "Description": "",
+                "Link": "",
+                "Message": "message",
+                "Severity": "warning",
+                "Match": "x",
+                "Line": line
+            }]
+        })
+        .to_string();
+
+        let error = rejected_alert("x", &json);
+
+        assert_bounded_redacted(&error, &line);
+    }
+
+    #[test]
+    fn invalid_external_rule_check_is_redacted() {
+        let check = "CHECK SENTINEL";
+        let json = alert_json(check, "message", "x", "warning", [1, 1]);
+
+        let error = rejected_alert("x", &json);
+
+        assert_bounded_redacted(&error, check);
+        assert_eq!(
+            error.message(),
+            "Vale alert check (14 bytes) cannot form an external rule code"
+        );
+    }
+
+    #[test]
+    fn invalid_alert_limit_preserves_utf8_and_the_exact_byte_budget() {
+        let error = invalid_alert("é".repeat(ALERT_ERROR_DETAIL_LIMIT));
+
+        assert_eq!(error.message().len(), ALERT_ERROR_DETAIL_LIMIT);
+        assert!(error.message().ends_with(ALERT_ERROR_TRUNCATION_SUFFIX));
+        assert!(std::str::from_utf8(error.message().as_bytes()).is_ok());
     }
 
     #[test]

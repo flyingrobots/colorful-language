@@ -447,6 +447,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Bounded Vale invalid-alert details.** Malformed optional-engine fields no
+  longer reproduce complete process-controlled check, match, severity, typed
+  value, or source-slice text in adapter errors. Stable field, byte-length, and
+  coordinate context remains available under a UTF-8-safe 512-byte ceiling,
+  and oversized check names are rejected before external-rule construction
+  copies them.
 - **Vale configuration paths preserve platform bytes.** The optional process
   adapter now builds `--config=` as an `OsString` instead of formatting
   `Path::display()`, so a valid non-UTF-8 path is not replaced with lossy
