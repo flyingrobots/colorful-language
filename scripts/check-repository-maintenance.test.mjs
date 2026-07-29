@@ -370,6 +370,12 @@ test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
 });
 
+test("accepts reviewed workflow-security exceptions in any order", () => {
+  const candidate = fixture();
+  candidate.workflowSecurityPolicy.exceptions.reverse();
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
+});
+
 test("accepts the exact editor package-tool license policy", () => {
   const candidate = fixture();
   const step = dependencyReviewStep(candidate);
