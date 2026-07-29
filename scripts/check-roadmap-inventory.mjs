@@ -489,6 +489,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       displayEquivalentAccountabilitySectionLocation ??= location;
       continue;
     }
+    const literalLine = line;
     const commentScan = stripClosedInlineHtmlComments(line);
     if (commentScan.opensMultilineComment) {
       if (
@@ -563,6 +564,12 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       mechanism === undefined
         ? undefined
         : accountabilityHeaderKind(mechanism, mechanismLocation);
+    if (
+      headerKind === "canonical" &&
+      markdownTableCells(literalLine)?.[0] !== "Mechanism"
+    ) {
+      headerKind = "display-equivalent";
+    }
     if (headerKind !== undefined && !tableHasLeadingPipe) {
       headerKind = "no-leading";
     }
