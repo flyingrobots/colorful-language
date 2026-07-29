@@ -184,6 +184,14 @@ fn contains_partial(actual: &Value, expected: &Value) -> bool {
     }
 }
 
+fn transcript_exit_code(fixture: &Value) -> i32 {
+    let value = fixture
+        .get("exitCode")
+        .and_then(Value::as_i64)
+        .expect("transcript exitCode must be present and integral");
+    i32::try_from(value).expect("transcript exitCode must fit the platform exit-code range")
+}
+
 fn replay_transcript_session(fixture: &Value, session: &Value) {
     let mut server = LspProcess::spawn();
     let steps = fixture["steps"].as_array().expect("transcript steps");
@@ -261,10 +269,12 @@ fn replay_transcript_session(fixture: &Value, session: &Value) {
         }
     }
 
-    assert_eq!(
-        server.finish().code().map(i64::from),
-        fixture["exitCode"].as_i64()
-    );
+    let expected = transcript_exit_code(fixture);
+    let actual = server
+        .finish()
+        .code()
+        .expect("colorful-lsp terminated by signal instead of returning an exit code");
+    assert_eq!(actual, expected, "unexpected colorful-lsp exit code");
 }
 
 #[test]
@@ -279,6 +289,21 @@ fn real_server_completes_the_public_stdio_lifecycle() {
     for session in fixture["sessions"].as_array().expect("transcript sessions") {
         replay_transcript_session(&fixture, session);
     }
+}
+
+#[test]
+fn transcript_exit_code_requires_an_integral_value() {
+    for malformed in [
+        json!({}),
+        json!({"exitCode": null}),
+        json!({"exitCode": 0.5}),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| transcript_exit_code(&malformed)).is_err(),
+            "accepted malformed transcript exitCode: {malformed}"
+        );
+    }
+    assert_eq!(transcript_exit_code(&json!({"exitCode": 0})), 0);
 }
 
 #[test]
