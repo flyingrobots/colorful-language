@@ -30,12 +30,14 @@ const COMPETING_DELIVERY_REFERENCE_PATTERNS = [
   /\bassign\s+releases?\s+to\s+GitHub milestones?\b/i,
 ];
 const RELEASE_TRACKING_REFERENCE_CLAIMS = [
-  '--title "[release] v0.4.0"',
   "--label slice",
-  "--body-file docs/goalposts/v0.4.0/release.md",
   "complete and review the packet's release thesis",
-  "git switch -c release/v0.4.0",
   "bash scripts/release-prep.sh",
+];
+const RELEASE_TRACKING_REFERENCE_PATTERNS = [
+  /--title "\[release\] v(?<version>\d+\.\d+\.\d+)"/u,
+  /--body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md/u,
+  /git switch -c release\/v(?<version>\d+\.\d+\.\d+)/u,
 ];
 const DELIVERY_REFERENCE_PATHS = Object.freeze({
   agents: "AGENTS.md",
@@ -254,15 +256,21 @@ function validateDeliveryTracking(
   const releasingReference = normalizeReference(
     deliveryReferences.releasing,
   );
+  const releaseExampleVersions =
+    RELEASE_TRACKING_REFERENCE_PATTERNS.map(
+      (pattern) => pattern.exec(releasingReference)?.groups?.version,
+    );
   if (
     RELEASE_TRACKING_REFERENCE_CLAIMS.some(
       (claim) => !releasingReference.includes(claim),
-    )
+    ) ||
+    releaseExampleVersions.some((version) => version === undefined) ||
+    new Set(releaseExampleVersions).size !== 1
   ) {
     reject(
       "E_DELIVERY_TRACKING",
       DELIVERY_REFERENCE_PATHS.releasing,
-      "must retain the v0.4.0 tracking-issue and release-preparation commands",
+      "must retain one aligned release-tracking example and its preparation command",
     );
   }
 }

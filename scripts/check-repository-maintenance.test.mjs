@@ -537,6 +537,26 @@ test("rejects an incomplete v0.4.0 tracking and prep sequence", () => {
   }
 });
 
+test("accepts a future aligned release example without policy code edits", () => {
+  const candidate = fixture();
+  candidate.deliveryReferences.releasing =
+    candidate.deliveryReferences.releasing.replaceAll(
+      "v0.4.0",
+      "v0.5.0",
+    );
+  assert.doesNotThrow(() =>
+    validateRepositoryMaintenance(candidate),
+  );
+
+  expectCode(({ deliveryReferences }) => {
+    deliveryReferences.releasing =
+      deliveryReferences.releasing.replace(
+        '--title "[release] v0.4.0"',
+        '--title "[release] v0.5.0"',
+      );
+  }, "E_DELIVERY_TRACKING");
+});
+
 test("accepts reordered delivery-tracking profile fields", () => {
   const candidate = fixture();
   candidate.repositoryProfile.delivery_tracker = {
