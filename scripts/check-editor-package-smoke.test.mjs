@@ -146,6 +146,18 @@ test("startup failures inspect causes before narrow message fallback", async () 
   );
 });
 
+test("startup failures keep machine categories in error logs only", () => {
+  const source = readFileSync("editors/vscode/src/extension.ts", "utf8");
+  assert.match(
+    source,
+    /output\.error\(`\[\$\{category\}\] Failed to start colorful-lsp:/u,
+  );
+  assert.match(
+    source,
+    /showErrorMessage\(\s*`Colorful Language could not start colorful-lsp:/u,
+  );
+});
+
 test("the persisted-log scan skips transient profile entries", async () => {
   const { readTextFile, textFiles } = await import(
     "../editors/vscode/smoke/log-files.mjs"

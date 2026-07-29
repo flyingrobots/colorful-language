@@ -56,9 +56,9 @@ export function activate(context: vscode.ExtensionContext): void {
     (error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
       const category = startupFailureCategory(error);
-      output.appendLine(`[${category}] Failed to start colorful-lsp: ${message}`);
+      output.error(`[${category}] Failed to start colorful-lsp: ${message}`);
       void vscode.window.showErrorMessage(
-        `[${category}] Colorful Language could not start colorful-lsp: ${message}`,
+        `Colorful Language could not start colorful-lsp: ${message}`,
       );
     },
   );
