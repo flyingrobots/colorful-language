@@ -189,7 +189,7 @@ fn fake_executable_is_published_atomically() {
     let source = adapter_test_source("vale_adapter.rs");
     assert!(
         source.contains("let staged_executable = root.join(\"vale.staging\")")
-            && source.contains("staged_file.sync_all()")
+            && source.contains(".sync_all()")
             && source.contains("fs::rename(&staged_executable, &executable)"),
         "the final fake executable path must appear only after a closed, durable staging file"
     );

@@ -456,11 +456,11 @@ Implemented and planned cases are listed below.
   regression requires a staging script, `sync_all`, and an atomic rename into
   the final executable path; the full parallel adapter suite has no Linux
   `ETXTBSY` failures. *Evidence type:* fixture-publication policy and hosted
-  parallel regression. *Evidence:* planned in `colorful-vale`
+  parallel regression. *Evidence:* `colorful-vale`
   `workspace_boundary::fake_executable_is_published_atomically` and the full
   `vale_adapter` integration test binary. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered

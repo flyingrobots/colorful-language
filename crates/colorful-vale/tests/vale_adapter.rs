@@ -1,6 +1,7 @@
 #![cfg(unix)]
 
 use std::fs;
+use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -89,6 +90,7 @@ impl FakeVale {
             }
         };
         let executable = root.join("vale");
+        let staged_executable = root.join("vale.staging");
         let configuration = root.join(".vale.ini");
         let arguments = root.join("arguments.txt");
         let captured_input = root.join("input.txt");
@@ -133,12 +135,27 @@ cat > 'input.txt'
 {analysis_body}
 "#,
         );
-        fs::write(&executable, script).expect("write fake Vale executable");
-        let mut permissions = fs::metadata(&executable)
-            .expect("fake Vale metadata")
+        let mut staged_file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&staged_executable)
+            .expect("create staged fake Vale executable");
+        staged_file
+            .write_all(script.as_bytes())
+            .expect("write staged fake Vale executable");
+        let mut permissions = staged_file
+            .metadata()
+            .expect("staged fake Vale metadata")
             .permissions();
         permissions.set_mode(0o755);
-        fs::set_permissions(&executable, permissions).expect("make fake Vale executable");
+        staged_file
+            .set_permissions(permissions)
+            .expect("make staged fake Vale executable");
+        staged_file
+            .sync_all()
+            .expect("sync staged fake Vale executable");
+        drop(staged_file);
+        fs::rename(&staged_executable, &executable).expect("publish fake Vale executable");
 
         Self {
             root,
