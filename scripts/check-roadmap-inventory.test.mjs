@@ -634,6 +634,7 @@ test("rejects rendered-equivalent duplicate table headers", () => {
     "[Mechanism](#other)",
     "Mech&#97;nism",
     "Mech&#x61;nism",
+    "**Mech**anism",
   ]) {
     expectCategory(
       "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",

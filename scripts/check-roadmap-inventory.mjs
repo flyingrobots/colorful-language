@@ -552,12 +552,30 @@ function decodeNumericCharacterReferences(source) {
   );
 }
 
+function removeBalancedStyleDelimiters(source) {
+  let rendered = source;
+  while (true) {
+    const withoutOneLayer = rendered.replace(
+      /(?<!\\)(\*\*|__|~~|\*|_)(?=\S)([\s\S]*?\S)(?<!\\)\1/gu,
+      "$2",
+    );
+    if (withoutOneLayer === rendered) {
+      return rendered;
+    }
+    rendered = withoutOneLayer;
+  }
+}
+
 function displaysRenderedMechanismHeader(mechanism, location) {
   if (displaysMechanismHeader(mechanism, location)) {
     return true;
   }
   const visibleSource = markdownLinkLabel(mechanism) ?? mechanism;
-  return decodeNumericCharacterReferences(visibleSource) === "Mechanism";
+  return (
+    decodeNumericCharacterReferences(
+      removeBalancedStyleDelimiters(visibleSource),
+    ) === "Mechanism"
+  );
 }
 
 function accountabilityHeaderKind(mechanism, location) {
