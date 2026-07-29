@@ -30,6 +30,8 @@ const DELIVERY_REFERENCE = [
 const RELEASE_TRACKING_COMMANDS = [
   '--title "[release] v0.4.0"',
   "--label slice",
+  "--body-file docs/goalposts/v0.4.0/release.md",
+  "complete and review the packet's release thesis",
   "git switch -c release/v0.4.0",
   "bash scripts/release-prep.sh",
 ];

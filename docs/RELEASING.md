@@ -227,7 +227,10 @@ follows `[release] vX.Y.Z`, links the packet and scoped slices, and carries one
 roadmap disposition. Do not create version milestones or version labels.
 
 For v0.4.0, create the tracking issue on the cross-cutting Product Maturity
-goalpost after its packet exists:
+goalpost after its packet exists. Before running the command, complete and
+review the packet's release thesis, all three scope buckets, goalposts,
+acceptance evidence, and scoped-slice links. The issue begins as an exact
+snapshot of that reviewed packet:
 
 ```bash
 gh issue create \
@@ -236,12 +239,13 @@ gh issue create \
   --milestone "Product Maturity — Evidence before expansion" \
   --label documentation \
   --label slice \
-  --body "Release packet: docs/goalposts/v0.4.0/release.md"
+  --body-file docs/goalposts/v0.4.0/release.md
 ```
 
 Then add the issue to `ROADMAP.md` with one active primary marker. Individual
 v0.4.0 slices stay on their existing goalpost milestones and are linked from
-the packet and tracking issue instead of being moved.
+the packet and tracking issue instead of being moved. If scope changes after
+creation, update both the issue and packet before release preparation.
 
 After the tracking issue and packet are reviewed, prepare v0.4.0 from aligned
 `main`:
