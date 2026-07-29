@@ -461,6 +461,19 @@ Implemented and planned cases are listed below.
   `vale_adapter` integration test binary. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
+- **LINT-13s** — *Requirement:* LINT-13. *Behavior:* Unix process startup
+  retries only the explicit `ETXTBSY` condition under a fixed 50 ms budget;
+  every other spawn failure remains immediate and retains its existing typed
+  category. *Oracle:* an injected spawn closure returns executable-busy twice
+  and succeeds on the third call, while a non-busy failure is attempted once.
+  Hosted Linux Rust and coverage jobs run the complete parallel adapter suite
+  without executable-busy failures. *Evidence type:* deterministic retry unit
+  tests and hosted process integration. *Evidence:* planned in `colorful-vale`
+  `process::tests::{executable_busy_spawn_is_retried,
+  non_busy_spawn_failure_is_not_retried}` and the full `vale_adapter` binary.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
