@@ -237,6 +237,24 @@ test("accepts the complete native and editor distribution contract", () => {
   });
 });
 
+test("isolates each editor registry credential to its publisher step", () => {
+  const snapshot = loadRepositorySnapshot();
+  const publisherEnvironments = snapshot.workflow.jobs.release.steps
+    .filter((step) => step.name?.startsWith("Verify and publish "))
+    .map((step) => [step.name, step.env]);
+
+  assert.deepEqual(publisherEnvironments, [
+    [
+      "Verify and publish VS Marketplace extension",
+      { VSCE_PAT: "${{ secrets.VSCE_PAT }}" },
+    ],
+    [
+      "Verify and publish Open VSX extension",
+      { OVSX_PAT: "${{ secrets.OVSX_PAT }}" },
+    ],
+  ]);
+});
+
 test("rejects every platform inventory mutation", () => {
   for (const mutate of [
     (platforms) => platforms.pop(),
