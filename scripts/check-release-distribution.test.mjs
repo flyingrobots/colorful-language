@@ -153,6 +153,12 @@ function validSnapshot() {
                 'npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate\n' +
                 'npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate\n',
             },
+            {
+              name: "Verify published editor bytes",
+              run:
+                "node scripts/verify-editor-publication.mjs " +
+                '--vsix "$vsix" --version "$version"',
+            },
             { name: "Publish to crates.io", run: "cargo publish" },
             {
               name: "Create GitHub Release",
@@ -343,6 +349,19 @@ test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
     }
     assert.throws(() => validateReleaseDistribution(snapshot));
   }
+});
+
+test("requires published registry bytes to match the smoke-tested VSIX", () => {
+  const snapshot = validSnapshot();
+  const steps = snapshot.workflow.jobs.release.steps;
+  const verificationIndex = steps.findIndex(
+    (step) => step.name === "Verify published editor bytes",
+  );
+  steps.splice(verificationIndex, 1);
+  assert.throws(
+    () => validateReleaseDistribution(snapshot),
+    /verify published editor bytes/u,
+  );
 });
 
 test("requires exact lockfile-backed publisher tools", () => {
