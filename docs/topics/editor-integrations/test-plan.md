@@ -291,7 +291,8 @@ From the repository root:
 npm --prefix editors/vscode ci
 npm --prefix editors/vscode run smoke:package
 profile_dir="$(mktemp -d)"
-zed --user-data-dir "$profile_dir" editors/fixtures
+zed_bin="$(command -v zed)"
+PATH=/usr/bin:/bin "$zed_bin" --user-data-dir "$profile_dir" editors/fixtures
 ```
 
 In that clean Zed profile:
@@ -311,8 +312,9 @@ In that clean Zed profile:
 6. Open `theme-fallback.txt` and `theme-fallback.md`. The text-equivalent
    fallback result is: `The` as `keyword`, `cat` as `noun`, `writes` as `verb`,
    `careful` as `adjective`, `prose` unstyled, and `quickly` as `adverb`.
-7. Set the server path to a nonexistent executable and restart the language
-   server. Zed's log must contain `[colorful/server-not-found]`.
+7. Remove `lsp.colorful-lsp.binary.path` and restart the language server.
+   Because the clean host started without the Cargo binary directory on
+   `PATH`, Zed's log must contain `[colorful/server-not-found]`.
 8. Close the clean-profile window. No `colorful-lsp` process started from
    `target/release/colorful-lsp` may remain.
 

@@ -138,6 +138,23 @@ test("Zed package validation is table-aware and formatting-independent", () => {
   }
 });
 
+test("the Zed missing-server oracle targets the extension-owned PATH branch", () => {
+  const readme = readFileSync("editors/zed/README.md", "utf8");
+  const plan = readFileSync(
+    "docs/topics/editor-integrations/test-plan.md",
+    "utf8",
+  );
+  assert.match(
+    readme,
+    /If no binary path is configured and `PATH` does not resolve the server/u,
+  );
+  assert.match(plan, /PATH=\/usr\/bin:\/bin "\$zed_bin"/u);
+  assert.match(
+    plan,
+    /Remove `lsp\.colorful-lsp\.binary\.path` and restart the language server/u,
+  );
+});
+
 test("the extension-host smoke rejects cross-drive install paths", () => {
   const source = readFileSync(
     "editors/vscode/smoke/suite/index.cjs",

@@ -36,8 +36,10 @@ If Zed cannot see your shell `PATH`, set the binary path explicitly in
 }
 ```
 
-If neither the configured path nor `PATH` resolves the server, Zed reports the
-stable failure category `[colorful/server-not-found]`.
+If no binary path is configured and `PATH` does not resolve the server, the
+extension reports the stable failure category `[colorful/server-not-found]`.
+Zed itself owns launch errors for an explicitly configured path, so confirm that
+an override exists and is executable before relying on it.
 
 ## Install
 
