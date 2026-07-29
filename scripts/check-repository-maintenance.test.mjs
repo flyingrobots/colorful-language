@@ -379,6 +379,14 @@ test("accepts the exact editor package-tool license policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
 });
 
+test("accepts the exact Open VSX publisher license exception", () => {
+  const candidate = fixture();
+  const step = dependencyReviewStep(candidate);
+  step.with["allow-dependencies-licenses"] +=
+    ", pkg:npm/ovsx@1.0.2";
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
+});
+
 test("rejects a missing editor package-tool license exception", () => {
   expectCode((candidate) => {
     const step = dependencyReviewStep(candidate);
