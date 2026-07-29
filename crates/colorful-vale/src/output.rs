@@ -10,7 +10,10 @@ use crate::{ValeError, ValeErrorKind};
 const ALERT_ERROR_DETAIL_LIMIT: usize = 512;
 const ALERT_ERROR_TRUNCATION_SUFFIX: &str = " [truncated]";
 const VALE_RULE_PREFIX: &str = "vale/";
-const MAX_EXTERNAL_RULE_CODE_BYTES: usize = 128;
+// Rule::external currently admits 128-byte codes. Preflight the adapter-owned
+// prefix so a hostile check cannot be copied into a rule code only to be
+// rejected for length.
+const MAX_VALE_CHECK_BYTES: usize = 128 - VALE_RULE_PREFIX.len();
 
 #[cfg(test)]
 thread_local! {
@@ -265,7 +268,7 @@ fn normalize_alert(line_index: &LineIndex<'_>, alert: ValeAlert) -> Result<Findi
             span.len()
         )));
     }
-    if alert.check.len() > MAX_EXTERNAL_RULE_CODE_BYTES - VALE_RULE_PREFIX.len() {
+    if alert.check.len() > MAX_VALE_CHECK_BYTES {
         return Err(invalid_alert(format!(
             "{alert_context} cannot form an external rule code"
         )));
@@ -373,11 +376,18 @@ mod tests {
     #[test]
     fn oversized_check_is_bounded_and_redacted() {
         let check = "CHECK-SENTINEL-".repeat(256);
-        let json = alert_json(&check, "", "x", "warning", [1, 1]);
+        let json = alert_json(&check, "message", "x", "warning", [1, 1]);
 
         let error = rejected_alert("x", &json);
 
         assert_bounded_redacted(&error, &check);
+        assert_eq!(
+            error.message(),
+            format!(
+                "Vale alert check ({} bytes) cannot form an external rule code",
+                check.len()
+            )
+        );
     }
 
     #[test]
