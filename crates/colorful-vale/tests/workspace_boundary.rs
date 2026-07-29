@@ -171,6 +171,20 @@ fn adapter_process_tests_do_not_mutate_global_environment() {
 }
 
 #[test]
+fn delayed_pid_evidence_uses_a_reaped_child() {
+    let source = adapter_test_source("vale_adapter.rs");
+    assert!(
+        !source.contains("u32::MAX"),
+        "PID evidence must not use a value that can narrow to process-group semantics"
+    );
+    assert!(
+        source.contains("Command::new(\"/bin/sleep\")")
+            && source.contains("delayed worker must be reaped"),
+        "delayed PID evidence must own and reap a real short-lived child"
+    );
+}
+
+#[test]
 fn workspace_dependency_entry_requires_a_workspace_flag() {
     let manifest = toml::from_str::<toml::Value>(
         r#"
