@@ -214,7 +214,8 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `editors/fixtures/theme-fallback.txt`;
   `editors/fixtures/theme-fallback.md`;
   `npm --prefix editors/vscode run smoke:package`; the manual oracle below.
-  *Status:* implemented.
+  *Status:* planned; the automated package and Wasm legs pass, but the manual
+  host result has not been recorded.
 - **EDIT-9a** — *Requirement:* EDIT-9. *Behavior:* the chosen synchronized or
   independent adapter version policy declares compatible `colorful-lsp`
   versions and detects unintended manifest drift. The synchronized policy

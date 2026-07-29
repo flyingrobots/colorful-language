@@ -155,6 +155,16 @@ test("the Zed missing-server oracle targets the extension-owned PATH branch", ()
   );
 });
 
+test("the Zed host oracle remains planned until manual evidence is recorded", () => {
+  const plan = readFileSync(
+    "docs/topics/editor-integrations/test-plan.md",
+    "utf8",
+  );
+  const edit8c = /- \*\*EDIT-8c\*\*[\s\S]*?(?=\n- \*\*EDIT-9a\*\*)/u.exec(plan);
+  assert.ok(edit8c, "missing EDIT-8c package and host case");
+  assert.match(edit8c[0], /\*Status:\* planned(?:[.;])/u);
+});
+
 test("the extension-host smoke rejects cross-drive install paths", () => {
   const source = readFileSync(
     "editors/vscode/smoke/suite/index.cjs",
