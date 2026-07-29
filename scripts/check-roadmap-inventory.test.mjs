@@ -150,6 +150,20 @@ test("ignores indented code that spells the accountability heading", () => {
   );
 });
 
+test("does not let an indented comment opener hide a later table", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+    <!--
+
+| Mechanism | Current user job |
+| --- | --- |
+| Visible authority | The indented code line cannot hide this table. |
+`,
+  );
+});
+
 test("rejects a second architecture-accountability section", () => {
   expectCategory(
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",

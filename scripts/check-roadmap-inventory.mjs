@@ -374,6 +374,16 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       }
       continue;
     }
+    if (/^(?: {4}|\t)/u.test(line)) {
+      if (accountabilityTableState === "rows") {
+        accountabilityTableState = "complete";
+      } else if (accountabilityTableState === "delimiter") {
+        accountabilityTableState = "searching";
+        candidateAccountabilityTableLocation = undefined;
+        candidateAccountabilityTableColumnCount = undefined;
+      }
+      continue;
+    }
 
     const openingFence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/u);
     if (
