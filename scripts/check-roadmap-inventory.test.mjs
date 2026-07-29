@@ -930,6 +930,18 @@ test("bounds live GitHub calls by time and response size", () => {
   assert.match(checker, /maxBuffer:\s*16 \* 1024 \* 1024/u);
 });
 
+test("defines the canonical accountability heading in one source location", () => {
+  const checker = readFileSync(
+    new URL("./check-roadmap-inventory.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(
+    [...checker.matchAll(/## Architecture accountability/gu)].length,
+    1,
+  );
+});
+
 test("the workflow reference pins the canonical accountability heading", () => {
   const reference = readFileSync(
     new URL(

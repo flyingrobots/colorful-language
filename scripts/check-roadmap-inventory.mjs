@@ -8,6 +8,18 @@ import { pathToFileURL } from "node:url";
 const PRIMARY_MARKER = /<!--\s*roadmap-primary:\s*([\s\S]*?)-->/gu;
 const VALID_MARKER = /^(active|parked|delivered)((?:\s+#\d+)+)$/u;
 const ACCOUNTABILITY_HEADING = "## Architecture accountability";
+const ACCOUNTABILITY_HEADING_PATTERN = ACCOUNTABILITY_HEADING.replace(
+  /[.*+?^${}()|[\]\\]/gu,
+  "\\$&",
+);
+const CANONICAL_ACCOUNTABILITY_HEADING = new RegExp(
+  `^ {0,3}${ACCOUNTABILITY_HEADING_PATTERN}[ \\t]*$`,
+  "u",
+);
+const CLOSING_HASH_ACCOUNTABILITY_HEADING = new RegExp(
+  `^ {0,3}${ACCOUNTABILITY_HEADING_PATTERN}[ \\t]+#+[ \\t]*$`,
+  "u",
+);
 const MARKDOWN_DELIMITER_CELL = /^:?-{3,}:?$/u;
 const MARKDOWN_CHARACTER_REFERENCE =
   /^&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
@@ -180,13 +192,11 @@ function noLeadingPipeTableCells(line) {
 }
 
 function isCanonicalAccountabilityHeading(line) {
-  return /^ {0,3}## Architecture accountability[ \t]*$/u.test(line);
+  return CANONICAL_ACCOUNTABILITY_HEADING.test(line);
 }
 
 function isAccountabilityHeadingWithClosingHashes(line) {
-  return /^ {0,3}## Architecture accountability[ \t]+#+[ \t]*$/u.test(
-    line,
-  );
+  return CLOSING_HASH_ACCOUNTABILITY_HEADING.test(line);
 }
 
 function isRoadmapLevelTwoHeading(line) {
