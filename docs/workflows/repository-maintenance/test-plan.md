@@ -252,8 +252,9 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   Markdown is noncanonical. *Oracle:* a byte-equivalent CRLF success case and
   fixture mutations cover exact duplicate rows, missing/recased or
   code-indented headings, comment-altered and closing-hash variants in both
-  source orders, duplicate headings, comment-altered header and delimiter
-  source, plain, inline-code-styled, whole-cell and partial inline-linked,
+  source orders, duplicate headings, comment-altered or overlapping-comment
+  header and delimiter source, plain, inline-code-styled, whole-cell and
+  partial inline-linked,
   numeric-character-reference, fully styled, and partially
   asterisk-emphasized duplicate table headers plus unresolved-reference and
   intraword-underscore negative controls, incomplete plain and styled header
@@ -316,7 +317,7 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `scripts/check-roadmap-inventory.mjs`,
   `scripts/roadmap-inventory-runner.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
-  `package-lock.json`. The parser-owning checker measures 853 lines and 19
+  `package-lock.json`. The parser-owning checker measures 887 lines and 19
   top-level helpers; the 207-line transport runner contains no Markdown
   interpretation. *Tracking:*
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).

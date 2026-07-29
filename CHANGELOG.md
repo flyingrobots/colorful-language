@@ -462,7 +462,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mdast` and `micromark` packages while retaining every stable fixture,
   diagnostic category, and source address. `ROADMAP.md` remains the sole
   disposition and architecture-accountability authority. The parser-owning
-  checker falls from 1,429 lines and 34 top-level helpers to 853 lines and 19
+  checker falls from 1,429 lines and 34 top-level helpers to 887 lines and 19
   helpers; a separate dependency-injected runner owns only bounded GitHub/CLI
   transport. Source and dependency ratchets prevent the bespoke Markdown state
   machine or a floating parser from returning.

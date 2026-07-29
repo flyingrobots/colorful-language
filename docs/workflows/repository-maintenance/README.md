@@ -234,7 +234,7 @@ the Colorful-specific policy below:
 - duplicate headings, tables, and mechanism identities report stable
   path-and-line addresses for both LF and CRLF input.
 
-`scripts/check-roadmap-inventory.mjs` now owns 853 lines and 19 top-level
+`scripts/check-roadmap-inventory.mjs` now owns 887 lines and 19 top-level
 helpers, down from 1,429 lines and 34 helpers. Its 207-line
 `scripts/roadmap-inventory-runner.mjs` companion owns only argument parsing,
 bounded GitHub transport, JSON loading, and process output; it contains no

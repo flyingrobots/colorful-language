@@ -813,6 +813,17 @@ test("rejects a comment-altered accountability table header", () => {
   );
 });
 
+test("rejects overlapping comment delimiters in a table header", () => {
+  expectCategory(
+    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+    (source) =>
+      source.replace(
+        "| Mechanism | Current user job |",
+        "<!<!--note-->-->| Mechanism | Current user job |",
+      ),
+  );
+});
+
 test("rejects a comment-altered accountability table delimiter", () => {
   expectCategory(
     "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",

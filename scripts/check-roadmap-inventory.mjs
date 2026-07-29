@@ -175,8 +175,24 @@ function tableIsInsideSection(
   );
 }
 
-function removeClosedComments(line) {
-  return line.replace(/<!--[\s\S]*?-->/gu, "");
+function lineWithoutInlineComments(line, lineNumber_, commentRanges) {
+  const ranges = commentRanges.filter(
+    (range) =>
+      range.startLine === lineNumber_ && range.endLine === lineNumber_,
+  );
+  let visible = line;
+  for (let index = ranges.length - 1; index >= 0; index -= 1) {
+    const range = ranges[index];
+    visible =
+      visible.slice(0, range.startColumn) +
+      visible.slice(range.endColumn);
+  }
+  return {
+    visible,
+    exposedDelimiter:
+      ranges.length > 0 &&
+      (visible.includes("<!--") || visible.includes("-->")),
+  };
 }
 
 function pipeCells(line) {
@@ -213,19 +229,33 @@ function corruptedCanonicalTableLine(
     }
     const literalHeader = sourceLine(lines, index + 1);
     const literalDelimiter = sourceLine(lines, index + 2);
-    const visibleHeader = removeClosedComments(literalHeader);
-    const visibleDelimiter = removeClosedComments(literalDelimiter);
-    const visibleHeaderCells = pipeCells(visibleHeader);
+    const headerView = lineWithoutInlineComments(
+      literalHeader,
+      index + 1,
+      commentRanges,
+    );
+    const delimiterView = lineWithoutInlineComments(
+      literalDelimiter,
+      index + 2,
+      commentRanges,
+    );
+    const visibleHeaderCells = pipeCells(headerView.visible);
+    if (headerView.exposedDelimiter) {
+      return index + 1;
+    }
+    if (delimiterView.exposedDelimiter) {
+      return index + 2;
+    }
     if (
       visibleHeaderCells?.[0] !== "Mechanism" ||
-      !isDelimiter(pipeCells(visibleDelimiter))
+      !isDelimiter(pipeCells(delimiterView.visible))
     ) {
       continue;
     }
-    if (visibleHeader !== literalHeader) {
+    if (headerView.visible !== literalHeader) {
       return index + 1;
     }
-    if (visibleDelimiter !== literalDelimiter) {
+    if (delimiterView.visible !== literalDelimiter) {
       return index + 2;
     }
   }
@@ -371,6 +401,10 @@ function markdownCommentRanges(source, tree) {
       closing: closing === -1 ? undefined : closing,
       startLine: lineNumber(source, start),
       endLine: lineNumber(source, end),
+      startColumn:
+        start - (source.lastIndexOf("\n", start - 1) + 1),
+      endColumn:
+        end - (source.lastIndexOf("\n", end - 1) + 1),
     });
     searchFrom = end;
   }
