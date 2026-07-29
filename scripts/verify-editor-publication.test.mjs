@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import {
   mkdtempSync,
   rmSync,
@@ -261,4 +262,28 @@ test("rejects Open VSX metadata that redirects outside the requested version", a
         error.code === "E_EDITOR_PUBLICATION_METADATA",
     );
   });
+});
+
+test("rejects malformed publication-verifier CLI arguments", () => {
+  for (const argv of [
+    [],
+    ["--vsix", "artifact.vsix"],
+    ["--version", VERSION],
+    ["--version", VERSION, "--version", VERSION],
+    ["--unknown", "value", "--vsix", "artifact.vsix"],
+    ["--version", "", "--vsix", "artifact.vsix"],
+    ["--version", VERSION, "--vsix"],
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      ["scripts/verify-editor-publication.mjs", ...argv],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 1, JSON.stringify(argv));
+    assert.match(
+      result.stderr,
+      /^E_EDITOR_PUBLICATION_USAGE: usage:/u,
+      JSON.stringify(argv),
+    );
+  }
 });
