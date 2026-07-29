@@ -129,6 +129,35 @@ test("retries bounded eventual publication without accepting another status", as
   });
 });
 
+test("default retry budget covers delayed Marketplace propagation", async () => {
+  await withVsix(async (vsixPath) => {
+    const sleeps = [];
+    let marketplaceAttempts = 0;
+    const fetchImpl = async (url) => {
+      if (url === marketplacePackageUrl(VERSION)) {
+        marketplaceAttempts += 1;
+        return marketplaceAttempts < 60
+          ? response("pending", 404)
+          : response(PACKAGE);
+      }
+      if (url === openVsxMetadataUrl(VERSION)) {
+        return response(metadata());
+      }
+      return response(PACKAGE);
+    };
+
+    await verifyEditorPublication({
+      vsixPath,
+      version: VERSION,
+      fetchImpl,
+      sleep: async (milliseconds) => sleeps.push(milliseconds),
+    });
+    assert.equal(marketplaceAttempts, 60);
+    assert.equal(sleeps.length, 59);
+    assert.equal(sleeps.every((milliseconds) => milliseconds === 15_000), true);
+  });
+});
+
 test("reports the actual attempt count for a non-retryable response", async () => {
   await withVsix(async (vsixPath) => {
     let requests = 0;
