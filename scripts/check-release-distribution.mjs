@@ -275,6 +275,11 @@ function validateBinaryJob(job, platforms) {
   if (!uploadPath.includes("*.tar.gz") || !uploadPath.includes("*.sha256")) {
     throw new Error(`${context} must upload each archive and checksum`);
   }
+  if (upload.with?.["if-no-files-found"] !== "error") {
+    throw new Error(
+      `${context} must fail when native archive files are absent`,
+    );
+  }
 }
 
 function validateReleaseJob(job) {
@@ -316,6 +321,9 @@ function validateReleaseJob(job) {
     download.with?.["merge-multiple"] !== true
   ) {
     throw new Error(`${context} must merge the reviewed native archives`);
+  }
+  if (download.with?.path !== "dist") {
+    throw new Error(`${context} must download native archives into dist`);
   }
 
   const publish = requiredStep(

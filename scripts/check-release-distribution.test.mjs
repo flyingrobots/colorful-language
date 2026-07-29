@@ -102,6 +102,7 @@ function validSnapshot() {
               with: {
                 name: "release-binaries-${{ matrix.target }}",
                 path: "dist/*.tar.gz\ndist/*.sha256",
+                "if-no-files-found": "error",
               },
             },
           ],
@@ -124,6 +125,7 @@ function validSnapshot() {
               uses: `actions/download-artifact@${ACTION_SHA}`,
               with: {
                 pattern: "release-binaries-*",
+                path: "dist",
                 "merge-multiple": true,
               },
             },
