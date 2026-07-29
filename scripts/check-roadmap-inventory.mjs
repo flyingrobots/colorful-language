@@ -9,6 +9,15 @@ const PRIMARY_MARKER = /<!--\s*roadmap-primary:\s*([\s\S]*?)-->/gu;
 const VALID_MARKER = /^(active|parked|delivered)((?:\s+#\d+)+)$/u;
 const ACCOUNTABILITY_HEADING = "## Architecture accountability";
 const MARKDOWN_DELIMITER_CELL = /^:?-+:?$/u;
+const NONCANONICAL_MECHANISM_MARKUP = new Set([
+  "*",
+  "_",
+  "~",
+  "[",
+  "]",
+  "<",
+  ">",
+]);
 const ACTIVE_DISPOSITIONS = new Set(["active", "parked"]);
 
 export class InventoryError extends Error {
@@ -93,6 +102,55 @@ function markdownTableMechanism(line) {
   return undefined;
 }
 
+function canonicalMechanismIdentity(mechanism, location) {
+  let identity = "";
+
+  for (let index = 0; index < mechanism.length; index += 1) {
+    const character = mechanism[index];
+    if (character === "\\") {
+      if (index + 1 === mechanism.length) {
+        fail(
+          "E_ROADMAP_NONCANONICAL_MECHANISM",
+          location,
+          "mechanism ends with an incomplete Markdown escape",
+        );
+      }
+      identity += mechanism[index + 1];
+      index += 1;
+      continue;
+    }
+    if (character === "`") {
+      let delimiterLength = 1;
+      while (mechanism[index + delimiterLength] === "`") {
+        delimiterLength += 1;
+      }
+      const delimiter = "`".repeat(delimiterLength);
+      const contentStart = index + delimiterLength;
+      const contentEnd = mechanism.indexOf(delimiter, contentStart);
+      if (contentEnd === -1) {
+        fail(
+          "E_ROADMAP_NONCANONICAL_MECHANISM",
+          location,
+          "mechanism contains an unterminated inline-code span",
+        );
+      }
+      identity += mechanism.slice(contentStart, contentEnd);
+      index = contentEnd + delimiterLength - 1;
+      continue;
+    }
+    if (NONCANONICAL_MECHANISM_MARKUP.has(character)) {
+      fail(
+        "E_ROADMAP_NONCANONICAL_MECHANISM",
+        location,
+        "use plain text, escaped punctuation, or inline code in mechanism cells",
+      );
+    }
+    identity += character;
+  }
+
+  return identity.replace(/\s+/gu, " ").trim();
+}
+
 function validateArchitectureAccountability(roadmap, roadmapPath) {
   const mechanisms = new Map();
   let inAccountabilitySection = false;
@@ -130,15 +188,16 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
 
     const location = `${roadmapPath}:${index + 1}`;
-    const previous = mechanisms.get(mechanism);
+    const identity = canonicalMechanismIdentity(mechanism, location);
+    const previous = mechanisms.get(identity);
     if (previous !== undefined) {
       fail(
         "E_ROADMAP_DUPLICATE_MECHANISM",
         location,
-        `architecture-accountability mechanism "${mechanism}" already appears at ${previous}`,
+        `architecture-accountability mechanism "${identity}" already appears at ${previous}`,
       );
     }
-    mechanisms.set(mechanism, location);
+    mechanisms.set(identity, location);
   }
 
   if (!foundAccountabilitySection) {

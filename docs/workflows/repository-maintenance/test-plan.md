@@ -67,7 +67,9 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
 - **RM-14 — Unique architecture accountability.** Every mechanism in the
   roadmap's Architecture Accountability table must have one row, so duplicated
   decisions cannot conceal drift while every distinct moonshot mechanism is
-  preserved.
+  preserved. The gate must fail closed when the canonical section or table is
+  absent and must compare displayed identities without treating examples as
+  authoritative rows.
 
 ## Cases
 
@@ -236,12 +238,18 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   implemented.
 - **RM-14a — Duplicate mechanism refusal.** *Requirement:* RM-14. *Behavior:*
   the offline roadmap structure gate rejects a repeated Architecture
-  Accountability mechanism without deleting or conflating distinct rows.
-  *Oracle:* a fixture mutation that repeats one complete mechanism row fails
-  with `E_ROADMAP_DUPLICATE_MECHANISM`, the current and previous
-  `ROADMAP.md` line addresses, and a nonzero process status. *Evidence type:*
-  deterministic fixture-backed Node test plus the existing offline repository
-  command. *Evidence:* `scripts/check-roadmap-inventory.mjs`,
+  Accountability mechanism without deleting or conflating distinct rows,
+  refuses a missing canonical section or table, ignores table-shaped examples
+  outside the authoritative table, and compares plain and inline-code labels
+  by displayed identity. Unsupported mechanism-cell Markdown is
+  noncanonical. *Oracle:* fixture mutations cover exact duplicate rows,
+  missing/recased headings, a missing table, a fenced table example,
+  inline-code styling, and unsupported emphasis. They fail with their stable
+  `E_ROADMAP_*` categories, including both source addresses for a duplicate,
+  while the fenced example remains valid. The process-level duplicate leg
+  exits nonzero with empty stdout and exact stderr. *Evidence type:*
+  deterministic fixture-backed Node tests plus the existing offline
+  repository command. *Evidence:* `scripts/check-roadmap-inventory.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, and
   `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).

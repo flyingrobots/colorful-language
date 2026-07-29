@@ -211,10 +211,15 @@ change its primary marker to `delivered`. When opening or moving a slice, add or
 move its one marker in the same change. When a pull request closes a slice,
 change that marker to `delivered` before merge.
 
-The same offline structure gate also requires each mechanism in the
-Architecture Accountability table to appear exactly once. A duplicate fails
-with both the repeated row's line and the original row's line; distinct
-moonshot mechanisms remain independent entries.
+The same offline structure gate requires the canonical Architecture
+Accountability heading and its `Mechanism` table, then requires each displayed
+mechanism identity to appear exactly once. Only contiguous rows in that table
+are authoritative, so later examples and comments cannot create findings.
+Plain text, escaped punctuation, and inline code are normalized to their
+displayed identity; other mechanism-cell Markdown is rejected as
+noncanonical. A duplicate fails with both the repeated row's line and the
+original row's line, while distinct moonshot mechanisms remain independent
+entries.
 
 Run the deterministic structure and fixture gates without network access:
 

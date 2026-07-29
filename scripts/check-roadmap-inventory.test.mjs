@@ -140,6 +140,24 @@ test("rejects a missing architecture-accountability table", () => {
   );
 });
 
+test("compares displayed mechanism identity across inline-code styling", () => {
+  expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
+    source.replace(
+      "| Parser ports | Substitute deterministic adapters. |",
+      [
+        "| Parser ports | Substitute deterministic adapters. |",
+        "| `Parser ports` | Same displayed mechanism. |",
+      ].join("\n"),
+    ),
+  );
+});
+
+test("rejects noncanonical mechanism-cell Markdown", () => {
+  expectCategory("E_ROADMAP_NONCANONICAL_MECHANISM", (source) =>
+    source.replace("| Parser ports |", "| **Parser ports** |"),
+  );
+});
+
 test("rejects a closed slice presented as active", () => {
   expectCategory("E_ROADMAP_CLOSED_ACTIVE", (source) =>
     source.replace(

@@ -172,8 +172,9 @@ observe public-contract regressions before they ship.
   warning-denying package rustdoc a hosted and local release-preparation gate
   [#230](https://github.com/flyingrobots/colorful-language/issues/230).
   <!-- roadmap-primary: delivered #230 -->
-- **Delivered roadmap-accountability hygiene:** reject duplicate mechanism rows so
-  one architecture decision cannot drift through two apparent authorities
+- **Delivered roadmap-accountability hygiene:** fail closed around the
+  canonical mechanism table and reject duplicate displayed identities so one
+  architecture decision cannot drift through two apparent authorities
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).
   <!-- roadmap-primary: delivered #243 -->
 - **Delivered process-test determinism:** replace the Vale timeout fixture's
