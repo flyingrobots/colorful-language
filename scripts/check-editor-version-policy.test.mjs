@@ -1,0 +1,167 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import {
+  CHECK_COMMAND,
+  EXPECTED_VERSION_SOURCES,
+  deriveCompatibleLspRange,
+  isCompatibleLspVersion,
+  loadRepositorySnapshot,
+  validateEditorVersionPolicy,
+} from "./check-editor-version-policy.mjs";
+
+const RELEASE_VERSION = "0.4.0";
+
+function validSnapshot() {
+  return {
+    policy: {
+      strategy: "synchronized",
+      server: "colorful-lsp",
+      compatibility: "same-pre-1.0-minor",
+      prerelease: "unsupported",
+      versionSources: structuredClone(EXPECTED_VERSION_SOURCES),
+    },
+    versions: Object.fromEntries(
+      EXPECTED_VERSION_SOURCES.map(({ path }) => [path, RELEASE_VERSION]),
+    ),
+    gateSources: {
+      ci: `- run: ${CHECK_COMMAND}\n`,
+      releasePrep: `${CHECK_COMMAND}\n`,
+      release: `- run: ${CHECK_COMMAND}\n`,
+    },
+  };
+}
+
+test("the synchronized policy derives the same pre-1.0 minor range", () => {
+  assert.equal(deriveCompatibleLspRange("0.4.0"), ">=0.4.0 <0.5.0");
+  assert.equal(deriveCompatibleLspRange("0.4.27"), ">=0.4.0 <0.5.0");
+  assert.throws(
+    () => deriveCompatibleLspRange("0.4.0-rc.1"),
+    /stable SemVer/u,
+  );
+  assert.throws(() => deriveCompatibleLspRange("1.0.0"), /pre-1\.0/u);
+});
+
+test("same-minor stable servers are compatible and breaking minors are not", () => {
+  assert.equal(isCompatibleLspVersion("0.4.0", "0.4.0"), true);
+  assert.equal(isCompatibleLspVersion("0.4.9", "0.4.0"), true);
+  assert.equal(isCompatibleLspVersion("0.4.0", "0.4.99"), true);
+  assert.equal(isCompatibleLspVersion("0.4.0", "0.3.99"), false);
+  assert.equal(isCompatibleLspVersion("0.4.0", "0.5.0"), false);
+  assert.equal(isCompatibleLspVersion("0.4.0", "0.4.1-rc.1"), false);
+});
+
+test("accepts the complete synchronized manifest and gate inventory", () => {
+  assert.deepEqual(validateEditorVersionPolicy(validSnapshot()), {
+    releaseVersion: RELEASE_VERSION,
+    compatibleLsp: ">=0.4.0 <0.5.0",
+    versionSourceCount: EXPECTED_VERSION_SOURCES.length,
+  });
+});
+
+for (const source of EXPECTED_VERSION_SOURCES) {
+  test(`rejects drift in ${source.path}`, () => {
+    const snapshot = validSnapshot();
+    snapshot.versions[source.path] = "0.4.1";
+    assert.throws(
+      () => validateEditorVersionPolicy(snapshot),
+      new RegExp(
+        `${source.path.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&")} has 0\\.4\\.1; expected 0\\.4\\.0`,
+        "u",
+      ),
+    );
+  });
+}
+
+test("rejects prerelease versions in every synchronized source", () => {
+  for (const source of EXPECTED_VERSION_SOURCES) {
+    const snapshot = validSnapshot();
+    snapshot.versions[source.path] = "0.4.0-rc.1";
+    assert.throws(
+      () => validateEditorVersionPolicy(snapshot),
+      new RegExp(
+        `${source.path.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&")} must be stable SemVer`,
+        "u",
+      ),
+    );
+  }
+});
+
+test("rejects an independent adapter strategy", () => {
+  const snapshot = validSnapshot();
+  snapshot.policy.strategy = "independent";
+  assert.throws(
+    () => validateEditorVersionPolicy(snapshot),
+    /editor adapter strategy must be synchronized/u,
+  );
+});
+
+test("rejects compatibility and prerelease policy drift", () => {
+  const compatibility = validSnapshot();
+  compatibility.policy.compatibility = "any-newer";
+  assert.throws(
+    () => validateEditorVersionPolicy(compatibility),
+    /LSP compatibility must be same-pre-1\.0-minor/u,
+  );
+
+  const prerelease = validSnapshot();
+  prerelease.policy.prerelease = "rc";
+  assert.throws(
+    () => validateEditorVersionPolicy(prerelease),
+    /editor prerelease policy must be unsupported/u,
+  );
+});
+
+test("rejects missing, duplicated, unexpected, or reordered version sources", () => {
+  const missing = validSnapshot();
+  missing.policy.versionSources.pop();
+  assert.throws(
+    () => validateEditorVersionPolicy(missing),
+    /version sources differ from the reviewed synchronized inventory/u,
+  );
+
+  const duplicated = validSnapshot();
+  duplicated.policy.versionSources.push(
+    structuredClone(EXPECTED_VERSION_SOURCES[0]),
+  );
+  assert.throws(
+    () => validateEditorVersionPolicy(duplicated),
+    /version sources differ from the reviewed synchronized inventory/u,
+  );
+
+  const unexpected = validSnapshot();
+  unexpected.policy.versionSources[0].path = "editors/other/package.json";
+  assert.throws(
+    () => validateEditorVersionPolicy(unexpected),
+    /version sources differ from the reviewed synchronized inventory/u,
+  );
+
+  const reordered = validSnapshot();
+  reordered.policy.versionSources.reverse();
+  assert.throws(
+    () => validateEditorVersionPolicy(reordered),
+    /version sources differ from the reviewed synchronized inventory/u,
+  );
+});
+
+test("rejects missing policy wiring in every release gate", () => {
+  for (const gate of ["ci", "releasePrep", "release"]) {
+    const snapshot = validSnapshot();
+    snapshot.gateSources[gate] = "";
+    assert.throws(
+      () => validateEditorVersionPolicy(snapshot),
+      new RegExp(`${gate} must run ${CHECK_COMMAND}`, "u"),
+    );
+  }
+});
+
+test("the checked-in repository satisfies the policy", () => {
+  assert.deepEqual(
+    validateEditorVersionPolicy(loadRepositorySnapshot()),
+    {
+      releaseVersion: RELEASE_VERSION,
+      compatibleLsp: ">=0.4.0 <0.5.0",
+      versionSourceCount: EXPECTED_VERSION_SOURCES.length,
+    },
+  );
+});
