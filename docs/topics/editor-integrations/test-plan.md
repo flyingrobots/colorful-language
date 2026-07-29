@@ -309,18 +309,16 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `masking_preserves_byte_and_utf16_coordinates_after_unicode`. *Status:*
   implemented.
 - **EDIT-15c** — *Requirement:* EDIT-15. *Behavior:* LSP `languageId:
-  "markdown"` and CLI `.md`/`.markdown` lint inputs use the same format adapter;
-  stdin and non-Markdown files remain Plain Text unless a future explicit
-  format option is introduced. *Oracle:* the same source produces the same
-  finding byte span and human/LSP line under both surfaces, while a `.txt`
-  control still analyzes code-looking text. *Evidence type:* cross-surface
-  process and unit fixtures. *Tracking:*
+  "markdown"` and CLI `.md`/`.markdown` lint and ANSI file inputs use the same
+  format adapter; stdin, public string colorization helpers, and non-Markdown
+  files remain Plain Text unless a future explicit format option is introduced.
+  *Oracle:* the same source produces the same finding byte span and human/LSP
+  line under both diagnostic surfaces, while the default CLI styles prose but
+  leaves excluded source bytes unchanged. A `.txt` control still analyzes
+  code-looking text. *Evidence type:* cross-surface process and unit fixtures.
+  *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Evidence:* `colorful-cli` test
-  `cli::tests::markdown_lint_matches_lsp_prose_regions_while_plain_text_stays_whole_document`;
-  `crates/colorful-lsp/tests/fixtures/editor_lifecycle_transcript.json`;
-  `crates/colorful-lsp/tests/stdio_contract.rs`
-  `real_server_completes_the_public_stdio_lifecycle`. *Status:* implemented.
+  *Status:* planned.
 - **EDIT-15d** — *Requirement:* EDIT-15. *Behavior:* the server stores the
   `didOpen` language identifier with the document generation and preserves that
   format across incremental edits, stale-result rejection, cached diagnostics,
