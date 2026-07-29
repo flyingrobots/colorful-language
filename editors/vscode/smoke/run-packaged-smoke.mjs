@@ -52,7 +52,6 @@ function run(command, args, options = {}) {
     env: { ...process.env, ...options.env },
     encoding: "utf8",
     stdio: options.capture ? "pipe" : "inherit",
-    shell: process.platform === "win32" && options.shell !== false,
   });
   if (result.error) {
     throw result.error;
@@ -130,19 +129,9 @@ function installVsix(vscodeExecutablePath, vsixPath, extensionsDirectory) {
     `--extensions-dir=${extensionsDirectory}`,
     `--user-data-dir=${installData}`,
   ];
-  run(
-    cli,
-    [
-      ...profileArgs,
-      "--install-extension",
-      vsixPath,
-      "--force",
-    ],
-    { shell: true },
-  );
+  run(cli, [...profileArgs, "--install-extension", vsixPath, "--force"]);
   const listed = run(cli, [...profileArgs, "--list-extensions", "--show-versions"], {
     capture: true,
-    shell: true,
   });
   assert.ok(
     listed.stdout

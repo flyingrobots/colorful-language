@@ -103,6 +103,14 @@ test("package evidence has independent validation boundaries", () => {
   );
 });
 
+test("the package smoke never delegates argument parsing to a shell", () => {
+  const source = readFileSync(
+    "editors/vscode/smoke/run-packaged-smoke.mjs",
+    "utf8",
+  );
+  assert.doesNotMatch(source, /\bshell\s*:/u);
+});
+
 test("Zed package validation is table-aware and formatting-independent", () => {
   const scratch = mkdtempSync(path.join(tmpdir(), "colorful-zed-package-"));
   const staged = path.join(scratch, "staged");
