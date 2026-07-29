@@ -327,6 +327,18 @@ Requirements:
   `crates/colorful-cli/benchmarks/cross-stage-baseline.json`;
   `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
   *Status:* implemented.
+- **COL-17e** — *Requirement:* COL-17. *Behavior:* the cross-stage benchmark
+  derives its allocation-counter name and version from exactly one resolved
+  `stats_alloc` package reported by locked, offline Cargo metadata instead of a
+  hand-maintained string. *Oracle:* malformed metadata and missing, duplicated,
+  empty, or stale profiler identities fail closed; changing the resolved
+  version without regenerating the committed report fails deterministically.
+  The packaged report-contract test remains runnable against its generated
+  lockfile, while timing/allocation report regeneration remains a clean
+  workspace operation. *Evidence type:* pure metadata mutation tests, packaged
+  integration contract, and release benchmark metadata. *Tracking:*
+  [#207](https://github.com/flyingrobots/colorful-language/issues/207).
+  *Evidence:* planned. *Status:* planned.
 - **COL-18a** — *Requirement:* COL-18. *Behavior:* a bounded seeded corpus
   generates valid Unicode plus malformed public trees and IR mutations and
   exercises parser, annotator, projection, validation, and UTF-16 indexing.
