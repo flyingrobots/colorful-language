@@ -200,6 +200,51 @@ function findExactBacktickRun(source, start, length) {
   return -1;
 }
 
+function stripClosedInlineHtmlComments(line) {
+  let visible = "";
+  for (let index = 0; index < line.length; ) {
+    if (line[index] === "\\") {
+      visible += line[index];
+      index += 1;
+      if (index < line.length) {
+        visible += line[index];
+        index += 1;
+      }
+      continue;
+    }
+    if (line[index] === "`") {
+      let delimiterLength = 1;
+      while (line[index + delimiterLength] === "`") {
+        delimiterLength += 1;
+      }
+      const contentEnd = findExactBacktickRun(
+        line,
+        index + delimiterLength,
+        delimiterLength,
+      );
+      if (contentEnd === -1) {
+        visible += line.slice(index);
+        return { visible, opensMultilineComment: false };
+      }
+      const spanEnd = contentEnd + delimiterLength;
+      visible += line.slice(index, spanEnd);
+      index = spanEnd;
+      continue;
+    }
+    if (line.startsWith("<!--", index)) {
+      const commentEnd = line.indexOf("-->", index + 4);
+      if (commentEnd === -1) {
+        return { visible, opensMultilineComment: true };
+      }
+      index = commentEnd + 3;
+      continue;
+    }
+    visible += line[index];
+    index += 1;
+  }
+  return { visible, opensMultilineComment: false };
+}
+
 function canonicalMechanismIdentity(mechanism, location) {
   let identity = "";
 
@@ -306,7 +351,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let candidateAccountabilityTableColumnCount;
 
   for (const [index, rawLine] of roadmap.split("\n").entries()) {
-    const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+    let line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
     if (fenceCharacter !== undefined) {
       const closingFence = line.match(
         /^ {0,3}(`{3,}|~{3,})[ \t]*$/u,
@@ -343,17 +388,31 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       fenceLength = openingFence[1].length;
       continue;
     }
-    const commentStart = line.indexOf("<!--");
-    if (commentStart !== -1) {
+    const commentScan = stripClosedInlineHtmlComments(line);
+    if (commentScan.opensMultilineComment) {
+      if (
+        markdownTableCells(commentScan.visible) !== undefined ||
+        isNoLeadingPipeMechanismHeader(commentScan.visible) ||
+        ((accountabilityTableState === "delimiter" ||
+          accountabilityTableState === "rows") &&
+          isNoLeadingPipeTableRow(commentScan.visible))
+      ) {
+        fail(
+          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+          `${roadmapPath}:${index + 1}`,
+          "a multiline HTML comment cannot begin on an accountability table row",
+        );
+      }
       if (accountabilityTableState === "rows") {
         accountabilityTableState = "complete";
       } else if (accountabilityTableState === "delimiter") {
         accountabilityTableState = "searching";
         candidateAccountabilityTableColumnCount = undefined;
       }
-      inHtmlComment = !line.slice(commentStart + 4).includes("-->");
+      inHtmlComment = true;
       continue;
     }
+    line = commentScan.visible;
 
     if (isCanonicalAccountabilityHeading(line)) {
       const location = `${roadmapPath}:${index + 1}`;

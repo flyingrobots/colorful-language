@@ -251,8 +251,12 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   no-leading-pipe headers, a no-leading-pipe continuing data row, indented code
   plus fenced and commented table-shaped examples, invalid backtick-fence info
   strings plus valid tilde-fence controls, multiline comments that open after
-  visible text, inline-code styling and longer internal backtick runs, an empty
-  identity, invalid escaping inside and outside inline code,
+  visible text, a visible duplicate mechanism split by a closed inline HTML
+  comment, a multiline comment beginning on a visible table row, and a
+  post-table prose control containing a pipe before a multiline comment plus a
+  comment-shaped inline-code literal control, inline-code styling and longer
+  internal backtick runs, an empty identity, invalid escaping inside and
+  outside inline code,
   named/decimal/hexadecimal character references, canonically equivalent
   Unicode, and unsupported emphasis. They fail with
   their stable `E_ROADMAP_*` categories, including both source addresses for a

@@ -231,18 +231,22 @@ stand in for the table. Backtick fence openers whose info strings contain a
 backtick are treated as visible source, while tilde-fence info strings may
 contain backticks. A
 multiline comment is non-authoritative even when its opener follows visible
-text on the same line. Plain text, ASCII-punctuation escapes, and inline code
-are normalized to their NFC displayed identity, including table-delimiter
-escapes inside code spans. An inline-code span closes only on a backtick run
-exactly as long as its opener, so shorter and longer internal runs remain
-displayed content. Character-reference-shaped source outside inline code is
-rejected; the displayed character must be written directly so source and
-rendered identities cannot diverge. Skipped blocks also terminate the table
-even without a separating blank line. Empty cells, invalid escapes, and other
-mechanism-cell Markdown are rejected as noncanonical. A repeated heading,
-table, or mechanism fails with both source locations, while distinct moonshot
-mechanisms remain independent entries. Leaving the canonical section does not
-end the structural scan: a later H2 cannot hide a second accountability
+text on the same line, but a multiline comment cannot begin on a visible
+table-shaped line. Closed inline HTML comment spans are ignored while the
+surrounding visible row content remains authoritative; comment-shaped text
+inside inline code remains literal. Plain text, ASCII-punctuation escapes, and
+inline code are normalized to their NFC displayed identity, including
+table-delimiter escapes inside code spans. An inline-code span closes only on
+a backtick run exactly as long as its opener, so shorter and longer internal
+runs remain displayed content.
+Character-reference-shaped source outside inline code is rejected; the
+displayed character must be written directly so source and rendered identities
+cannot diverge. Skipped blocks also terminate the table even without a
+separating blank line. Empty cells, invalid escapes, and other mechanism-cell
+Markdown are rejected as noncanonical. A repeated heading, table, or mechanism
+fails with both source locations, while distinct moonshot mechanisms remain
+independent entries. Leaving the canonical section does not end the structural
+scan: a later H2 cannot hide a second accountability
 authority, and a closing-hash display equivalent is rejected in either source
 order.
 

@@ -278,6 +278,71 @@ ${commentedTable}
   );
 });
 
+test("compares visible mechanism identity around inline HTML comments", () => {
+  const mechanismRow =
+    "| Parser ports | Substitute deterministic adapters. |";
+  expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
+    source.replace(
+      mechanismRow,
+      [
+        mechanismRow,
+        "| Parser <!-- explanatory note --> ports | Same visible mechanism. |",
+      ].join("\n"),
+    ),
+  );
+});
+
+test("preserves comment-shaped text inside inline code", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(
+        "| Parser ports | Substitute deterministic adapters. |",
+        [
+          "| Parser ports | Plain identity. |",
+          "| `Parser <!-- explanatory note --> ports` | Literal code identity. |",
+        ].join("\n"),
+      ),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
+test("rejects a multiline comment beginning on a visible table row", () => {
+  const mechanismRow =
+    "| Parser ports | Substitute deterministic adapters. |";
+  expectCategory(
+    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+    (source) =>
+      source.replace(
+        mechanismRow,
+        [
+          mechanismRow,
+          "| Parser ports | Duplicate visible row. | <!--",
+          "Comment body.",
+          "-->",
+        ].join("\n"),
+      ),
+  );
+});
+
+test("allows a multiline comment after post-table prose containing a pipe", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: `${roadmap}
+
+Choose Parser ports | annotator ports here. <!--
+This comment does not extend the accountability table.
+-->
+`,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("rejects a missing architecture-accountability table", () => {
   expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
     source.replace(/\n\| Mechanism \|[\s\S]*$/u, "\n"),
