@@ -316,6 +316,97 @@ fn invalid_alert(message: impl Into<String>) -> ValeError {
 #[cfg(test)]
 mod tests {
     use super::{parse_findings, LineIndex, LINE_INDEX_CONSTRUCTIONS, RESPONSE_DESERIALIZATIONS};
+    use crate::{ValeError, ValeErrorKind};
+    use serde_json::json;
+
+    const ALERT_ERROR_LIMIT: usize = 512;
+
+    fn alert_json(
+        check: &str,
+        message: &str,
+        matched: &str,
+        severity: &str,
+        span: [i64; 2],
+    ) -> String {
+        json!({
+            "stdin.txt": [{
+                "Action": {"Name": "", "Params": null},
+                "Span": span,
+                "Check": check,
+                "Description": "",
+                "Link": "",
+                "Message": message,
+                "Severity": severity,
+                "Match": matched,
+                "Line": 1
+            }]
+        })
+        .to_string()
+    }
+
+    fn rejected_alert(source: &str, json: &str) -> ValeError {
+        parse_findings(source, "stdin.txt", json).expect_err("malformed alert must fail closed")
+    }
+
+    fn assert_bounded_redacted(error: &ValeError, sentinel: &str) {
+        assert_eq!(error.kind(), ValeErrorKind::InvalidAlert);
+        assert!(
+            error.message().len() <= ALERT_ERROR_LIMIT,
+            "invalid-alert detail used {} bytes; expected at most {ALERT_ERROR_LIMIT}",
+            error.message().len()
+        );
+        assert!(
+            !error.message().contains(sentinel),
+            "invalid-alert detail reproduced the complete external sentinel"
+        );
+    }
+
+    #[test]
+    fn oversized_check_is_bounded_and_redacted() {
+        let check = "CHECK-SENTINEL-".repeat(256);
+        let json = alert_json(&check, "", "x", "warning", [1, 1]);
+
+        let error = rejected_alert("x", &json);
+
+        assert_bounded_redacted(&error, &check);
+    }
+
+    #[test]
+    fn oversized_match_is_bounded_and_redacted() {
+        let matched = "MATCH-SENTINEL-".repeat(256);
+        let json = alert_json("Style.Safe", "message", &matched, "warning", [1, 1]);
+
+        let error = rejected_alert("x", &json);
+
+        assert_bounded_redacted(&error, &matched);
+    }
+
+    #[test]
+    fn oversized_unsupported_severity_is_bounded_and_redacted() {
+        let severity = "SEVERITY-SENTINEL-".repeat(256);
+        let json = alert_json("Style.Safe", "message", "x", &severity, [1, 1]);
+
+        let error = rejected_alert("x", &json);
+
+        assert_bounded_redacted(&error, &severity);
+    }
+
+    #[test]
+    fn mismatched_source_slice_is_bounded_and_redacted() {
+        let source = "SOURCE-SENTINEL-".repeat(256);
+        let end = i64::try_from(source.chars().count()).expect("fixture length fits in i64");
+        let json = alert_json(
+            "Style.Safe",
+            "message",
+            "not-the-source",
+            "warning",
+            [1, end],
+        );
+
+        let error = rejected_alert(&source, &json);
+
+        assert_bounded_redacted(&error, &source);
+    }
 
     #[test]
     fn line_index_preserves_crlf_and_terminal_empty_lines() {
