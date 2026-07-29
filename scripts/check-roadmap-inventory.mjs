@@ -88,7 +88,11 @@ function normalizeIssues(issues, issuePath, closingIssueNumbers) {
 
 function markdownTableMechanism(line) {
   const firstNonWhitespace = line.search(/\S/u);
-  if (firstNonWhitespace === -1 || line[firstNonWhitespace] !== "|") {
+  if (
+    firstNonWhitespace === -1 ||
+    !/^ {0,3}$/u.test(line.slice(0, firstNonWhitespace)) ||
+    line[firstNonWhitespace] !== "|"
+  ) {
     return undefined;
   }
 

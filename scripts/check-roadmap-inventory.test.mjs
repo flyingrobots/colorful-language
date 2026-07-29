@@ -176,6 +176,11 @@ test("requires a delimiter and data row for the accountability table", () => {
       "| Parser ports | Not authoritative. |",
       "-->",
     ].join("\n"),
+    [
+      "    | Mechanism | Example only |",
+      "    | --- | --- |",
+      "    | Parser ports | Indented code, not a table. |",
+    ].join("\n"),
   ]) {
     expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
       source.replace(/\n\| Mechanism \|[\s\S]*$/u, `\n${replacement}\n`),

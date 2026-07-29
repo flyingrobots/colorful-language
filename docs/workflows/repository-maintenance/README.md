@@ -215,13 +215,14 @@ The same offline structure gate requires exactly one canonical Architecture
 Accountability heading and its `Mechanism` table, then requires each displayed
 mechanism identity to appear exactly once. A header-shaped line is not enough:
 the table requires its delimiter and at least one non-empty data row. Only
-contiguous rows in that table are authoritative, and fenced examples or HTML
-comments cannot stand in for it. Plain text, ASCII-punctuation escapes, and
-inline code are normalized to their NFC displayed identity; skipped blocks
-also terminate the table even without a separating blank line. Empty cells,
-invalid escapes, and other mechanism-cell Markdown are rejected as
-noncanonical. A repeated heading or mechanism fails with both source
-locations, while distinct moonshot mechanisms remain independent entries.
+contiguous Markdown table rows with no more than three leading spaces are
+authoritative; indented code, fenced examples, and HTML comments cannot stand
+in for the table. Plain text, ASCII-punctuation escapes, and inline code are
+normalized to their NFC displayed identity; skipped blocks also terminate the
+table even without a separating blank line. Empty cells, invalid escapes, and
+other mechanism-cell Markdown are rejected as noncanonical. A repeated heading
+or mechanism fails with both source locations, while distinct moonshot
+mechanisms remain independent entries.
 
 Run the deterministic structure and fixture gates without network access:
 
