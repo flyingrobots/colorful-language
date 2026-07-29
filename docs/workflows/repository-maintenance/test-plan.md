@@ -243,10 +243,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   outside the authoritative table, and compares plain and inline-code labels
   by displayed identity across LF and CRLF source. Unsupported mechanism-cell
   Markdown is noncanonical. *Oracle:* a byte-equivalent CRLF success case and
-  fixture mutations cover exact duplicate rows, missing/recased, code-indented,
-  closing-hash variants in both source orders, or duplicate headings, plain and
-  inline-code-styled and unsupported-emphasis duplicate table headers,
-  duplicate tables,
+  fixture mutations cover exact duplicate rows, missing/recased,
+  comment-altered, code-indented, closing-hash variants in both source orders,
+  or duplicate headings, plain and inline-code-styled and unsupported-emphasis
+  duplicate table headers, duplicate tables,
   missing or malformed delimiter or data rows, delimiter/header arity
   mismatches, a missing first-cell closing pipe, compact/multi-space/tab-padded
   no-leading-pipe headers, a no-leading-pipe continuing data row, indented code

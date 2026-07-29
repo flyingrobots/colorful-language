@@ -400,32 +400,6 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       fenceLength = openingFence[1].length;
       continue;
     }
-    const commentScan = stripClosedInlineHtmlComments(line);
-    if (commentScan.opensMultilineComment) {
-      if (
-        markdownTableCells(commentScan.visible) !== undefined ||
-        isNoLeadingPipeMechanismHeader(commentScan.visible) ||
-        ((accountabilityTableState === "delimiter" ||
-          accountabilityTableState === "rows") &&
-          isNoLeadingPipeTableRow(commentScan.visible))
-      ) {
-        fail(
-          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-          `${roadmapPath}:${index + 1}`,
-          "a multiline HTML comment cannot begin on an accountability table row",
-        );
-      }
-      if (accountabilityTableState === "rows") {
-        accountabilityTableState = "complete";
-      } else if (accountabilityTableState === "delimiter") {
-        accountabilityTableState = "searching";
-        candidateAccountabilityTableColumnCount = undefined;
-      }
-      inHtmlComment = true;
-      continue;
-    }
-    line = commentScan.visible;
-
     if (isCanonicalAccountabilityHeading(line)) {
       const location = `${roadmapPath}:${index + 1}`;
       if (
@@ -472,6 +446,32 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       displayEquivalentAccountabilitySectionLocation = location;
       continue;
     }
+    const commentScan = stripClosedInlineHtmlComments(line);
+    if (commentScan.opensMultilineComment) {
+      if (
+        markdownTableCells(commentScan.visible) !== undefined ||
+        isNoLeadingPipeMechanismHeader(commentScan.visible) ||
+        ((accountabilityTableState === "delimiter" ||
+          accountabilityTableState === "rows") &&
+          isNoLeadingPipeTableRow(commentScan.visible))
+      ) {
+        fail(
+          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+          `${roadmapPath}:${index + 1}`,
+          "a multiline HTML comment cannot begin on an accountability table row",
+        );
+      }
+      if (accountabilityTableState === "rows") {
+        accountabilityTableState = "complete";
+      } else if (accountabilityTableState === "delimiter") {
+        accountabilityTableState = "searching";
+        candidateAccountabilityTableColumnCount = undefined;
+      }
+      inHtmlComment = true;
+      continue;
+    }
+    line = commentScan.visible;
+
     if (inAccountabilitySection && isRoadmapLevelTwoHeading(line)) {
       inAccountabilitySection = false;
       accountabilityTableState = "searching";

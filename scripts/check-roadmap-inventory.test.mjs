@@ -136,6 +136,19 @@ test("rejects a missing canonical architecture-accountability section", () => {
   }
 });
 
+test("rejects comment-altered accountability headings", () => {
+  for (const replacement of [
+    "## Architecture<!--note--> accountability",
+    "## Architecture accountability<!--note-->",
+  ]) {
+    expectCategory(
+      "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
+      (source) =>
+        source.replace("## Architecture accountability", replacement),
+    );
+  }
+});
+
 test("ignores indented code that spells the accountability heading", () => {
   assert.doesNotThrow(() =>
     validateRoadmapInventory({

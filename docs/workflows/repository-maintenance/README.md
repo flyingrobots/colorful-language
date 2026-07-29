@@ -219,7 +219,9 @@ displayed mechanism identity to appear exactly once. A header-shaped line is
 not enough: the table requires a delimiter row with the same column count,
 every delimiter cell requires at least three hyphens with only optional edge
 colons, and at least one non-empty data row follows. LF and CRLF roadmaps have
-the same structural result and line addresses. The first cell in every
+the same structural result and line addresses. Closed inline comments cannot
+join or decorate the canonical H2 because its literal source is validated
+before comment spans are removed. The first cell in every
 canonical header is the plain-text cell `Mechanism`; inline-code styling that
 displays the same label is refused. The first cell in every canonical row is
 pipe-delimited on both sides, and the row has no more than three leading spaces.
