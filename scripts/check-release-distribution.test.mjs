@@ -493,6 +493,20 @@ test("keeps public byte verification after publication", () => {
   );
 });
 
+test("downloads every release asset before integrity verification", () => {
+  const snapshot = validSnapshot();
+  snapshot.documentation.runbook =
+    snapshot.documentation.runbook.replace(
+      "gh release download vX.Y.Z\ngh attestation verify",
+      'gh release download vX.Y.Z --pattern "*.vsix"\n' +
+        "gh attestation verify",
+    );
+  assert.throws(
+    () => validateReleaseDistribution(snapshot),
+    /download every release asset before attestation/u,
+  );
+});
+
 test("the checked-in repository satisfies the distribution policy", () => {
   assert.deepEqual(validateReleaseDistribution(loadRepositorySnapshot()), {
     owner: EXPECTED_OWNER,
