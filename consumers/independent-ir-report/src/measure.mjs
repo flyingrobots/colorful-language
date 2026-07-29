@@ -9,6 +9,9 @@ import { decideIrContract } from "./decision.mjs";
 import { IR_ERROR_CODES } from "./ir.mjs";
 import { LSP_ERROR_CODES } from "./lsp.mjs";
 import { measurePortableAdmission } from "./measure-portable-admission.mjs";
+import {
+  SYNTAX_ADMISSION_REVIEW_CASES,
+} from "../../../scripts/syntax-admission-review-cases.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const REPOSITORY_ROOT = path.resolve(ROOT, "../..");
@@ -176,7 +179,9 @@ const portableAdmission = {
   generatedCopies: portableAdmissionSources.length,
   ...portableAdmissionMeasurement,
   copyIdentityEvidence: "scripts/check-generated-syntax-admission-drift.sh",
-  reviewedGeneratorCases: 13,
+  reviewedGeneratorCaseAuthority:
+    "scripts/syntax-admission-review-cases.mjs",
+  reviewedGeneratorCases: SYNTAX_ADMISSION_REVIEW_CASES.length,
   countedAsAuthoredAdapter: false,
   rationale:
     "generated structural admission is reported separately; only authored " +

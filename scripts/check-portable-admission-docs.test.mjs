@@ -77,3 +77,27 @@ test("a stale alternatives decision input fails with its path", () => {
       ),
   );
 });
+
+test("a stale reviewed-case count fails with its path", () => {
+  const inputs = currentInputs();
+  const target = "docs/topics/downstream-consumers/README.md";
+  const reviewed =
+    inputs.ledger.portableAdmission.reviewedGeneratorCases;
+  const currentClaim = `${reviewed} reviewed generator cases`;
+  assert.equal(inputs.documents.get(target).includes(currentClaim), true);
+  inputs.documents.set(
+    target,
+    inputs.documents.get(target).replace(
+      currentClaim,
+      `${reviewed + 1} reviewed generator cases`,
+    ),
+  );
+  assert.throws(
+    () => checkPortableAdmissionDocs(inputs),
+    (error) =>
+      error instanceof Error &&
+      error.message.startsWith(
+        `portable admission documentation drift: ${target}`,
+      ),
+  );
+});

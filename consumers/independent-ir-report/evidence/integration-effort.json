@@ -114,6 +114,7 @@
     "uniqueGeneratedNonblankLines": 862,
     "committedGeneratedNonblankLines": 1724,
     "copyIdentityEvidence": "scripts/check-generated-syntax-admission-drift.sh",
+    "reviewedGeneratorCaseAuthority": "scripts/syntax-admission-review-cases.mjs",
     "reviewedGeneratorCases": 13,
     "countedAsAuthoredAdapter": false,
     "rationale": "generated structural admission is reported separately; only authored adapter lines participate in the retain-or-simplify decision"

@@ -33,6 +33,10 @@ workspace.
 - **CONSUMER-11** Graft and the independent consumer use structural admission
   generated from the compatibility-selected GraphQL schemas; they retain
   explicit semantic checks and their existing stable public error categories.
+- **CONSUMER-12** The portable-admission burden ledger derives its reviewed
+  generator-case count from the executable case inventory; missing, extra, or
+  duplicate registrations fail closed without wall-clock, network, or
+  test-order dependence.
 
 ## Cases
 
@@ -249,6 +253,19 @@ workspace.
   *Tracking:*
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
   *Status:* implemented.
+- **CONSUMER-12a** — *Requirement:* CONSUMER-12. *Behavior:* one named
+  executable inventory registers every reviewed syntax-admission generator
+  case exactly once, rejects added or removed registrations until the
+  authority changes, and supplies the burden ledger count without a copied
+  numeric literal. *Oracle:* deterministic registry mutation assertions plus
+  stale-ledger refusal after an inventory mutation. *Evidence type:* Node unit
+  and process-contract tests. *Tracking:*
+  [#233](https://github.com/flyingrobots/colorful-language/issues/233).
+  *Evidence:* `scripts/syntax-admission-review-cases.mjs`;
+  `scripts/syntax-admission-review-cases.test.mjs`;
+  `scripts/generate-syntax-admission.test.mjs`;
+  `scripts/check-portable-admission-docs.test.mjs`;
+  `scripts/check-independent-consumer.sh`. *Status:* implemented.
 
 ## Open verification gaps
 

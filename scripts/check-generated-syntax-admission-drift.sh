@@ -21,6 +21,7 @@ for output in "${outputs[@]}"; do
   fi
 done
 
+node --test "$root/scripts/syntax-admission-review-cases.test.mjs"
 node --test "$root/scripts/generate-syntax-admission.test.mjs"
 node --test "$root/scripts/check-portable-admission-docs.test.mjs"
 node "$root/scripts/check-portable-admission-docs.mjs"
