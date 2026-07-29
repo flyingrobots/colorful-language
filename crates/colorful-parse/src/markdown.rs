@@ -118,20 +118,23 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
                     ranges.excluded.push(ExcludedRange::block(start..range.end));
                 }
             }
-            Event::Start(
-                Tag::Link {
-                    link_type: LinkType::Inline,
-                    ..
-                }
-                | Tag::Image {
-                    link_type: LinkType::Inline,
-                    ..
-                },
-            ) => ranges.inline_links.push(range),
             Event::Start(Tag::Link {
                 link_type: LinkType::Autolink | LinkType::Email,
                 ..
             }) => ranges.excluded.push(ExcludedRange::inline(range)),
+            Event::Start(Tag::Link { link_type, .. } | Tag::Image { link_type, .. }) => {
+                match link_type {
+                    LinkType::Inline => ranges.inline_links.push(range),
+                    LinkType::Reference | LinkType::Collapsed => {
+                        if let Some(identifier) =
+                            reference_identifier_range(source, range, link_type)
+                        {
+                            ranges.excluded.push(ExcludedRange::inline(identifier));
+                        }
+                    }
+                    _ => {}
+                }
+            }
             Event::Html(_) => {
                 ranges.excluded.push(ExcludedRange::block(range));
             }
@@ -146,6 +149,43 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
         &mut ranges.rendered,
     ));
     ranges
+}
+
+fn reference_identifier_range(
+    source: &str,
+    link: Range<usize>,
+    link_type: LinkType,
+) -> Option<Range<usize>> {
+    let bytes = source.as_bytes();
+    if link_type == LinkType::Collapsed {
+        let suffix_end = link.end.checked_add(2)?;
+        if bytes.get(link.end..suffix_end) == Some(b"[]") {
+            return Some(link.end..suffix_end);
+        }
+    }
+
+    let closing = link.end.checked_sub(1)?;
+    if bytes.get(closing) != Some(&b']') || byte_is_escaped(bytes, link.start, closing) {
+        return None;
+    }
+
+    let mut cursor = closing;
+    while cursor > link.start {
+        cursor -= 1;
+        if bytes[cursor] == b'[' && !byte_is_escaped(bytes, link.start, cursor) {
+            return Some(cursor..link.end);
+        }
+    }
+    None
+}
+
+fn byte_is_escaped(bytes: &[u8], lower_bound: usize, offset: usize) -> bool {
+    let preceding_backslashes = bytes[lower_bound..offset]
+        .iter()
+        .rev()
+        .take_while(|byte| **byte == b'\\')
+        .count();
+    preceding_backslashes % 2 == 1
 }
 
 fn hidden_reference_definition_ranges(

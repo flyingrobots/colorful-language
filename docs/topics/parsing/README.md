@@ -45,11 +45,12 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
 `colorful_parse::markdown::mask_non_prose` is a format adapter, not a second
 prose grammar. It uses CommonMark structure to replace fenced and indented code
 blocks, inline code, opening YAML/TOML front matter, HTML blocks, inline HTML
-markup, and link destinations with a coordinate-equivalent mask before the
-existing `ProseParser` runs. Duplicate reference definitions and destinations
-with quoted titles follow the same parser-admitted boundary. Link labels and
-ordinary Markdown text remain analyzable. An unmatched inline-code or
-front-matter opener does not suppress the rest of the document.
+markup, link destinations, and full or collapsed reference identifiers with a
+coordinate-equivalent mask before the existing `ProseParser` runs. Duplicate
+reference definitions and destinations with quoted titles follow the same
+parser-admitted boundary. Link labels, shortcut-reference labels, and ordinary
+Markdown text remain analyzable. An unmatched inline-code or front-matter
+opener does not suppress the rest of the document.
 
 Every replacement preserves the original byte length, `LF`/`CRLF`/bare-`CR`
 line endings, and UTF-16 length before retained prose. ASCII, two-byte BMP,

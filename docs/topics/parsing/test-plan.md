@@ -164,7 +164,9 @@ lives in `crates/colorful-parse/src/lib.rs`.
   excluded ranges for each admitted reference form, including a non-link
   lookalike. *Evidence type:* format-adapter unit test. *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Status:* planned.
+  *Evidence:* `colorful-parse`
+  `markdown::tests::reference_link_identifiers_are_masked_while_labels_remain_prose`.
+  *Status:* implemented.
 
 ## Known gaps
 

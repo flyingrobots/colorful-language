@@ -12,11 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Coordinate-preserving Markdown prose analysis.** The CLI `.md`/`.markdown`
   lint and ANSI file paths and LSP `markdown` language ID now share one format
   adapter outside `colorful-core`. Fenced and indented code, inline code,
-  opening YAML/TOML front matter, parser-admitted link destinations (including
-  quoted titles and duplicate reference definitions), and HTML blocks receive
-  a byte-/UTF-16-equivalent mask before one parse, classification, and lint
-  pass. Block masks retain an unstyled sentence boundary, and the LSP fails
-  closed if the analysis view cannot project safely onto the source.
+  opening YAML/TOML front matter, parser-admitted link destinations and
+  reference identifiers (including quoted titles and duplicate reference
+  definitions), and HTML blocks receive a byte-/UTF-16-equivalent mask before
+  one parse, classification, and lint pass. Block masks retain an unstyled
+  sentence boundary, and the LSP fails closed if the analysis view cannot
+  project safely onto the source.
   Diagnostics and semantic roles therefore exclude reviewed non-prose regions
   without moving source positions or bridging excluded blocks; Plain Text,
   stdin, and public string colorization helpers keep the historical
