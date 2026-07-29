@@ -304,10 +304,12 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `reviewed_markdown_regions_have_explicit_suppression_decisions`,
   `link_labels_remain_prose_while_destinations_are_suppressed`,
   `nested_and_reference_link_destinations_are_suppressed`,
+  `destination_masking_follows_commonmark_admission`,
   `inline_html_markup_is_suppressed_but_its_text_remains_prose`,
   `unterminated_constructs_do_not_hide_the_rest_of_the_document`, and
-  `masking_preserves_byte_and_utf16_coordinates_after_unicode`. *Status:*
-  implemented.
+  `masking_preserves_byte_and_utf16_coordinates_after_unicode`, and
+  `masking_preserves_coordinates_across_scalar_widths_and_line_endings`.
+  *Status:* implemented.
 - **EDIT-15c** — *Requirement:* EDIT-15. *Behavior:* LSP `languageId:
   "markdown"` and CLI `.md`/`.markdown` lint and ANSI file inputs use the same
   format adapter; stdin, public string colorization helpers, and non-Markdown

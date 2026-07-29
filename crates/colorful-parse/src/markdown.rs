@@ -308,6 +308,35 @@ mod tests {
     }
 
     #[test]
+    fn masking_preserves_coordinates_across_scalar_widths_and_line_endings() {
+        let source =
+            "ASCII `x` alpha.\r\nCombining `a\u{0301}` beta.\rBMP `é漢` gamma.\nAstral `😀` omega.";
+        let masked = mask_non_prose(source);
+
+        assert_eq!(masked.len(), source.len());
+        assert_eq!(utf16_len(&masked), utf16_len(source));
+        assert_eq!(
+            masked
+                .chars()
+                .filter(|character| matches!(character, '\r' | '\n'))
+                .collect::<String>(),
+            "\r\n\r\n"
+        );
+        for retained in [" alpha.\r\n", " beta.\r", " gamma.\n", " omega."] {
+            let source_start = source.find(retained).expect("retained source suffix");
+            let masked_start = masked.find(retained).expect("retained masked suffix");
+            assert_eq!(masked_start, source_start);
+            assert_eq!(
+                utf16_len(&masked[..masked_start]),
+                utf16_len(&source[..source_start])
+            );
+        }
+        for excluded in ["x", "a\u{0301}", "é漢", "😀"] {
+            assert_masked(source, excluded);
+        }
+    }
+
+    #[test]
     fn plain_prose_is_borrowed_without_allocation() {
         let source = "This is really plain prose.";
         assert!(matches!(mask_non_prose(source), Cow::Borrowed(candidate) if candidate == source));
