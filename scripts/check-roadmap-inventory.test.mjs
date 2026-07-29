@@ -26,6 +26,10 @@ const roadmap = readFileSync(new URL("roadmap.md", fixtureRoot), "utf8");
 const issues = JSON.parse(
   readFileSync(new URL("issues.json", fixtureRoot), "utf8"),
 );
+const canonicalTableLine =
+  roadmap
+    .split("\n")
+    .findIndex((line) => line.startsWith("| Mechanism |")) + 1;
 
 function expectCategory(category, mutation, options = {}) {
   const { messagePattern, ...validationOptions } = options;
@@ -501,8 +505,10 @@ test("rejects a second architecture-accountability mechanism table", () => {
 | Parser ports | Duplicated table. |
 `,
     {
-      messagePattern:
-        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture\/roadmap\.md:\d+: canonical table already begins at fixture\/roadmap\.md:23$/u,
+      messagePattern: new RegExp(
+        `^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture/roadmap\\.md:\\d+: canonical table already begins at fixture/roadmap\\.md:${canonicalTableLine}$`,
+        "u",
+      ),
     },
   );
 });
@@ -534,8 +540,10 @@ test("rejects a second accountability table after a later H2", () => {
 | Appendix-only mechanism | Must not create another apparent authority. |
 `,
     {
-      messagePattern:
-        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture\/roadmap\.md:\d+: canonical table already begins at fixture\/roadmap\.md:23$/u,
+      messagePattern: new RegExp(
+        `^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture/roadmap\\.md:\\d+: canonical table already begins at fixture/roadmap\\.md:${canonicalTableLine}$`,
+        "u",
+      ),
     },
   );
 });
