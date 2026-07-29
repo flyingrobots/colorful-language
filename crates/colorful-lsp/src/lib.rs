@@ -561,6 +561,33 @@ mod tests {
         );
     }
 
+    #[test]
+    fn markdown_blocks_separate_surrounding_prose_contexts() {
+        let source = concat!(
+            "The report is\n\n",
+            "```text\n",
+            "x.\n",
+            "```\n\n",
+            "reviewed.\n",
+        );
+        let analysis = analyze_document_for_format(
+            source,
+            DocumentFormat::Markdown,
+            &ProseParser::new(),
+            &ContextualOpenClassAnnotator::default(),
+            &colorful_lint::ProseLinter::new(),
+        )
+        .expect("built-in Markdown analysis is valid");
+
+        assert!(
+            analysis.diagnostics().iter().all(|diagnostic| {
+                diagnostic.code
+                    != Some(NumberOrString::String("passive-voice".to_string()))
+            }),
+            "{analysis:?}"
+        );
+    }
+
     struct OverlappingAnnotator;
 
     impl Annotator for OverlappingAnnotator {
