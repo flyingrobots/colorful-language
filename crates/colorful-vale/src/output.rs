@@ -469,8 +469,13 @@ mod tests {
         let error = invalid_alert("é".repeat(ALERT_ERROR_DETAIL_LIMIT));
 
         assert_eq!(error.message().len(), ALERT_ERROR_DETAIL_LIMIT);
-        assert!(error.message().ends_with(ALERT_ERROR_TRUNCATION_SUFFIX));
-        assert!(std::str::from_utf8(error.message().as_bytes()).is_ok());
+        let prefix = error
+            .message()
+            .strip_suffix(ALERT_ERROR_TRUNCATION_SUFFIX)
+            .expect("bounded detail carries the truncation suffix");
+        let retained_scalars =
+            (ALERT_ERROR_DETAIL_LIMIT - ALERT_ERROR_TRUNCATION_SUFFIX.len()) / "é".len();
+        assert_eq!(prefix, "é".repeat(retained_scalars));
     }
 
     #[test]
