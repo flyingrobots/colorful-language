@@ -188,6 +188,44 @@ test("installation timing is ordered observational evidence", async () => {
   );
 });
 
+test("installation timing requires typed positive environment measurements", async () => {
+  const { createInstallationTimingWitness } = await import(
+    "../editors/vscode/smoke/timing-witness.mjs"
+  );
+  const environment = {
+    architecture: "arm64",
+    cpu: "Example CPU",
+    extension: "flyingrobots.colorful-language@0.4.0",
+    logicalCpuCount: 8,
+    memoryBytes: 16_000_000_000,
+    node: "v22.23.1",
+    operatingSystem: "darwin 25.0.0",
+    rustc: "rustc 1.97.1",
+    server: "colorful-lsp@0.4.0",
+    vscode: "1.91.0",
+  };
+  for (const [field, value] of [
+    ["cpu", 8],
+    ["logicalCpuCount", "8"],
+    ["logicalCpuCount", 0],
+    ["logicalCpuCount", -1],
+    ["memoryBytes", "16000000000"],
+    ["memoryBytes", 0],
+    ["memoryBytes", -1],
+  ]) {
+    assert.throws(
+      () =>
+        createInstallationTimingWitness({
+          installationStartedAtUnixMs: 1_000,
+          firstHighlightAtUnixMs: 1_375,
+          environment: { ...environment, [field]: value },
+        }),
+      new RegExp(`environment\\.${field}`, "u"),
+      `${field} accepted ${JSON.stringify(value)}`,
+    );
+  }
+});
+
 function relativeLuminance(hex) {
   const channels = hex
     .slice(1)
