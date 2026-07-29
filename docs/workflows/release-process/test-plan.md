@@ -270,7 +270,10 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-repository-maintenance.test.mjs`
   `rejects a competing release-milestone delivery axis`,
   `rejects drift in either delivery-tracking axis`,
-  `rejects a stale delivery-tracking reference`, and
+  `rejects a stale delivery-tracking reference`,
+  `rejects an additive contradictory delivery-tracking reference`,
+  `rejects an incomplete v0.4.0 tracking and prep sequence`,
+  `accepts a future aligned release example without policy code edits`, and
   `accepts reordered delivery-tracking profile fields`;
   `scripts/release-profile-check.sh`; `AGENTS.md`; `CONTRIBUTING.md`;
   `docs/RELEASING.md`; and
