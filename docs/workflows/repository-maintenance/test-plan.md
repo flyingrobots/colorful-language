@@ -246,10 +246,11 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   fixture mutations cover exact duplicate rows, missing/recased or
   code-indented headings, comment-altered and closing-hash variants in both
   source orders, duplicate headings, comment-altered header and delimiter
-  source, plain, inline-code-styled, linked, numeric-character-reference, and
-  unsupported-emphasis duplicate table headers, incomplete plain and styled
-  header controls, an incomplete no-leading-pipe header control, duplicate
-  tables before and after the canonical section,
+  source, plain, inline-code-styled, inline-linked,
+  numeric-character-reference, and unsupported-emphasis duplicate table
+  headers plus an unresolved-reference negative control, incomplete plain and
+  styled header controls, an incomplete no-leading-pipe header control,
+  duplicate tables before and after the canonical section,
   missing or malformed delimiter or data rows, an empty table followed by a
   later valid table, delimiter/header arity mismatches, a missing first-cell
   closing pipe, compact/multi-space/tab-padded no-leading-pipe headers, a

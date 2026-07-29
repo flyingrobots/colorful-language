@@ -647,6 +647,22 @@ test("rejects rendered-equivalent duplicate table headers", () => {
   }
 });
 
+test("does not invent a missing reference-link definition", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: `${roadmap}
+
+| [Mechanism][missing] | Current user job |
+| --- | --- |
+| Literal reference text | No link definition exists. |
+`,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("rejects a comment-altered accountability table header", () => {
   expectCategory(
     "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",

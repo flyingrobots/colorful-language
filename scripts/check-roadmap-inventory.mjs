@@ -525,13 +525,6 @@ function markdownLinkLabel(source) {
     }
     return undefined;
   }
-  if (
-    source[destinationStart] === "[" &&
-    source.endsWith("]") &&
-    source.indexOf("]", destinationStart + 1) === source.length - 1
-  ) {
-    return source.slice(1, labelEnd);
-  }
   return undefined;
 }
 
