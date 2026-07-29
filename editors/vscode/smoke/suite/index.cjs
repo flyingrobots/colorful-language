@@ -143,11 +143,17 @@ async function assertSemanticTokens(document) {
     "_provideDocumentSemanticTokens",
     document.uri,
   );
+  // VS Code 1.91 serializes this internal command as three u32 header words
+  // followed by the LSP stream's five u32 words per semantic token.
+  const semanticTokenHeaderBytes = 3 * Uint32Array.BYTES_PER_ELEMENT;
+  const semanticTokenStrideBytes = 5 * Uint32Array.BYTES_PER_ELEMENT;
+  const semanticTokenBytes =
+    (encoded?.byteLength ?? 0) - semanticTokenHeaderBytes;
   assert.ok(
     encoded &&
       ArrayBuffer.isView(encoded.buffer) &&
-      encoded.byteLength > 0 &&
-      encoded.byteLength % 5 === 0,
+      semanticTokenBytes > 0 &&
+      semanticTokenBytes % semanticTokenStrideBytes === 0,
     "installed adapter returned no encoded semantic tokens",
   );
 }

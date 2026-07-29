@@ -299,7 +299,18 @@ test("the semantic-token smoke checks protocol stride, not buffer capacity", () 
     source,
     /encoded\.buffer\.byteLength\s*===\s*encoded\.byteLength/u,
   );
-  assert.match(source, /encoded\.byteLength\s*%\s*5\s*===\s*0/u);
+  assert.match(
+    source,
+    /semanticTokenHeaderBytes\s*=\s*3\s*\*\s*Uint32Array\.BYTES_PER_ELEMENT/u,
+  );
+  assert.match(
+    source,
+    /semanticTokenStrideBytes\s*=\s*5\s*\*\s*Uint32Array\.BYTES_PER_ELEMENT/u,
+  );
+  assert.match(
+    source,
+    /semanticTokenBytes\s*%\s*semanticTokenStrideBytes\s*===\s*0/u,
+  );
 });
 
 test("documentation lint excludes the downloaded VS Code test application", () => {
