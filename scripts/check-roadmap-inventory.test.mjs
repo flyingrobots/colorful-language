@@ -324,6 +324,21 @@ ${commentedTable}
   );
 });
 
+test("continues comment scanning after an unmatched backtick", () => {
+  expectCategory(
+    "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
+    (source) =>
+      source.replace(
+        "## Architecture accountability",
+        [
+          "Visible unmatched ` <!--",
+          "## Architecture accountability",
+          "-->",
+        ].join("\n"),
+      ),
+  );
+});
+
 test("compares visible mechanism identity around inline HTML comments", () => {
   const mechanismRow =
     "| Parser ports | Substitute deterministic adapters. |";

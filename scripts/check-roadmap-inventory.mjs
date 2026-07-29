@@ -248,8 +248,9 @@ function stripClosedInlineHtmlComments(line) {
         delimiterLength,
       );
       if (contentEnd === -1) {
-        visible += line.slice(index);
-        return { visible, opensMultilineComment: false };
+        visible += line.slice(index, index + delimiterLength);
+        index += delimiterLength;
+        continue;
       }
       const spanEnd = contentEnd + delimiterLength;
       visible += line.slice(index, spanEnd);
