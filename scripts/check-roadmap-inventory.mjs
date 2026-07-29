@@ -172,7 +172,9 @@ function canonicalMechanismIdentity(mechanism, location) {
           "mechanism contains an unterminated inline-code span",
         );
       }
-      identity += mechanism.slice(contentStart, contentEnd);
+      identity += mechanism
+        .slice(contentStart, contentEnd)
+        .replaceAll("\\|", "|");
       index = contentEnd + delimiterLength - 1;
       continue;
     }

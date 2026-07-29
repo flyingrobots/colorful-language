@@ -246,10 +246,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   missing/recased or duplicate headings, duplicate tables, missing delimiter or
   data rows, no-leading-pipe syntax, indented code plus fenced and commented
   table-shaped examples, inline-code styling, an empty identity, invalid
-  escaping, canonically equivalent Unicode, and unsupported emphasis. They
-  fail with their stable `E_ROADMAP_*` categories, including both source
-  addresses for a duplicate heading, table, or mechanism, while fenced and
-  commented examples immediately after the real table remain
+  escaping inside and outside inline code, canonically equivalent Unicode, and
+  unsupported emphasis. They fail with their stable `E_ROADMAP_*` categories,
+  including both source addresses for a duplicate heading, table, or mechanism,
+  while fenced and commented examples immediately after the real table remain
   non-authoritative. A later H2 separates the duplicate-section fixture from
   the canonical section, and malformed nested-hash text cannot hide a second
   table. The process-level duplicate leg exits nonzero with empty stdout and

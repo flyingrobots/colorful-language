@@ -229,6 +229,20 @@ test("compares displayed mechanism identity across inline-code styling", () => {
   );
 });
 
+test("normalizes escaped pipes inside inline-code mechanism identities", () => {
+  const mechanismRow =
+    String.raw`| Parser \| compiler ports | Compile deterministic structure. |`;
+  expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
+    source.replace(
+      mechanismRow,
+      [
+        mechanismRow,
+        "| `Parser \\| compiler ports` | Same displayed mechanism. |",
+      ].join("\n"),
+    ),
+  );
+});
+
 test("rejects noncanonical mechanism-cell Markdown", () => {
   expectCategory("E_ROADMAP_NONCANONICAL_MECHANISM", (source) =>
     source.replace("| Parser ports |", "| **Parser ports** |"),
