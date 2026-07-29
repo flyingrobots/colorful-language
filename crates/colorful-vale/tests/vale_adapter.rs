@@ -587,7 +587,7 @@ fn required_alert_text_precedes_coordinate_validation() {
                     "\"Message\": \"Consider replacing 'very'.\"",
                     "\"Message\": \"\"",
                     1,
-            ),
+                ),
             "Style.Clarity alert message is empty",
         ),
         (

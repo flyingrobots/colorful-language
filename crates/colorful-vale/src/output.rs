@@ -145,6 +145,12 @@ fn normalize_alert(line_index: &LineIndex<'_>, alert: ValeAlert) -> Result<Findi
             alert.check
         )));
     }
+    if alert.matched.is_empty() {
+        return Err(invalid_alert(format!(
+            "{} alert match is empty",
+            alert.check
+        )));
+    }
     if alert.span.len() != 2 {
         return Err(invalid_alert(format!(
             "{} has {} span elements; expected two",
@@ -197,7 +203,7 @@ fn normalize_alert(line_index: &LineIndex<'_>, alert: ValeAlert) -> Result<Findi
         )));
     }
     let span = Span::new(line_start + start, line_start + end);
-    if !alert.matched.is_empty() && span.slice(source) != alert.matched {
+    if span.slice(source) != alert.matched {
         return Err(invalid_alert(format!(
             "{} match {:?} does not equal source slice {:?}",
             alert.check,
