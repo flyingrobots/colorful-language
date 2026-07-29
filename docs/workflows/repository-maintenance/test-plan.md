@@ -70,6 +70,12 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   preserved. The gate must fail closed when the canonical section or table is
   absent and must compare displayed identities without treating examples as
   authoritative rows.
+- **RM-15 — Maintained roadmap parsing boundary.** `ROADMAP.md` must remain the
+  sole authority for primary issue dispositions and architecture-accountability
+  identities, while exact-pinned maintained CommonMark/GFM tooling owns
+  heading, block, table, and inline interpretation. Repository code must not
+  recreate a general Markdown fence, raw-HTML, paragraph, table, or inline
+  parser to enforce the roadmap policy.
 
 ## Cases
 
@@ -290,6 +296,25 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).
   *Status:* implemented.
+- **RM-15a — Maintained roadmap structure interpretation.** *Requirements:*
+  RM-9, RM-14, RM-15. *Behavior:* one exact-pinned maintained CommonMark/GFM
+  parser supplies the roadmap heading, block, table, and rendered-inline
+  structure while `ROADMAP.md` remains the only disposition and mechanism
+  authority. The checker retains every existing accepted fixture and stable,
+  path-addressed `E_ROADMAP_*` failure category and source line, removes its
+  bespoke fence/raw-HTML/paragraph/table/inline state machine, and ratchets the
+  maintained checker below its 1,429-line and 34-helper baseline. *Oracle:* the
+  full existing roadmap inventory suite remains green; a source-policy
+  regression rejects the former parser helper/state signatures or a checker at
+  or above the reviewed line ceiling; dependency-policy evidence rejects
+  unpinned parser packages; and the before/after responsibility inventory is
+  recorded in the current workflow reference. *Evidence type:* fixture-backed
+  characterization suite, deterministic source/dependency policy, and measured
+  maintained-source inventory. *Evidence:* planned in
+  `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
+  `package-lock.json`. *Tracking:*
+  [#250](https://github.com/flyingrobots/colorful-language/issues/250).
+  *Status:* planned.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and
