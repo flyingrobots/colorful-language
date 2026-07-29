@@ -435,7 +435,20 @@ test("rejects deployment environment and evidence drift", () => {
     ],
     [
       ({ deployment }) => {
+        deployment.credential_secrets[1] =
+          deployment.credential_secrets[0];
+      },
+      "E_DEPLOYMENT_CREDENTIALS",
+    ],
+    [
+      ({ deployment }) => {
         deployment.evidence.pop();
+      },
+      "E_DEPLOYMENT_EVIDENCE",
+    ],
+    [
+      ({ deployment }) => {
+        deployment.evidence[1] = deployment.evidence[0];
       },
       "E_DEPLOYMENT_EVIDENCE",
     ],

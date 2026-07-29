@@ -112,6 +112,14 @@ function sameStrings(actual, expected) {
   );
 }
 
+function sameStringSet(actual, expected) {
+  return (
+    new Set(actual).size === actual.length &&
+    new Set(expected).size === expected.length &&
+    sameStrings(actual.toSorted(), expected.toSorted())
+  );
+}
+
 function requireExactKeys(value, expected, code, path) {
   const wanted = expected.toSorted();
   const keys = Object.keys(requireObject(value, code, path)).toSorted();
@@ -199,7 +207,7 @@ function validateRepositoryProfile(profile, maintenanceReference) {
   }
   if (
     !Array.isArray(profile.deployment.credential_secrets) ||
-    !sameStrings(
+    !sameStringSet(
       profile.deployment.credential_secrets,
       DEPLOYMENT_CREDENTIALS,
     )
@@ -212,7 +220,7 @@ function validateRepositoryProfile(profile, maintenanceReference) {
   }
   if (
     !Array.isArray(profile.deployment.evidence) ||
-    !sameStrings(profile.deployment.evidence, DEPLOYMENT_EVIDENCE)
+    !sameStringSet(profile.deployment.evidence, DEPLOYMENT_EVIDENCE)
   ) {
     reject(
       "E_DEPLOYMENT_EVIDENCE",
