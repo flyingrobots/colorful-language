@@ -465,17 +465,22 @@ mod tests {
     }
 
     #[test]
-    fn invalid_alert_limit_preserves_utf8_and_the_exact_byte_budget() {
-        let error = invalid_alert("é".repeat(ALERT_ERROR_DETAIL_LIMIT));
+    fn invalid_alert_limit_preserves_utf8_within_the_byte_budget() {
+        let scalar = "€";
+        let error = invalid_alert(scalar.repeat(ALERT_ERROR_DETAIL_LIMIT));
 
-        assert_eq!(error.message().len(), ALERT_ERROR_DETAIL_LIMIT);
         let prefix = error
             .message()
             .strip_suffix(ALERT_ERROR_TRUNCATION_SUFFIX)
             .expect("bounded detail carries the truncation suffix");
-        let retained_scalars =
-            (ALERT_ERROR_DETAIL_LIMIT - ALERT_ERROR_TRUNCATION_SUFFIX.len()) / "é".len();
-        assert_eq!(prefix, "é".repeat(retained_scalars));
+        let retained_bytes = (ALERT_ERROR_DETAIL_LIMIT - ALERT_ERROR_TRUNCATION_SUFFIX.len())
+            / scalar.len()
+            * scalar.len();
+        assert_eq!(
+            error.message().len(),
+            retained_bytes + ALERT_ERROR_TRUNCATION_SUFFIX.len()
+        );
+        assert_eq!(prefix, scalar.repeat(retained_bytes / scalar.len()));
     }
 
     #[test]
