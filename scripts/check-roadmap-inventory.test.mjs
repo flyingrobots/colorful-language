@@ -62,6 +62,17 @@ test("accepts one primary home for every open non-epic slice", () => {
   );
 });
 
+test("accepts the canonical roadmap with CRLF line endings", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replaceAll("\n", "\r\n"),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("rejects an open slice missing from the primary inventory", () => {
   expectCategory("E_ROADMAP_MISSING_OPEN", (source) =>
     source.replace("  <!-- roadmap-primary: active #101 -->\n", ""),

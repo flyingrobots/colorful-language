@@ -267,7 +267,8 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let candidateAccountabilityTableLocation;
   let candidateAccountabilityTableColumnCount;
 
-  for (const [index, line] of roadmap.split("\n").entries()) {
+  for (const [index, rawLine] of roadmap.split("\n").entries()) {
+    const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
     if (fenceCharacter !== undefined) {
       const closingFence = line.match(
         /^ {0,3}(`{3,}|~{3,})[ \t]*$/u,

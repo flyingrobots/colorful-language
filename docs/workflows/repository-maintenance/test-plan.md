@@ -241,9 +241,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   Accountability mechanism without deleting or conflating distinct rows,
   refuses a missing canonical section or table, ignores table-shaped examples
   outside the authoritative table, and compares plain and inline-code labels
-  by displayed identity. Unsupported mechanism-cell Markdown is
-  noncanonical. *Oracle:* fixture mutations cover exact duplicate rows,
-  missing/recased, code-indented, or duplicate headings, duplicate tables,
+  by displayed identity across LF and CRLF source. Unsupported mechanism-cell
+  Markdown is noncanonical. *Oracle:* a byte-equivalent CRLF success case and
+  fixture mutations cover exact duplicate rows, missing/recased, code-indented,
+  or duplicate headings, duplicate tables,
   missing or malformed delimiter or data rows, delimiter/header arity
   mismatches, a missing first-cell closing pipe, compact/multi-space/tab-padded
   no-leading-pipe syntax, indented code plus fenced and commented table-shaped
