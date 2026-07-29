@@ -22,6 +22,13 @@ const DELIVERY_REFERENCE_CLAIMS = [
   "GitHub milestones are goalposts.",
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
 ];
+const COMPETING_DELIVERY_REFERENCE_PATTERNS = [
+  /\buse\s+GitHub milestones?\s+as\s+release buckets?\b/i,
+  /\bGitHub milestones?\s+are\s+release buckets?\b/i,
+  /\brelease trains?\s+use\s+(?:GitHub )?milestones?\b/i,
+  /\btrack\s+releases?\s+(?:in|using|with)\s+GitHub milestones?\b/i,
+  /\bassign\s+releases?\s+to\s+GitHub milestones?\b/i,
+];
 const RELEASE_TRACKING_REFERENCE_CLAIMS = [
   '--title "[release] v0.4.0"',
   "--label slice",
@@ -220,6 +227,9 @@ function validateDeliveryTracking(
       typeof reference !== "string" ||
       DELIVERY_REFERENCE_CLAIMS.some(
         (claim) => !reference.includes(claim),
+      ) ||
+      COMPETING_DELIVERY_REFERENCE_PATTERNS.some((pattern) =>
+        pattern.test(reference),
       )
     ) {
       reject(

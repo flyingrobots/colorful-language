@@ -494,6 +494,22 @@ test("rejects a stale delivery-tracking reference", () => {
   }
 });
 
+test("rejects an additive contradictory delivery-tracking reference", () => {
+  for (const key of [
+    "agents",
+    "contributing",
+    "maintenance",
+    "releasing",
+    "releaseProcess",
+    "roadmap",
+  ]) {
+    expectCode(({ deliveryReferences }) => {
+      deliveryReferences[key] +=
+        "\nUse GitHub milestones as release buckets.";
+    }, "E_DELIVERY_TRACKING");
+  }
+});
+
 test("rejects an incomplete v0.4.0 tracking and prep sequence", () => {
   for (const missing of RELEASE_TRACKING_COMMANDS) {
     expectCode(({ deliveryReferences }) => {
