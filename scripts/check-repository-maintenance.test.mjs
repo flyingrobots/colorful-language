@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -454,6 +455,17 @@ test("rejects a competing release-milestone delivery axis", () => {
       },
     };
   }, "E_DELIVERY_TRACKING");
+
+  expectCode(({ releaseProfile }) => {
+    releaseProfile.versioning.version = {
+      milestone_format: "v{version}",
+    };
+  }, "E_DELIVERY_TRACKING");
+
+  assert.match(
+    readFileSync("scripts/release-profile-check.sh", "utf8"),
+    /^node scripts\/check-repository-maintenance\.mjs$/mu,
+  );
 });
 
 test("rejects drift in either delivery-tracking axis", () => {

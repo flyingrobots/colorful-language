@@ -27,8 +27,6 @@ jobs:
           persist-credentials: false
       - name: Check for trailing whitespace / conflict markers
         run: git diff --check "$(git hash-object -t tree /dev/null)" HEAD
-      - name: Check release profile
-        run: bash scripts/release-profile-check.sh
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@ded1f9488f68a970bc66ea5619e13e9b52e601cd # v23
         with:
@@ -38,6 +36,8 @@ jobs:
           node-version-file: ".node-version"
       - name: Install repository policy dependencies
         run: npm ci
+      - name: Check release profile
+        run: bash scripts/release-profile-check.sh
       - name: Self-test the Node-version checker
         run: bash scripts/check-node-version.test.sh
       - name: Check the exact Node evidence version

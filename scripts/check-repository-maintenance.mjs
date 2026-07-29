@@ -162,6 +162,16 @@ function requireExactKeys(value, expected, code, path) {
   }
 }
 
+function containsKey(value, key) {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  return Object.entries(value).some(
+    ([candidate, nested]) =>
+      candidate === key || containsKey(nested, key),
+  );
+}
+
 function normalizeReference(reference) {
   return typeof reference === "string"
     ? reference.replace(/`/gu, "").replace(/\s+/gu, " ")
@@ -204,7 +214,7 @@ function validateDeliveryTracking(
     ".continuum/release.yml:versioning",
   );
   if (
-    Object.hasOwn(versioning, "milestone_format") ||
+    containsKey(versioning, "milestone_format") ||
     versioning.release_tracking_issue_format !==
       RELEASE_ISSUE_FORMAT
   ) {

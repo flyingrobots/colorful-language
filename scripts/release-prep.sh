@@ -21,8 +21,8 @@ command -v zizmor >/dev/null 2>&1 || fail "zizmor is required"
 
 bash scripts/check-node-version.test.sh
 bash scripts/check-node-version.sh
-bash scripts/release-profile-check.sh
 npm ci
+bash scripts/release-profile-check.sh
 node --test scripts/check-editor-version-policy.test.mjs
 node scripts/check-editor-version-policy.mjs
 node --test scripts/check-release-distribution.test.mjs
