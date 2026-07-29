@@ -96,10 +96,12 @@ function markdownTableMechanism(line) {
 function validateArchitectureAccountability(roadmap, roadmapPath) {
   const mechanisms = new Map();
   let inAccountabilitySection = false;
+  let foundAccountabilitySection = false;
 
   for (const [index, line] of roadmap.split("\n").entries()) {
     if (line.trim() === ACCOUNTABILITY_HEADING) {
       inAccountabilitySection = true;
+      foundAccountabilitySection = true;
       continue;
     }
     if (inAccountabilitySection && /^##\s+/u.test(line.trimStart())) {
@@ -128,6 +130,14 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       );
     }
     mechanisms.set(mechanism, location);
+  }
+
+  if (!foundAccountabilitySection) {
+    fail(
+      "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
+      roadmapPath,
+      `expected canonical heading "${ACCOUNTABILITY_HEADING}"`,
+    );
   }
 }
 

@@ -106,6 +106,16 @@ test("rejects a duplicate architecture-accountability mechanism by line", () => 
   }
 });
 
+test("rejects a missing canonical architecture-accountability section", () => {
+  for (const replacement of ["## Architecture Accountability", ""]) {
+    expectCategory(
+      "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
+      (source) =>
+        source.replace("## Architecture accountability", replacement),
+    );
+  }
+});
+
 test("rejects a closed slice presented as active", () => {
   expectCategory("E_ROADMAP_CLOSED_ACTIVE", (source) =>
     source.replace(
