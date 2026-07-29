@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const LIVE_ISSUE_LIMIT = 10_000;
+export const GITHUB_CALL_BOUNDS = Object.freeze({
+  timeout: 30_000,
+  maxBuffer: 16 * 1024 * 1024,
+});
 
 export function createRoadmapInventoryRun({
   InventoryError,
@@ -95,10 +99,7 @@ export function createRoadmapInventoryRun({
         "--live requires --repo OWNER/NAME or GITHUB_REPOSITORY",
       );
     }
-    if (
-      options.closingPr &&
-      !/^[1-9]\d*$/u.test(String(options.closingPr))
-    ) {
+    if (options.closingPr && !/^[1-9]\d*$/u.test(String(options.closingPr))) {
       fail(
         "E_ROADMAP_USAGE",
         "arguments",
@@ -115,8 +116,8 @@ export function createRoadmapInventoryRun({
         encoding: "utf8",
         env: process.env,
         stdio: ["ignore", "pipe", "pipe"],
-        timeout: 30_000,
-        maxBuffer: 16 * 1024 * 1024,
+        timeout: GITHUB_CALL_BOUNDS.timeout,
+        maxBuffer: GITHUB_CALL_BOUNDS.maxBuffer,
       });
     } catch (error) {
       const stderr = error?.stderr?.trim();

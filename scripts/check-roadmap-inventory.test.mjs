@@ -18,6 +18,7 @@ import {
   run,
   validateRoadmapInventory,
 } from "./check-roadmap-inventory.mjs";
+import { GITHUB_CALL_BOUNDS } from "./roadmap-inventory-runner.mjs";
 
 const fixtureRoot = new URL("./fixtures/roadmap-inventory/", import.meta.url);
 const script = fileURLToPath(
@@ -1338,13 +1339,11 @@ test("rejects malformed issue JSON with a stable snapshot error", () => {
 });
 
 test("bounds live GitHub calls by time and response size", () => {
-  const runner = readFileSync(
-    new URL("./roadmap-inventory-runner.mjs", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(runner, /timeout:\s*30_000/u);
-  assert.match(runner, /maxBuffer:\s*16 \* 1024 \* 1024/u);
+  assert.deepEqual(GITHUB_CALL_BOUNDS, {
+    timeout: 30_000,
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  assert.ok(Object.isFrozen(GITHUB_CALL_BOUNDS));
 });
 
 test("fails closed when the live issue listing reaches its ceiling", () => {
