@@ -303,6 +303,18 @@ mod tests {
     }
 
     #[test]
+    fn duplicate_reference_definitions_are_all_suppressed() {
+        let source = concat!(
+            "[label][ref]\n\n",
+            "[ref]: https://example.invalid/first\n",
+            "[ref]: https://really.example/duplicate\n",
+        );
+
+        assert_masked(source, "[ref]: https://example.invalid/first");
+        assert_masked(source, "[ref]: https://really.example/duplicate");
+    }
+
+    #[test]
     fn quoted_link_titles_do_not_confuse_destination_boundaries() {
         let source = r#"[label](https://really.example "title (")"#;
 
