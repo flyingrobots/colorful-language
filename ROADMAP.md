@@ -182,6 +182,16 @@ observe public-contract regressions before they ship.
   roadmap's sole authority, fail-closed policy, and stable diagnostics
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
   <!-- roadmap-primary: delivered #250 -->
+- **Parked roadmap-checker decomposition:** restore meaningful maintenance
+  headroom by splitting one coherent policy owner from the checker after the
+  active distribution lane publishes its existing evidence machinery
+  [#257](https://github.com/flyingrobots/colorful-language/issues/257).
+  <!-- roadmap-primary: parked #257 -->
+- **Roadmap follow-up triage:** keep the checker decomposition behind active
+  distribution and the cursor-complete transport idea in the scale-triggered
+  experiment backlog
+  [#260](https://github.com/flyingrobots/colorful-language/issues/260).
+  <!-- roadmap-primary: delivered #260 -->
 - **Delivered process-test determinism:** replace the Vale timeout fixture's
   scheduler race with an explicit test-only worker-ready seam while preserving
   production timeout and descendant-cleanup postconditions
@@ -391,7 +401,10 @@ mistaking an idea for a committed milestone or an already validated user need.
   [#175](https://github.com/flyingrobots/colorful-language/issues/175).
 - Emit deterministic SARIF for CI-native lint findings
   [#188](https://github.com/flyingrobots/colorful-language/issues/188).
-  <!-- roadmap-primary: parked #172 #173 #174 #175 #188 -->
+- Make live roadmap reconciliation cursor-complete if repository scale turns
+  the current fail-closed issue ceiling into an operational limit
+  [#258](https://github.com/flyingrobots/colorful-language/issues/258).
+  <!-- roadmap-primary: parked #172 #173 #174 #175 #188 #258 -->
 
 **Promotion rule:** move an experiment into M0–M4 only when a current user job,
 dependency boundary, and executable proof justify its place. Parking preserves
