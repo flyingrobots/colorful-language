@@ -196,8 +196,21 @@ allow-git = []
                 "fail-on-scopes": "runtime, development, unknown",
                 "license-check": true,
                 "vulnerability-check": true,
-                "allow-licenses":
-                  "0BSD, Apache-2.0, Apache-2.0 WITH LLVM-exception, MIT, NCSA, Unicode-3.0, Unlicense, Zlib, BlueOak-1.0.0, ISC",
+                "allow-licenses": [
+                  "0BSD",
+                  "Apache-2.0",
+                  "Apache-2.0 WITH LLVM-exception",
+                  "MIT",
+                  "NCSA",
+                  "Unicode-3.0",
+                  "Unlicense",
+                  "Zlib",
+                  "BlueOak-1.0.0",
+                  "ISC",
+                  ...EDITOR_TOOL_LICENSES,
+                ].join(", "),
+                "allow-dependencies-licenses":
+                  EDITOR_TOOL_LICENSE_EXCEPTIONS.join(", "),
               },
             },
           ],
@@ -305,6 +318,13 @@ function actionStep(job, action) {
   return job.steps.find((step) => step.uses === action);
 }
 
+function dependencyReviewStep(candidate) {
+  return actionStep(
+    candidate.securityWorkflow.jobs["dependency-review"],
+    DEPENDENCY_ACTION,
+  );
+}
+
 function commandStep(job, command) {
   return job.steps.find((step) => step.run === command);
 }
@@ -328,14 +348,37 @@ test("accepts the reviewed repository maintenance policy", () => {
 
 test("accepts the exact editor package-tool license policy", () => {
   const candidate = fixture();
-  const step = actionStep(
-    candidate.securityWorkflow.jobs["dependency-review"],
-    DEPENDENCY_ACTION,
+  const step = dependencyReviewStep(candidate);
+  assert.equal(
+    step.with["allow-dependencies-licenses"],
+    EDITOR_TOOL_LICENSE_EXCEPTIONS.join(", "),
   );
-  step.with["allow-licenses"] += `, ${EDITOR_TOOL_LICENSES.join(", ")}`;
-  step.with["allow-dependencies-licenses"] =
-    EDITOR_TOOL_LICENSE_EXCEPTIONS.join(", ");
   assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
+});
+
+test("rejects a missing editor package-tool license exception", () => {
+  expectCode((candidate) => {
+    const step = dependencyReviewStep(candidate);
+    step.with["allow-dependencies-licenses"] =
+      EDITOR_TOOL_LICENSE_EXCEPTIONS.slice(1).join(", ");
+  }, "E_DEPENDENCY_REVIEW");
+});
+
+test("rejects an unexpected editor package-tool license exception", () => {
+  expectCode((candidate) => {
+    const step = dependencyReviewStep(candidate);
+    step.with["allow-dependencies-licenses"] +=
+      ", pkg:npm/unreviewed-tool@1.0.0";
+  }, "E_DEPENDENCY_REVIEW");
+});
+
+test("rejects a version-broadened editor package-tool exception", () => {
+  expectCode((candidate) => {
+    const step = dependencyReviewStep(candidate);
+    step.with["allow-dependencies-licenses"] = step.with[
+      "allow-dependencies-licenses"
+    ].replace("@1.0.1", "");
+  }, "E_DEPENDENCY_REVIEW");
 });
 
 test("rejects an incomplete bug form", () => {

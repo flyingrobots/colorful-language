@@ -40,8 +40,29 @@ const RUST_LICENSES = [
 ];
 const DEPENDENCY_LICENSES = [
   ...RUST_LICENSES,
+  "Artistic-2.0",
   "BlueOak-1.0.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "CC-BY-3.0",
+  "CC0-1.0",
   "ISC",
+  "Python-2.0",
+].toSorted();
+const DEPENDENCY_LICENSE_EXCEPTIONS = [
+  "pkg:npm/@azu/style-format@1.0.1",
+  "pkg:npm/@vscode/vsce-sign@2.0.9",
+  "pkg:npm/@vscode/vsce-sign-alpine-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-alpine-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-darwin-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-darwin-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-arm@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-win32-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-win32-x64@2.0.6",
+  "pkg:npm/typed-rest-client@1.8.11",
+  "pkg:npm/xmlbuilder@11.0.1",
 ].toSorted();
 const REQUIRED_COMMANDS = [
   "node --test scripts/check-repository-maintenance.test.mjs",
@@ -562,6 +583,14 @@ function validateDependencyReview(workflow) {
         `${path}:allow-licenses`,
       ),
       DEPENDENCY_LICENSES,
+    ) ||
+    !sameStrings(
+      commaList(
+        step.with?.["allow-dependencies-licenses"],
+        "E_DEPENDENCY_REVIEW",
+        `${path}:allow-dependencies-licenses`,
+      ),
+      DEPENDENCY_LICENSE_EXCEPTIONS,
     )
   ) {
     reject(

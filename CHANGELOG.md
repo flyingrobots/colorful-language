@@ -18,7 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stable missing-server category from persisted logs. The same gate stages the
   exact Zed registry-source inventory with its lockfile and license, builds it
   to Wasm in isolation, and documents the remaining clean-profile Zed host
-  oracle without claiming a nonexistent headless installation surface.
+  oracle without claiming a nonexistent headless installation surface. The
+  dependency-review gate admits the resulting packaging toolchain through a
+  reviewed permissive-license set and exact-version exceptions that do not
+  enter the dependency-free VSIX.
 - **Synchronized editor/server release compatibility.** The Cargo workspace,
   VS Code manifest and lockfile, Zed extension manifest, and standalone Zed
   crate and lockfile now share one release version. The release profile

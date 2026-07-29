@@ -137,11 +137,13 @@ roadmap-to-issue reconciliation is tracked in
   exact-version npm package URLs, and no packaging-only dependency enters the
   extension archive. *Oracle:* the maintenance checker rejects a missing,
   unexpected, or version-broadened exception; the package smoke test proves the
-  exact VSIX inventory excludes development dependencies. *Evidence type:*
+  dependency-free package boundary excludes development dependencies. *Evidence
+  type:*
   deterministic policy mutation tests and the packaged-extension witness.
-  *Planned evidence:* `.github/workflows/security.yml`,
+  *Evidence:* `.github/workflows/security.yml`,
   `scripts/check-repository-maintenance.test.mjs`, and
-  `scripts/check-editor-package-smoke.mjs`. Tracking: #136. *Status:* planned.
+  `scripts/check-editor-package-smoke.test.mjs`. Tracking: #136. *Status:*
+  implemented.
 - **RM-4b — Required security contexts.** *Requirements:* RM-4, RM-5, RM-8.
   *Behavior:* the live and checked-in mainline rulesets require Rust dependency
   policy, dependency review, both CodeQL language jobs, and pinned workflow-
