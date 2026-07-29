@@ -157,6 +157,14 @@ lives in `crates/colorful-parse/src/lib.rs`.
   *Evidence:* `crates/colorful-parse/tests/feature_boundary.rs`
   `markdown_feature_is_opt_in`, plus the CLI and LSP
   `tests/source_policy.rs` adapter opt-in tests. *Status:* implemented.
+- **PAR-10c** — *Requirement:* PAR-10. *Behavior:* parser-admitted full and
+  collapsed link or image reference identifiers receive an inline,
+  coordinate-equivalent mask while visible labels remain prose; shortcut
+  labels have no separate identifier to suppress. *Oracle:* exact retained and
+  excluded ranges for each admitted reference form, including a non-link
+  lookalike. *Evidence type:* format-adapter unit test. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Status:* planned.
 
 ## Known gaps
 
