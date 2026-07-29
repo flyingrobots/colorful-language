@@ -73,7 +73,7 @@ That command builds the matching release server, installs the VSIX into an
 isolated VS Code 1.91.0 profile, exercises Plain Text and Markdown plus a
 missing-server profile, stages the Zed source package, and writes
 `target/editor-smoke/witness.json`. It downloads and caches the tested VS Code
-build under `editors/vscode/.vscode-test/`.
+build under the editor-local ignored `.vscode-test/` directory.
 
 ## How it works
 
