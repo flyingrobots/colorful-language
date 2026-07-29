@@ -2,6 +2,7 @@
 .vscode/**
 .vscode-test/**
 smoke/**
+scripts/**
 src/**
 node_modules/**
 **/*.map

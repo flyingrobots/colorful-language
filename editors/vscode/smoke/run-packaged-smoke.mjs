@@ -10,12 +10,14 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { arch, cpus, platform, release, totalmem } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import vscodeTest from "@vscode/test-electron";
 
 import { readTextFile, textFiles } from "./log-files.mjs";
+import { createInstallationTimingWitness } from "./timing-witness.mjs";
 import {
   stageZedExtension,
   validateZedSourcePackage,
@@ -127,6 +129,7 @@ async function runExtensionHost(
   userDataDirectory,
   extensionsDirectory,
   colorfulLsp,
+  timing,
 ) {
   mkdirSync(userDataDirectory, { recursive: true });
   const status = await runTests({
@@ -151,6 +154,14 @@ async function runExtensionHost(
       COLORFUL_SMOKE_MODE: mode,
       COLORFUL_SMOKE_WORKSPACE: smokeWorkspace,
       COLORFUL_USER_DATA_DIR: userDataDirectory,
+      ...(timing
+        ? {
+            COLORFUL_INSTALL_STARTED_AT_UNIX_MS: String(
+              timing.installationStartedAtUnixMs,
+            ),
+            COLORFUL_TIMING_PATH: timing.path,
+          }
+        : {}),
     },
   });
   assert.equal(status, 0, `${mode} Extension Host exited nonzero`);
@@ -202,15 +213,48 @@ async function main() {
     cachePath,
   });
   const extensionsDirectory = path.join(artifactRoot, "extensions");
+  const installationStartedAtUnixMs = Date.now();
   installVsix(vscodeExecutablePath, vsixPath, extensionsDirectory);
 
+  const timingPath = path.join(
+    artifactRoot,
+    "install-to-first-highlight.json",
+  );
   await runExtensionHost(
     vscodeExecutablePath,
     "success",
     path.join(artifactRoot, "profiles/success"),
     extensionsDirectory,
     colorfulLsp,
+    { installationStartedAtUnixMs, path: timingPath },
   );
+  const timingMarker = JSON.parse(readFileSync(timingPath, "utf8"));
+  assert.equal(
+    timingMarker.installationStartedAtUnixMs,
+    installationStartedAtUnixMs,
+    "Extension Host timing marker must preserve the parent start event",
+  );
+  assert.equal(
+    timingMarker.endEvent,
+    "first-plaintext-diagnostic-and-semantic-tokens",
+  );
+  const cpuInventory = cpus();
+  const installationToFirstHighlight = createInstallationTimingWitness({
+    installationStartedAtUnixMs,
+    firstHighlightAtUnixMs: timingMarker.firstHighlightAtUnixMs,
+    environment: {
+      architecture: arch(),
+      cpu: cpuInventory[0]?.model ?? "unknown",
+      extension: `${EXTENSION_ID}@${packageJson.version}`,
+      logicalCpuCount: cpuInventory.length,
+      memoryBytes: totalmem(),
+      node: process.version,
+      operatingSystem: `${platform()} ${release()}`,
+      rustc: run("rustc", ["--version"], { capture: true }).stdout.trim(),
+      server: `colorful-lsp@${packageJson.version}`,
+      vscode: VSCODE_VERSION,
+    },
+  });
   const missingProfile = path.join(artifactRoot, "profiles/missing-server");
   await runExtensionHost(
     vscodeExecutablePath,
@@ -235,6 +279,7 @@ async function main() {
       sha256: digestFile(vsixPath),
       missingServerCategory: SERVER_NOT_FOUND_CATEGORY,
       missingServerLogs,
+      installationToFirstHighlight,
     },
     zed: {
       ...zedPackage,

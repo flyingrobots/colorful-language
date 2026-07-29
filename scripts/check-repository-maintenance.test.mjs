@@ -43,6 +43,7 @@ const EDITOR_TOOL_LICENSE_EXCEPTIONS = [
   "pkg:npm/@vscode/vsce-sign-linux-x64@2.0.6",
   "pkg:npm/@vscode/vsce-sign-win32-arm64@2.0.6",
   "pkg:npm/@vscode/vsce-sign-win32-x64@2.0.6",
+  "pkg:npm/ovsx@1.0.2",
   "pkg:npm/typed-rest-client@1.8.11",
   "pkg:npm/xmlbuilder@11.0.1",
 ];
@@ -61,6 +62,18 @@ function fixture() {
     jobs: {
       release: {
         steps: [
+          {
+            name: "Verify and publish VS Marketplace extension",
+            env: {
+              VSCE_PAT: "${{ secrets.VSCE_PAT }}",
+            },
+          },
+          {
+            name: "Verify and publish Open VSX extension",
+            env: {
+              OVSX_PAT: "${{ secrets.OVSX_PAT }}",
+            },
+          },
           {
             name: "Publish to crates.io",
             env: {
@@ -160,6 +173,22 @@ allow-git = []
           rule: "secrets-outside-env",
           path: ".github/workflows/release.yml:jobs.release.steps[Publish to crates.io].env.CARGO_REGISTRY_TOKEN",
           selector: "CARGO_REGISTRY_TOKEN",
+          owner: "@flyingrobots",
+          reason: "The release environment is not configured yet.",
+          remove_when: "A protected release environment is configured.",
+        },
+        {
+          rule: "secrets-outside-env",
+          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish VS Marketplace extension].env.VSCE_PAT",
+          selector: "VSCE_PAT",
+          owner: "@flyingrobots",
+          reason: "The release environment is not configured yet.",
+          remove_when: "A protected release environment is configured.",
+        },
+        {
+          rule: "secrets-outside-env",
+          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish Open VSX extension].env.OVSX_PAT",
+          selector: "OVSX_PAT",
           owner: "@flyingrobots",
           reason: "The release environment is not configured yet.",
           remove_when: "A protected release environment is configured.",
@@ -346,12 +375,28 @@ test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
 });
 
+test("accepts reviewed workflow-security exceptions in any order", () => {
+  const candidate = fixture();
+  candidate.workflowSecurityPolicy.exceptions.reverse();
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
+});
+
 test("accepts the exact editor package-tool license policy", () => {
   const candidate = fixture();
   const step = dependencyReviewStep(candidate);
   assert.equal(
     step.with["allow-dependencies-licenses"],
     EDITOR_TOOL_LICENSE_EXCEPTIONS.join(", "),
+  );
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
+});
+
+test("accepts the exact Open VSX publisher license exception", () => {
+  const candidate = fixture();
+  const step = dependencyReviewStep(candidate);
+  assert.match(
+    step.with["allow-dependencies-licenses"],
+    /(?:^|, )pkg:npm\/ovsx@1\.0\.2(?:,|$)/u,
   );
   assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
 });
@@ -491,6 +536,35 @@ test("rejects a broadened workflow-security exception", () => {
   }, "E_WORKFLOW_SECURITY_EXCEPTION");
 });
 
+test("rejects a missing reviewed workflow-security exception", () => {
+  expectCode(({ workflowSecurityPolicy }) => {
+    workflowSecurityPolicy.exceptions.pop();
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects a publisher token missing from its reviewed step", () => {
+  expectCode(({ workflowFiles }) => {
+    const release =
+      workflowFiles[".github/workflows/release.yml"];
+    const publish = release.jobs.release.steps.find(
+      (step) =>
+        step.name === "Verify and publish VS Marketplace extension",
+    );
+    delete publish.env.VSCE_PAT;
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects a publisher token used by an additional release step", () => {
+  expectCode(({ workflowFiles }) => {
+    const release =
+      workflowFiles[".github/workflows/release.yml"];
+    release.jobs.release.steps.push({
+      name: "Unreviewed publication",
+      env: { VSCE_PAT: "${{ secrets.VSCE_PAT }}" },
+    });
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
 test("rejects a second use of an excepted workflow secret", () => {
   expectCode(({ workflowFiles }) => {
     workflowFiles[".github/workflows/other.yml"] = {
@@ -501,6 +575,24 @@ test("rejects a second use of an excepted workflow secret", () => {
               env: {
                 CARGO_REGISTRY_TOKEN:
                   "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+              },
+            },
+          ],
+        },
+      },
+    };
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects a second use of an excepted publisher secret", () => {
+  expectCode(({ workflowFiles }) => {
+    workflowFiles[".github/workflows/other.yml"] = {
+      jobs: {
+        other: {
+          steps: [
+            {
+              env: {
+                OVSX_PAT: "${{ secrets.OVSX_PAT }}",
               },
             },
           ],

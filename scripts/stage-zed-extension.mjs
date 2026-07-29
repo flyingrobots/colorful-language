@@ -112,7 +112,7 @@ export function stageZedExtension(repositoryRoot, destination) {
   const sources = new Map([
     ["Cargo.lock", path.join(sourceRoot, "Cargo.lock")],
     ["Cargo.toml", path.join(sourceRoot, "Cargo.toml")],
-    ["LICENSE", path.join(repositoryRoot, "LICENSE")],
+    ["LICENSE", path.join(sourceRoot, "LICENSE")],
     ["README.md", path.join(sourceRoot, "README.md")],
     ["extension.toml", path.join(sourceRoot, "extension.toml")],
     ["src/lib.rs", path.join(sourceRoot, "src/lib.rs")],

@@ -91,12 +91,14 @@ and manual recovery:
   The lock-backed editor package toolchain adds the permissive Artistic 2.0,
   BSD 2-Clause, BSD 3-Clause, CC BY 3.0, CC0 1.0, and Python 2.0 SPDX licenses.
   Exact-version package exceptions cover `@azu/style-format`'s WTFPL license,
-  the VSCE signing runtime's installation-and-use terms, and the scanner's
-  composite-license classifications for `typed-rest-client` and `xmlbuilder`.
-  These are development-only dependencies: the VSIX package command uses
-  `--no-dependencies`, and `.vscodeignore` excludes `node_modules`. A replacement
-  release does not inherit an exception. A dependency whose license GitHub
-  cannot identify is reported but cannot be failed by that action;
+  the VSCE signing runtime's installation-and-use terms, the Open VSX
+  publisher's EPL 2.0 license, and the scanner's composite-license
+  classifications for `typed-rest-client` and `xmlbuilder`. These are
+  development-only dependencies: the VSIX package command uses
+  `--no-dependencies`, and `.vscodeignore` excludes `node_modules`. A
+  replacement release does not inherit an exception. A dependency whose
+  license GitHub cannot identify is reported but cannot be failed by that
+  action;
 - CodeQL uses its supported build-free analysis for both Rust and
   JavaScript/TypeScript, then uploads one result category per language; and
 - workflow security installs `zizmor` 1.28.0 with the full-SHA-pinned installer,
@@ -117,11 +119,12 @@ security job or step.
 The workflow-security job grants only `contents: read` and disables checkout
 credential persistence. Its versioned policy fixes the analyzer identity,
 offline workflow-only invocation, finding thresholds, and exception metadata.
-The sole exception allows `CARGO_REGISTRY_TOKEN` only at the named crates.io
-publication step while deployment ownership and a protected release environment
-remain unconfigured; the record names its owner, rationale, and removal trigger.
-Changing the secret location, broadening the exception path, weakening a
-threshold, or drifting the hosted installation from the policy fails the
+Three exceptions allow `CARGO_REGISTRY_TOKEN`, `VSCE_PAT`, and `OVSX_PAT` only
+at their named crates.io or editor-publication steps while deployment ownership
+and a protected release environment remain unconfigured. Each record names its
+owner, rationale, and removal trigger, and each selector may occur once across
+all workflows. Changing a secret location, broadening an exception path,
+weakening a threshold, or drifting the hosted installation from policy fails the
 deterministic maintenance suite.
 
 ## Updates and ownership

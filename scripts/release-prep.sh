@@ -25,6 +25,9 @@ bash scripts/release-profile-check.sh
 npm ci
 node --test scripts/check-editor-version-policy.test.mjs
 node scripts/check-editor-version-policy.mjs
+node --test scripts/check-release-distribution.test.mjs
+node scripts/check-release-distribution.mjs
+node --test scripts/verify-editor-publication.test.mjs
 node scripts/check-evidence-toolchains.mjs --self-test
 node scripts/check-evidence-toolchains.mjs
 node --test scripts/check-property-fuzz-policy.test.mjs
@@ -62,8 +65,8 @@ bash scripts/check-rust-dependency-policy.test.sh
 bash scripts/check-rust-dependency-policy.sh
 node scripts/check-vscode-dependency-policy.test.mjs
 node scripts/check-vscode-dependency-policy.mjs
-node --test scripts/check-editor-package-smoke.test.mjs
 npm --prefix editors/vscode ci
+node --test scripts/check-editor-package-smoke.test.mjs
 npm --prefix editors/vscode audit --audit-level=high
 bash scripts/ir-witness.sh
 bash scripts/check-independent-consumer.sh

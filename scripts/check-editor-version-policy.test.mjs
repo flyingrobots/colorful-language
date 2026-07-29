@@ -120,10 +120,14 @@ test("derives a future synchronized minor without a policy-code edit", () => {
   });
 });
 
-test("source editor install guidance selects the synchronized checkout", () => {
+test("editor install guidance separates source and publication authority", () => {
   const command = "cargo install --path crates/colorful-lsp --locked";
   const publicationIssue =
     "https://github.com/flyingrobots/colorful-language/issues/154";
+  const immutablePackageReadmes = new Set([
+    "editors/vscode/README.md",
+    "editors/zed/README.md",
+  ]);
   for (const path of EDITOR_INSTALL_GUIDANCE.filter((path) =>
     path.endsWith("README.md"),
   )) {
@@ -132,10 +136,22 @@ test("source editor install guidance selects the synchronized checkout", () => {
       (match) => match[1],
     );
     assert.ok(source.includes(command), `${path} must include ${command}`);
-    assert.ok(
-      linkTargets.some((target) => target === publicationIssue),
-      `${path} must defer compatible public binaries to issue #154`,
-    );
+    if (immutablePackageReadmes.has(path)) {
+      assert.ok(source.includes("matching tag"), `${path} must bind releases`);
+      assert.ok(
+        source.includes("that exact target and version"),
+        `${path} must require an exact public asset`,
+      );
+      assert.ok(
+        !source.includes("not yet published"),
+        `${path} must remain true inside an immutable published package`,
+      );
+    } else {
+      assert.ok(
+        linkTargets.some((target) => target === publicationIssue),
+        `${path} must defer current publication status to issue #154`,
+      );
+    }
   }
 
   for (const path of EDITOR_INSTALL_GUIDANCE) {

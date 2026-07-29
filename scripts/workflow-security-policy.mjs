@@ -1,7 +1,25 @@
 const POLICY_PATH = ".github/workflow-security-policy.yml";
-const RELEASE_EXCEPTION_PATH =
-  ".github/workflows/release.yml:jobs.release.steps[Publish to crates.io].env.CARGO_REGISTRY_TOKEN";
-const RELEASE_SECRET = "${{ secrets.CARGO_REGISTRY_TOKEN }}";
+const RELEASE_WORKFLOW_PATH = ".github/workflows/release.yml";
+const REVIEWED_RELEASE_SECRET_EXCEPTIONS = Object.freeze([
+  {
+    path: `${RELEASE_WORKFLOW_PATH}:jobs.release.steps[Publish to crates.io].env.CARGO_REGISTRY_TOKEN`,
+    selector: "CARGO_REGISTRY_TOKEN",
+    stepName: "Publish to crates.io",
+    secret: "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+  },
+  {
+    path: `${RELEASE_WORKFLOW_PATH}:jobs.release.steps[Verify and publish VS Marketplace extension].env.VSCE_PAT`,
+    selector: "VSCE_PAT",
+    stepName: "Verify and publish VS Marketplace extension",
+    secret: "${{ secrets.VSCE_PAT }}",
+  },
+  {
+    path: `${RELEASE_WORKFLOW_PATH}:jobs.release.steps[Verify and publish Open VSX extension].env.OVSX_PAT`,
+    selector: "OVSX_PAT",
+    stepName: "Verify and publish Open VSX extension",
+    secret: "${{ secrets.OVSX_PAT }}",
+  },
+]);
 
 export const WORKFLOW_SECURITY_COMMANDS = [
   "node --test scripts/check-workflow-security.test.mjs",
@@ -69,9 +87,9 @@ function countSubstring(value, needle) {
   return 0;
 }
 
-function validateException(exception, workflowFiles) {
+function validateException(exception, index, workflowFiles, expected) {
   const code = "E_WORKFLOW_SECURITY_EXCEPTION";
-  const path = `${POLICY_PATH}:exceptions[0]`;
+  const path = `${POLICY_PATH}:exceptions[${index}]`;
   requireExactKeys(
     exception,
     ["owner", "path", "reason", "remove_when", "rule", "selector"],
@@ -80,20 +98,17 @@ function validateException(exception, workflowFiles) {
   );
   if (
     exception.rule !== "secrets-outside-env" ||
-    exception.path !== RELEASE_EXCEPTION_PATH ||
-    exception.selector !== "CARGO_REGISTRY_TOKEN"
+    exception.path !== expected.path ||
+    exception.selector !== expected.selector
   ) {
     reject(
       code,
       path,
-      "must identify only the reviewed crates.io release-token exception",
+      `must identify only the reviewed ${expected.selector} release-token exception`,
     );
   }
-  if (
-    typeof exception.owner !== "string" ||
-    !/^@[A-Za-z0-9-]+$/u.test(exception.owner)
-  ) {
-    reject(code, `${path}.owner`, "must name one GitHub owner");
+  if (exception.owner !== "@flyingrobots") {
+    reject(code, `${path}.owner`, "must name @flyingrobots");
   }
   for (const key of ["reason", "remove_when"]) {
     requireText(
@@ -104,21 +119,20 @@ function validateException(exception, workflowFiles) {
     );
   }
 
-  const releaseWorkflow =
-    workflowFiles?.[".github/workflows/release.yml"];
+  const releaseWorkflow = workflowFiles?.[RELEASE_WORKFLOW_PATH];
   const publishSteps = releaseWorkflow?.jobs?.release?.steps?.filter(
-    (step) => step?.name === "Publish to crates.io",
+    (step) => step?.name === expected.stepName,
   );
   if (
     !Array.isArray(publishSteps) ||
     publishSteps.length !== 1 ||
-    publishSteps[0]?.env?.CARGO_REGISTRY_TOKEN !== RELEASE_SECRET ||
-    countSubstring(workflowFiles, exception.selector) !== 1
+    publishSteps[0]?.env?.[expected.selector] !== expected.secret ||
+    countSubstring(workflowFiles, expected.selector) !== 1
   ) {
     reject(
       code,
       exception.path,
-      "must resolve to the only use of the reviewed crates.io token",
+      `must resolve to the only use of the reviewed ${expected.selector} token`,
     );
   }
 }
@@ -184,14 +198,46 @@ export function validateWorkflowSecurityPolicy(policy, workflowFiles) {
     }
   }
 
-  if (!Array.isArray(policy.exceptions) || policy.exceptions.length !== 1) {
+  if (
+    !Array.isArray(policy.exceptions) ||
+    policy.exceptions.length !==
+      REVIEWED_RELEASE_SECRET_EXCEPTIONS.length
+  ) {
     reject(
       "E_WORKFLOW_SECURITY_EXCEPTION",
       `${POLICY_PATH}:exceptions`,
-      "must contain exactly the reviewed release-token exception",
+      "must contain exactly the reviewed release-token exceptions",
     );
   }
-  validateException(policy.exceptions[0], workflowFiles);
+  const expectedBySelector = new Map(
+    REVIEWED_RELEASE_SECRET_EXCEPTIONS.map((expected) => [
+      expected.selector,
+      expected,
+    ]),
+  );
+  const expectedSelectors = [...expectedBySelector.keys()].toSorted();
+  const actualSelectors = policy.exceptions
+    .map((exception) => exception?.selector)
+    .toSorted();
+  if (
+    actualSelectors.some(
+      (selector, index) => selector !== expectedSelectors[index],
+    )
+  ) {
+    reject(
+      "E_WORKFLOW_SECURITY_EXCEPTION",
+      `${POLICY_PATH}:exceptions`,
+      `selectors must equal ${expectedSelectors.join(", ")}`,
+    );
+  }
+  for (const [index, exception] of policy.exceptions.entries()) {
+    validateException(
+      exception,
+      index,
+      workflowFiles,
+      expectedBySelector.get(exception.selector),
+    );
+  }
   return policy;
 }
 

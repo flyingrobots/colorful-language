@@ -87,7 +87,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — generate portable admission** | Consumers no longer hand-maintain structural wire validation after generation compatibility and module ownership became explicit. | #222 derives both JavaScript runtimes from generation SDLs, retains named semantic checks, and reports generated burden separately. |
 | **Delivered — test analyzer substitution** | An optional external-analyzer adapter proves that the pure port can provide useful substitution without making an external engine mandatory. | #157 keeps Vale v3 process failures outside the pure port, proves built-in/external CLI/LSP parity, and leaves both production binaries Vale-free. |
 | **Delivered — bound external-adapter failures** | A malformed optional-engine response cannot multiply or reproduce process-controlled content in an operator-visible error. | #235 caps and redacts every invalid-alert path before distribution work expands the reachable surface. |
-| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #154 is the next publication gate. |
+| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #245 implements the repository machinery while #154 retains public publication proof. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
 
@@ -314,9 +314,15 @@ was installed, and reach the first useful editor result.
   coordinate-preserving adapter shared by the CLI and LSP
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
   <!-- roadmap-primary: delivered #241 -->
-- **Open publication:** publish signed VS Code, Open VSX, Zed, and platform
-  server artifacts with rollback evidence
+- **Active publication:** the tag workflow now encodes native Linux x86-64,
+  Apple Silicon, and Windows x86-64 archives, checksums, provenance, one
+  smoke-tested VSIX for both registries, licensed Zed source packaging, and an
+  observational first-highlight witness
+  [#245](https://github.com/flyingrobots/colorful-language/issues/245). Public
+  VS Code/Open VSX/Zed URLs, clean-machine release evidence, and rollback proof
+  remain open
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  <!-- roadmap-primary: delivered #245 -->
   <!-- roadmap-primary: active #154 -->
 - **Operator installation:** package the CLI, and decide the server boundary,
   for Homebrew
@@ -395,7 +401,7 @@ preserving the deeper destination.
 | `colorful.vocabulary/v1` | Give every surface one versioned role/key authority. | Current ANSI, LSP, Graft projection, manifest hash checks, and schema-generated validators (#145). | High drift cost across Rust and JavaScript. | **Keep generated.** One schema authority drives both consumers. |
 | `PassIdentity` and derivation trace seed | Identify which parser and annotator produced an artifact. | `colorful-projection`, IR validation, and witness fixtures. | Existing fields are a compatibility obligation; replayable provenance would add substantial contract and cross-system cost. | **Preserve; freeze expansion.** Do not add provenance layers before the deep-end gate. |
 | Graft projection | Give agents a fail-closed structured prose projection. | `consumers/graft-projection.mjs`, parity fixtures, process witnesses, and the independent-consumer comparison. | Boundary code must reject, never clamp or coerce, malformed artifacts. | **Boundary hardened; value supported.** #148 supplies negative witnesses and #156 supports stable v1 without authorizing expansion. |
-| `colorful-lsp` and editor adapters | Deliver live POS visualization and deterministic diagnostics while a user writes. | Current LSP binary, source VS Code/Zed adapters, and generic clients; packaged smoke tests planned in #136. | High operational cost around freshness, memory, packaging, and version drift. | **Invest now.** M2 and M3 are the shortest path to observed user value. |
+| `colorful-lsp` and editor adapters | Deliver live POS visualization and deterministic diagnostics while a user writes. | Current LSP binary, source VS Code/Zed adapters, generic clients, #136 packaged smoke, and #154 distribution policy. | High operational cost around freshness, memory, packaging, and version drift. | **Invest now.** M2 and M3 are the shortest path to observed user value. |
 | Contract English | Express unambiguous shape declarations that can lower to canonical GraphQL SDL. | No current product consumer; the future target is Wesley. | High grammar, compatibility, and proof burden. | **Preserve as Phase 5; freeze new surface area** until the deep-end gate passes. |
 | Intent English | Express explicit effectful intent as an Edict surface AST. | No current product consumer; the future target is Edict. | High semantic and safety cost; depends on Contract English. | **Preserve as Phase 6; freeze new surface area** until Phase 5 has evidence. |
 | Edict and echo integration | Verify capabilities, budgets, sealing, and replayable evidence outside Colorful. | No current Colorful product consumer; future Edict compiler and echo admission path. | Very high cross-repository authority and compatibility cost. | **Preserve as Phase 7; freeze integration work** until the earlier phases are justified. |

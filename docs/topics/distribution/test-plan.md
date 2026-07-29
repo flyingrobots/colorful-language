@@ -7,8 +7,9 @@ Verification for install paths and published artifacts.
 - **DIST-1** All publishable crates compile from packaged tarballs, not only from
   the workspace checkout.
 - **DIST-2** The release workflow publishes crates in dependency order.
-- **DIST-3** The release workflow builds one Linux `x86_64-unknown-linux-gnu`
-  binary archive containing `colorful` and `colorful-lsp`.
+- **DIST-3** The release workflow builds `colorful` and `colorful-lsp` on the
+  reviewed Linux x86-64, Apple Silicon, and Windows x86-64 native matrix,
+  packages checksums, and publishes provenance for the exact archives.
 - **DIST-4** The local install script installs `colorful` into a stable user
   prefix and explains the required `PATH` update.
 - **DIST-5** Future Homebrew distribution must be tracked as its own packaging
@@ -36,11 +37,19 @@ Verification for install paths and published artifacts.
   `scripts/check-release-publish-order.test.mjs`;
   `.github/workflows/release.yml`; `docs/RELEASING.md`. *Status:* implemented
   in workflow and PR CI.
-- **DIST-3a** — *Requirement:* DIST-3. *Behavior:* the release archive includes
-  the CLI and LSP binaries plus release metadata and checksum files. *Oracle:*
-  release workflow source and release witness. *Evidence:*
-  `.github/workflows/release.yml`; `docs/goalposts/*/verification.md`. *Status:*
-  implemented in workflow.
+- **DIST-3a** — *Requirement:* DIST-3. *Behavior:* native jobs build the CLI and
+  LSP on `ubuntu-24.04` / `x86_64-unknown-linux-gnu`, `macos-15` /
+  `aarch64-apple-darwin`, and `windows-2025` /
+  `x86_64-pc-windows-msvc`, only after final profile, editor compatibility,
+  Rust, build, and package admission; every archive carries the same release
+  metadata, one SHA-256 sidecar, and GitHub/Sigstore provenance. *Oracle:*
+  profile and workflow mutations reject late validation, target drift, missing
+  package members, absent checksums, or unsigned archives. *Evidence:*
+  `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires final validation before native provenance`. *Status:* implemented
+  in workflow; public release evidence remains planned.
 - **DIST-4a** — *Requirement:* DIST-4. *Behavior:* `scripts/install-local.sh`
   installs `colorful` under `$COLORFUL_HOME/bin`, defaulting to
   `$HOME/.colorful-language/bin`; a smoke test installs into a fresh
@@ -79,5 +88,5 @@ Verification for install paths and published artifacts.
 - crates.io install smoke tests are not part of PR CI because they depend on
   already-published versions.
 - Homebrew remains unavailable until DIST-6a lands.
-- Signed editor releases and the native server artifact matrix remain
-  unavailable until DIST-7a lands.
+- Publicly verified native matrix and signed editor releases remain unavailable
+  until DIST-7a lands.

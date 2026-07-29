@@ -1,0 +1,96 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1200"
+  height="480"
+  viewBox="0 0 1200 480"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Colorful semantic-role editor demo</title>
+  <desc id="description">
+    A dark editor panel renders “The cat writes careful prose quickly.”
+    Every colored word is also labeled in text: cat: noun; writes: verb;
+    careful: adjective; prose: noun; quickly: adverb. A separate diagnostic
+    fixture reports really as a weak word to remove or replace.
+  </desc>
+  <style>
+    .page {
+      fill: #1f2328;
+    }
+
+    .panel {
+      fill: #262c33;
+      stroke: #57606a;
+      stroke-width: 2;
+    }
+
+    .body {
+      fill: #f0f3f6;
+    }
+
+    .muted {
+      fill: #b6bec9;
+    }
+
+    .noun {
+      fill: #fc9867;
+    }
+
+    .verb {
+      fill: #a9dc76;
+    }
+
+    .adjective {
+      fill: #ab9df2;
+    }
+
+    .adverb {
+      fill: #ffd866;
+    }
+
+    .code {
+      font: 38px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .role {
+      font: 18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .heading {
+      font: 600 22px system-ui, sans-serif;
+    }
+
+    .caption {
+      font: 17px system-ui, sans-serif;
+    }
+  </style>
+
+  <rect class="page" width="1200" height="480" rx="24" />
+  <text class="heading body" x="64" y="62">Colorful Language</text>
+  <text class="caption muted" x="64" y="92">
+    Semantic roles remain readable as labels when color is unavailable.
+  </text>
+  <rect class="panel" x="64" y="122" width="1072" height="286" rx="12" />
+
+  <text class="code body" x="104" y="202">The</text>
+  <text class="code noun" x="202" y="202">cat</text>
+  <text class="code verb" x="292" y="202">writes</text>
+  <text class="code adjective" x="452" y="202">careful</text>
+  <text class="code noun" x="644" y="202">prose</text>
+  <text class="code adverb" x="784" y="202">quickly</text>
+  <text class="code body" x="976" y="202">.</text>
+
+  <text class="role muted" x="104" y="248">keyword</text>
+  <text class="role noun" x="202" y="248">noun</text>
+  <text class="role verb" x="292" y="248">verb</text>
+  <text class="role adjective" x="452" y="248">adjective</text>
+  <text class="role noun" x="644" y="248">noun</text>
+  <text class="role adverb" x="784" y="248">adverb</text>
+
+  <text class="caption body" x="104" y="322">
+    Separate diagnostic fixture: weak word “really” → remove or replace
+  </text>
+  <text class="caption muted" x="104" y="356">
+    Plain Text and Markdown use the same LSP analysis and source coordinates.
+  </text>
+</svg>

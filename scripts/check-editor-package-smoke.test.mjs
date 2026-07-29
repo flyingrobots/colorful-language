@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdtempSync,
@@ -21,6 +23,9 @@ import {
 
 const VSCODE_DIRECTORY = "editors/vscode";
 const PACKAGE_SMOKE_COMMAND = "npm run smoke:package";
+const PACKAGE_POLICY_COMMAND =
+  "node --test scripts/check-editor-package-smoke.test.mjs";
+const EDITOR_INSTALL_COMMAND = "npm --prefix editors/vscode ci";
 const RELEASE_PACKAGE_SMOKE_COMMAND =
   "npm --prefix editors/vscode run smoke:package";
 const EXPECTED_TOOL_VERSIONS = {
@@ -35,6 +40,8 @@ const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/smoke/log-files.mjs",
   "editors/vscode/smoke/run-packaged-smoke.mjs",
   "editors/vscode/smoke/suite/index.cjs",
+  "editors/vscode/smoke/timing-witness.mjs",
+  "editors/vscode/scripts/package-vsix.mjs",
   "scripts/stage-zed-extension.mjs",
 ];
 
@@ -68,19 +75,72 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
   }
   assert.equal(
     packageJson.scripts?.["package:vsix"],
-    "vsce package --no-yarn --no-dependencies",
+    "node scripts/package-vsix.mjs",
   );
   const packageIgnore = readFileSync(
     "editors/vscode/.vscodeignore",
     "utf8",
   );
   assert.match(packageIgnore, /^node_modules\/\*\*$/mu);
+  assert.match(packageIgnore, /^scripts\/\*\*$/mu);
   assert.match(packageIgnore, /^\*\*\/\*\.map$/mu);
   assert.equal(
     packageJson.scripts?.["smoke:package"],
     "node smoke/run-packaged-smoke.mjs",
   );
   assert.equal(packageJson.repository?.directory, "editors/vscode");
+});
+
+test("VSIX packaging resolves the publisher binary from its package manifest", () => {
+  const source = readFileSync(
+    "editors/vscode/scripts/package-vsix.mjs",
+    "utf8",
+  );
+  assert.match(source, /@vscode\/vsce\/package\.json/u);
+  assert.match(source, /\.bin/u);
+  assert.doesNotMatch(
+    source,
+    /node_modules",\s*"@vscode",\s*"vsce",\s*"vsce"/u,
+  );
+});
+
+test("VSIX packaging is reproducible across ambient build times", () => {
+  const scratch = mkdtempSync(path.join(tmpdir(), "colorful-vsix-repro-"));
+  const first = path.join(scratch, "first.vsix");
+  const second = path.join(scratch, "second.vsix");
+  const packageVsix = (output, sourceDateEpoch) => {
+    const result = spawnSync(
+      "npm",
+      [
+        "--prefix",
+        VSCODE_DIRECTORY,
+        "run",
+        "package:vsix",
+        "--",
+        "--out",
+        output,
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: { ...process.env, SOURCE_DATE_EPOCH: sourceDateEpoch },
+      },
+    );
+    assert.equal(
+      result.status,
+      0,
+      `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
+    );
+  };
+  try {
+    packageVsix(first, "1600000000");
+    packageVsix(second, "1700000000");
+    const digest = (filename) =>
+      createHash("sha256").update(readFileSync(filename)).digest("hex");
+    assert.equal(digest(first), digest(second));
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 test("the packaged VS Code license stays byte-identical to repository authority", () => {
@@ -94,6 +154,223 @@ test("the committed package harness has every portable evidence boundary", () =>
   for (const path of EXPECTED_HARNESS_PATHS) {
     assert.equal(existsSync(path), true, `missing package evidence: ${path}`);
   }
+});
+
+test("installation timing is ordered observational evidence", async () => {
+  const { createInstallationTimingWitness } = await import(
+    "../editors/vscode/smoke/timing-witness.mjs"
+  );
+  const witness = createInstallationTimingWitness({
+    installationStartedAtUnixMs: 1_000,
+    firstHighlightAtUnixMs: 1_375,
+    environment: {
+      architecture: "arm64",
+      cpu: "Example CPU",
+      extension: "flyingrobots.colorful-language@0.4.0",
+      logicalCpuCount: 8,
+      memoryBytes: 16_000_000_000,
+      node: "v22.23.1",
+      operatingSystem: "darwin 25.0.0",
+      rustc: "rustc 1.97.1",
+      server: "colorful-lsp@0.4.0",
+      vscode: "1.91.0",
+    },
+  });
+
+  assert.deepEqual(witness, {
+    schemaVersion: "colorful.install-to-first-highlight/v1",
+    observational: true,
+    correctnessThresholdMs: null,
+    startEvent: "before-isolated-vsix-install",
+    endEvent: "first-plaintext-diagnostic-and-semantic-tokens",
+    installationStartedAtUnixMs: 1_000,
+    firstHighlightAtUnixMs: 1_375,
+    durationMs: 375,
+    environment: {
+      architecture: "arm64",
+      cpu: "Example CPU",
+      extension: "flyingrobots.colorful-language@0.4.0",
+      logicalCpuCount: 8,
+      memoryBytes: 16_000_000_000,
+      node: "v22.23.1",
+      operatingSystem: "darwin 25.0.0",
+      rustc: "rustc 1.97.1",
+      server: "colorful-lsp@0.4.0",
+      vscode: "1.91.0",
+    },
+  });
+  assert.throws(
+    () =>
+      createInstallationTimingWitness({
+        installationStartedAtUnixMs: 1_000,
+        firstHighlightAtUnixMs: 999,
+        environment: witness.environment,
+    }),
+    /must not precede installation start/u,
+  );
+  assert.throws(
+    () =>
+      createInstallationTimingWitness({
+        installationStartedAtUnixMs: 1_000,
+        firstHighlightAtUnixMs: 1_375,
+        environment: {
+          ...witness.environment,
+          rustc: undefined,
+        },
+      }),
+    /environment\.rustc/u,
+  );
+
+  const runner = readFileSync(
+    "editors/vscode/smoke/run-packaged-smoke.mjs",
+    "utf8",
+  );
+  const suite = readFileSync(
+    "editors/vscode/smoke/suite/index.cjs",
+    "utf8",
+  );
+  const start = runner.indexOf(
+    "const installationStartedAtUnixMs = Date.now();",
+  );
+  const install = runner.indexOf(
+    "installVsix(vscodeExecutablePath, vsixPath, extensionsDirectory);",
+  );
+  assert.ok(
+    start >= 0 && install > start,
+    "timing must begin immediately before the isolated VSIX installation",
+  );
+  assert.match(runner, /COLORFUL_TIMING_PATH/u);
+  assert.match(runner, /installationToFirstHighlight/u);
+  assert.match(
+    suite,
+    /first-plaintext-diagnostic-and-semantic-tokens/u,
+  );
+});
+
+test("installation timing requires typed positive environment measurements", async () => {
+  const { createInstallationTimingWitness } = await import(
+    "../editors/vscode/smoke/timing-witness.mjs"
+  );
+  const environment = {
+    architecture: "arm64",
+    cpu: "Example CPU",
+    extension: "flyingrobots.colorful-language@0.4.0",
+    logicalCpuCount: 8,
+    memoryBytes: 16_000_000_000,
+    node: "v22.23.1",
+    operatingSystem: "darwin 25.0.0",
+    rustc: "rustc 1.97.1",
+    server: "colorful-lsp@0.4.0",
+    vscode: "1.91.0",
+  };
+  for (const [field, value] of [
+    ["cpu", 8],
+    ["logicalCpuCount", "8"],
+    ["logicalCpuCount", 0],
+    ["logicalCpuCount", -1],
+    ["memoryBytes", "16000000000"],
+    ["memoryBytes", 0],
+    ["memoryBytes", -1],
+  ]) {
+    assert.throws(
+      () =>
+        createInstallationTimingWitness({
+          installationStartedAtUnixMs: 1_000,
+          firstHighlightAtUnixMs: 1_375,
+          environment: { ...environment, [field]: value },
+        }),
+      new RegExp(`environment\\.${field}`, "u"),
+      `${field} accepted ${JSON.stringify(value)}`,
+    );
+  }
+});
+
+function relativeLuminance(hex) {
+  const channels = hex
+    .slice(1)
+    .match(/../gu)
+    .map((value) => Number.parseInt(value, 16) / 255)
+    .map((value) =>
+      value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4,
+    );
+  return (
+    0.2126 * channels[0] +
+    0.7152 * channels[1] +
+    0.0722 * channels[2]
+  );
+}
+
+function contrastRatio(left, right) {
+  const leftLuminance = relativeLuminance(left);
+  const rightLuminance = relativeLuminance(right);
+  return (
+    (Math.max(leftLuminance, rightLuminance) + 0.05) /
+    (Math.min(leftLuminance, rightLuminance) + 0.05)
+  );
+}
+
+test("the visual demo has a text-equivalent accessible role mapping", () => {
+  const demoPath =
+    "docs/topics/editor-integrations/assets/semantic-role-demo.svg";
+  assert.equal(existsSync(demoPath), true, `missing editor demo: ${demoPath}`);
+  const svg = readFileSync(demoPath, "utf8");
+  const readme = readFileSync(
+    "docs/topics/editor-integrations/README.md",
+    "utf8",
+  );
+  assert.match(svg, /<title[^>]*>Colorful semantic-role editor demo<\/title>/u);
+  assert.match(svg, /<desc[^>]*>[\s\S]*cat: noun[\s\S]*writes: verb/u);
+  assert.match(
+    svg,
+    /<desc[^>]*>[\s\S]*separate diagnostic fixture[\s\S]*really/iu,
+  );
+  assert.match(
+    readme,
+    /Separate diagnostic example[\s\S]*`really`[\s\S]*`weak-word`/u,
+  );
+  assert.doesNotMatch(
+    svg,
+    /(?:fill|stroke):\s*var\(/u,
+    "demo paint must render without CSS custom-property support",
+  );
+
+  const classFill = (className) =>
+    new RegExp(
+      `\\.${className}\\s*\\{\\s*fill:\\s*(#[0-9a-f]{6})`,
+      "u",
+    ).exec(svg)?.[1];
+  const surface = classFill("panel");
+  assert.ok(surface, "demo must declare one semantic surface token");
+  const roles = {
+    noun: ["cat", "prose"],
+    verb: ["writes"],
+    adjective: ["careful"],
+    adverb: ["quickly"],
+  };
+  for (const [role, words] of Object.entries(roles)) {
+    const color = classFill(role);
+    assert.ok(color, `demo must declare the ${role} reference color`);
+    assert.ok(
+      contrastRatio(color, surface) >= 4.5,
+      `${role} must meet 4.5:1 contrast against the demo surface`,
+    );
+    assert.match(
+      svg,
+      new RegExp(`class="[^"]*\\b${role}\\b[^"]*"`, "u"),
+    );
+    for (const word of words) {
+      assert.match(
+        readme,
+        new RegExp(`\\| ${word} \\| \`${role}\` \\|`, "u"),
+      );
+    }
+  }
+  assert.match(
+    readme,
+    /!\[Colorful semantic-role demo with each word labeled by role\]/u,
+  );
 });
 
 test("package evidence has independent validation boundaries", () => {
@@ -282,6 +559,19 @@ test("the VS Code packaging warning precedes every package command", () => {
   );
 });
 
+test("immutable editor package READMEs avoid time-bound publication claims", () => {
+  for (const filename of [
+    "editors/vscode/README.md",
+    "editors/zed/README.md",
+  ]) {
+    const readme = readFileSync(filename, "utf8");
+    assert.doesNotMatch(readme, /\bnot yet published\b/iu);
+    assert.doesNotMatch(readme, /\bfirst synchronized editor release\b/iu);
+    assert.match(readme, /matching tag/u);
+    assert.match(readme, /that exact target and version/u);
+  }
+});
+
 test("the extension-host smoke rejects cross-drive install paths", () => {
   const source = readFileSync(
     "editors/vscode/smoke/suite/index.cjs",
@@ -337,6 +627,36 @@ test("CI runs the headless package smoke from the editor directory", () => {
   const smokeStep = steps.find((step) => step.run === PACKAGE_SMOKE_COMMAND);
   assert.ok(smokeStep, `editors job must run ${PACKAGE_SMOKE_COMMAND}`);
   assert.equal(smokeStep["working-directory"], VSCODE_DIRECTORY);
+});
+
+test("clean gates install editor dependencies before package policy", () => {
+  const workflow = parseYaml(
+    readFileSync(".github/workflows/ci.yml", "utf8"),
+  );
+  const steps = workflow?.jobs?.editors?.steps;
+  assert.ok(Array.isArray(steps), "workflow job editors must have steps");
+  const hostedInstall = steps.findIndex(
+    (step) =>
+      step.run === "npm ci" &&
+      step["working-directory"] === VSCODE_DIRECTORY,
+  );
+  const hostedPolicy = steps.findIndex(
+    (step) => step.run === PACKAGE_POLICY_COMMAND,
+  );
+  assert.ok(
+    hostedInstall >= 0 && hostedPolicy > hostedInstall,
+    "hosted editor dependencies must precede package policy",
+  );
+
+  const commands = readFileSync("scripts/release-prep.sh", "utf8")
+    .split(/\r?\n/u)
+    .map((line) => line.trim());
+  const localInstall = commands.indexOf(EDITOR_INSTALL_COMMAND);
+  const localPolicy = commands.indexOf(PACKAGE_POLICY_COMMAND);
+  assert.ok(
+    localInstall >= 0 && localPolicy > localInstall,
+    "release-prep editor dependencies must precede package policy",
+  );
 });
 
 test("release preparation reruns the packaged editor smoke", () => {

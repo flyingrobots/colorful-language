@@ -92,7 +92,7 @@ publish:
         - colorful-cli
       verify: cargo info {crate}@{version}
   artifacts:
-    - name: linux-binaries
+    - name: linux-x86-64-binaries
       platform: x86_64-unknown-linux-gnu
       contents:
         - colorful
@@ -101,6 +101,59 @@ publish:
         - LICENSE
         - NOTICE
         - CHANGELOG.md
+    - name: macos-apple-silicon-binaries
+      platform: aarch64-apple-darwin
+      contents:
+        - colorful
+        - colorful-lsp
+        - README.md
+        - LICENSE
+        - NOTICE
+        - CHANGELOG.md
+    - name: windows-x86-64-binaries
+      platform: x86_64-pc-windows-msvc
+      contents:
+        - colorful.exe
+        - colorful-lsp.exe
+        - README.md
+        - LICENSE
+        - NOTICE
+        - CHANGELOG.md
+    - name: vscode-extension
+      platform: editor
+      contents:
+        - target/editor-smoke/colorful-language-{version}.vsix
+    - name: zed-registry-source
+      platform: editor
+      contents:
+        - target/editor-smoke/zed-source
+distribution:
+  owner: "@flyingrobots"
+  provenance: github-sigstore
+  binaries:
+    - runner: ubuntu-24.04
+      target: x86_64-unknown-linux-gnu
+      executable_suffix: ""
+    - runner: macos-15
+      target: aarch64-apple-darwin
+      executable_suffix: ""
+    - runner: windows-2025
+      target: x86_64-pc-windows-msvc
+      executable_suffix: ".exe"
+  editors:
+    vscode:
+      artifact: target/editor-smoke/colorful-language-{version}.vsix
+      registries:
+        - visual-studio-marketplace
+        - open-vsx
+      credential_secrets:
+        - VSCE_PAT
+        - OVSX_PAT
+      duplicate_policy: skip-existing-version
+    zed:
+      source_path: editors/zed
+      registry: zed-industries/extensions
+      publication: pull-request
 dist_tags:
   stable: crates.io-default
   prerelease:

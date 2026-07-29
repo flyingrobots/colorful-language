@@ -259,21 +259,46 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
   `scripts/release-prep.sh`. *Status:* implemented.
 - **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* signed VS Code/Open VSX and
-  Zed releases plus compatible platform server binaries publish at real URLs,
-  install on a clean machine, and roll back to the previous compatible set.
-  *Oracle:* registry/release URL resolution, integrity verification, activation,
-  semantic-token/diagnostic output, and rollback result equality.
+  Zed releases plus compatible Linux x86-64, Apple Silicon, and Windows x86-64
+  server binaries publish at real URLs, install on a clean machine, and roll
+  back to the previous compatible set. One smoke-tested VSIX supplies both
+  VS Code registries; each binary archive and the VSIX carry a SHA-256 identity
+  and GitHub/Sigstore provenance. *Oracle:* registry/release URL resolution,
+  provenance and checksum verification, activation, semantic-token/diagnostic
+  output, and rollback result equality.
   *Evidence type:* signed release witness and clean-machine matrix. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.
 - **EDIT-10b** — *Requirement:* EDIT-10. *Behavior:* publication evidence
-  includes a text-equivalent visual demo, a reviewed theme/fallback result, and
-  install-to-first-highlight timing without making the network-dependent timing
-  a correctness gate. *Oracle:* the demo exposes the expected roles in text and
-  pixels; the timing report names hardware, toolchain, package versions, and
-  start/stop events. *Evidence type:* reviewed visual artifact and observational
-  performance report. *Tracking:*
+  includes a text-equivalent visual demo and install-to-first-highlight timing
+  without making host-dependent timing a correctness gate. *Oracle:* the demo
+  exposes the expected roles in text and pixels with at least 4.5:1 custom-role
+  contrast; the timing witness names hardware, toolchain, package versions,
+  start/stop events, and no correctness threshold. *Evidence type:* accessible
+  visual artifact and observational package witness. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Evidence:*
+  `docs/topics/editor-integrations/assets/semantic-role-demo.svg`;
+  `docs/topics/editor-integrations/README.md`;
+  `editors/vscode/smoke/timing-witness.mjs`;
+  `editors/vscode/smoke/run-packaged-smoke.mjs`;
+  `scripts/check-editor-package-smoke.test.mjs`
+  `installation timing is ordered observational evidence` and
+  `the visual demo has a text-equivalent accessible role mapping`. *Status:*
+  implemented.
+- **EDIT-10c** — *Requirement:* EDIT-10. *Behavior:* the public release witness
+  records a reviewed theme/fallback result and the observational
+  install-to-first-highlight measurement from a clean installation of the
+  published bytes, including the exact public URLs and environment. *Oracle:*
+  the public VSIX digest equals the smoke witness; expected roles and
+  diagnostics appear; timing event order and environment are complete.
+  *Evidence type:* public registry metadata, clean-machine visual review, and
+  release witness. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Intended evidence:* the version-specific
+  `docs/goalposts/vX.Y.Z/release.md` and
+  `docs/goalposts/vX.Y.Z/verification.md` release packet after public
+  publication.
   *Status:* planned.
 - **EDIT-15a** — *Requirement:* EDIT-15. *Behavior:* a Markdown document with
   one prose weak word and the same sentence inside a fenced code block emits

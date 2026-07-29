@@ -52,6 +52,14 @@ license, then compiled to Wasm from an isolated directory. Zed host activation
 uses the exact manual oracle in the [test plan](test-plan.md) because Zed does
 not expose a headless dev-extension install command.
 
+The package witness also records an observational
+`installation-to-first-highlight` duration from immediately before the isolated
+VSIX install through the first Plain Text diagnostic and semantic-token
+response. It records the host, hardware, Node/Rust toolchain, VS Code, extension,
+and server versions. The measurement is diagnostic evidence, not a correctness
+threshold: host load and editor startup are deliberately excluded from the
+deterministic merge gate.
+
 These artifacts are test witnesses only. They are not yet published to editor
 marketplaces or registries.
 
@@ -99,6 +107,33 @@ must resolve to the selected finding's same source line and start offset; the
 LSP range end must resolve to that finding's byte-span end. A separate manual
 `coordinates` fuzz target exercises the same public CLI/LSP entry points without
 making time-dependent fuzzing part of the merge gate.
+
+## Visual demo
+
+The repository demo renders the same deterministic sentence used by the editor
+theme-fallback fixture. It is an illustration of the documented semantic-token
+mapping, not a screenshot of a marketplace installation.
+
+![Colorful semantic-role demo with each word labeled by role](assets/semantic-role-demo.svg)
+
+Text equivalent:
+
+| Word | Semantic role | Meaning without color |
+| --- | --- | --- |
+| The | `keyword` | Structural function word |
+| cat | `noun` | Open-class noun |
+| writes | `verb` | Open-class verb |
+| careful | `adjective` | Open-class adjective |
+| prose | `noun` | Open-class noun |
+| quickly | `adverb` | Open-class adverb |
+
+Separate diagnostic example: in the editor-smoke fixture, `really` produces the
+`weak-word` finding “weak word 'really'.” The visual labels it as a separate
+fixture so it is not mistaken for a finding over the semantic-role sentence.
+
+The custom-role colors use the same starter values documented for Zed and each
+meets at least 4.5:1 contrast against the demo surface. Role labels and this
+table are the primary oracle; color is supplementary.
 
 ## Token and theme behavior
 

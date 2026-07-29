@@ -23,10 +23,20 @@ cargo install --git https://github.com/flyingrobots/colorful-language.git colorf
 
 Download the current prebuilt Linux archive from the
 [GitHub Releases](https://github.com/flyingrobots/colorful-language/releases)
-page. The release workflow currently creates one
+page. The latest public release provides one
 `x86_64-unknown-linux-gnu` tarball containing both `colorful` and
 `colorful-lsp`, plus release metadata and a SHA-256 checksum. For macOS,
 Windows, and other Linux targets, install with Cargo or build from source.
+
+The tag workflow on `main` is prepared to replace that single-platform shape on
+the next deliberate release: native jobs build Linux x86-64, Apple Silicon, and
+Windows x86-64 archives, checksum each archive, and publish
+GitHub/Sigstore provenance. The same tagged workflow clean-installs one exact
+VSIX before using those bytes for VS Code Marketplace and Open VSX, and it
+packages the licensed Zed registry source. These are release mechanics, not
+current install claims. No macOS, Windows, VS Code Marketplace, Open VSX, or Zed
+public URL is documented as available until the tagged workflow and external
+registries provide verification evidence.
 
 For source-checkout development, especially with Graft or jedit, install the
 local CLI into a stable user directory:
@@ -64,9 +74,9 @@ slice because it needs release assets, install docs, and smoke tests for a
 different distribution channel; the canonical tracker is
 [#37](https://github.com/flyingrobots/colorful-language/issues/37).
 
-There are no native macOS or Windows binary archives yet. Signed editor
-artifacts, the reviewed server platform matrix, public registry URLs, and
-clean-install/rollback evidence are tracked by
+There are no publicly verified native macOS or Windows binary archives yet.
+Signed editor artifacts, public registry URLs, and clean-install/rollback
+evidence are tracked by
 [#154](https://github.com/flyingrobots/colorful-language/issues/154). Homebrew
 remains the separate operator-install slice in #37, while both lanes may reuse
 the same release assets and checksum evidence.

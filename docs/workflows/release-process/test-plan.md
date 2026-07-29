@@ -7,7 +7,8 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-1** A release has a packet, verification witness, changelog entry, tag,
   and GitHub Release.
 - **REL-2** A release tag must point to a commit reachable from `origin/main`.
-- **REL-3** The release workflow reruns Rust and package guards before publish.
+- **REL-3** The release workflow reruns profile, editor compatibility, Rust,
+  build, and package guards before any provenance-producing job.
 - **REL-4** Crates publish in dependency order.
 - **REL-5** The release runbook remains the canonical operational checklist.
 - **REL-6** The repo declares release mechanics in a machine-checkable profile.
@@ -21,6 +22,17 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-11** Every editor adapter released from the repository tag must share
   the workspace version and declare a deterministic `colorful-lsp`
   compatibility rule.
+- **REL-12** A release tag must build `colorful` and `colorful-lsp` for the
+  reviewed native platform matrix, publish checksums, and attach signed
+  provenance to the exact archives created from that tag.
+- **REL-13** One clean-install-tested VSIX must be the sole input to both VS
+  Code Marketplace and Open VSX publication, with credentials verified before
+  immutable publication and duplicate-version retries handled explicitly.
+- **REL-14** The Zed registry source path must carry the complete accepted
+  inventory and license required by the external registry PR.
+- **REL-15** Distribution verification and rollback must name an owner, public
+  URL and integrity oracle for every channel; observational startup timing must
+  remain separate from deterministic correctness gates.
 
 ## Cases
 
@@ -33,9 +45,13 @@ Verification for release preparation, tag automation, and release witnesses.
   is not an ancestor of `origin/main`. *Oracle:* workflow source review.
   *Evidence:* `.github/workflows/release.yml`. *Status:* implemented.
 - **REL-3a** — *Requirement:* REL-3. *Behavior:* the release workflow reruns
-  `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build --release`, and the
-  package witness. *Oracle:* workflow source review. *Evidence:*
-  `.github/workflows/release.yml`. *Status:* implemented.
+  release-profile and editor-compatibility validation, `cargo fmt`,
+  `cargo clippy`, `cargo test`, `cargo build --release`, and the package
+  witness in the read-only admission job that every provenance-producing
+  native job requires. *Oracle:* workflow source and distribution-policy
+  mutation review. *Evidence:* `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires final validation before native provenance`. *Status:* implemented.
 - **REL-4a** — *Requirement:* REL-4. *Behavior:* crates publish from leaf
   dependencies to dependents. *Oracle:* workflow source review. *Evidence:*
   `.github/workflows/release.yml`; `docs/RELEASING.md`. *Status:* implemented.
@@ -123,6 +139,94 @@ Verification for release preparation, tag automation, and release witnesses.
   `requires policy dependencies before the checker in every release gate`
   prove serialization independence and clean-environment dependency ordering.
   *Status:* implemented.
+- **REL-12a** — *Requirement:* REL-12. *Behavior:* the tag workflow builds the
+  two public binaries natively on `ubuntu-24.04` /
+  `x86_64-unknown-linux-gnu`, `macos-15` /
+  `aarch64-apple-darwin`, and `windows-2025` /
+  `x86_64-pc-windows-msvc`; each archive contains the same reviewed support
+  files, has one SHA-256 sidecar, and receives GitHub/Sigstore build
+  provenance before release creation. *Oracle:* profile/workflow mutations
+  reject a missing, duplicated, reordered, mismatched, unsigned, or
+  unchecked archive entry. *Evidence type:* deterministic distribution-policy
+  checker and mutation tests. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `rejects every platform inventory mutation`,
+  `rejects workflow matrix drift independently of the profile`,
+  `requires tag admission before provenance-producing jobs`,
+  `requires final validation before native provenance`,
+  `binds native dispatch and release side effects to the reviewed topology`,
+  and `requires signed checksummed native archives`. *Status:* implemented in
+  workflow; hosted release evidence remains planned.
+- **REL-13a** — *Requirement:* REL-13. *Behavior:* the tag workflow runs the
+  packaged VS Code smoke once, publishes that witness's exact VSIX path to both
+  registries, isolates each registry credential to its own verification and
+  publication step, verifies both credentials before crates or editor packages
+  are published, and treats an already-present version as a rerun-safe success
+  only when both downloaded registry packages match the witness SHA-256.
+  Packaging normalizes ZIP timestamps to the immutable source commit, so
+  ambient time cannot change the VSIX bytes. *Oracle:* workflow and lockfile
+  mutations reject shared publisher credentials, a second package command,
+  different publication paths, missing credential or byte verification,
+  floating publisher tooling, absent duplicate handling, a mismatched remote
+  package, or time-dependent packaging. *Evidence type:* deterministic
+  distribution-policy checker and mutation tests. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Evidence:* `.github/workflows/release.yml`;
+  `editors/vscode/smoke/run-packaged-smoke.mjs`;
+  `editors/vscode/package.json`; `editors/vscode/package-lock.json`;
+  `scripts/verify-editor-publication.mjs`;
+  `scripts/verify-editor-publication.test.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `isolates each editor registry credential to its publisher step`,
+  `requires publisher credential verification before crates`,
+  `rejects credentials shared between editor publisher steps`,
+  `requires one smoke-tested VSIX for both rerun-safe publishers`, and
+  `requires published registry bytes to match the smoke-tested VSIX`, and
+  `requires exact lockfile-backed publisher tools`;
+  `scripts/check-editor-package-smoke.test.mjs`
+  `VSIX packaging is reproducible across ambient build times` and
+  `clean gates install editor dependencies before package policy`. *Status:*
+  implemented in workflow; public registry evidence remains planned.
+- **REL-14a** — *Requirement:* REL-14. *Behavior:* the repository-owned
+  `editors/zed` path and its staged clean-room copy carry the same accepted
+  license, synchronized manifest and crate versions, lockfile, source, and
+  documentation needed by an official `zed-industries/extensions` submodule
+  entry with `path = "editors/zed"`. *Oracle:* an exact inventory and
+  byte-equality check fails if either source omits or drifts the license.
+  *Evidence type:* deterministic package-policy test and isolated Wasm build.
+  *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Evidence:* `editors/zed/LICENSE`; `scripts/stage-zed-extension.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires the Zed registry path to retain the repository license`; packaged
+  editor smoke. *Status:* implemented in source packaging; external registry
+  submission remains planned.
+- **REL-15a** — *Requirement:* REL-15. *Behavior:* the release runbook names
+  `@flyingrobots` as publication and rollback owner; gives exact verification
+  commands for GitHub attestations, registry metadata, clean installation, and
+  Zed registry status; and requires patch-forward recovery without moving a
+  public tag. Install-to-first-highlight measurements record their start/end
+  events and environment but do not enforce a wall-clock threshold.
+  *Oracle:* documentation/policy mutations reject a missing owner, channel,
+  integrity command, rollback rule, or an observational measurement presented
+  as a correctness gate. *Evidence type:* deterministic distribution-policy
+  checker and documentation review. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Evidence:* `docs/RELEASING.md`;
+  `editors/vscode/smoke/timing-witness.mjs`;
+  `editors/vscode/smoke/run-packaged-smoke.mjs`;
+  `scripts/check-editor-package-smoke.test.mjs`
+  `installation timing is ordered observational evidence`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires every release gate and rollback reference` and
+  `keeps public byte verification after publication` and
+  `downloads every release asset before integrity verification` and
+  `verifies checksums and provenance for the complete release matrix`.
+  *Status:* implemented in the runbook and package witness; public rollback
+  rehearsal remains planned.
 
 ## Open verification gaps
 
@@ -133,3 +237,7 @@ Verification for release preparation, tag automation, and release witnesses.
   profile-aware release gate.
 - GitHub Release asset recovery is still a manual inspection path when a release
   exists but assets are missing.
+- Native platform archives, editor-registry publication, and signed provenance
+  are implemented in the tag workflow but remain unverified on a public tag.
+  Zed registry submission and public distribution rollback evidence remain
+  planned in REL-12a through REL-15a.

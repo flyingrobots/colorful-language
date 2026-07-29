@@ -15,16 +15,19 @@ The extension version is synchronized with the Colorful workspace release. For
 extension `0.Y.Z`, use a stable `colorful-lsp` in
 `>=0.Y.0 <0.(Y+1).0`; prereleases and a different minor line are unsupported.
 
-This source extension drives the `colorful-lsp` binary. From the repository
-root, install the matching server from the same checkout:
+The extension starts a separately installed `colorful-lsp` binary. For source
+development, install the matching server from the same checkout:
 
 ```bash
 cargo install --path crates/colorful-lsp --locked
 ```
 
-Compatible public server binaries are not yet published. Track
-[#154](https://github.com/flyingrobots/colorful-language/issues/154) for the
-first synchronized editor release.
+For a registry-installed extension, install the same version of
+[`colorful-lsp`](https://crates.io/crates/colorful-lsp) or use a native archive
+from the matching tag on
+[GitHub Releases](https://github.com/flyingrobots/colorful-language/releases).
+Use an archive only when that exact target and version appear in the release
+asset list; otherwise install the server with Cargo.
 
 ## Settings
 
@@ -76,8 +79,10 @@ npm --prefix editors/vscode run smoke:package
 That command builds the matching release server, installs the VSIX into an
 isolated VS Code 1.91.0 profile, exercises Plain Text and Markdown plus a
 missing-server profile, stages the Zed source package, and writes
-`target/editor-smoke/witness.json`. It downloads and caches the tested VS Code
-build under the editor-local ignored `.vscode-test/` directory.
+`target/editor-smoke/witness.json`, including an observational
+installation-to-first-highlight duration and its host/toolchain identity. It
+downloads and caches the tested VS Code build under the editor-local ignored
+`.vscode-test/` directory.
 
 ## How it works
 

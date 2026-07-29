@@ -46,6 +46,12 @@ jobs:
         run: node --test scripts/check-editor-version-policy.test.mjs
       - name: Check editor version compatibility
         run: node scripts/check-editor-version-policy.mjs
+      - name: Self-test release distribution policy
+        run: node --test scripts/check-release-distribution.test.mjs
+      - name: Check release distribution policy
+        run: node scripts/check-release-distribution.mjs
+      - name: Self-test editor publication verification
+        run: node --test scripts/verify-editor-publication.test.mjs
       - name: Self-test the evidence-toolchain checker
         run: node scripts/check-evidence-toolchains.mjs --self-test
       - name: Check evidence-toolchain policy
@@ -328,9 +334,9 @@ jobs:
       - run: npm ci
       - run: node scripts/check-vscode-dependency-policy.test.mjs
       - run: node scripts/check-vscode-dependency-policy.mjs
-      - run: node --test scripts/check-editor-package-smoke.test.mjs
       - run: npm ci
         working-directory: editors/vscode
+      - run: node --test scripts/check-editor-package-smoke.test.mjs
       - run: npm audit --audit-level=high
         working-directory: editors/vscode
       - run: npm run compile
