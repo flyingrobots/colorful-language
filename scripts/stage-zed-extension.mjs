@@ -87,12 +87,11 @@ export function validateZedSourcePackage(repositoryRoot, packageRoot) {
     readFileSync(path.join(repositoryRoot, "LICENSE"), "utf8"),
     "staged Zed license must equal the repository license",
   );
-  assert.match(
-    source,
-    new RegExp(
-      `const SERVER_NOT_FOUND_CATEGORY: &str =\\s*"${ZED_SERVER_NOT_FOUND_CATEGORY.replace("/", "\\/")}";`,
-      "u",
+  assert.ok(
+    source.includes(
+      `const SERVER_NOT_FOUND_CATEGORY: &str = "${ZED_SERVER_NOT_FOUND_CATEGORY}";`,
     ),
+    "staged Zed source must expose the documented missing-server category",
   );
   assert.ok(
     statSync(path.join(packageRoot, "Cargo.lock")).size > 0,

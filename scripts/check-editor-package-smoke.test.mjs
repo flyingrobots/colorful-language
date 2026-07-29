@@ -236,6 +236,15 @@ test("Zed package validation is table-aware and formatting-independent", () => {
   }
 });
 
+test("Zed source validation compares the missing-server constant literally", () => {
+  const source = readFileSync("scripts/stage-zed-extension.mjs", "utf8");
+  assert.doesNotMatch(source, /ZED_SERVER_NOT_FOUND_CATEGORY\.replace/u);
+  assert.match(
+    source,
+    /source\.includes\(\s*`const SERVER_NOT_FOUND_CATEGORY: &str = "\$\{ZED_SERVER_NOT_FOUND_CATEGORY\}";`/u,
+  );
+});
+
 test("the Zed missing-server oracle targets the extension-owned PATH branch", () => {
   const readme = readFileSync("editors/zed/README.md", "utf8");
   const plan = readFileSync(
