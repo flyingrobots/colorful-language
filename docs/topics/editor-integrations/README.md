@@ -32,6 +32,16 @@ The repository currently ships source integrations and recipes:
 The source integrations build in CI. They are not yet published to editor
 marketplaces or registries.
 
+From the repository root, install the matching server from the same checkout:
+
+```bash
+cargo install --path crates/colorful-lsp --locked
+```
+
+Do not substitute an unreleased registry version. Public registry installation
+guidance belongs with the publication evidence tracked by
+[#154](https://github.com/flyingrobots/colorful-language/issues/154).
+
 ## Version compatibility
 
 The Rust workspace, VS Code extension, and Zed extension use one synchronized

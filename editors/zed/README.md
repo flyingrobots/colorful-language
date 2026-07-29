@@ -10,11 +10,16 @@ The extension version is synchronized with the Colorful workspace release. For
 extension `0.Y.Z`, use a stable `colorful-lsp` in
 `>=0.Y.0 <0.(Y+1).0`; prereleases and a different minor line are unsupported.
 
-The extension starts the `colorful-lsp` language server. Install it once:
+This source extension starts the `colorful-lsp` language server. From the
+repository root, install the matching server from the same checkout:
 
 ```bash
-cargo install colorful-lsp --version '^0.4'
+cargo install --path crates/colorful-lsp --locked
 ```
+
+Compatible public server binaries are not yet published. Track
+[#154](https://github.com/flyingrobots/colorful-language/issues/154) for the
+first synchronized editor release.
 
 If Zed cannot see your shell `PATH`, set the binary path explicitly in
 `settings.json`:

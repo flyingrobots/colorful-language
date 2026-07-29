@@ -15,10 +15,12 @@ import {
 
 const RELEASE_VERSION = "0.4.0";
 const EDITOR_INSTALL_GUIDANCE = [
+  "docs/topics/editor-integrations/README.md",
   "editors/README.md",
   "editors/vscode/README.md",
   "editors/vscode/package.json",
   "editors/zed/README.md",
+  "editors/zed/src/lib.rs",
 ];
 const EDITOR_COMPATIBILITY_GUIDANCE = [
   "docs/RELEASING.md",
@@ -118,15 +120,27 @@ test("derives a future synchronized minor without a policy-code edit", () => {
   });
 });
 
-test("editor install guidance selects the synchronized server minor", () => {
-  const releaseVersion = loadRepositorySnapshot().versions["Cargo.toml"];
-  const [major, minor] = releaseVersion.split(".");
-  assert.equal(major, "0");
-  const command = `cargo install colorful-lsp --version '^0.${minor}'`;
+test("source editor install guidance selects the synchronized checkout", () => {
+  const command = "cargo install --path crates/colorful-lsp --locked";
+  const publicationIssue =
+    "https://github.com/flyingrobots/colorful-language/issues/154";
+  for (const path of EDITOR_INSTALL_GUIDANCE.filter((path) =>
+    path.endsWith("README.md"),
+  )) {
+    const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+    assert.ok(source.includes(command), `${path} must include ${command}`);
+    assert.ok(
+      source.includes(publicationIssue),
+      `${path} must defer compatible public binaries to issue #154`,
+    );
+  }
 
   for (const path of EDITOR_INSTALL_GUIDANCE) {
     const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-    assert.ok(source.includes(command), `${path} must include ${command}`);
+    assert.ok(
+      !source.includes("cargo install colorful-lsp --version"),
+      `${path} must not claim the unreleased registry version is installable`,
+    );
   }
 
   const zedSource = readFileSync(
@@ -135,13 +149,9 @@ test("editor install guidance selects the synchronized server minor", () => {
   );
   assert.ok(
     zedSource.includes(
-      `const COMPATIBLE_SERVER_REQ: &str = "^0.${minor}";`,
+      "cargo install --path /path/to/colorful-language/crates/colorful-lsp --locked",
     ),
-    "the Zed missing-server error must use the synchronized server minor",
-  );
-  assert.ok(
-    zedSource.includes("--version '{COMPATIBLE_SERVER_REQ}'"),
-    "the Zed missing-server error must apply its compatible requirement",
+    "the Zed missing-server error must select a same-checkout source path",
   );
 });
 
