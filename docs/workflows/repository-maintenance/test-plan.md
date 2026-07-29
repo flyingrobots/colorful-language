@@ -64,6 +64,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   responsibility, and environment-creation threshold must be explicit.
   Discussions must not be promoted without an owner commitment, and an empty
   deployment environment must not be created for appearance.
+- **RM-14 — Unique architecture accountability.** Every mechanism in the
+  roadmap's Architecture Accountability table must have one row, so duplicated
+  decisions cannot conceal drift while every distinct moonshot mechanism is
+  preserved.
 
 ## Cases
 
@@ -230,6 +234,16 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `scripts/check-roadmap-inventory.test.mjs` and
   `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:*
   implemented.
+- **RM-14a — Duplicate mechanism refusal.** *Requirement:* RM-14. *Behavior:*
+  the offline roadmap structure gate rejects a repeated Architecture
+  Accountability mechanism without deleting or conflating distinct rows.
+  *Oracle:* a fixture mutation that repeats one complete mechanism row fails
+  with `E_ROADMAP_DUPLICATE_MECHANISM`, the current and previous
+  `ROADMAP.md` line addresses, and a nonzero process status. *Evidence type:*
+  deterministic fixture-backed Node test plus the existing offline repository
+  command. *Tracking:*
+  [#243](https://github.com/flyingrobots/colorful-language/issues/243).
+  *Status:* planned.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and
