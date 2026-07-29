@@ -35,6 +35,10 @@ const COVERAGE_REFERENCE = readFileSync(
   ),
   "utf8",
 );
+const CHANGELOG = readFileSync(
+  new URL("../CHANGELOG.md", import.meta.url),
+  "utf8",
+);
 const EXPECTED_CLI_TRANSPORT_PATHS = [
   "crates/colorful-cli/src/cli/args.rs",
   "crates/colorful-cli/src/cli/color.rs",
@@ -49,6 +53,13 @@ function lineSummary(count, covered) {
     covered,
     percent: (covered * 100) / count,
   };
+}
+
+function renderedWorkspacePercent() {
+  const measuredPercent = ACTUAL_POLICY.workspace.measuredLinePercent;
+  return Number.isInteger(measuredPercent)
+    ? `${measuredPercent}%`
+    : `${measuredPercent.toFixed(2)}%`;
 }
 
 function policy() {
@@ -276,6 +287,22 @@ test("accepts coverage documentation generated from the machine policy", () => {
   );
 });
 
+test("unreleased coverage note matches the machine policy", () => {
+  const start = CHANGELOG.indexOf("## [Unreleased]");
+  assert.notEqual(start, -1, "missing Unreleased changelog section");
+  const followingRelease = CHANGELOG.indexOf("\n## [", start + 1);
+  const unreleased = CHANGELOG.slice(
+    start,
+    followingRelease === -1 ? undefined : followingRelease,
+  );
+  assert(
+    unreleased.includes(
+      `ratchet the ${renderedWorkspacePercent()} measured baseline`,
+    ),
+    "Unreleased coverage evidence must quote the current workspace baseline",
+  );
+});
+
 test("coverage follows every executable CLI source owner", () => {
   const cliPaths = ACTUAL_POLICY.files
     .map((entry) => entry.path)
@@ -290,9 +317,7 @@ test("coverage follows every executable CLI source owner", () => {
 
 test("rejects stale coverage measurements in the maintained reference", () => {
   const measuredPercent = ACTUAL_POLICY.workspace.measuredLinePercent;
-  const renderedPercent = Number.isInteger(measuredPercent)
-    ? `${measuredPercent}%`
-    : `${measuredPercent.toFixed(2)}%`;
+  const renderedPercent = renderedWorkspacePercent();
   const staleReference = COVERAGE_REFERENCE.replaceAll(
     renderedPercent,
     `${(measuredPercent - 0.01).toFixed(2)}%`,
