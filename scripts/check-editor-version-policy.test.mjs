@@ -128,9 +128,12 @@ test("source editor install guidance selects the synchronized checkout", () => {
     path.endsWith("README.md"),
   )) {
     const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+    const linkTargets = [...source.matchAll(/\]\((https:\/\/[^)\s]+)\)/gu)].map(
+      (match) => match[1],
+    );
     assert.ok(source.includes(command), `${path} must include ${command}`);
     assert.ok(
-      source.includes(publicationIssue),
+      linkTargets.some((target) => target === publicationIssue),
       `${path} must defer compatible public binaries to issue #154`,
     );
   }
