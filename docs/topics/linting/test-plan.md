@@ -474,6 +474,18 @@ Implemented and planned cases are listed below.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
+- **LINT-13t** — *Requirement:* LINT-13. *Behavior:* malformed Vale alerts
+  cannot make adapter errors reproduce complete process-controlled text or
+  allocate diagnostics proportional to the configured output limit. Every
+  invalid-alert message preserves stable field and coordinate context within a
+  512-byte ceiling. *Oracle:* oversized `Check`, `Match`, unsupported
+  `Severity`, and mismatched source-slice sentinels each retain
+  `ValeErrorKind::InvalidAlert`; every message is at most 512 bytes and omits
+  the complete sentinel. Existing duplicate-source and unexpected-source-key
+  redaction remains exact. *Evidence type:* malformed-output boundary matrix
+  and error-budget regression. *Tracking:*
+  [#235](https://github.com/flyingrobots/colorful-language/issues/235).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
