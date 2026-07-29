@@ -64,6 +64,12 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   responsibility, and environment-creation threshold must be explicit.
   Discussions must not be promoted without an owner commitment, and an empty
   deployment environment must not be created for appearance.
+- **RM-14 — Unique architecture accountability.** Every mechanism in the
+  roadmap's Architecture Accountability table must have one row, so duplicated
+  decisions cannot conceal drift while every distinct moonshot mechanism is
+  preserved. The gate must fail closed when the canonical section or table is
+  absent and must compare displayed identities without treating examples as
+  authoritative rows.
 
 ## Cases
 
@@ -230,6 +236,60 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `scripts/check-roadmap-inventory.test.mjs` and
   `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:*
   implemented.
+- **RM-14a — Duplicate mechanism refusal.** *Requirement:* RM-14. *Behavior:*
+  the offline roadmap structure gate rejects a repeated Architecture
+  Accountability mechanism without deleting or conflating distinct rows,
+  refuses a missing canonical section or table, ignores table-shaped examples
+  outside the authoritative table, and compares plain and inline-code labels
+  by displayed identity across LF and CRLF source. Unsupported mechanism-cell
+  Markdown is noncanonical. *Oracle:* a byte-equivalent CRLF success case and
+  fixture mutations cover exact duplicate rows, missing/recased or
+  code-indented headings, comment-altered and closing-hash variants in both
+  source orders, duplicate headings, comment-altered header and delimiter
+  source, plain, inline-code-styled, whole-cell and partial inline-linked,
+  numeric-character-reference, fully styled, and partially
+  asterisk-emphasized duplicate table headers plus unresolved-reference and
+  intraword-underscore negative controls, incomplete plain and styled header
+  controls, an incomplete header followed by paragraph-inline generic HTML and
+  a structural heading, an incomplete no-leading-pipe header control,
+  duplicate tables before and after the canonical section,
+  missing or malformed delimiter or data rows, an empty table followed by a
+  later valid table, delimiter/header arity mismatches, a missing first-cell
+  closing pipe, non-breaking-space-padded header and delimiter cells,
+  compact/multi-space/tab-padded no-leading-pipe headers, a no-leading-pipe
+  continuing data row, duplicate final rows followed by each Setext underline
+  form, indented code plus fenced and commented table-shaped examples, raw HTML
+  block variants with boolean, unquoted, single-quoted, double-quoted, and
+  self-closing generic tags, a type-7 generic tag inside an open paragraph
+  followed by a structural heading, plus a source-policy guard against
+  overlapping attribute separators, an indented comment opener followed by a
+  visible table, invalid backtick-fence info strings plus valid tilde-fence
+  controls, multiline comments that open after visible text or an unmatched
+  backtick, a visible duplicate mechanism split by a closed inline HTML
+  comment, a duplicate table beginning after a multiline comment closer, a
+  multiline comment beginning on a visible table row, and post-table prose
+  controls containing a literal or inline-code pipe plus a comment-shaped
+  inline-code literal control, inline-code styling and longer internal backtick
+  runs, an empty identity, invalid escaping inside and outside inline code,
+  named/decimal/hexadecimal character references, canonically equivalent
+  Unicode, NUL/replacement-character equivalence, and unsupported emphasis.
+  They fail with
+  their stable `E_ROADMAP_*` categories, including both source addresses for a
+  duplicate heading, table, or mechanism and identical LF/CRLF failure
+  addresses, while indented, fenced, and commented examples immediately after
+  the real authority remain non-authoritative. ATX H1/H2 and Setext H2 fixtures
+  prove a peer section cannot supply missing canonical authority. A later H2
+  separates the duplicate-section fixture from the canonical section, and a
+  valid later mechanism table remains detectable without turning an incomplete
+  header or unrelated table into authority; malformed nested-hash text cannot
+  hide a second table. The process-level duplicate leg exits nonzero with empty
+  stdout and exact stderr. *Evidence type:* deterministic fixture-backed Node
+  tests plus the existing offline repository command. *Evidence:*
+  `scripts/check-roadmap-inventory.mjs`,
+  `scripts/check-roadmap-inventory.test.mjs`, and
+  `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
+  [#243](https://github.com/flyingrobots/colorful-language/issues/243).
+  *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and

@@ -211,6 +211,76 @@ change its primary marker to `delivered`. When opening or moving a slice, add or
 move its one marker in the same change. When a pull request closes a slice,
 change that marker to `delivered` before merge.
 
+The same offline structure gate applies these fail-closed rules:
+
+- **Heading:** Exactly one canonical `## Architecture accountability` H2 is
+  required. It is matched case-sensitively, with no more than three leading
+  spaces and no closing-hash sequence. Closed inline comments cannot join or
+  decorate it because its literal source is validated before comment spans are
+  removed. A comment-altered display equivalent is tracked for duplicate
+  detection but never accepted as canonical source.
+- **Table shape:** Exactly one `Mechanism` table is required. A header-shaped
+  line is insufficient: the table needs a delimiter row with the same column
+  count, every delimiter cell needs at least three hyphens with only optional
+  edge colons, and at least one non-empty data row must follow. Once a header
+  and delimiter establish a table location, a later non-empty table cannot
+  replace it merely because the first table had no data row. The first cell in
+  every canonical header is the plain-text cell `Mechanism`. Inline code,
+  whole-span styling, partial asterisk emphasis, whole-cell or partial inline
+  links, numeric character references, or comments that display the same label
+  are refused. Unresolved reference-link source remains literal rather than
+  gaining an invented definition. The
+  `Mechanism` header cell and every delimiter cell must be valid in literal
+  source; comments cannot synthesize either. Only ASCII space and tab
+  characters count as table-cell padding; Unicode whitespace cannot disguise a
+  header or delimiter. A header-shaped line remains paragraph content until a
+  valid delimiter confirms the table. Only a complete table inside the
+  canonical section satisfies the required authority.
+- **Row shape:** The first cell in every canonical row is pipe-delimited on
+  both sides, and the row has no more than three leading spaces. Valid
+  no-leading-pipe Markdown headers and continuing data rows are refused
+  explicitly instead of being silently ignored, whether a header delimiter is
+  compact, space-padded, or tab-padded. Only contiguous canonical rows are
+  authoritative. Skipped blocks terminate the table even without a separating
+  blank line. While the canonical table is active, a pipe-delimited row is
+  validated before any following `---` or `===` line can make it look like a
+  Setext heading.
+- **Non-authoritative blocks:** Indented code, CommonMark fences, raw HTML
+  blocks, and HTML comments cannot stand in for the table. Raw-text elements,
+  processing instructions, declarations, CDATA, block tags, and complete
+  generic tags suspend table discovery through their CommonMark block boundary.
+  A complete generic tag inside an open paragraph remains inline HTML and
+  cannot start a type-7 raw block or hide a following structural heading.
+  Generic tag attributes admit boolean, unquoted, single-quoted, and
+  double-quoted values through a disjoint grammar so hostile incomplete tags
+  cannot trigger ambiguous backtracking. Backtick fence openers whose info
+  strings contain a backtick are treated as visible source, while tilde-fence
+  info strings may contain backticks. A multiline comment is non-authoritative
+  even when its opener follows visible text on the same line, but it cannot
+  begin on a visible table-shaped line. Visible source after a multiline
+  comment closer on the same line re-enters structural scanning. Closed inline
+  HTML comment spans are ignored while the surrounding visible row content
+  remains authoritative; comment-shaped text inside inline code remains
+  literal.
+- **Identity normalization:** Plain text, ASCII-punctuation escapes, and inline
+  code are normalized to their NFC displayed identity, including
+  table-delimiter escapes inside code spans. NUL input is replaced with U+FFFD
+  before identity comparison, matching CommonMark input normalization. An
+  inline-code span closes only on a backtick run exactly as long as its opener,
+  so shorter and longer internal runs remain displayed content.
+  Character-reference-shaped source outside inline code is rejected; the
+  displayed character must be written directly so source and rendered
+  identities cannot diverge. Empty cells, invalid escapes, and other
+  mechanism-cell Markdown are rejected as noncanonical.
+- **Duplication and scan scope:** Every displayed mechanism identity appears
+  exactly once. A repeated heading, table, or mechanism fails with both source
+  locations, while distinct moonshot mechanisms remain independent entries.
+  ATX H1/H2 and Setext H1/H2 peers end the canonical section, but leaving it
+  does not end the duplicate scan: another section cannot supply missing
+  canonical authority or hide a second apparent authority. A closing-hash
+  display equivalent is rejected in either source order. LF and CRLF roadmaps
+  have the same structural result and line addresses.
+
 Run the deterministic structure and fixture gates without network access:
 
 ```bash

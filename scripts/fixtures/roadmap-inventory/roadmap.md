@@ -17,3 +17,12 @@
 
 Ordinary historical [#104](https://example.test/issues/104) and epic
 [#900](https://example.test/issues/900) links are non-owning references.
+
+## Architecture accountability
+
+| Mechanism | Current user job |
+| --- | --- |
+| Parser ports | Substitute deterministic adapters. |
+| Portable IR | Cross a process boundary. |
+| Parser \| compiler ports | Compile deterministic structure. |
+| Parser \| analyzer ports | Analyze deterministic structure. |
