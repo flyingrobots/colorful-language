@@ -248,32 +248,32 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   source orders, duplicate headings, comment-altered header and delimiter
   source, plain, inline-code-styled, and unsupported-emphasis duplicate table
   headers, incomplete plain and styled header controls, an incomplete
-  no-leading-pipe header control, duplicate tables,
+  no-leading-pipe header control, duplicate tables before and after the
+  canonical section,
   missing or malformed delimiter or data rows, an empty table followed by a
   later valid table, delimiter/header arity mismatches, a missing first-cell
   closing pipe, compact/multi-space/tab-padded no-leading-pipe headers, a
   no-leading-pipe continuing data row, indented code plus fenced and commented
   table-shaped examples, an indented comment opener followed by a visible
   table, invalid backtick-fence info strings plus valid tilde-fence controls,
-  multiline comments that open after visible text, a visible duplicate
-  mechanism split by a closed inline HTML comment, a multiline comment
-  beginning on a visible table row, and a
-  post-table prose control containing a pipe before a multiline comment plus a
-  comment-shaped inline-code literal control, inline-code styling and longer
-  internal backtick runs, an empty identity, invalid escaping inside and
-  outside inline code,
+  multiline comments that open after visible text or an unmatched backtick, a
+  visible duplicate mechanism split by a closed inline HTML comment, a
+  multiline comment beginning on a visible table row, and post-table prose
+  controls containing a literal or inline-code pipe plus a comment-shaped
+  inline-code literal control, inline-code styling and longer internal backtick
+  runs, an empty identity, invalid escaping inside and outside inline code,
   named/decimal/hexadecimal character references, canonically equivalent
   Unicode, and unsupported emphasis. They fail with
   their stable `E_ROADMAP_*` categories, including both source addresses for a
-  duplicate heading, table, or mechanism, while indented, fenced, and
-  commented examples immediately after the real authority remain
-  non-authoritative. A later H2 separates the duplicate-section fixture from
-  the canonical section, and a valid later mechanism table remains detectable
-  without turning an incomplete header or unrelated table into authority;
-  malformed nested-hash text cannot hide a second table. The process-level
-  duplicate leg exits nonzero with empty stdout and exact stderr. *Evidence type:*
-  deterministic fixture-backed Node tests plus the existing offline repository
-  command. *Evidence:*
+  duplicate heading, table, or mechanism and identical LF/CRLF failure
+  addresses, while indented, fenced, and commented examples immediately after
+  the real authority remain non-authoritative. A later H2 separates the
+  duplicate-section fixture from the canonical section, and a valid later
+  mechanism table remains detectable without turning an incomplete header or
+  unrelated table into authority; malformed nested-hash text cannot hide a
+  second table. The process-level duplicate leg exits nonzero with empty stdout
+  and exact stderr. *Evidence type:* deterministic fixture-backed Node tests
+  plus the existing offline repository command. *Evidence:*
   `scripts/check-roadmap-inventory.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, and
   `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
