@@ -201,6 +201,7 @@ test("rejects a no-leading-pipe accountability table explicitly", () => {
 
 test("requires a delimiter and data row for the accountability table", () => {
   for (const replacement of [
+    "| Mechanism",
     "| Mechanism | Example only |",
     ["| Mechanism | Example only |", "| --- | --- |"].join("\n"),
     [

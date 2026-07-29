@@ -215,18 +215,19 @@ The same offline structure gate requires exactly one canonical Architecture
 Accountability heading and exactly one `Mechanism` table, then requires each
 displayed mechanism identity to appear exactly once. A header-shaped line is
 not enough: the table requires its delimiter and at least one non-empty data
-row. Canonical rows begin with a pipe and have no more than three leading
-spaces; valid no-leading-pipe Markdown is refused explicitly instead of being
-silently ignored. Only contiguous canonical rows are authoritative, so
-indented code, fenced examples, and HTML comments cannot stand in for the
-table. Plain text, ASCII-punctuation escapes, and inline code are normalized to
-their NFC displayed identity, including table-delimiter escapes inside code
-spans. Skipped blocks also terminate the table even without a separating blank
-line. Empty cells, invalid escapes, and other mechanism-cell Markdown are
-rejected as noncanonical. A repeated heading, table, or mechanism fails with
-both source locations, while distinct moonshot mechanisms remain independent
-entries. Leaving the canonical section does not end the structural scan: a
-later H2 cannot hide a second accountability authority.
+row. The first cell in every canonical row is pipe-delimited on both sides, and
+the row has no more than three leading spaces. Valid no-leading-pipe Markdown
+is refused explicitly instead of being silently ignored. Only contiguous
+canonical rows are authoritative, so indented code, fenced examples, and HTML
+comments cannot stand in for the table. Plain text, ASCII-punctuation escapes,
+and inline code are normalized to their NFC displayed identity, including
+table-delimiter escapes inside code spans. Skipped blocks also terminate the
+table even without a separating blank line. Empty cells, invalid escapes, and
+other mechanism-cell Markdown are rejected as noncanonical. A repeated
+heading, table, or mechanism fails with both source locations, while distinct
+moonshot mechanisms remain independent entries. Leaving the canonical section
+does not end the structural scan: a later H2 cannot hide a second
+accountability authority.
 
 Run the deterministic structure and fixture gates without network access:
 
