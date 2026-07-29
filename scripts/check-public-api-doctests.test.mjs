@@ -16,11 +16,14 @@ import {
 } from "./check-public-api-doctests.mjs";
 
 const script = resolve("scripts/check-public-api-doctests.mjs");
+const RUSTDOC_COMMAND =
+  'RUSTDOCFLAGS="-D warnings" cargo doc --locked -p colorful-lexicon --no-deps';
 const INPUT_PATHS = Object.freeze({
   core: "crates/colorful-core/src/lib.rs",
   projection: "crates/colorful-projection/src/lib.rs",
   vocabulary: "crates/colorful-ir/src/vocabulary.rs",
   workflow: ".github/workflows/ci.yml",
+  releasePrep: "scripts/release-prep.sh",
 });
 const VALID_SNAPSHOT = Object.freeze({
   core: `
@@ -69,6 +72,10 @@ jobs:
   rust:
     steps:
       - run: cargo test --doc --workspace --locked
+      - run: ${RUSTDOC_COMMAND}
+`,
+  releasePrep: `#!/usr/bin/env bash
+${RUSTDOC_COMMAND}
 `,
 });
 
@@ -95,7 +102,7 @@ function expectPolicyError(snapshot, code, detail) {
   );
 }
 
-test("accepts every named doctest and the explicit CI command", () => {
+test("accepts named doctests and explicit hosted and local doc commands", () => {
   assert.doesNotThrow(() => validatePublicApiDoctestPolicy(VALID_SNAPSHOT));
 });
 
@@ -160,6 +167,85 @@ test("rejects an implicit or misspelled workspace doctest command", () => {
     snapshot,
     "E_API_DOCTEST_CI_MISSING",
     /cargo test --doc --workspace --locked/,
+  );
+});
+
+test("rejects a missing warning-denying rustdoc command in CI", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(RUSTDOC_COMMAND, "cargo doc"),
+  };
+  expectPolicyError(
+    snapshot,
+    "E_API_RUSTDOC_CI_MISSING",
+    /RUSTDOCFLAGS="-D warnings"/,
+  );
+});
+
+test("rejects a warning-denying rustdoc command outside the Rust job", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(
+      `      - run: ${RUSTDOC_COMMAND}\n`,
+      "",
+    ).replace(
+      "jobs:\n",
+      `jobs:\n  docs:\n    steps:\n      - run: ${RUSTDOC_COMMAND}\n`,
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_RUSTDOC_CI_MISSING", /Rust job/);
+});
+
+test("rejects a guarded warning-denying rustdoc step", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(
+      `      - run: ${RUSTDOC_COMMAND}`,
+      `      - if: false\n        run: ${RUSTDOC_COMMAND}`,
+    ),
+  };
+  expectPolicyError(snapshot, "E_API_RUSTDOC_CI_DISABLED", /rustdoc step/);
+});
+
+test("rejects a non-blocking warning-denying rustdoc step", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    workflow: VALID_SNAPSHOT.workflow.replace(
+      `      - run: ${RUSTDOC_COMMAND}`,
+      `      - continue-on-error: true\n        run: ${RUSTDOC_COMMAND}`,
+    ),
+  };
+  expectPolicyError(
+    snapshot,
+    "E_API_RUSTDOC_CI_NON_BLOCKING",
+    /rustdoc step/,
+  );
+});
+
+test("rejects a missing warning-denying rustdoc release-prep command", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    releasePrep: VALID_SNAPSHOT.releasePrep.replace(
+      RUSTDOC_COMMAND,
+      "cargo doc",
+    ),
+  };
+  expectPolicyError(
+    snapshot,
+    "E_API_RUSTDOC_RELEASE_MISSING",
+    /scripts\/release-prep\.sh/,
+  );
+});
+
+test("rejects a release-prep rustdoc command that exists only in a comment", () => {
+  const snapshot = {
+    ...VALID_SNAPSHOT,
+    releasePrep: `#!/usr/bin/env bash\n# ${RUSTDOC_COMMAND}\n`,
+  };
+  expectPolicyError(
+    snapshot,
+    "E_API_RUSTDOC_RELEASE_MISSING",
+    /scripts\/release-prep\.sh/,
   );
 });
 

@@ -167,11 +167,11 @@ observe public-contract regressions before they ship.
   [#210](https://github.com/flyingrobots/colorful-language/issues/210) without
   creating a second coverage gate.
   <!-- roadmap-primary: parked #210 -->
-- **Parked public-rustdoc hygiene:** replace public API links to private lexicon
-  tables with stable public-facing documentation before making rustdoc warnings
-  a workspace gate
+- **Delivered public-rustdoc hygiene:** replace public API links to private
+  lexicon tables with stable public-facing documentation and make
+  warning-denying package rustdoc a hosted and local release-preparation gate
   [#230](https://github.com/flyingrobots/colorful-language/issues/230).
-  <!-- roadmap-primary: parked #230 -->
+  <!-- roadmap-primary: delivered #230 -->
 - **Parked roadmap-accountability hygiene:** reject duplicate mechanism rows so
   one architecture decision cannot drift through two apparent authorities
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).

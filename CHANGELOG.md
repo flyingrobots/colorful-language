@@ -509,6 +509,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Warning-free public lexicon documentation.** Public adapter rustdoc now
+  describes stable concepts rather than linking private tables, and
+  warning-denying `colorful-lexicon` documentation is a blocking CI and
+  release-preparation gate.
 - **Bounded Vale invalid-alert details.** Malformed optional-engine fields no
   longer reproduce complete process-controlled check, match, severity, typed
   value, or source-slice text in adapter errors. Stable structural context and,

@@ -25,6 +25,9 @@ Requirements:
 - **LEX-11** Numeric recognition has one scanner contract shared with parsing:
   separators are singular and surrounded by numeric characters, and Unicode
   numeric behavior is explicit.
+- **LEX-12** Public lexicon API documentation describes data-backed behavior
+  without linking private implementation tables, and warning-denying rustdoc
+  runs as a blocking CI and release-preparation gate.
 
 ## Cases
 
@@ -129,6 +132,19 @@ lives in `crates/colorful-lexicon/src/lib.rs`.
   `every_unicode_numeric_scalar_has_parser_lexicon_parity`). *Tracking:*
   [#143](https://github.com/flyingrobots/colorful-language/issues/143).
   *Status:* implemented.
+- **LEX-12a** — *Requirement:* LEX-12. *Behavior:* exported lexicon adapters
+  use stable public concepts rather than private table symbols in their
+  rustdoc, and the package documentation builds with warnings denied in both
+  hosted CI and the full local release-preparation gate. *Oracle:*
+  `RUSTDOCFLAGS="-D warnings" cargo doc --locked -p colorful-lexicon
+  --no-deps` exits zero; the public-API documentation policy rejects a missing,
+  guarded, or non-blocking hosted command and a missing release-preparation
+  command. *Evidence type:* warning-denying package documentation build plus
+  deterministic policy tests. *Tracking:*
+  [#230](https://github.com/flyingrobots/colorful-language/issues/230).
+  *Evidence:* public rustdoc in `crates/colorful-lexicon/src/lib.rs`;
+  `scripts/check-public-api-doctests.test.mjs`; the Rust job in
+  `.github/workflows/ci.yml`; `scripts/release-prep.sh`. *Status:* implemented.
 
 ## Known gaps
 
