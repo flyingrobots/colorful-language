@@ -18,6 +18,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-10** Release preparation fails when a `colorful.syntax/v1` schema or
   vocabulary identity lacks an explicit compatibility decision and migration
   evidence.
+- **REL-11** Every editor adapter released from the repository tag must share
+  the workspace version and declare a deterministic `colorful-lsp`
+  compatibility rule.
 
 ## Cases
 
@@ -101,6 +104,15 @@ Verification for release preparation, tag automation, and release witnesses.
   *Tracking:*
   [#221](https://github.com/flyingrobots/colorful-language/issues/221).
   *Status:* implemented.
+- **REL-11a** — *Requirement:* REL-11. *Behavior:* the release profile records
+  the synchronized VS Code, Zed, and workspace version sources; derives
+  same-pre-1.0-minor server compatibility; rejects prereleases and potentially
+  breaking next-minor servers; and runs the deterministic drift check in CI,
+  release preparation, and tag publication. *Oracle:* source, profile, range,
+  prerelease, and gate-wiring mutations each fail with a stable category.
+  *Evidence type:* release-policy checker and mutation test. *Tracking:*
+  [#141](https://github.com/flyingrobots/colorful-language/issues/141).
+  *Status:* planned.
 
 ## Open verification gaps
 
