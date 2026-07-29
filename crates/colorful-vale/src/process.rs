@@ -569,6 +569,32 @@ exit 0"#,
     }
 
     #[test]
+    fn polling_observes_pending_ready_and_deadline() {
+        let probes = Cell::new(0_u8);
+        let ready = poll_until(Instant::now() + Duration::from_secs(1), || {
+            let current = probes.get();
+            probes.set(current + 1);
+            Ok(if current == 0 { None } else { Some(7) })
+        })
+        .expect("polling probe must remain valid");
+        let expired = poll_until::<()>(Instant::now(), || Ok(None))
+            .expect("elapsed polling probe must remain valid");
+
+        assert_eq!(ready, Some(7));
+        assert_eq!(probes.get(), 2);
+        assert_eq!(expired, None);
+    }
+
+    #[test]
+    fn process_state_distinguishes_zombies_from_running_workers() {
+        assert_eq!(parse_process_running_state("S+"), Some(true));
+        assert_eq!(parse_process_running_state("R"), Some(true));
+        assert_eq!(parse_process_running_state("Z"), Some(false));
+        assert_eq!(parse_process_running_state("Z+"), Some(false));
+        assert_eq!(parse_process_running_state(""), None);
+    }
+
+    #[test]
     fn failed_termination_check_kills_the_surviving_worker() {
         let mut worker = Command::new("/bin/sleep")
             .arg("1")
