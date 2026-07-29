@@ -180,6 +180,67 @@ test("reports the actual attempt count for a non-retryable response", async () =
   });
 });
 
+test("rejects and cancels an oversized registry response", async () => {
+  await withVsix(async (vsixPath) => {
+    let cancelled = false;
+    const oversizedMetadata = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new Uint8Array(1024 * 1024 + 1));
+        },
+        cancel() {
+          cancelled = true;
+        },
+      }),
+    );
+    const fetchImpl = async (url) =>
+      url === marketplacePackageUrl(VERSION)
+        ? response(PACKAGE)
+        : oversizedMetadata;
+
+    await assert.rejects(
+      verifyEditorPublication({
+        vsixPath,
+        version: VERSION,
+        fetchImpl,
+        sleep: async () => {},
+      }),
+      (error) =>
+        error instanceof EditorPublicationError &&
+        error.code === "E_EDITOR_PUBLICATION_FETCH" &&
+        /response exceeds 1048576 bytes/u.test(error.message),
+    );
+    assert.equal(cancelled, true);
+  });
+});
+
+test("rejects missing and empty local VSIX inputs", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "colorful-editor-input-"));
+  const missing = join(directory, "missing.vsix");
+  const empty = join(directory, "empty.vsix");
+  writeFileSync(empty, "");
+  try {
+    for (const vsixPath of [missing, empty]) {
+      await assert.rejects(
+        verifyEditorPublication({
+          vsixPath,
+          version: VERSION,
+          fetchImpl: async () => {
+            throw new Error("network access must not occur");
+          },
+          sleep: async () => {},
+        }),
+        (error) =>
+          error instanceof EditorPublicationError &&
+          error.code === "E_EDITOR_PUBLICATION_INPUT",
+        `${vsixPath} must fail before registry access`,
+      );
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("rejects Open VSX metadata that redirects outside the requested version", async () => {
   await withVsix(async (vsixPath) => {
     const fetchImpl = async (url) => {
