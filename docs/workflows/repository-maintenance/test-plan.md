@@ -236,7 +236,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   options and malformed `OWNER/NAME` repository coordinates fail with
   `E_ROADMAP_USAGE` before transport. *Evidence type:* deterministic argument
   tests in the ordinary offline documentation gate plus an authenticated GitHub
-  API witness kept outside it. *Evidence:*
+  API witness kept outside it. The clean hosted lane installs exact root
+  lockfile dependencies before importing the parser. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs`,
   `scripts/check-roadmap-inventory.mjs --live`,
   `.github/workflows/ci.yml`, and `.github/workflows/maintenance.yml`.

@@ -1570,6 +1570,14 @@ test("the repository wires offline and live reconciliation into distinct lanes",
     maintenance,
     /^\s*issues:\s*read\s*# Live issue snapshot reconciliation\.\s*$/mu,
   );
+  const installDependencies = maintenance.indexOf("run: npm ci");
+  const selfTest = maintenance.indexOf(
+    "run: node --test scripts/check-roadmap-inventory.test.mjs",
+  );
+  assert.ok(
+    installDependencies >= 0 && installDependencies < selfTest,
+    "the clean maintenance lane must install locked parser dependencies before use",
+  );
   assert.match(
     maintenance,
     /node scripts\/check-roadmap-inventory\.mjs\s+--live\s+--repo "\$REPOSITORY"/u,

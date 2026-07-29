@@ -266,11 +266,12 @@ On a branch whose pull request closes an issue, pass `--closing-pr NUMBER`.
 The checker reads GitHub's closing-issue references and evaluates the intended
 post-merge state. The required documentation job does this automatically for
 pull requests. A separate weekly and manually dispatchable repository-
-maintenance workflow checks default-branch state without a pull-request
-transition. A live issue response that reaches the command's 10,000-item
-ceiling is refused because GitHub may have truncated it. GitHub authentication
-and availability are therefore explicit hosted oracles, not hidden
-prerequisites of the local correctness gate.
+maintenance workflow installs the root lockfile-backed parser dependencies,
+then checks default-branch state without a pull-request transition. A live issue
+response that reaches the command's 10,000-item ceiling is refused because
+GitHub may have truncated it. GitHub authentication and availability are
+therefore explicit hosted oracles, not hidden prerequisites of the local
+correctness gate.
 
 ## Rust coverage ratchet
 
