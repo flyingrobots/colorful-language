@@ -259,10 +259,13 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
   `scripts/release-prep.sh`. *Status:* implemented.
 - **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* signed VS Code/Open VSX and
-  Zed releases plus compatible platform server binaries publish at real URLs,
-  install on a clean machine, and roll back to the previous compatible set.
-  *Oracle:* registry/release URL resolution, integrity verification, activation,
-  semantic-token/diagnostic output, and rollback result equality.
+  Zed releases plus compatible Linux x86-64, Apple Silicon, and Windows x86-64
+  server binaries publish at real URLs, install on a clean machine, and roll
+  back to the previous compatible set. One smoke-tested VSIX supplies both
+  VS Code registries; each binary archive and the VSIX carry a SHA-256 identity
+  and GitHub/Sigstore provenance. *Oracle:* registry/release URL resolution,
+  provenance and checksum verification, activation, semantic-token/diagnostic
+  output, and rollback result equality.
   *Evidence type:* signed release witness and clean-machine matrix. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.

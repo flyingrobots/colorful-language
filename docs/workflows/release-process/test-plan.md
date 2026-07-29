@@ -21,6 +21,17 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-11** Every editor adapter released from the repository tag must share
   the workspace version and declare a deterministic `colorful-lsp`
   compatibility rule.
+- **REL-12** A release tag must build `colorful` and `colorful-lsp` for the
+  reviewed native platform matrix, publish checksums, and attach signed
+  provenance to the exact archives created from that tag.
+- **REL-13** One clean-install-tested VSIX must be the sole input to both VS
+  Code Marketplace and Open VSX publication, with credentials verified before
+  immutable publication and duplicate-version retries handled explicitly.
+- **REL-14** The Zed registry source path must carry the complete accepted
+  inventory and license required by the external registry PR.
+- **REL-15** Distribution verification and rollback must name an owner, public
+  URL and integrity oracle for every channel; observational startup timing must
+  remain separate from deterministic correctness gates.
 
 ## Cases
 
@@ -123,6 +134,51 @@ Verification for release preparation, tag automation, and release witnesses.
   `requires policy dependencies before the checker in every release gate`
   prove serialization independence and clean-environment dependency ordering.
   *Status:* implemented.
+- **REL-12a** — *Requirement:* REL-12. *Behavior:* the tag workflow builds the
+  two public binaries natively on `ubuntu-24.04` /
+  `x86_64-unknown-linux-gnu`, `macos-14` /
+  `aarch64-apple-darwin`, and `windows-2025` /
+  `x86_64-pc-windows-msvc`; each archive contains the same reviewed support
+  files, has one SHA-256 sidecar, and receives GitHub/Sigstore build
+  provenance before release creation. *Oracle:* profile/workflow mutations
+  reject a missing, duplicated, reordered, mismatched, unsigned, or
+  unchecked archive entry. *Evidence type:* deterministic distribution-policy
+  checker and mutation tests. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
+- **REL-13a** — *Requirement:* REL-13. *Behavior:* the tag workflow runs the
+  packaged VS Code smoke once, publishes that witness's exact VSIX path to both
+  registries, verifies both publisher credentials before crates or editor
+  packages are published, and treats an already-present exact version as a
+  rerun-safe success. *Oracle:* workflow and lockfile mutations reject a
+  second package command, different publication paths, missing credential
+  verification, floating publisher tooling, or absent duplicate handling.
+  *Evidence type:* deterministic distribution-policy checker and mutation
+  tests. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
+- **REL-14a** — *Requirement:* REL-14. *Behavior:* the repository-owned
+  `editors/zed` path and its staged clean-room copy carry the same accepted
+  license, synchronized manifest and crate versions, lockfile, source, and
+  documentation needed by an official `zed-industries/extensions` submodule
+  entry with `path = "editors/zed"`. *Oracle:* an exact inventory and
+  byte-equality check fails if either source omits or drifts the license.
+  *Evidence type:* deterministic package-policy test and isolated Wasm build.
+  *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
+- **REL-15a** — *Requirement:* REL-15. *Behavior:* the release runbook names
+  `@flyingrobots` as publication and rollback owner; gives exact verification
+  commands for GitHub attestations, registry metadata, clean installation, and
+  Zed registry status; and requires patch-forward recovery without moving a
+  public tag. Install-to-first-highlight measurements record their start/end
+  events and environment but do not enforce a wall-clock threshold.
+  *Oracle:* documentation/policy mutations reject a missing owner, channel,
+  integrity command, rollback rule, or an observational measurement presented
+  as a correctness gate. *Evidence type:* deterministic distribution-policy
+  checker and documentation review. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
 
 ## Open verification gaps
 
@@ -133,3 +189,6 @@ Verification for release preparation, tag automation, and release witnesses.
   profile-aware release gate.
 - GitHub Release asset recovery is still a manual inspection path when a release
   exists but assets are missing.
+- Native platform archives, editor-registry publication, signed provenance,
+  Zed registry submission, and distribution rollback evidence remain planned
+  in REL-12a through REL-15a.
