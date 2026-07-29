@@ -71,6 +71,8 @@ Each child starts from an empty environment. Unix receives only the fixed
 `/usr/bin:/bin` executable path; Windows retains `SystemRoot` and `WINDIR` when
 present so the selected executable can use platform services. User `HOME`, XDG,
 proxy, and Vale override variables are not inherited.
+Unix process startup retries only `ETXTBSY` for at most 50 ms; other spawn
+failures remain immediate.
 On Unix, each invocation owns a dedicated process group so timeout and
 cancellation terminate configured wrappers and their descendants before
 joining captured output. The same deadline and cancellation token remain active

@@ -11,6 +11,7 @@ use std::os::unix::process::CommandExt;
 use crate::{CancellationToken, ValeError, ValeErrorKind};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(2);
+const MAX_EXECUTABLE_BUSY_RETRIES: usize = 25;
 
 /// Minimal trusted search path for helpers invoked by the isolated Vale child.
 ///
@@ -52,9 +53,29 @@ pub(crate) struct ProcessOutput {
     pub(crate) stderr: Vec<u8>,
 }
 
-#[cfg(test)]
 fn spawn_with_executable_busy_retry<T>(mut spawn: impl FnMut() -> io::Result<T>) -> io::Result<T> {
-    spawn()
+    let mut retries = 0;
+    loop {
+        match spawn() {
+            Err(error) if executable_is_busy(&error) && retries < MAX_EXECUTABLE_BUSY_RETRIES => {
+                retries += 1;
+                thread::sleep(POLL_INTERVAL);
+            }
+            result => return result,
+        }
+    }
+}
+
+fn executable_is_busy(error: &io::Error) -> bool {
+    #[cfg(unix)]
+    {
+        error.raw_os_error() == Some(rustix::io::Errno::TXTBSY.raw_os_error())
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = error;
+        false
+    }
 }
 
 impl ProcessOutput {
@@ -103,7 +124,7 @@ pub(crate) fn run_process(
         .stderr(Stdio::piped());
     #[cfg(unix)]
     command.process_group(0);
-    let mut child = command.spawn().map_err(|error| {
+    let mut child = spawn_with_executable_busy_retry(|| command.spawn()).map_err(|error| {
         let kind = match error.kind() {
             io::ErrorKind::NotFound | io::ErrorKind::PermissionDenied => ValeErrorKind::Unavailable,
             _ => ValeErrorKind::ProcessFailure,
