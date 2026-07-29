@@ -422,6 +422,31 @@ mod tests {
     }
 
     #[test]
+    fn reference_link_identifiers_are_masked_while_labels_remain_prose() {
+        let full = "[visible prose][really]\n\n[really]: https://example.invalid/destination\n";
+        let full_masked = mask_non_prose(full);
+        assert!(full_masked.starts_with("[visible prose]"));
+        assert_masked(full, "[really]");
+
+        let collapsed =
+            "[visible prose][]\n\n[visible prose]: https://example.invalid/destination\n";
+        let collapsed_masked = mask_non_prose(collapsed);
+        assert!(collapsed_masked.starts_with("[visible prose]"));
+        assert_masked(collapsed, "[]");
+
+        let image = "![visible alt][really]\n\n[really]: image.png\n";
+        let image_masked = mask_non_prose(image);
+        assert!(image_masked.contains("visible alt"));
+        assert_masked(image, "[really]");
+
+        let shortcut = "[visible prose]\n\n[visible prose]: https://example.invalid/destination\n";
+        assert!(mask_non_prose(shortcut).starts_with("[visible prose]"));
+
+        let lookalike = "Ordinary [visible prose][missing] stays analyzable.";
+        assert_eq!(mask_non_prose(lookalike), lookalike);
+    }
+
+    #[test]
     fn duplicate_reference_definitions_are_all_suppressed() {
         let source = concat!(
             "[label][ref]\n\n",
