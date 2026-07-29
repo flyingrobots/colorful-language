@@ -172,6 +172,20 @@ This section separates the duplicate from the canonical authority.
   );
 });
 
+test("rejects closing hashes on a duplicate accountability heading", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+    (source) => `${source}
+
+## Architecture accountability ##
+
+| Mechanism | Current user job |
+| --- | --- |
+| Closing-hash authority | Must not escape duplicate detection. |
+`,
+  );
+});
+
 test("ignores table-like examples outside the accountability table", () => {
   for (const block of [
     ["```markdown", "| Example | Only |", "```"].join("\n"),

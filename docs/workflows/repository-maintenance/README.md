@@ -213,7 +213,8 @@ change that marker to `delivered` before merge.
 
 The same offline structure gate requires exactly one canonical
 `## Architecture accountability` H2, matched case-sensitively with no more than
-three leading spaces, and exactly one `Mechanism` table, then requires each
+three leading spaces and no closing-hash sequence, and exactly one `Mechanism`
+table, then requires each
 displayed mechanism identity to appear exactly once. A header-shaped line is
 not enough: the table requires a delimiter row with the same column count,
 every delimiter cell requires at least three hyphens with only optional edge

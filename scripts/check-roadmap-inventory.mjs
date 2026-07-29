@@ -158,6 +158,12 @@ function isCanonicalAccountabilityHeading(line) {
   return /^ {0,3}## Architecture accountability[ \t]*$/u.test(line);
 }
 
+function isAccountabilityHeadingWithClosingHashes(line) {
+  return /^ {0,3}## Architecture accountability[ \t]+#+[ \t]*$/u.test(
+    line,
+  );
+}
+
 function isRoadmapLevelTwoHeading(line) {
   const match = line.match(/^ {0,3}##(?:[ \t]+|$)/u);
   if (match === null) {
@@ -350,6 +356,16 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       foundAccountabilitySection = true;
       accountabilitySectionLocation = location;
       continue;
+    }
+    if (
+      foundAccountabilitySection &&
+      isAccountabilityHeadingWithClosingHashes(line)
+    ) {
+      fail(
+        "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+        `${roadmapPath}:${index + 1}`,
+        `canonical heading already appears at ${accountabilitySectionLocation}`,
+      );
     }
     if (
       inAccountabilitySection &&
