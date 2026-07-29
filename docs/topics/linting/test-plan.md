@@ -315,20 +315,21 @@ Implemented and planned cases are listed below.
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
 - **LINT-13h** — *Requirement:* LINT-13. *Behavior:* Vale's JSON result is
-  admitted in one typed deserialization pass; required alert text is validated
-  before coordinate work; documented one-based inclusive rune spans preserve
-  their exact Unicode source slice; and severity collapse is explicit.
-  *Oracle:* syntax failures, non-object roots, typed shape failures, empty
-  fields, astral/combining endpoints, and every supported severity have stable
-  results. *Evidence type:* JSON and coordinate contract matrix. *Evidence:*
-  `colorful-vale`
+  admitted in one typed deserialization pass; required check, message, and
+  match text is validated before coordinate work; documented one-based
+  inclusive rune spans preserve their exact Unicode source slice; and severity
+  collapse is explicit. *Oracle:* syntax failures, non-object roots, typed
+  shape failures, empty fields, astral/combining endpoints, and every supported
+  severity have stable results. *Evidence type:* JSON and coordinate contract
+  matrix. *Evidence:* `colorful-vale`
   `workspace_boundary::output_parser_has_one_typed_deserialization_owner` and
   `vale_adapter::{malformed_outputs_fail_closed_by_category,
-  required_alert_text_precedes_coordinate_validation,
+  required_alert_text_precedes_coordinate_validation` (the empty-match leg is
+  planned),
   alerts_normalize_to_legal_ordered_colorful_findings,
   vale_v3_inclusive_rune_endpoints_and_severities_are_preserved}`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* implemented.
+  *Status:* planned.
 - **LINT-13i** — *Requirement:* LINT-13. *Behavior:* discovery and analysis do
   not inherit ambient user configuration, home, XDG, or proxy variables while
   retaining the minimum platform environment required to execute the
