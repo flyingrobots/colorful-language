@@ -166,14 +166,8 @@ function accountabilityHeaderKind(source, lines, table) {
   return "display-equivalent";
 }
 
-function tableIsInsideSection(
-  nodeIndex,
-  canonicalHeadingIndex,
-  sectionEndIndex,
-) {
-  return (
-    nodeIndex > canonicalHeadingIndex && nodeIndex < sectionEndIndex
-  );
+function tableIsInsideSection(nodeIndex, canonicalHeadingIndex, sectionEndIndex) {
+  return nodeIndex > canonicalHeadingIndex && nodeIndex < sectionEndIndex;
 }
 
 function lineWithoutInlineComments(line, lineNumber_, commentRanges) {
@@ -356,6 +350,12 @@ function parseMarkdown(source) {
   });
 }
 
+function isMarkdownEscaped(source, offset) {
+  let cursor = offset;
+  while (source[cursor - 1] === "\\") cursor -= 1;
+  return (offset - cursor) % 2 === 1;
+}
+
 function markdownCommentRanges(source, tree) {
   const excludedRanges = [];
   const stack = [tree];
@@ -386,7 +386,7 @@ function markdownCommentRanges(source, tree) {
     if (start === -1) {
       break;
     }
-    if (insideExcludedSyntax(start)) {
+    if (insideExcludedSyntax(start) || isMarkdownEscaped(source, start)) {
       searchFrom = start + 4;
       continue;
     }

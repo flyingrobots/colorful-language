@@ -416,6 +416,37 @@ test("does not scan comment-shaped text inside raw HTML blocks", () => {
   );
 });
 
+test("escaped comment syntax cannot hide a duplicate accountability table", () => {
+  expectCategory("E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE", (source) =>
+    [
+      source,
+      String.raw`\<!-- literal comment opener`,
+      "",
+      "| Mechanism | Current user job |",
+      "| --- | --- |",
+      "| Escaped-comment duplicate | Must remain visible. |",
+      "-->",
+    ].join("\n"),
+  );
+
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: [
+        roadmap,
+        String.raw`\\<!-- active comment opener`,
+        "",
+        "| Mechanism | Example only |",
+        "| --- | --- |",
+        "| Even-escape control | Hidden in the comment. |",
+        "-->",
+      ].join("\n"),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("does not let a generic HTML tag interrupt a paragraph", () => {
   assert.doesNotThrow(() =>
     validateRoadmapInventory({

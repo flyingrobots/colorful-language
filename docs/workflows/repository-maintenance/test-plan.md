@@ -78,6 +78,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   parser to enforce the roadmap policy. Narrow literal-source pipe recognition
   may only reject table-like source that the AST cannot represent after an HTML
   comment closer; it must never accept or establish canonical authority.
+  Preserved multiline-comment ranges must honor parser-owned code and
+  non-comment HTML exclusions plus Markdown backslash parity.
 
 ## Cases
 
@@ -280,17 +282,18 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   self-closing generic tags, comment-shaped script text, a type-7 generic tag
   inside an open paragraph followed by a structural heading, plus a
   source-policy guard against reintroducing generic HTML grammar, an indented
-  comment opener followed by a visible table, invalid backtick-fence info
-  strings plus valid tilde-fence controls, multiline comments that open after
-  visible text or an unmatched backtick, a visible duplicate mechanism split
-  by a closed inline HTML comment, duplicate tables beginning after inline and
-  multiline comment closers, a multiline comment beginning on a visible table
-  row, and post-table prose controls containing a literal or inline-code pipe
-  plus a comment-shaped inline-code literal control, inline-code styling and
-  longer internal backtick runs, an empty identity, invalid escaping inside and
-  outside inline code, named/decimal/hexadecimal character references,
-  canonically equivalent Unicode, NUL/replacement-character equivalence, and
-  unsupported emphasis.
+  comment opener followed by a visible table, an escaped comment opener followed
+  by a duplicate table plus an even-backslash active-comment control, invalid
+  backtick-fence info strings plus valid tilde-fence controls, multiline
+  comments that open after visible text or an unmatched backtick, a visible
+  duplicate mechanism split by a closed inline HTML comment, duplicate tables
+  beginning after inline and multiline comment closers, a multiline comment
+  beginning on a visible table row, and post-table prose controls containing a
+  literal or inline-code pipe plus a comment-shaped inline-code literal control,
+  inline-code styling and longer internal backtick runs, an empty identity,
+  invalid escaping inside and outside inline code, named/decimal/hexadecimal
+  character references, canonically equivalent Unicode,
+  NUL/replacement-character equivalence, and unsupported emphasis.
   They fail with
   their stable `E_ROADMAP_*` categories, including both source addresses for a
   duplicate heading, table, or mechanism and identical LF/CRLF failure
@@ -328,7 +331,7 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `scripts/check-roadmap-inventory.mjs`,
   `scripts/roadmap-inventory-runner.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
-  `package-lock.json`. The parser-owning checker measures 899 lines and 22
+  `package-lock.json`. The parser-owning checker measures 899 lines and 23
   top-level helpers, down from 1,429 lines and 38 helpers; the transport runner
   contains no Markdown interpretation. *Tracking:*
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).

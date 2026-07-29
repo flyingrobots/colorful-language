@@ -217,9 +217,9 @@ The gate parses CommonMark plus GFM tables through the exact direct
 `mdast-util-from-markdown`, `mdast-util-gfm-table`, `mdast-util-to-string`, and
 `micromark-extension-gfm-table` dependencies declared in the root
 `package.json` and resolved by `package-lock.json`. Maintained parser nodes and
-source positions decide headings, tables, code, HTML, inline rendering, and
-section boundaries. Repository code applies only the Colorful-specific policy
-below:
+source positions decide headings, tables, code and non-comment HTML exclusions,
+inline rendering, and section boundaries. Repository code applies only the
+Colorful-specific policy below:
 
 - exactly one canonical `## Architecture accountability` H2 and one complete
   leading-pipe `Mechanism` table inside that section are authoritative;
@@ -233,9 +233,12 @@ below:
   character references, invalid escapes, and other inline markup are rejected;
   and
 - duplicate headings, tables, and mechanism identities report stable
-  path-and-line addresses for both LF and CRLF input.
+  path-and-line addresses for both LF and CRLF input; and
+- the preserved multiline-comment range policy honors parser-owned code and
+  non-comment HTML exclusions plus Markdown backslash parity, so escaped
+  `\<!--` text cannot hide a second table.
 
-`scripts/check-roadmap-inventory.mjs` now owns 899 lines and 22 top-level
+`scripts/check-roadmap-inventory.mjs` now owns 899 lines and 23 top-level
 helpers, down from 1,429 lines and 38 helpers.
 `scripts/roadmap-inventory-runner.mjs` owns only argument parsing, bounded
 GitHub transport, JSON loading, and process output; it contains no Markdown

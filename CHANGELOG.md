@@ -462,13 +462,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mdast` and `micromark` packages while retaining every stable fixture,
   diagnostic category, and source address. `ROADMAP.md` remains the sole
   disposition and architecture-accountability authority. The parser-owning
-  checker falls from 1,429 lines and 38 top-level helpers to 899 lines and 22
+  checker falls from 1,429 lines and 38 top-level helpers to 899 lines and 23
   top-level helpers; a separate dependency-injected runner owns only bounded
   GitHub/CLI transport. Source and dependency ratchets prevent the bespoke
   Markdown state machine or a floating parser from returning. The runner
   rejects duplicate options, malformed repository coordinates, unreadable
   roadmaps, and unreadable issue snapshots with stable error categories before
-  transport or parsing.
+  transport or parsing. Comment-range policy honors Markdown escape parity, so
+  a literal `\<!--` cannot conceal a second architecture authority.
 - **Derived portable-admission review burden.** The independent-consumer ledger
   now derives its reviewed generator-case count from the same fail-closed
   inventory that registers the generator suite, so missing, extra, or duplicate
