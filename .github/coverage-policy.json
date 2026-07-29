@@ -5,15 +5,15 @@
     "cargoLlvmCov": "0.8.7"
   },
   "measurement": {
-    "sourceCommit": "2692465e42017b1f910760805a84740d7c3ce87b",
+    "sourceCommit": "a4acd3a1171fe8b6f0662f5d2193da865d41a1f6",
     "command": "cargo llvm-cov --workspace --all-features --all-targets --locked"
   },
   "workspace": {
-    "measuredLines": 6563,
-    "measuredCoveredLines": 6171,
-    "measuredLinePercent": 94.0271217431053,
+    "measuredLines": 6647,
+    "measuredCoveredLines": 6246,
+    "measuredLinePercent": 93.96720324958629,
     "minimumLinePercent": 92,
-    "maximumUncoveredLines": 392
+    "maximumUncoveredLines": 401
   },
   "files": [
     {
@@ -74,19 +74,19 @@
     },
     {
       "path": "crates/colorful-vale/src/output.rs",
-      "measuredLines": 237,
-      "measuredCoveredLines": 193,
-      "measuredLinePercent": 81.43459915611815,
+      "measuredLines": 279,
+      "measuredCoveredLines": 235,
+      "measuredLinePercent": 84.22939068100358,
       "minimumLinePercent": 68,
       "maximumUncoveredLines": 44
     },
     {
       "path": "crates/colorful-vale/src/process.rs",
-      "measuredLines": 182,
-      "measuredCoveredLines": 151,
-      "measuredLinePercent": 82.96703296703298,
+      "measuredLines": 224,
+      "measuredCoveredLines": 184,
+      "measuredLinePercent": 82.14285714285714,
       "minimumLinePercent": 80,
-      "maximumUncoveredLines": 31
+      "maximumUncoveredLines": 40
     }
   ],
   "exclusions": []
