@@ -606,6 +606,24 @@ test("rejects a styled duplicate accountability table header", () => {
   );
 });
 
+test("rejects rendered-equivalent duplicate table headers", () => {
+  for (const header of [
+    "[Mechanism](#other)",
+    "Mech&#97;nism",
+    "Mech&#x61;nism",
+  ]) {
+    expectCategory(
+      "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+      (source) => `${source}
+
+| ${header} | Current user job |
+| --- | --- |
+| Rendered duplicate | Must not evade duplicate-table detection. |
+`,
+    );
+  }
+});
+
 test("rejects a comment-altered accountability table header", () => {
   expectCategory(
     "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",

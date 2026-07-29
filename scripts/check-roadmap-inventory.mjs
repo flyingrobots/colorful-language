@@ -378,6 +378,79 @@ function displaysMechanismHeader(mechanism, location) {
   }
 }
 
+function markdownLinkLabel(source) {
+  if (!source.startsWith("[")) {
+    return undefined;
+  }
+  let labelEnd = -1;
+  for (let index = 1; index < source.length; index += 1) {
+    if (source[index] === "\\") {
+      index += 1;
+    } else if (source[index] === "]") {
+      labelEnd = index;
+      break;
+    }
+  }
+  if (labelEnd === -1) {
+    return undefined;
+  }
+
+  const destinationStart = labelEnd + 1;
+  if (source[destinationStart] === "(") {
+    let depth = 1;
+    for (let index = destinationStart + 1; index < source.length; index += 1) {
+      if (source[index] === "\\") {
+        index += 1;
+      } else if (source[index] === "(") {
+        depth += 1;
+      } else if (source[index] === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          return index === source.length - 1
+            ? source.slice(1, labelEnd)
+            : undefined;
+        }
+      }
+    }
+    return undefined;
+  }
+  if (
+    source[destinationStart] === "[" &&
+    source.endsWith("]") &&
+    source.indexOf("]", destinationStart + 1) === source.length - 1
+  ) {
+    return source.slice(1, labelEnd);
+  }
+  return undefined;
+}
+
+function decodeNumericCharacterReferences(source) {
+  return source.replace(
+    /&#(?:[Xx]([0-9A-Fa-f]+)|([0-9]+));/gu,
+    (reference, hexadecimal, decimal) => {
+      const radix = hexadecimal === undefined ? 10 : 16;
+      const codePoint = Number.parseInt(hexadecimal ?? decimal, radix);
+      if (
+        !Number.isSafeInteger(codePoint) ||
+        codePoint === 0 ||
+        codePoint > 0x10ffff ||
+        (codePoint >= 0xd800 && codePoint <= 0xdfff)
+      ) {
+        return reference;
+      }
+      return String.fromCodePoint(codePoint);
+    },
+  );
+}
+
+function displaysRenderedMechanismHeader(mechanism, location) {
+  if (displaysMechanismHeader(mechanism, location)) {
+    return true;
+  }
+  const visibleSource = markdownLinkLabel(mechanism) ?? mechanism;
+  return decodeNumericCharacterReferences(visibleSource) === "Mechanism";
+}
+
 function accountabilityHeaderKind(mechanism, location) {
   if (mechanism === "Mechanism") {
     return "canonical";
@@ -385,7 +458,7 @@ function accountabilityHeaderKind(mechanism, location) {
   if (UNSUPPORTED_STYLED_MECHANISM_HEADER.test(mechanism)) {
     return "unsupported";
   }
-  return displaysMechanismHeader(mechanism, location)
+  return displaysRenderedMechanismHeader(mechanism, location)
     ? "display-equivalent"
     : undefined;
 }
