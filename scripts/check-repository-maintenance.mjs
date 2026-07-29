@@ -18,6 +18,11 @@ const REPOSITORY_OWNER = "@flyingrobots";
 const DELIVERY_ISSUE_ROLES = ["release-trains", "slices"];
 const DELIVERY_MILESTONE_ROLE = "goalposts";
 const RELEASE_ISSUE_FORMAT = "[release] v{version}";
+const RELEASE_TRACKING_LABELS = [
+  "area:core",
+  "documentation",
+  "slice",
+];
 const DELIVERY_REFERENCE_CLAIMS = [
   "GitHub milestones are goalposts.",
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
@@ -30,10 +35,11 @@ const COMPETING_DELIVERY_REFERENCE_PATTERNS = [
   /\bassign\s+releases?\s+to\s+GitHub milestones?\b/i,
 ];
 const RELEASE_TRACKING_REFERENCE_CLAIMS = [
-  "--label slice",
   "complete and review the packet's release thesis",
   "bash scripts/release-prep.sh",
 ];
+const RELEASE_TRACKING_LABEL_PATTERN =
+  /--label (?<label>[a-z0-9][a-z0-9:._-]*)/gu;
 const RELEASE_TRACKING_REFERENCE_PATTERNS = [
   /--title "\[release\] v(?<version>\d+\.\d+\.\d+)"/u,
   /--body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md/u,
@@ -271,17 +277,21 @@ function validateDeliveryTracking(
     RELEASE_TRACKING_REFERENCE_PATTERNS.map(
       (pattern) => oneVersionMatch(releasingReference, pattern),
     );
+  const releaseTrackingLabels = [
+    ...releasingReference.matchAll(RELEASE_TRACKING_LABEL_PATTERN),
+  ].map((match) => match.groups?.label);
   if (
     RELEASE_TRACKING_REFERENCE_CLAIMS.some(
       (claim) => !releasingReference.includes(claim),
     ) ||
     releaseExampleVersions.some((version) => version === undefined) ||
-    new Set(releaseExampleVersions).size !== 1
+    new Set(releaseExampleVersions).size !== 1 ||
+    !sameStringSet(releaseTrackingLabels, RELEASE_TRACKING_LABELS)
   ) {
     reject(
       "E_DELIVERY_TRACKING",
       DELIVERY_REFERENCE_PATHS.releasing,
-      "must retain one aligned release-tracking example and its preparation command",
+      "must retain one aligned release-tracking example, its exact role and area labels, and its preparation command",
     );
   }
 }

@@ -290,8 +290,12 @@ Verification for release preparation, tag automation, and release witnesses.
   remains valid. *Evidence type:* deterministic repository-maintenance policy
   mutations and checked-in release-runbook validation. *Tracking:*
   [#263](https://github.com/flyingrobots/colorful-language/issues/263).
-  *Evidence:* planned in `scripts/check-repository-maintenance.test.mjs`.
-  *Status:* planned.
+  *Evidence:* `scripts/check-repository-maintenance.test.mjs`
+  `rejects a noncompliant release-tracker label set` and
+  `rejects an incomplete v0.4.0 tracking and prep sequence`;
+  `scripts/check-repository-maintenance.mjs`; `docs/RELEASING.md`;
+  `docs/workflows/release-process/README.md`; and
+  `docs/workflows/repository-maintenance/README.md`. *Status:* implemented.
 
 ## Open verification gaps
 
