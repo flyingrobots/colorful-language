@@ -581,9 +581,7 @@ fn duplicate_source_key_error_is_bounded_and_redacted() {
     let source_key = "s".repeat(8192);
     let fixture = FakeVale::new(
         "3.14.2",
-        &format!(
-            "printf '%s' '{{\"{source_key}\":[],\"{source_key}\":[]}}'"
-        ),
+        &format!("printf '%s' '{{\"{source_key}\":[],\"{source_key}\":[]}}'"),
     );
     let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover duplicate-key Vale");
 

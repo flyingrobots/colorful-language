@@ -43,7 +43,7 @@ struct ValeAlert {
 
 struct ValeFiles {
     entries: BTreeMap<String, Vec<ValeAlert>>,
-    duplicate_source: Option<String>,
+    duplicate_source: bool,
 }
 
 impl<'de> Deserialize<'de> for ValeFiles {
@@ -65,12 +65,10 @@ impl<'de> Deserialize<'de> for ValeFiles {
                 A: MapAccess<'de>,
             {
                 let mut entries = BTreeMap::new();
-                let mut duplicate_source = None;
+                let mut duplicate_source = false;
                 while let Some((source, alerts)) = map.next_entry::<String, Vec<ValeAlert>>()? {
-                    if entries.insert(source.clone(), alerts).is_some()
-                        && duplicate_source.is_none()
-                    {
-                        duplicate_source = Some(source);
+                    if entries.insert(source, alerts).is_some() {
+                        duplicate_source = true;
                     }
                 }
                 Ok(ValeFiles {
@@ -144,10 +142,10 @@ pub(crate) fn parse_findings(
         };
         ValeError::new(kind, format!("{context}: {error}"))
     })?;
-    if let Some(source) = parsed.duplicate_source {
+    if parsed.duplicate_source {
         return Err(ValeError::new(
             ValeErrorKind::MalformedOutput,
-            format!("Vale returned duplicate source key {source:?}"),
+            "Vale returned a duplicate source key",
         ));
     }
     let files = parsed.entries;

@@ -391,12 +391,11 @@ Implemented and planned cases are listed below.
   deserialization pass; a long duplicate key is absent from an exact bounded
   error message. *Evidence type:* malformed process-output mutation and
   bounded-error tests. *Evidence:* `colorful-vale`
-  `vale_adapter::malformed_outputs_fail_closed_by_category`; the bounded message
-  leg is planned in
-  `vale_adapter::duplicate_source_key_error_is_bounded_and_redacted`.
+  `vale_adapter::{malformed_outputs_fail_closed_by_category,
+  duplicate_source_key_error_is_bounded_and_redacted}`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
