@@ -63,6 +63,30 @@ test("the committed package harness has every portable evidence boundary", () =>
   }
 });
 
+test("package evidence has independent validation boundaries", () => {
+  const source = readFileSync(
+    "editors/vscode/smoke/run-packaged-smoke.mjs",
+    "utf8",
+  );
+  assert.doesNotMatch(source, /new Set\(channels\.map/gu);
+
+  const stage = source.indexOf(
+    "stageZedExtension(repositoryRoot, zedPackageRoot)",
+  );
+  const build = source.indexOf(
+    '"--manifest-path",\n    path.join(zedPackageRoot, "Cargo.toml")',
+    stage,
+  );
+  const revalidate = source.indexOf(
+    "const zedPackage = validateZedSourcePackage(",
+    build,
+  );
+  assert.ok(
+    stage >= 0 && build > stage && revalidate > build,
+    "the staged Zed tree must be revalidated after its isolated build",
+  );
+});
+
 test("documentation lint excludes the downloaded VS Code test application", () => {
   assert.match(
     readFileSync(".markdownlint-cli2.jsonc", "utf8"),

@@ -211,11 +211,7 @@ async function main() {
   assert.ok(statSync(vsixPath).size > 0, "VSIX must not be empty");
 
   const zedPackageRoot = path.join(artifactRoot, "zed-source");
-  const zedPackage = stageZedExtension(repositoryRoot, zedPackageRoot);
-  assert.deepEqual(
-    validateZedSourcePackage(repositoryRoot, zedPackageRoot),
-    zedPackage,
-  );
+  stageZedExtension(repositoryRoot, zedPackageRoot);
   run("cargo", [
     "build",
     "--manifest-path",
@@ -256,27 +252,18 @@ async function main() {
   );
   const missingServerLogs = assertMissingServerLog(missingProfile);
 
-  const channels = ["visual-studio-marketplace", "open-vsx"].map((channel) => ({
-    channel,
-    artifact: path.relative(repositoryRoot, vsixPath),
-    sha256: digestFile(vsixPath),
-  }));
-  assert.equal(
-    new Set(channels.map(({ artifact }) => artifact)).size,
-    1,
-    "VS Code Marketplace and Open VSX must consume one VSIX path",
-  );
-  assert.equal(
-    new Set(channels.map(({ sha256 }) => sha256)).size,
-    1,
-    "VS Code Marketplace and Open VSX must consume byte-identical VSIX input",
+  const zedPackage = validateZedSourcePackage(
+    repositoryRoot,
+    zedPackageRoot,
   );
   const witness = {
     schemaVersion: "colorful.editor-package-smoke/v1",
     vscode: {
       version: VSCODE_VERSION,
       extension: `${EXTENSION_ID}@${packageJson.version}`,
-      channels,
+      publicationTargets: ["visual-studio-marketplace", "open-vsx"],
+      artifact: path.relative(repositoryRoot, vsixPath),
+      sha256: digestFile(vsixPath),
       missingServerCategory: SERVER_NOT_FOUND_CATEGORY,
       missingServerLogs,
     },
