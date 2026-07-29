@@ -369,6 +369,28 @@ test("requires signed checksummed native archives", () => {
   }
 });
 
+test("rejects native artifact paths that can omit release assets", () => {
+  const permissiveUpload = validSnapshot();
+  const upload = permissiveUpload.workflow.jobs[
+    "binary-artifacts"
+  ].steps.find((step) => step.name === "Upload native archive");
+  delete upload.with["if-no-files-found"];
+  assert.throws(
+    () => validateReleaseDistribution(permissiveUpload),
+    /fail when native archive files are absent/u,
+  );
+
+  const redirectedDownload = validSnapshot();
+  releaseStep(
+    redirectedDownload,
+    "Download native archives",
+  ).with.path = "elsewhere";
+  assert.throws(
+    () => validateReleaseDistribution(redirectedDownload),
+    /download native archives into dist/u,
+  );
+});
+
 test("requires publisher credential verification before crates", () => {
   const snapshot = validSnapshot();
   const steps = snapshot.workflow.jobs.release.steps;
