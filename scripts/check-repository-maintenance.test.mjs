@@ -27,6 +27,11 @@ const DELIVERY_REFERENCE = [
   "GitHub milestones are goalposts.",
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
 ].join("\n");
+const RELEASE_TRACKING_COMMANDS = [
+  '--title "[release] v0.4.0"',
+  "git switch -c release/v0.4.0",
+  "bash scripts/release-prep.sh",
+];
 const EDITOR_TOOL_LICENSES = [
   "Artistic-2.0",
   "BSD-2-Clause",
@@ -132,7 +137,10 @@ function fixture() {
       agents: DELIVERY_REFERENCE,
       contributing: DELIVERY_REFERENCE,
       maintenance: DELIVERY_REFERENCE,
-      releasing: DELIVERY_REFERENCE,
+      releasing: [
+        DELIVERY_REFERENCE,
+        ...RELEASE_TRACKING_COMMANDS,
+      ].join("\n"),
       releaseProcess: DELIVERY_REFERENCE,
       roadmap: DELIVERY_REFERENCE,
     },
@@ -481,6 +489,19 @@ test("rejects a stale delivery-tracking reference", () => {
         "Release trains use one versioned tracking issue;",
         "Release trains use a GitHub milestone;",
       );
+    }, "E_DELIVERY_TRACKING");
+  }
+});
+
+test("rejects an incomplete v0.4.0 tracking and prep sequence", () => {
+  for (const missing of RELEASE_TRACKING_COMMANDS) {
+    expectCode(({ deliveryReferences }) => {
+      deliveryReferences.releasing = [
+        DELIVERY_REFERENCE,
+        ...RELEASE_TRACKING_COMMANDS.filter(
+          (command) => command !== missing,
+        ),
+      ].join("\n");
     }, "E_DELIVERY_TRACKING");
   }
 });

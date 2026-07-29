@@ -242,6 +242,16 @@ Then add the issue to `ROADMAP.md` with one active primary marker. Individual
 v0.4.0 slices stay on their existing goalpost milestones and are linked from
 the packet and tracking issue instead of being moved.
 
+After the tracking issue and packet are reviewed, prepare v0.4.0 from aligned
+`main`:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git switch -c release/v0.4.0
+bash scripts/release-prep.sh
+```
+
 Labels are query axes. Live issue axes should include exactly one label from
 each required family when that family exists in the repo:
 

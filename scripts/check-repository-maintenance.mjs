@@ -22,6 +22,11 @@ const DELIVERY_REFERENCE_CLAIMS = [
   "GitHub milestones are goalposts.",
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
 ];
+const RELEASE_TRACKING_REFERENCE_CLAIMS = [
+  '--title "[release] v0.4.0"',
+  "git switch -c release/v0.4.0",
+  "bash scripts/release-prep.sh",
+];
 const DELIVERY_REFERENCE_PATHS = Object.freeze({
   agents: "AGENTS.md",
   contributing: "CONTRIBUTING.md",
@@ -222,6 +227,20 @@ function validateDeliveryTracking(
         "must distinguish goalpost milestones from versioned release-tracking issues",
       );
     }
+  }
+  const releasingReference = normalizeReference(
+    deliveryReferences.releasing,
+  );
+  if (
+    RELEASE_TRACKING_REFERENCE_CLAIMS.some(
+      (claim) => !releasingReference.includes(claim),
+    )
+  ) {
+    reject(
+      "E_DELIVERY_TRACKING",
+      DELIVERY_REFERENCE_PATHS.releasing,
+      "must retain the v0.4.0 tracking-issue and release-preparation commands",
+    );
   }
 }
 
