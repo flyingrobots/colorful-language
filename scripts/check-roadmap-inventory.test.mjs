@@ -682,6 +682,26 @@ test("rejects a comment-altered accountability table delimiter", () => {
   );
 });
 
+test("rejects non-Markdown whitespace as table-cell padding", () => {
+  for (const [category, mutation] of [
+    [
+      "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+      (source) =>
+        source.replace(
+          "| Mechanism | Current user job |",
+          "|\u00a0Mechanism\u00a0| Current user job |",
+        ),
+    ],
+    [
+      "E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE",
+      (source) =>
+        source.replace("| --- | --- |", "|\u00a0---\u00a0| --- |"),
+    ],
+  ]) {
+    expectCategory(category, mutation);
+  }
+});
+
 test("rejects unsupported Markdown in a duplicate table header", () => {
   expectCategory(
     "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",

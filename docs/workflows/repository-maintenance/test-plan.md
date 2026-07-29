@@ -253,13 +253,14 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   duplicate tables before and after the canonical section,
   missing or malformed delimiter or data rows, an empty table followed by a
   later valid table, delimiter/header arity mismatches, a missing first-cell
-  closing pipe, compact/multi-space/tab-padded no-leading-pipe headers, a
-  no-leading-pipe continuing data row, indented code plus fenced and commented
-  table-shaped examples, raw HTML block variants, an indented comment opener
-  followed by a visible table, invalid backtick-fence info strings plus valid
-  tilde-fence controls, multiline comments that open after visible text or an
-  unmatched backtick, a visible duplicate mechanism split by a closed inline
-  HTML comment, a multiline comment beginning on a visible table row, and
+  closing pipe, non-breaking-space-padded header and delimiter cells,
+  compact/multi-space/tab-padded no-leading-pipe headers, a no-leading-pipe
+  continuing data row, indented code plus fenced and commented table-shaped
+  examples, raw HTML block variants, an indented comment opener followed by a
+  visible table, invalid backtick-fence info strings plus valid tilde-fence
+  controls, multiline comments that open after visible text or an unmatched
+  backtick, a visible duplicate mechanism split by a closed inline HTML
+  comment, a multiline comment beginning on a visible table row, and
   post-table prose controls containing a literal or inline-code pipe plus a
   comment-shaped inline-code literal control, inline-code styling and longer
   internal backtick runs, an empty identity, invalid escaping inside and

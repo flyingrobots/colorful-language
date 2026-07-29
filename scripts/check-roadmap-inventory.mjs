@@ -166,6 +166,10 @@ function normalizeIssues(issues, issuePath, closingIssueNumbers) {
   return byNumber;
 }
 
+function trimMarkdownTableCellPadding(cell) {
+  return cell.replace(/^[\t ]+|[\t ]+$/gu, "");
+}
+
 function markdownTableCells(line) {
   const firstNonWhitespace = line.search(/\S/u);
   if (
@@ -187,7 +191,7 @@ function markdownTableCells(line) {
         cell += line[index];
       }
     } else if (line[index] === "|") {
-      cells.push(cell.trim());
+      cells.push(trimMarkdownTableCellPadding(cell));
       cell = "";
       closedFirstCell = true;
     } else {
@@ -197,8 +201,9 @@ function markdownTableCells(line) {
   if (!closedFirstCell) {
     return undefined;
   }
-  if (cell.trim().length > 0) {
-    cells.push(cell.trim());
+  const trailingCell = trimMarkdownTableCellPadding(cell);
+  if (trailingCell.length > 0) {
+    cells.push(trailingCell);
   }
   return cells;
 }
