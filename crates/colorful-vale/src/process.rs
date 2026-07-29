@@ -341,15 +341,17 @@ mod tests {
     use std::cell::{Cell, RefCell};
     use std::ffi::OsString;
     use std::fs;
+    use std::io;
     use std::path::{Path, PathBuf};
-    use std::process::{Command, Stdio};
+    use std::process::{Command, ExitStatus, Stdio};
     use std::rc::Rc;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{Duration, Instant};
 
     use super::{
-        run_process, set_after_spawn_before_deadline, set_before_completion_acceptance,
-        spawn_with_executable_busy_retry, ProcessInput,
+        join_reader, join_writer, run_process, set_after_spawn_before_deadline,
+        set_before_completion_acceptance, spawn_with_executable_busy_retry, CapturedStream,
+        ProcessInput,
     };
     use crate::{CancellationToken, ValeErrorKind};
 
@@ -370,7 +372,7 @@ mod tests {
                 ));
                 match fs::create_dir(&candidate) {
                     Ok(()) => break candidate,
-                    Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+                    Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
                     Err(error) => {
                         panic!(
                             "create process-tree fixture {}: {error}",
@@ -414,13 +416,35 @@ mod tests {
     }
 
     #[test]
+    fn pre_cancelled_process_does_not_spawn() {
+        let cancellation = CancellationToken::new();
+        cancellation.cancel();
+        let args: [OsString; 0] = [];
+
+        let error = run_process(
+            Path::new("/colorful-test/nonexistent-vale"),
+            &args,
+            Path::new("/"),
+            ProcessInput::None,
+            Duration::from_secs(2),
+            1024,
+            &cancellation,
+        )
+        .err()
+        .expect("pre-cancelled process must not reach spawn");
+
+        assert_eq!(error.kind(), ValeErrorKind::Cancelled);
+    }
+
+    #[test]
     fn ready_worker_timeout_terminates_the_process_group() {
         assert_ready_process_tree_is_terminated(
             r#"(
   trap '' HUP TERM
   while :; do :; done
 ) >/dev/null 2>&1 &
-printf '%s\n' "$!" > worker.pid
+printf '%s\n' "$!" > worker.pid.tmp
+mv worker.pid.tmp worker.pid
 wait"#,
             false,
         );
@@ -433,10 +457,179 @@ wait"#,
   trap '' HUP TERM
   /bin/sleep 1
 ) &
-printf '%s\n' "$!" > worker.pid
+printf '%s\n' "$!" > worker.pid.tmp
+mv worker.pid.tmp worker.pid
+while [ ! -e allow-wrapper-exit ]; do
+  /bin/sleep 0.01
+done
 exit 0"#,
             true,
         );
+    }
+
+    #[test]
+    fn readiness_rejects_a_wrapper_that_already_exited() {
+        let fixture = ProcessTreeFixture::new();
+        fs::write(&fixture.worker_pid, b"1").expect("record synthetic worker PID");
+        let mut child = Command::new("/bin/sh")
+            .args(["-c", "exit 0"])
+            .spawn()
+            .expect("spawn exited wrapper");
+        child.wait().expect("reap exited wrapper");
+
+        let error = wait_for_ready_process_tree(&fixture.worker_pid, &mut child, false)
+            .expect_err("an exited wrapper cannot establish timeout ordering");
+
+        assert_eq!(
+            error,
+            "ready wrapper exited before its synthetic timeout was established"
+        );
+    }
+
+    #[test]
+    fn readiness_propagates_malformed_worker_pid() {
+        let fixture = ProcessTreeFixture::new();
+        fs::write(&fixture.worker_pid, b"not-a-pid").expect("record malformed worker PID");
+        let mut child = Command::new("/bin/sleep")
+            .arg("1")
+            .spawn()
+            .expect("spawn ready wrapper");
+
+        let error = wait_for_ready_process_tree(&fixture.worker_pid, &mut child, false)
+            .expect_err("malformed worker PID must prevent timeout ordering");
+        let _ = child.kill();
+        child.wait().expect("reap ready wrapper");
+
+        assert_eq!(
+            error,
+            "process-tree fixture recorded a non-numeric worker PID"
+        );
+    }
+
+    #[test]
+    fn readiness_propagates_wrapper_release_failure() {
+        let fixture = ProcessTreeFixture::new();
+        fs::write(&fixture.worker_pid, b"1").expect("record synthetic worker PID");
+        fs::create_dir(fixture.root.join("allow-wrapper-exit"))
+            .expect("occupy wrapper release path with a directory");
+        let mut child = Command::new("/bin/sleep")
+            .arg("1")
+            .spawn()
+            .expect("spawn ready wrapper");
+
+        let error = wait_for_ready_process_tree(&fixture.worker_pid, &mut child, true)
+            .expect_err("occupied release path must reject the wrapper release");
+        let _ = child.kill();
+        child.wait().expect("reap ready wrapper");
+
+        assert!(
+            error.starts_with("release ready wrapper: "),
+            "unexpected release failure: {error}"
+        );
+    }
+
+    #[test]
+    fn wrapper_exit_wait_has_a_bounded_failure() {
+        let mut child = Command::new("/bin/sleep")
+            .arg("1")
+            .spawn()
+            .expect("spawn non-exiting wrapper");
+
+        let error = wait_for_wrapper_exit_until(&mut child, Instant::now())
+            .expect_err("live wrapper must exceed an elapsed deadline");
+        let _ = child.kill();
+        child.wait().expect("reap bounded wrapper");
+
+        assert_eq!(error, "ready wrapper did not exit before its deadline");
+    }
+
+    #[test]
+    fn worker_pid_wait_failures_are_bounded_and_categorized() {
+        let fixture = ProcessTreeFixture::new();
+        let missing = wait_for_worker_pid_until(&fixture.worker_pid, Instant::now())
+            .expect_err("missing PID must exceed an elapsed deadline");
+        assert_eq!(missing, "process-tree worker did not become ready");
+
+        fs::write(&fixture.worker_pid, b"not-a-pid").expect("write malformed PID");
+        let malformed = wait_for_worker_pid_until(&fixture.worker_pid, Instant::now())
+            .expect_err("malformed PID must fail closed");
+        assert_eq!(
+            malformed,
+            "process-tree fixture recorded a non-numeric worker PID"
+        );
+
+        let directory = fixture.root.join("pid-directory");
+        fs::create_dir(&directory).expect("create unreadable PID artifact");
+        let unreadable = wait_for_worker_pid_until(&directory, Instant::now())
+            .expect_err("directory PID artifact must fail closed");
+        assert!(
+            unreadable.starts_with("read process-tree worker PID: "),
+            "{unreadable}"
+        );
+    }
+
+    #[test]
+    fn failed_termination_check_kills_the_surviving_worker() {
+        let mut worker = Command::new("/bin/sleep")
+            .arg("1")
+            .spawn()
+            .expect("spawn surviving worker");
+        let worker_pid = worker.id();
+
+        let survived =
+            terminate_worker_if_needed(worker_pid, Instant::now() + Duration::from_millis(10));
+        let status = worker.wait().expect("reap cleaned worker");
+
+        assert!(survived, "fixture must exercise cleanup after failure");
+        assert!(!status.success(), "cleanup must kill the surviving worker");
+        assert!(!process_exists(worker_pid), "cleaned worker must be absent");
+    }
+
+    #[test]
+    fn process_ordering_io_errors_are_categorized() {
+        let probe =
+            checked_child_status(Err(io::Error::other("probe failed")), "probe ready wrapper")
+                .expect_err("failed wrapper probe must be categorized");
+        let wait = checked_child_status(
+            Err(io::Error::other("wait failed")),
+            "wait for ready wrapper exit",
+        )
+        .expect_err("failed wrapper wait must be categorized");
+        let release = checked_wrapper_release(Err(io::Error::other("release failed")))
+            .expect_err("failed wrapper release must be categorized");
+
+        assert_eq!(probe, "probe ready wrapper: probe failed");
+        assert_eq!(wait, "wait for ready wrapper exit: wait failed");
+        assert_eq!(release, "release ready wrapper: release failed");
+    }
+
+    #[test]
+    fn reader_and_writer_thread_failures_are_categorized() {
+        let writer = std::thread::spawn(|| -> io::Result<()> {
+            panic!("synthetic writer panic");
+        });
+        let writer_error =
+            join_writer(writer).expect_err("writer panic must become a typed failure");
+
+        let reader = std::thread::spawn(|| -> io::Result<CapturedStream> {
+            panic!("synthetic reader panic");
+        });
+        let reader_panic = join_reader(reader)
+            .map(drop)
+            .expect_err("reader panic must become a typed failure");
+
+        let reader =
+            std::thread::spawn(|| -> io::Result<CapturedStream> { Err(io::Error::other("read")) });
+        let reader_error = join_reader(reader)
+            .map(drop)
+            .expect_err("reader error must become a typed failure");
+
+        assert_eq!(writer_error.kind(), ValeErrorKind::ProcessFailure);
+        assert_eq!(writer_error.message(), "Vale stdin writer thread panicked");
+        assert_eq!(reader_panic.kind(), ValeErrorKind::ProcessFailure);
+        assert_eq!(reader_panic.message(), "Vale output reader thread panicked");
+        assert_eq!(reader_error.kind(), ValeErrorKind::ProcessFailure);
+        assert_eq!(reader_error.message(), "could not read Vale output: read");
     }
 
     fn assert_ready_process_tree_is_terminated(script: &str, wrapper_must_exit: bool) {
@@ -452,7 +645,7 @@ exit 0"#,
             ));
         });
 
-        let error = match run_process(
+        let error = run_process(
             Path::new("/bin/sh"),
             &[OsString::from("-c"), OsString::from(script)],
             &fixture.root,
@@ -460,10 +653,9 @@ exit 0"#,
             Duration::from_millis(5),
             1024,
             &CancellationToken::new(),
-        ) {
-            Ok(_) => panic!("ready process tree must time out"),
-            Err(error) => error,
-        };
+        )
+        .err()
+        .expect("ready process tree must time out");
 
         assert_eq!(error.kind(), ValeErrorKind::Timeout);
         let worker_pid = readiness
@@ -480,49 +672,77 @@ exit 0"#,
         wrapper_must_exit: bool,
     ) -> Result<u32, String> {
         let worker_pid = wait_for_worker_pid(path)?;
+        let wrapper_status = checked_child_status(child.try_wait(), "probe ready wrapper")?;
+        if wrapper_status.is_some() {
+            return Err(
+                "ready wrapper exited before its synthetic timeout was established".to_string(),
+            );
+        }
         if wrapper_must_exit {
+            checked_wrapper_release(fs::write(
+                path.with_file_name("allow-wrapper-exit"),
+                b"ready",
+            ))?;
             wait_for_wrapper_exit(child)?;
-        } else if child
-            .try_wait()
-            .map_err(|error| format!("probe ready wrapper: {error}"))?
-            .is_some()
-        {
-            return Err("ready wrapper exited before its synthetic timeout".to_string());
         }
         Ok(worker_pid)
     }
 
     fn wait_for_wrapper_exit(child: &mut std::process::Child) -> Result<(), String> {
-        let deadline = Instant::now() + Duration::from_secs(2);
+        wait_for_wrapper_exit_until(child, Instant::now() + Duration::from_secs(2))
+    }
+
+    fn wait_for_wrapper_exit_until(
+        child: &mut std::process::Child,
+        deadline: Instant,
+    ) -> Result<(), String> {
         loop {
-            match child.try_wait() {
-                Ok(Some(_)) => return Ok(()),
-                Ok(None) if Instant::now() < deadline => {}
-                Ok(None) => {
-                    return Err("ready wrapper did not exit before its deadline".to_string())
-                }
-                Err(error) => return Err(format!("wait for ready wrapper exit: {error}")),
-            }
             std::thread::sleep(Duration::from_millis(2));
+            match checked_child_status(child.try_wait(), "wait for ready wrapper exit")? {
+                Some(_) => return Ok(()),
+                None => {
+                    if Instant::now() >= deadline {
+                        return Err("ready wrapper did not exit before its deadline".to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    fn checked_child_status(
+        status: io::Result<Option<ExitStatus>>,
+        operation: &str,
+    ) -> Result<Option<ExitStatus>, String> {
+        match status {
+            Ok(status) => Ok(status),
+            Err(error) => Err(format!("{operation}: {error}")),
+        }
+    }
+
+    fn checked_wrapper_release(result: io::Result<()>) -> Result<(), String> {
+        match result {
+            Ok(()) => Ok(()),
+            Err(error) => Err(format!("release ready wrapper: {error}")),
         }
     }
 
     fn wait_for_worker_pid(path: &Path) -> Result<u32, String> {
-        let deadline = Instant::now() + Duration::from_secs(2);
+        wait_for_worker_pid_until(path, Instant::now() + Duration::from_secs(2))
+    }
+
+    fn wait_for_worker_pid_until(path: &Path, deadline: Instant) -> Result<u32, String> {
         loop {
             match fs::read_to_string(path) {
-                Ok(contents) => match contents.trim().parse() {
-                    Ok(pid) => return Ok(pid),
-                    Err(_) if Instant::now() < deadline => {}
-                    Err(_) => {
-                        return Err(
-                            "process-tree fixture recorded a non-numeric worker PID".to_string()
-                        )
+                Ok(contents) => {
+                    return contents.trim().parse().map_err(|_| {
+                        "process-tree fixture recorded a non-numeric worker PID".to_string()
+                    })
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    if Instant::now() >= deadline {
+                        return Err("process-tree worker did not become ready".to_string());
                     }
-                },
-                Err(error)
-                    if error.kind() == std::io::ErrorKind::NotFound
-                        && Instant::now() < deadline => {}
+                }
                 Err(error) => return Err(format!("read process-tree worker PID: {error}")),
             }
             std::thread::sleep(Duration::from_millis(2));
@@ -530,7 +750,11 @@ exit 0"#,
     }
 
     fn assert_worker_terminated(pid: u32) {
-        let deadline = Instant::now() + Duration::from_secs(2);
+        let survived = terminate_worker_if_needed(pid, Instant::now() + Duration::from_secs(2));
+        assert!(!survived, "timed-out process left worker {pid} alive");
+    }
+
+    fn terminate_worker_if_needed(pid: u32, deadline: Instant) -> bool {
         while process_exists(pid) && Instant::now() < deadline {
             std::thread::sleep(Duration::from_millis(2));
         }
@@ -540,7 +764,7 @@ exit 0"#,
                 .args(["-KILL", &pid.to_string()])
                 .status();
         }
-        assert!(!survived, "timed-out process left worker {pid} alive");
+        survived
     }
 
     fn process_exists(pid: u32) -> bool {
