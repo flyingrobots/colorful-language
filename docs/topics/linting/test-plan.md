@@ -300,9 +300,10 @@ Implemented and planned cases are listed below.
   timeout returns its exact typed category, and the recorded worker process no
   longer exists. *Evidence type:* process-tree regression test. *Evidence:*
   `colorful-vale`
-  `vale_adapter::{running_process_can_be_cancelled_after_start,
-  timeout_terminates_wrapper_process_group}`. *Tracking:*
-  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  `vale_adapter::running_process_can_be_cancelled_after_start` and
+  `process::tests::ready_worker_timeout_terminates_the_process_group`.
+  *Tracking:* [#157](https://github.com/flyingrobots/colorful-language/issues/157)
+  and [#240](https://github.com/flyingrobots/colorful-language/issues/240).
   *Status:* implemented.
 - **LINT-13g** — *Requirement:* LINT-13. *Behavior:* external rule identifiers
   enforce their exact ASCII length and namespace boundaries; malformed or
@@ -354,9 +355,9 @@ Implemented and planned cases are listed below.
   returns the exact timeout category and terminates the descendant rather than
   waiting for pipe closure. *Evidence type:* process-lifecycle regression test.
   *Evidence:* `colorful-vale`
-  `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`.
-  *Tracking:*
-  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  `process::tests::ready_descendant_timeout_remains_active_after_wrapper_exit`.
+  *Tracking:* [#157](https://github.com/flyingrobots/colorful-language/issues/157)
+  and [#240](https://github.com/flyingrobots/colorful-language/issues/240).
   *Status:* implemented.
 - **LINT-13k** — *Requirement:* LINT-13. *Behavior:* one Vale response indexes
   document line boundaries once before normalizing any alerts; individual alert
@@ -505,11 +506,11 @@ Implemented and planned cases are listed below.
   returns `ValeErrorKind::Timeout` and leaves the recorded worker absent. The
   same forced ordering covers a wrapper that waits and a wrapper that exits
   while its descendant owns the capture pipes. *Evidence type:* deterministic
-  process-lifecycle unit tests. *Planned evidence:* `colorful-vale`
+  process-lifecycle unit tests. *Evidence:* `colorful-vale`
   `process::tests::{ready_worker_timeout_terminates_the_process_group,
   ready_descendant_timeout_remains_active_after_wrapper_exit}`. *Tracking:*
   [#240](https://github.com/flyingrobots/colorful-language/issues/240).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered

@@ -21,9 +21,30 @@ const MAX_EXECUTABLE_BUSY_RETRIES: usize = 25;
 const ISOLATED_PATH: &str = "/usr/bin:/bin";
 
 #[cfg(test)]
+type AfterSpawnHook = Box<dyn FnOnce(&mut std::process::Child)>;
+
+#[cfg(test)]
 thread_local! {
+    static AFTER_SPAWN_BEFORE_DEADLINE: std::cell::RefCell<Option<AfterSpawnHook>> =
+        const { std::cell::RefCell::new(None) };
     static BEFORE_COMPLETION_ACCEPTANCE: std::cell::RefCell<Option<Box<dyn FnOnce()>>> =
         const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+fn set_after_spawn_before_deadline(hook: impl FnOnce(&mut std::process::Child) + 'static) {
+    AFTER_SPAWN_BEFORE_DEADLINE.with(|slot| {
+        *slot.borrow_mut() = Some(Box::new(hook));
+    });
+}
+
+#[cfg(test)]
+fn run_after_spawn_before_deadline(child: &mut std::process::Child) {
+    AFTER_SPAWN_BEFORE_DEADLINE.with(|slot| {
+        if let Some(hook) = slot.borrow_mut().take() {
+            hook(child);
+        }
+    });
 }
 
 #[cfg(test)]
@@ -159,6 +180,8 @@ pub(crate) fn run_process(
         }
     };
 
+    #[cfg(test)]
+    run_after_spawn_before_deadline(&mut child);
     let started = Instant::now();
     let mut status = None;
     let process_result = loop {
@@ -315,11 +338,12 @@ fn read_capped(mut reader: impl Read, limit: usize) -> io::Result<CapturedStream
 
 #[cfg(all(test, unix))]
 mod tests {
-    use std::cell::Cell;
+    use std::cell::{Cell, RefCell};
     use std::ffi::OsString;
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::process::{Command, Stdio};
+    use std::rc::Rc;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{Duration, Instant};
 
@@ -398,6 +422,7 @@ mod tests {
 ) >/dev/null 2>&1 &
 printf '%s\n' "$!" > worker.pid
 wait"#,
+            false,
         );
     }
 
@@ -410,14 +435,21 @@ wait"#,
 ) &
 printf '%s\n' "$!" > worker.pid
 exit 0"#,
+            true,
         );
     }
 
-    fn assert_ready_process_tree_is_terminated(script: &str) {
+    fn assert_ready_process_tree_is_terminated(script: &str, wrapper_must_exit: bool) {
         let fixture = ProcessTreeFixture::new();
         let ready_path = fixture.worker_pid.clone();
-        set_after_spawn_before_deadline(move || {
-            wait_for_worker_pid(&ready_path);
+        let readiness = Rc::new(RefCell::new(None));
+        let hook_readiness = Rc::clone(&readiness);
+        set_after_spawn_before_deadline(move |child| {
+            *hook_readiness.borrow_mut() = Some(wait_for_ready_process_tree(
+                &ready_path,
+                child,
+                wrapper_must_exit,
+            ));
         });
 
         let error = match run_process(
@@ -434,22 +466,64 @@ exit 0"#,
         };
 
         assert_eq!(error.kind(), ValeErrorKind::Timeout);
-        assert_worker_terminated(wait_for_worker_pid(&fixture.worker_pid));
+        let worker_pid = readiness
+            .borrow_mut()
+            .take()
+            .expect("worker-readiness hook must run")
+            .expect("worker must become ready before the synthetic deadline");
+        assert_worker_terminated(worker_pid);
     }
 
-    fn wait_for_worker_pid(path: &Path) -> u32 {
+    fn wait_for_ready_process_tree(
+        path: &Path,
+        child: &mut std::process::Child,
+        wrapper_must_exit: bool,
+    ) -> Result<u32, String> {
+        let worker_pid = wait_for_worker_pid(path)?;
+        if wrapper_must_exit {
+            wait_for_wrapper_exit(child)?;
+        } else if child
+            .try_wait()
+            .map_err(|error| format!("probe ready wrapper: {error}"))?
+            .is_some()
+        {
+            return Err("ready wrapper exited before its synthetic timeout".to_string());
+        }
+        Ok(worker_pid)
+    }
+
+    fn wait_for_wrapper_exit(child: &mut std::process::Child) -> Result<(), String> {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            match child.try_wait() {
+                Ok(Some(_)) => return Ok(()),
+                Ok(None) if Instant::now() < deadline => {}
+                Ok(None) => {
+                    return Err("ready wrapper did not exit before its deadline".to_string())
+                }
+                Err(error) => return Err(format!("wait for ready wrapper exit: {error}")),
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        }
+    }
+
+    fn wait_for_worker_pid(path: &Path) -> Result<u32, String> {
         let deadline = Instant::now() + Duration::from_secs(2);
         loop {
             match fs::read_to_string(path) {
                 Ok(contents) => match contents.trim().parse() {
-                    Ok(pid) => return pid,
+                    Ok(pid) => return Ok(pid),
                     Err(_) if Instant::now() < deadline => {}
-                    Err(_) => panic!("process-tree fixture recorded a non-numeric worker PID"),
+                    Err(_) => {
+                        return Err(
+                            "process-tree fixture recorded a non-numeric worker PID".to_string()
+                        )
+                    }
                 },
                 Err(error)
                     if error.kind() == std::io::ErrorKind::NotFound
                         && Instant::now() < deadline => {}
-                Err(error) => panic!("read process-tree worker PID: {error}"),
+                Err(error) => return Err(format!("read process-tree worker PID: {error}")),
             }
             std::thread::sleep(Duration::from_millis(2));
         }

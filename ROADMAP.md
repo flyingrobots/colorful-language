@@ -172,11 +172,11 @@ observe public-contract regressions before they ship.
   a workspace gate
   [#230](https://github.com/flyingrobots/colorful-language/issues/230).
   <!-- roadmap-primary: parked #230 -->
-- **Open process-test determinism:** replace the Vale timeout fixture's
-  scheduler race with an explicit worker-ready seam while preserving the real
-  timeout and descendant-cleanup postconditions
+- **Delivered process-test determinism:** replace the Vale timeout fixture's
+  scheduler race with an explicit test-only worker-ready seam while preserving
+  production timeout and descendant-cleanup postconditions
   [#240](https://github.com/flyingrobots/colorful-language/issues/240).
-  <!-- roadmap-primary: active #240 -->
+  <!-- roadmap-primary: delivered #240 -->
 
 **Exit signal:** the documented local gate and the protected-branch gate name
 the same reproducible evidence; public binary transport and API examples are

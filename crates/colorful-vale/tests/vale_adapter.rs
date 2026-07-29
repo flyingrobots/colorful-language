@@ -437,49 +437,6 @@ fn timeout_and_process_failure_are_distinct() {
     );
 }
 
-#[test]
-fn timeout_terminates_wrapper_process_group() {
-    let fixture = FakeVale::new(
-        "3.14.2",
-        r#"(
-  trap '' HUP TERM
-  while :; do :; done
-) >/dev/null 2>&1 &
-printf '%s\n' "$!" > '{FAKE_VALE_WORKER_PID}'
-wait"#,
-    );
-    let analyzer = ValeAnalyzer::discover(fixture.config().with_timeout(Duration::from_millis(50)))
-        .expect("discover wrapper fixture");
-
-    let error = analyzer
-        .analyze(SOURCE, &CancellationToken::new())
-        .expect_err("wrapper analysis must time out");
-    assert_eq!(error.kind(), ValeErrorKind::Timeout);
-
-    assert_worker_terminated(&fixture);
-}
-
-#[test]
-fn timeout_remains_active_while_descendants_hold_output_pipes() {
-    let fixture = FakeVale::new(
-        "3.14.2",
-        r#"(
-  trap '' HUP TERM
-  /bin/sleep 0.5
-) &
-printf '%s\n' "$!" > '{FAKE_VALE_WORKER_PID}'
-exit 0"#,
-    );
-    let analyzer = ValeAnalyzer::discover(fixture.config().with_timeout(Duration::from_millis(50)))
-        .expect("discover exited-wrapper fixture");
-
-    let error = analyzer
-        .analyze(SOURCE, &CancellationToken::new())
-        .expect_err("inherited output pipes must remain under the timeout");
-    assert_eq!(error.kind(), ValeErrorKind::Timeout);
-    assert_worker_terminated(&fixture);
-}
-
 fn assert_worker_terminated(fixture: &FakeVale) {
     let recorded = Instant::now() + Duration::from_secs(2);
     let worker_pid = loop {
