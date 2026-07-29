@@ -288,6 +288,33 @@ test("requires tag admission before provenance-producing jobs", () => {
   );
 });
 
+test("requires final validation before native provenance", () => {
+  const admissionCommands = [
+    "bash scripts/release-profile-check.sh",
+    "node scripts/check-editor-version-policy.mjs",
+    CHECK_COMMAND,
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --all-targets --all-features -- -D warnings",
+    "cargo test --all --locked",
+    "cargo build --release --locked",
+    "bash scripts/package-witness.sh",
+  ];
+  for (const omitted of admissionCommands) {
+    const snapshot = validSnapshot();
+    snapshot.workflow.jobs["validate-release"].steps.push(
+      ...admissionCommands
+        .filter((command) => command !== omitted)
+        .map((run) => ({ run })),
+    );
+    snapshot.workflow.jobs.release.steps.push({ run: omitted });
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /admission must complete all final validation/u,
+      `${omitted} may not run only after native artifacts`,
+    );
+  }
+});
+
 test("requires matrix values to enter shell through step-scoped env", () => {
   const buildInjection = validSnapshot();
   const build = buildInjection.workflow.jobs["binary-artifacts"].steps.find(
