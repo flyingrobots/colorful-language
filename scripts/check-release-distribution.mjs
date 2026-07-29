@@ -176,6 +176,14 @@ function stepsIncludeCommand(steps, command) {
   );
 }
 
+function shellCommandLines(source) {
+  return String(source)
+    .replace(/[ \t]*\\\r?\n[ \t]*/gu, " ")
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
 function validateGateCommands(gates, names, command) {
   requiredRecord(gates, "release distribution gates");
   const observed = Object.keys(gates).toSorted();
@@ -372,19 +380,27 @@ function validateReleaseJob(job) {
     context,
   );
   const homebrewSource = String(homebrew.run ?? "");
+  const homebrewLines = shellCommandLines(homebrewSource);
   for (const required of [
+    "set -euo pipefail",
     'version="${GITHUB_REF_NAME#v}"',
-    "node scripts/generate-homebrew-formula.mjs",
-    '--version "$version"',
-    "--dist-dir dist",
-    "> dist/colorful.rb",
     "ruby -c dist/colorful.rb",
   ]) {
-    if (!homebrewSource.includes(required)) {
+    if (homebrewLines.filter((line) => line === required).length !== 1) {
       throw new Error(
         `${context} Homebrew generation must include ${required}`,
       );
     }
+  }
+  const generatorCommand =
+    "node scripts/generate-homebrew-formula.mjs " +
+    '--version "$version" --dist-dir dist > dist/colorful.rb';
+  if (
+    homebrewLines.filter((line) => line === generatorCommand).length !== 1
+  ) {
+    throw new Error(
+      `${context} Homebrew generation must invoke the exact generator command once`,
+    );
   }
   if (/\bcargo\s+(?:build|install|package)\b/u.test(homebrewSource)) {
     throw new Error(
@@ -443,10 +459,13 @@ function validateReleaseJob(job) {
     context,
   );
   requirePinnedAction(attest, "actions/attest", context);
-  const attested = String(attest.with?.["subject-path"] ?? "");
+  const attested = String(attest.with?.["subject-path"] ?? "")
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
   if (
-    !attested.includes("*.vsix") ||
-    !attested.includes("*zed-source.tar.gz") ||
+    !attested.includes("target/editor-smoke/*.vsix") ||
+    !attested.includes("dist/*zed-source.tar.gz") ||
     !attested.includes("dist/colorful.rb")
   ) {
     throw new Error(

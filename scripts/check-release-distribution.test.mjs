@@ -143,6 +143,7 @@ function validSnapshot() {
             {
               name: "Generate Homebrew formula",
               run:
+                "set -euo pipefail\n" +
                 'version="${GITHUB_REF_NAME#v}"\n' +
                 "node scripts/generate-homebrew-formula.mjs " +
                 '--version "$version" --dist-dir dist ' +
@@ -508,7 +509,7 @@ test("rejects native artifact paths that can omit release assets", () => {
 test("derives and attests Homebrew formulae from downloaded native assets", () => {
   for (const [mutation, expected] of [
     ["missing-step", /exactly one 'Generate Homebrew formula' step/u],
-    ["wrong-dist", /Homebrew generation must include --dist-dir dist/u],
+    ["wrong-dist", /exact generator command/u],
     ["rebuild", /must not rebuild native artifacts/u],
     ["before-download", /must preserve the reviewed release step order/u],
     [
@@ -550,6 +551,50 @@ test("derives and attests Homebrew formulae from downloaded native assets", () =
       () => validateReleaseDistribution(snapshot),
       expected,
       `${mutation} mutation must reach its specific invariant`,
+    );
+  }
+});
+
+test("rejects Homebrew command and attestation prefix bypasses", () => {
+  for (const [mutation, expected] of [
+    ["dist-prefix", /exact generator command/u],
+    ["output-suffix", /exact generator command/u],
+    ["duplicate-command", /exact generator command/u],
+    [
+      "attestation-suffix",
+      /must attest the formula, VSIX, and Zed source archive/u,
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    const formula = releaseStep(snapshot, "Generate Homebrew formula");
+    if (mutation === "dist-prefix") {
+      formula.run = formula.run.replace(
+        "--dist-dir dist",
+        "--dist-dir dist-evil",
+      );
+    } else if (mutation === "output-suffix") {
+      formula.run = formula.run.replace(
+        "> dist/colorful.rb",
+        "> dist/colorful.rb.evil",
+      );
+    } else if (mutation === "duplicate-command") {
+      formula.run +=
+        "\nnode scripts/generate-homebrew-formula.mjs " +
+        '--version "$version" --dist-dir dist > dist/colorful.rb\n';
+    } else {
+      const attest = releaseStep(
+        snapshot,
+        "Attest Homebrew and editor artifacts",
+      );
+      attest.with["subject-path"] = attest.with["subject-path"].replace(
+        "dist/colorful.rb",
+        "dist/colorful.rb.evil",
+      );
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${mutation} must not satisfy the exact release policy`,
     );
   }
 });
