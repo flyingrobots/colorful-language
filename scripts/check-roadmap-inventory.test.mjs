@@ -183,6 +183,35 @@ test("ignores table-like examples outside the accountability table", () => {
   }
 });
 
+test("rejects a table hidden by an invalid backtick-fence interpretation", () => {
+  const hiddenTable = [
+    "```markdown`",
+    "Visible text, not a canonical table.",
+    "```",
+    "| Mechanism | Hidden table |",
+    "| --- | --- |",
+    "| Parser ports | Hidden by the real Markdown fence. |",
+  ].join("\n");
+  expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
+    source.replace(/\n\| Mechanism \|[\s\S]*$/u, `\n${hiddenTable}\n`),
+  );
+
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: `${roadmap}
+~~~markdown\`literal
+| Mechanism | Example only |
+| --- | --- |
+| Parser ports | Hidden by a valid tilde fence. |
+~~~
+`,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("ignores multiline HTML comments that start after visible text", () => {
   const commentedTable = [
     "Visible introduction. <!--",

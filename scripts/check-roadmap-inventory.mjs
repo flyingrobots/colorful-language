@@ -289,8 +289,11 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       continue;
     }
 
-    const openingFence = line.match(/^ {0,3}(`{3,}|~{3,}).*$/u);
-    if (openingFence !== null) {
+    const openingFence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/u);
+    if (
+      openingFence !== null &&
+      (openingFence[1][0] === "~" || !openingFence[2].includes("`"))
+    ) {
       if (accountabilityTableState === "rows") {
         accountabilityTableState = "complete";
       } else if (accountabilityTableState === "delimiter") {
