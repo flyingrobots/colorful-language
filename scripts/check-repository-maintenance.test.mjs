@@ -29,6 +29,7 @@ const DELIVERY_REFERENCE = [
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
 ].join("\n");
 const RELEASE_TRACKING_COMMANDS = [
+  "gh issue create",
   '--title "[release] v0.4.0"',
   "--label documentation",
   "--label slice",
@@ -570,6 +571,21 @@ test("rejects a noncompliant release-tracker label set", () => {
       );
     }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
   }
+});
+
+test("does not accept release-tracker labels outside the command", () => {
+  expectCode(({ deliveryReferences }) => {
+    deliveryReferences.releasing =
+      deliveryReferences.releasing
+        .replace("--label area:core", "")
+        .replace(
+          "bash scripts/release-prep.sh",
+          [
+            "bash scripts/release-prep.sh",
+            "Unrelated example: --label area:core",
+          ].join("\n"),
+        );
+  }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
 });
 
 test("accepts a future aligned release example without policy code edits", () => {
