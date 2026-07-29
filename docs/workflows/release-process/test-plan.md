@@ -178,7 +178,8 @@ Verification for release preparation, tag automation, and release witnesses.
   `requires published registry bytes to match the smoke-tested VSIX`, and
   `requires exact lockfile-backed publisher tools`;
   `scripts/check-editor-package-smoke.test.mjs`
-  `VSIX packaging is reproducible across ambient build times`. *Status:*
+  `VSIX packaging is reproducible across ambient build times` and
+  `clean gates install editor dependencies before package policy`. *Status:*
   implemented in workflow; public registry evidence remains planned.
 - **REL-14a** — *Requirement:* REL-14. *Behavior:* the repository-owned
   `editors/zed` path and its staged clean-room copy carry the same accepted

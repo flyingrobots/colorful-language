@@ -65,8 +65,8 @@ bash scripts/check-rust-dependency-policy.test.sh
 bash scripts/check-rust-dependency-policy.sh
 node scripts/check-vscode-dependency-policy.test.mjs
 node scripts/check-vscode-dependency-policy.mjs
-node --test scripts/check-editor-package-smoke.test.mjs
 npm --prefix editors/vscode ci
+node --test scripts/check-editor-package-smoke.test.mjs
 npm --prefix editors/vscode audit --audit-level=high
 bash scripts/ir-witness.sh
 bash scripts/check-independent-consumer.sh
