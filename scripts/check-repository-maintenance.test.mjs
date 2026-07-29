@@ -86,6 +86,35 @@ function fixture() {
     },
   };
   return {
+    repositoryProfile: {
+      version: 1,
+      homepage:
+        "https://github.com/flyingrobots/colorful-language#readme",
+      delivery_tracker: "github-issues-and-milestones",
+      discussions: {
+        supported_intake: false,
+        owner: null,
+        promoted_categories: [],
+      },
+      deployment: {
+        environment: null,
+        owner: "@flyingrobots",
+        credential_owner: "@flyingrobots",
+        rollback_owner: "@flyingrobots",
+        credential_secrets: [
+          "CARGO_REGISTRY_TOKEN",
+          "OVSX_PAT",
+          "VSCE_PAT",
+        ],
+        evidence: [
+          "bash scripts/release-prep.sh",
+          "node scripts/verify-editor-publication.mjs",
+          "npm --prefix editors/vscode run smoke:package",
+        ],
+        create_environment_when:
+          "a real release is scheduled and all credentials can move atomically",
+      },
+    },
     bugForm: {
       name: "Bug report",
       description: "Report a reproducible defect",
@@ -373,6 +402,22 @@ function addAdvisoryException(candidate) {
 
 test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
+});
+
+test("rejects repository homepage drift", () => {
+  expectCode(({ repositoryProfile }) => {
+    repositoryProfile.homepage = "https://example.invalid";
+  }, "E_REPOSITORY_PROFILE");
+});
+
+test("rejects deployment credentials without a named custodian", () => {
+  expectCode(({ repositoryProfile }) => {
+    repositoryProfile.deployment.credential_owner = null;
+  }, "E_DEPLOYMENT_OWNERSHIP");
+});
+
+test("rejects promoted Discussion routes without supported intake", () => {
+  expectCode(() => {}, "E_DISCUSSION_ROUTE");
 });
 
 test("accepts reviewed workflow-security exceptions in any order", () => {
