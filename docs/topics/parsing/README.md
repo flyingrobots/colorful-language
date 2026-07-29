@@ -40,6 +40,35 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
   *Known limitations* below); the shipped release binaries do not have this
   limitation, so this is the guarantee that actually holds for them.
 
+## Markdown prose view
+
+`colorful_parse::markdown::mask_non_prose` is a format adapter, not a second
+prose grammar. It uses CommonMark structure to replace fenced and indented code
+blocks, inline code, opening YAML/TOML front matter, HTML blocks, inline HTML
+markup, link destinations, and full or collapsed reference identifiers with a
+coordinate-equivalent mask before the existing `ProseParser` runs. Duplicate
+reference definitions and destinations with quoted titles follow the same
+parser-admitted boundary. Link labels, shortcut-reference labels, and ordinary
+Markdown text remain analyzable. An unmatched inline-code or front-matter
+opener does not suppress the rest of the document.
+
+Every replacement preserves the original byte length, `LF`/`CRLF`/bare-`CR`
+line endings, and UTF-16 length before retained prose. ASCII, two-byte BMP,
+three-byte BMP, and astral scalars each receive a representation with the same
+byte and UTF-16 width. Inline exclusions become whitespace. Block exclusions
+retain one unstyled sentence separator so findings and contextual
+classification cannot cross code, metadata, HTML, or reference-definition
+blocks. This lets CLI findings and LSP diagnostics or semantic tokens project
+their spans directly onto the unmodified source. The LSP verifies coordinate
+compatibility again before projection and emits
+`colorful/invalid-source-view` instead of projecting an incompatible view.
+Plain prose returns as a borrowed string without allocation.
+
+The Markdown module and its `pulldown-cmark` dependency are behind
+`colorful-parse`'s opt-in `markdown` feature. The CLI and LSP adapters enable
+that feature explicitly; consumers using only `ProseParser` do not pull the
+Markdown dependency into their default graph.
+
 ## Invariants
 
 - Leaf spans are non-empty, in bounds, on `char` boundaries, and strictly

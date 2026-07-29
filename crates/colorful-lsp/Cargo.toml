@@ -25,7 +25,7 @@ test = true
 
 [dependencies]
 colorful-core = { workspace = true }
-colorful-parse = { workspace = true }
+colorful-parse = { workspace = true, features = ["markdown"] }
 colorful-lexicon = { workspace = true }
 colorful-lint = { workspace = true }
 colorful-ir = { workspace = true }

@@ -16,7 +16,9 @@ use std::time::Duration;
 
 use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_lint::ProseLinter;
-use colorful_lsp::{analyze_document, legend_token_types, DocumentAnalysis};
+use colorful_lsp::{
+    analyze_document_for_format, legend_token_types, DocumentAnalysis, DocumentFormat,
+};
 use colorful_parse::ProseParser;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::{
@@ -43,9 +45,10 @@ struct Backend {
 
 impl Backend {
     fn new(client: Client) -> Self {
-        let compute: AnalysisComputer = Arc::new(|text, _generation| {
-            analyze_document(
+        let compute: AnalysisComputer = Arc::new(|text, format, _generation| {
+            analyze_document_for_format(
                 &text,
+                format,
                 &ProseParser::new(),
                 &default_annotator(),
                 &ProseLinter::new(),
@@ -122,7 +125,13 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let doc = params.text_document;
         self.documents
-            .open(doc.uri, &doc.text, doc.version, self.analysis_publisher())
+            .open(
+                doc.uri,
+                &doc.text,
+                doc.version,
+                DocumentFormat::from_language_id(&doc.language_id),
+                self.analysis_publisher(),
+            )
             .await;
     }
 

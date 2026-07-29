@@ -9,9 +9,15 @@ authors.workspace = true
 keywords = ["prose", "parser", "segmenter", "english", "tokenizer"]
 categories = ["text-processing", "parser-implementations"]
 
+[features]
+default = []
+markdown = ["dep:pulldown-cmark"]
+
 [dependencies]
 colorful-core = { workspace = true }
 logos = { workspace = true }
+pulldown-cmark = { workspace = true, optional = true }
 
 [dev-dependencies]
 colorful-lexicon = { workspace = true }
+toml = { workspace = true }

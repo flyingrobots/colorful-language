@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Coordinate-preserving Markdown prose analysis.** The CLI `.md`/`.markdown`
+  lint and ANSI file paths and LSP `markdown` language ID now share one format
+  adapter outside `colorful-core`. Fenced and indented code, inline code,
+  opening YAML/TOML front matter, parser-admitted link destinations and
+  reference identifiers (including quoted titles and duplicate reference
+  definitions), and HTML blocks receive a byte-/UTF-16-equivalent mask before
+  one parse, classification, and lint pass. Block masks retain an unstyled
+  sentence boundary, and the LSP fails closed if the analysis view cannot
+  project safely onto the source.
+  Diagnostics and semantic roles therefore exclude reviewed non-prose regions
+  without moving source positions or bridging excluded blocks; Plain Text,
+  stdin, and public string colorization helpers keep the historical
+  whole-document behavior. Canonical IR and `diagnose --json` also remain
+  format-neutral whole-source projections. The `colorful-parse` Markdown module
+  is opt-in; CLI/LSP enable it explicitly. Unit, cross-surface, real stdio, real
+  CLI, and packaged-editor fixtures pin the policy across incremental
+  generations.
 - **Packaged editor and LSP lifecycle evidence.** One checked-in JSON-RPC
   transcript now drives the real `colorful-lsp` binary through the complete
   open/change/tokens/diagnostics/close/shutdown lifecycle for Plain Text and

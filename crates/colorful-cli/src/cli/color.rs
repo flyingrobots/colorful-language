@@ -1,4 +1,5 @@
 use super::args::{parse_input_args, Command, ParseOutcome};
+use super::format::analysis_source_for;
 use colorful_core::{ClassificationError, PosClass, ValidatedClassification};
 use colorful_lexicon::{ContextualOpenClassAnnotator, SeedOpenClassLexicon};
 use colorful_parse::ProseParser;
@@ -53,12 +54,24 @@ pub fn colorize(source: &str, color: bool) -> String {
 /// Returns a typed, path-addressed [`ClassificationError`] if the built-in
 /// parser or annotator emits malformed spans or inconsistent tree/token data.
 pub fn try_colorize(source: &str, color: bool) -> Result<String, ClassificationError> {
+    try_colorize_for_name(None, source, color)
+}
+
+fn try_colorize_for_name(
+    name: Option<&str>,
+    source: &str,
+    color: bool,
+) -> Result<String, ClassificationError> {
     if !color {
         return Ok(source.to_string());
     }
 
-    let classification =
-        ValidatedClassification::from_ports(source, &ProseParser::new(), &default_annotator())?;
+    let analysis_source = analysis_source_for(name, source);
+    let classification = ValidatedClassification::from_ports(
+        &analysis_source,
+        &ProseParser::new(),
+        &default_annotator(),
+    )?;
     let tokens = classification.tokens();
 
     let mut out = String::with_capacity(source.len() + tokens.len() * 8);
@@ -69,7 +82,9 @@ pub fn try_colorize(source: &str, color: bool) -> Result<String, ClassificationE
             out.push_str(source.get(prev..token.span.start).unwrap_or(""));
         }
         let text = token.span.slice(source);
-        if let Some(code) = sgr(token.class) {
+        let analysis_text = token.span.slice(&analysis_source);
+        let code = (analysis_text == text).then(|| sgr(token.class)).flatten();
+        if let Some(code) = code {
             out.push_str("\x1b[");
             out.push_str(code);
             out.push('m');
@@ -110,8 +125,8 @@ where
         parsed.has_flag("--no-color"),
         std::env::var_os("NO_COLOR").is_some(),
     );
-    let input = match parsed.path {
-        Some(p) => std::fs::read_to_string(p)?,
+    let input = match parsed.path.as_deref() {
+        Some(path) => std::fs::read_to_string(path)?,
         None => {
             let mut buf = String::new();
             io::stdin().read_to_string(&mut buf)?;
@@ -119,7 +134,8 @@ where
         }
     };
     let mut stdout = io::stdout().lock();
-    let output = try_colorize(&input, color).map_err(classification_io_error)?;
+    let output = try_colorize_for_name(parsed.path.as_deref(), &input, color)
+        .map_err(classification_io_error)?;
     stdout.write_all(output.as_bytes())?;
     stdout.flush()
 }

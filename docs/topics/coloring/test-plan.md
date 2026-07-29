@@ -62,6 +62,9 @@ Requirements:
   typed validation boundary before an LSP or IR adapter interprets its spans.
 - **COL-21** The public `Annotator` port has a concise runnable example that
   classifies parsed structure without duplicating the coloring reference.
+- **COL-22** The default CLI file path and LSP analyze the same reviewed
+  Markdown prose regions; public string helpers and stdin retain historical
+  Plain Text behavior because they carry no format metadata.
 
 ## Cases
 
@@ -97,6 +100,17 @@ Requirements:
   source; color disabled is an exact passthrough. *Oracle:* string equality.
   *Evidence:* `colorful-cli` `tests::gaps_and_newlines_are_preserved_exactly`,
   `tests::passthrough_when_color_disabled`, `tests::decide_color_honors_flag_and_env`.
+  *Status:* implemented.
+- **COL-22a** — *Requirement:* COL-22. *Behavior:* `colorful FILE.md` and
+  `colorful FILE.markdown` style prose while leaving reviewed code, metadata,
+  link-destination, and HTML regions byte-for-byte unchanged; a non-Markdown
+  file and stdin still analyze the whole source. *Oracle:* exact ANSI presence
+  in retained prose, exact excluded-region bytes, and unchanged Plain Text
+  controls. *Evidence type:* real-binary and pure unit tests. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-cli` tests
+  `binary_contract::markdown_file_colorization_excludes_non_prose_regions` and
+  `cli::tests::file_format_detection_is_extension_bounded_and_case_insensitive`.
   *Status:* implemented.
 - **COL-4a** — *Requirement:* COL-4. *Behavior:* single-line and multi-line tokens
   are delta-encoded; columns count UTF-16 code units. *Oracle:* `SemanticToken`

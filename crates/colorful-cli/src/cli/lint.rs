@@ -1,5 +1,6 @@
 use super::args::{parse_input_args, Command, ParseOutcome};
 use super::color::{classification_io_error, default_annotator};
+use super::format::analysis_source_for;
 use colorful_core::{Analyzer, Finding, Severity, ValidatedClassification};
 use colorful_lint::ProseLinter;
 use colorful_parse::ProseParser;
@@ -50,11 +51,18 @@ where
 /// code. Factored out of [`run_lint`] so the format and the exit decision are
 /// testable without touching the filesystem.
 pub(super) fn lint_to_writer<W: Write>(name: &str, source: &str, out: &mut W) -> io::Result<bool> {
-    let classification =
-        ValidatedClassification::from_ports(source, &ProseParser::new(), &default_annotator())
-            .map_err(classification_io_error)?;
-    let findings =
-        ProseLinter::new().analyze(source, classification.tree(), classification.tokens());
+    let analysis_source = analysis_source_for(Some(name), source);
+    let classification = ValidatedClassification::from_ports(
+        &analysis_source,
+        &ProseParser::new(),
+        &default_annotator(),
+    )
+    .map_err(classification_io_error)?;
+    let findings = ProseLinter::new().analyze(
+        &analysis_source,
+        classification.tree(),
+        classification.tokens(),
+    );
     out.write_all(lint_report(name, source, &findings).as_bytes())?;
     Ok(!findings.is_empty())
 }

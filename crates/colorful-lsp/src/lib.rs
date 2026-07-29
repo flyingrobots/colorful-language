@@ -24,6 +24,30 @@ use tower_lsp::lsp_types::{
     SemanticTokenType,
 };
 
+/// The source format that determines which document regions contain prose.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DocumentFormat {
+    /// Analyze the complete document.
+    PlainText,
+    /// Analyze Markdown prose while excluding reviewed syntax regions.
+    Markdown,
+}
+
+impl DocumentFormat {
+    /// Map an LSP language identifier to the supported document format.
+    ///
+    /// Unknown identifiers deliberately retain the historical Plain Text
+    /// behavior rather than silently dropping analysis.
+    #[must_use]
+    pub fn from_language_id(language_id: &str) -> Self {
+        if language_id.eq_ignore_ascii_case("markdown") {
+            Self::Markdown
+        } else {
+            Self::PlainText
+        }
+    }
+}
+
 /// The semantic-token legend, in index order, derived from the
 /// `colorful.vocabulary/v1` manifest (the distinct LSP token types its roles
 /// project to). The default contextual path is a *skeleton* highlighter: it
@@ -193,6 +217,25 @@ impl DocumentAnalysis {
         )
     }
 
+    /// Degrade a coordinate-incompatible analysis view into one stable
+    /// diagnostic before any span is projected onto the source document.
+    #[must_use]
+    pub fn invalid_source_view() -> Self {
+        Self::new(
+            vec![],
+            vec![Diagnostic {
+                range: Range::new(Position::new(0, 0), Position::new(0, 0)),
+                severity: Some(DiagnosticSeverity::ERROR),
+                code: Some(NumberOrString::String(
+                    "colorful/invalid-source-view".to_string(),
+                )),
+                source: Some("colorful".to_string()),
+                message: "analysis view does not preserve source coordinates".to_string(),
+                ..Diagnostic::default()
+            }],
+        )
+    }
+
     /// The delta-encoded semantic tokens for this document generation.
     #[must_use]
     pub fn semantic_tokens(&self) -> &[SemanticToken] {
@@ -226,11 +269,139 @@ where
     A: Annotator,
     An: Analyzer,
 {
-    let classification = ValidatedClassification::from_ports(text, parser, annotator)?;
-    let semantic_tokens = semantic_tokens_from(text, classification.tokens());
-    let findings = analyzer.analyze(text, classification.tree(), classification.tokens());
-    let diagnostics = diagnostics_from(text, findings);
-    Ok(DocumentAnalysis::new(semantic_tokens, diagnostics))
+    analyze_document_sources(text, text, parser, annotator, analyzer)
+}
+
+/// Analyze one document according to its source format.
+///
+/// # Errors
+///
+/// Returns a typed [`ClassificationError`] if the parser or annotator emits
+/// malformed public tree/token data.
+pub fn analyze_document_for_format<P, A, An>(
+    text: &str,
+    format: DocumentFormat,
+    parser: &P,
+    annotator: &A,
+    analyzer: &An,
+) -> Result<DocumentAnalysis, ClassificationError>
+where
+    P: Parser,
+    A: Annotator,
+    An: Analyzer,
+{
+    let analysis_text = match format {
+        DocumentFormat::PlainText => std::borrow::Cow::Borrowed(text),
+        DocumentFormat::Markdown => colorful_parse::markdown::mask_non_prose(text),
+    };
+    analyze_document_sources(text, &analysis_text, parser, annotator, analyzer)
+}
+
+fn analyze_document_sources<P, A, An>(
+    source_text: &str,
+    analysis_text: &str,
+    parser: &P,
+    annotator: &A,
+    analyzer: &An,
+) -> Result<DocumentAnalysis, ClassificationError>
+where
+    P: Parser,
+    A: Annotator,
+    An: Analyzer,
+{
+    let shares_storage = source_text.len() == analysis_text.len()
+        && std::ptr::eq(source_text.as_ptr(), analysis_text.as_ptr());
+    if !shares_storage && !source_views_share_coordinates(source_text, analysis_text) {
+        return Ok(DocumentAnalysis::invalid_source_view());
+    }
+
+    let classification = ValidatedClassification::from_ports(analysis_text, parser, annotator)?;
+    if shares_storage {
+        let semantic_tokens = semantic_tokens_from(source_text, classification.tokens());
+        let findings = analyzer.analyze(
+            analysis_text,
+            classification.tree(),
+            classification.tokens(),
+        );
+        let diagnostics = diagnostics_from(source_text, findings);
+        return Ok(DocumentAnalysis::new(semantic_tokens, diagnostics));
+    }
+
+    ValidatedClassification::new(
+        source_text,
+        classification.tree().clone(),
+        classification.tokens().to_vec(),
+    )
+    .map(|source_projection| {
+        let semantic_tokens = semantic_tokens_from(source_text, source_projection.tokens());
+        let findings = analyzer.analyze(
+            analysis_text,
+            classification.tree(),
+            classification.tokens(),
+        );
+        let diagnostics = diagnostics_from(source_text, findings);
+        DocumentAnalysis::new(semantic_tokens, diagnostics)
+    })
+}
+
+fn source_views_share_coordinates(source_text: &str, analysis_text: &str) -> bool {
+    if source_text.len() != analysis_text.len() {
+        return false;
+    }
+    let source_lines = LineIndex::new(source_text);
+    let analysis_lines = LineIndex::new(analysis_text);
+    if source_lines.line_starts != analysis_lines.line_starts {
+        return false;
+    }
+
+    let mut source_chars = source_text.chars();
+    let mut analysis_chars = analysis_text.chars();
+    let mut source_bytes = 0usize;
+    let mut analysis_bytes = 0usize;
+    let mut source_utf16 = 0usize;
+    let mut analysis_utf16 = 0usize;
+
+    while source_bytes < source_text.len() || analysis_bytes < analysis_text.len() {
+        match source_bytes.cmp(&analysis_bytes) {
+            std::cmp::Ordering::Equal => {
+                let source_character = source_chars
+                    .next()
+                    .expect("source bytes remain while its byte cursor is in bounds");
+                let analysis_character = analysis_chars
+                    .next()
+                    .expect("analysis bytes remain while its byte cursor is in bounds");
+                source_bytes += source_character.len_utf8();
+                source_utf16 += source_character.len_utf16();
+                analysis_bytes += analysis_character.len_utf8();
+                analysis_utf16 += analysis_character.len_utf16();
+            }
+            std::cmp::Ordering::Less => {
+                let character = source_chars
+                    .next()
+                    .expect("source bytes remain while its byte cursor is in bounds");
+                source_bytes += character.len_utf8();
+                source_utf16 += character.len_utf16();
+            }
+            std::cmp::Ordering::Greater => {
+                let character = analysis_chars
+                    .next()
+                    .expect("analysis bytes remain while its byte cursor is in bounds");
+                analysis_bytes += character.len_utf8();
+                analysis_utf16 += character.len_utf16();
+            }
+        }
+        if source_bytes == analysis_bytes {
+            if source_utf16 != analysis_utf16 {
+                return false;
+            }
+            source_utf16 = 0;
+            analysis_utf16 = 0;
+        }
+    }
+
+    source_bytes == analysis_bytes
+        && source_chars.next().is_none()
+        && analysis_chars.next().is_none()
 }
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
@@ -374,7 +545,7 @@ pub fn apply_change(rope: &mut Rope, range: Option<Range>, text: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use colorful_core::{ClassificationError, Finding, PosClass, Span, Token, Tree};
+    use colorful_core::{ClassificationError, Finding, Node, PosClass, Span, Token, Tree};
     use colorful_lexicon::ContextualOpenClassAnnotator;
     use colorful_lint::ProseLinter;
     use colorful_parse::ProseParser;
@@ -444,6 +615,173 @@ mod tests {
         assert_eq!(analyzer_calls.load(Ordering::SeqCst), 1);
     }
 
+    #[test]
+    fn markdown_analysis_excludes_fenced_code_from_both_lsp_surfaces() {
+        let source = concat!(
+            "The cat is really clear.\n\n",
+            "```text\n",
+            "The cat is really clear. 😀\n",
+            "```\n\n",
+            "The cat connects.\n",
+        );
+        let analysis = analyze_document_for_format(
+            source,
+            DocumentFormat::Markdown,
+            &ProseParser::new(),
+            &ContextualOpenClassAnnotator::default(),
+            &colorful_lint::ProseLinter::new(),
+        )
+        .expect("built-in Markdown analysis is valid");
+
+        assert_eq!(analysis.diagnostics().len(), 1, "{analysis:?}");
+        assert_eq!(
+            analysis.diagnostics()[0].range,
+            Range::new(Position::new(0, 11), Position::new(0, 17))
+        );
+
+        let mut line = 0u32;
+        let mut start = 0u32;
+        let decoded: Vec<_> = analysis
+            .semantic_tokens()
+            .iter()
+            .map(|token| {
+                if token.delta_line == 0 {
+                    start += token.delta_start;
+                } else {
+                    line += token.delta_line;
+                    start = token.delta_start;
+                }
+                (line, start, token.length, token.token_type)
+            })
+            .collect();
+        assert!(
+            decoded.iter().all(|(line, ..)| !(2..=4).contains(line)),
+            "fenced code emitted semantic tokens: {decoded:?}"
+        );
+        assert!(
+            decoded.contains(&(6, 4, 3, 4)),
+            "the noun after the fence lost its source coordinate: {decoded:?}"
+        );
+    }
+
+    #[test]
+    fn markdown_blocks_separate_surrounding_prose_contexts() {
+        let source = concat!(
+            "The report is really\n\n",
+            "```text\n",
+            "x.\n",
+            "```\n\n",
+            "reviewed.\n",
+        );
+        let analysis = analyze_document_for_format(
+            source,
+            DocumentFormat::Markdown,
+            &ProseParser::new(),
+            &ContextualOpenClassAnnotator::default(),
+            &colorful_lint::ProseLinter::new(),
+        )
+        .expect("built-in Markdown analysis is valid");
+
+        assert!(
+            analysis.diagnostics().iter().all(|diagnostic| {
+                diagnostic.code != Some(NumberOrString::String("passive-voice".to_string()))
+            }),
+            "{analysis:?}"
+        );
+    }
+
+    #[test]
+    fn source_view_coordinate_guard_covers_scalar_partitions() {
+        assert!(source_views_share_coordinates("", ""));
+        assert!(!source_views_share_coordinates("a", ""));
+        assert!(!source_views_share_coordinates("a\n", "ab"));
+        assert!(!source_views_share_coordinates("é", "aa"));
+        assert!(source_views_share_coordinates("aé", "éa"));
+        assert!(source_views_share_coordinates("😀", "\u{00A0}\u{00A0}"));
+    }
+
+    struct FixedParser(Tree);
+
+    impl Parser for FixedParser {
+        fn parse(&self, _text: &str) -> Tree {
+            self.0.clone()
+        }
+    }
+
+    struct FixedAnnotator(Vec<Token>);
+
+    impl Annotator for FixedAnnotator {
+        fn annotate(&self, _source: &str, _tree: &Tree) -> Vec<Token> {
+            self.0.clone()
+        }
+    }
+
+    #[test]
+    fn source_projection_rejects_an_analysis_only_character_boundary() {
+        let full_span = Span::new(0, 3);
+        analyze_document_sources(
+            "éa",
+            "aé",
+            &FixedParser(Tree::document(vec![Node::Sentence {
+                span: full_span,
+                parts: vec![Node::Word { span: full_span }],
+            }])),
+            &FixedAnnotator(vec![Token {
+                span: full_span,
+                class: PosClass::Content,
+            }]),
+            &ProseLinter::new(),
+        )
+        .expect("shared endpoint boundaries must project successfully");
+
+        let span = Span::new(0, 1);
+        let tree = Tree::document(vec![Node::Sentence {
+            span,
+            parts: vec![Node::Word { span }],
+        }]);
+        let error = analyze_document_sources(
+            "éa",
+            "aé",
+            &FixedParser(tree),
+            &FixedAnnotator(vec![Token {
+                span,
+                class: PosClass::Content,
+            }]),
+            &ProseLinter::new(),
+        )
+        .expect_err("analysis-only character boundary must fail source projection");
+
+        assert!(matches!(
+            error,
+            ClassificationError::SpanNotOnCharBoundary {
+                path,
+                offset: 1,
+                ..
+            } if path.to_string() == "tree.root.sentences[0].span.end"
+        ));
+    }
+
+    #[test]
+    fn incompatible_analysis_coordinates_fail_closed_before_projection() {
+        let analysis = analyze_document_sources(
+            "é is",
+            "aa is",
+            &ProseParser::new(),
+            &ContextualOpenClassAnnotator::default(),
+            &colorful_lint::ProseLinter::new(),
+        )
+        .expect("coordinate incompatibility degrades to a stable analysis");
+
+        assert!(analysis.semantic_tokens().is_empty());
+        assert_eq!(analysis.diagnostics().len(), 1);
+        assert_eq!(
+            analysis.diagnostics()[0].code,
+            Some(NumberOrString::String(
+                "colorful/invalid-source-view".to_string()
+            ))
+        );
+    }
+
     struct OverlappingAnnotator;
 
     impl Annotator for OverlappingAnnotator {
@@ -463,6 +801,16 @@ mod tests {
 
     #[test]
     fn analyze_document_propagates_a_custom_annotators_typed_span_error() {
+        compute_semantic_tokens("cat runs", &ProseParser::new(), &OverlappingAnnotator)
+            .expect_err("standalone semantic tokens must validate custom adapter output");
+        compute_diagnostics(
+            "cat runs",
+            &ProseParser::new(),
+            &OverlappingAnnotator,
+            &ProseLinter::new(),
+        )
+        .expect_err("standalone diagnostics must validate custom adapter output");
+
         let error = analyze_document(
             "cat runs",
             &ProseParser::new(),
@@ -726,6 +1074,7 @@ mod tests {
         let corpus = [
             "cafe\u{0301} test 12",
             "a\u{200D}b\u{200B}c word 3",
+            "first 1\nsecond 2",
             "\u{202E}rtl\u{202C} here 9",
             "z\u{0300}\u{0301}\u{0302}\u{0303}i Zalgo 4",
             "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} family 7",

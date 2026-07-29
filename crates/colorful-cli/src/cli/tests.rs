@@ -1,6 +1,7 @@
 use super::args::*;
 use super::color::*;
 use super::diagnose::*;
+use super::format::*;
 use super::lint::*;
 use std::io;
 
@@ -8,6 +9,54 @@ use std::io;
 fn passthrough_when_color_disabled() {
     let s = "The cat is 3.\nA second line.";
     assert_eq!(colorize(s, false), s);
+}
+
+#[test]
+fn markdown_lint_matches_lsp_prose_regions_while_plain_text_stays_whole_document() {
+    let source = concat!(
+        "The cat is really clear.\n\n",
+        "```text\n",
+        "The cat is really clear.\n",
+        "```\n",
+    );
+    let mut markdown = Vec::new();
+    let mut plain_text = Vec::new();
+
+    assert!(lint_to_writer("fixture.md", source, &mut markdown).unwrap());
+    assert!(lint_to_writer("fixture.txt", source, &mut plain_text).unwrap());
+
+    let markdown = String::from_utf8(markdown).expect("UTF-8 lint output");
+    let plain_text = String::from_utf8(plain_text).expect("UTF-8 lint output");
+    assert_eq!(markdown.lines().count(), 1, "{markdown}");
+    assert_eq!(plain_text.lines().count(), 2, "{plain_text}");
+    assert!(markdown.starts_with("fixture.md:1:12: info [weak-word]"));
+}
+
+#[test]
+fn file_format_detection_is_extension_bounded_and_case_insensitive() {
+    let source = "Prose.\n\n```text\nThe cat connects.\n```\n";
+
+    for name in ["fixture.md", "fixture.MARKDOWN"] {
+        let analysis = analysis_source_for(Some(name), source);
+        assert_ne!(analysis, source, "{name}");
+        assert!(
+            analysis
+                .lines()
+                .nth(3)
+                .expect("fenced content line")
+                .chars()
+                .all(char::is_whitespace),
+            "{name}: {analysis:?}"
+        );
+    }
+    for name in [
+        None,
+        Some("<stdin>"),
+        Some("fixture.txt"),
+        Some("fixture.md.txt"),
+    ] {
+        assert_eq!(analysis_source_for(name, source), source, "{name:?}");
+    }
 }
 
 #[test]

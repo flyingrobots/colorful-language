@@ -18,6 +18,10 @@ Requirements:
   stack assumptions.
 - **PAR-9** The public `Parser` port has a concise runnable example that shows
   total parsing without duplicating the parsing reference.
+- **PAR-10** The optional Markdown format adapter masks parser-admitted
+  non-prose regions without moving source coordinates or allowing findings to
+  cross block exclusions; format-neutral parser consumers do not pull its
+  dependency into their default graph.
 
 ## Cases
 
@@ -131,6 +135,37 @@ lives in `crates/colorful-parse/src/lib.rs`.
   `colorful-core` `Parser` rustdoc and
   `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* implemented.
+- **PAR-10a** — *Requirement:* PAR-10. *Behavior:* code, metadata, HTML, inline
+  destinations with quoted titles, and duplicate reference definitions receive
+  a coordinate-equivalent mask; link labels and prose remain analyzable; block
+  exclusions retain a non-emitting sentence boundary. *Oracle:* exact retained
+  and excluded ranges, byte/UTF-16 equality, and a passive-voice candidate that
+  cannot bridge a fence. *Evidence type:* format-adapter and LSP unit tests.
+  *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-parse` Markdown tests and `colorful-lsp`
+  `tests::markdown_blocks_separate_surrounding_prose_contexts`. *Status:*
+  implemented.
+- **PAR-10b** — *Requirement:* PAR-10. *Behavior:* `colorful-parse` has no
+  default feature, `pulldown-cmark` is optional behind `markdown`, and only the
+  CLI/LSP drivers opt in. *Oracle:* exact parsed Cargo manifest policy plus a
+  `cargo tree -p colorful-parse --no-default-features -e normal --locked`
+  negative check for `pulldown-cmark`. *Evidence type:* manifest-policy
+  integration test and dependency-tree gate. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `crates/colorful-parse/tests/feature_boundary.rs`
+  `markdown_feature_is_opt_in`, plus the CLI and LSP
+  `tests/source_policy.rs` adapter opt-in tests. *Status:* implemented.
+- **PAR-10c** — *Requirement:* PAR-10. *Behavior:* parser-admitted full and
+  collapsed link or image reference identifiers receive an inline,
+  coordinate-equivalent mask while visible labels remain prose; shortcut
+  labels have no separate identifier to suppress. *Oracle:* exact retained and
+  excluded ranges for each admitted reference form, including a non-link
+  lookalike. *Evidence type:* format-adapter unit test. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-parse`
+  `markdown::tests::reference_link_identifiers_are_masked_while_labels_remain_prose`.
   *Status:* implemented.
 
 ## Known gaps

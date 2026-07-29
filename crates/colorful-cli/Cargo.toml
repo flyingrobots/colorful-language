@@ -20,7 +20,7 @@ path = "src/main.rs"
 
 [dependencies]
 colorful-core = { workspace = true }
-colorful-parse = { workspace = true }
+colorful-parse = { workspace = true, features = ["markdown"] }
 colorful-lexicon = { workspace = true }
 colorful-ir = { workspace = true }
 colorful-lint = { workspace = true }

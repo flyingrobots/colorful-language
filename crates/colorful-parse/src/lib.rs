@@ -17,6 +17,10 @@
 use colorful_core::{numeric_prefix_len, Node, Parser, PassIdentity, Span, Tree};
 use logos::Logos;
 
+/// Coordinate-preserving adapters for extracting prose from Markdown.
+#[cfg(feature = "markdown")]
+pub mod markdown;
+
 fn extend_numeric_error(lexer: &mut logos::Lexer<'_, Tok>) -> bool {
     let start = lexer.span().start;
     let initial_length = lexer.slice().len();

@@ -8,6 +8,7 @@ const CLI_MODULE: &str = include_str!("../src/cli/mod.rs");
 const ARGS: &str = include_str!("../src/cli/args.rs");
 const COLOR: &str = include_str!("../src/cli/color.rs");
 const DIAGNOSE: &str = include_str!("../src/cli/diagnose.rs");
+const FORMAT: &str = include_str!("../src/cli/format.rs");
 const LINT: &str = include_str!("../src/cli/lint.rs");
 
 fn assert_source_owner(
@@ -35,6 +36,7 @@ fn command_responsibilities_have_exactly_one_module_owner() {
         ("args.rs", ARGS),
         ("color.rs", COLOR),
         ("diagnose.rs", DIAGNOSE),
+        ("format.rs", FORMAT),
         ("lint.rs", LINT),
     ];
 
@@ -44,6 +46,7 @@ fn command_responsibilities_have_exactly_one_module_owner() {
         ("pub fn try_colorize", "color.rs", COLOR),
         ("pub fn decide_color", "color.rs", COLOR),
         ("fn diagnose_json", "diagnose.rs", DIAGNOSE),
+        ("fn analysis_source_for", "format.rs", FORMAT),
         ("pub fn lint_report", "lint.rs", LINT),
         ("pub fn line_col", "lint.rs", LINT),
     ] {
@@ -56,7 +59,13 @@ fn command_responsibilities_have_exactly_one_module_owner() {
     }
 
     assert!(FACADE.contains("mod cli;"));
-    for declaration in ["mod args;", "mod color;", "mod diagnose;", "mod lint;"] {
+    for declaration in [
+        "mod args;",
+        "mod color;",
+        "mod diagnose;",
+        "mod format;",
+        "mod lint;",
+    ] {
         assert!(
             CLI_MODULE.contains(declaration),
             "the CLI module must declare {declaration}"

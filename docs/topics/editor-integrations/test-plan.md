@@ -37,6 +37,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
   location and LSP UTF-16 range map to the same finding start, and that the LSP
   range maps the complete selected span, across astral code points, combining
   marks, zero-width characters, and mixed line endings.
+- **EDIT-15** Markdown analysis must exclude reviewed non-prose syntax regions
+  through one coordinate-preserving format adapter outside `colorful-core`,
+  while Plain Text keeps the existing whole-document behavior.
 
 ## Cases
 
@@ -272,6 +275,84 @@ Verification for editor adapters and the `colorful-lsp` surface.
   performance report. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.
+- **EDIT-15a** — *Requirement:* EDIT-15. *Behavior:* a Markdown document with
+  one prose weak word and the same sentence inside a fenced code block emits
+  exactly one `weak-word` diagnostic at the prose span; the fenced sentence
+  emits no prose semantic roles, and a role after the fence retains its exact
+  source coordinate. *Oracle:* exact diagnostic count/code/range and decoded
+  semantic-token ranges. *Evidence type:* deterministic Rust unit and real-LSP
+  transcript tests plus the packaged Markdown fixture. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-lsp` test
+  `tests::markdown_analysis_excludes_fenced_code_from_both_lsp_surfaces`;
+  `crates/colorful-lsp/tests/fixtures/editor_lifecycle_transcript.json`;
+  `crates/colorful-lsp/tests/stdio_contract.rs`
+  `real_server_completes_the_public_stdio_lifecycle`;
+  `editors/fixtures/editor-smoke.md`; packaged VS Code smoke. *Status:*
+  implemented.
+- **EDIT-15b** — *Requirement:* EDIT-15. *Behavior:* inline code, indented code
+  blocks, opening YAML/TOML front matter, link destinations, and HTML blocks are
+  non-prose; link labels and ordinary text remain prose. Unterminated inline
+  code and front-matter delimiters remain prose rather than suppressing the
+  remainder of the document. *Oracle:* an adversarial table asserts every
+  excluded byte range, every retained prose range, and byte/UTF-16 coordinate
+  equality after ASCII, combining-mark, BMP, and astral content. *Evidence
+  type:* pure format-adapter unit tests. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-parse` Markdown tests
+  `fenced_code_is_masked_while_surrounding_prose_is_unchanged`,
+  `reviewed_markdown_regions_have_explicit_suppression_decisions`,
+  `link_labels_remain_prose_while_destinations_are_suppressed`,
+  `nested_and_reference_link_destinations_are_suppressed`,
+  `duplicate_reference_definitions_are_all_suppressed`,
+  `quoted_link_titles_do_not_confuse_destination_boundaries`,
+  `destination_masking_follows_commonmark_admission`,
+  `inline_html_markup_is_suppressed_but_its_text_remains_prose`,
+  `unterminated_constructs_do_not_hide_the_rest_of_the_document`, and
+  `masking_preserves_byte_and_utf16_coordinates_after_unicode`, and
+  `masking_preserves_coordinates_across_scalar_widths_and_line_endings`.
+  *Status:* implemented.
+- **EDIT-15c** — *Requirement:* EDIT-15. *Behavior:* LSP `languageId:
+  "markdown"` and CLI `.md`/`.markdown` lint and ANSI file inputs use the same
+  format adapter; stdin, public string colorization helpers, and non-Markdown
+  files remain Plain Text unless a future explicit format option is introduced.
+  *Oracle:* the same source produces the same finding byte span and human/LSP
+  line under both diagnostic surfaces, while the default CLI styles prose but
+  leaves excluded source bytes unchanged. A `.txt` control still analyzes
+  code-looking text. *Evidence type:* cross-surface process and unit fixtures.
+  *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-cli` tests
+  `cli::tests::markdown_lint_matches_lsp_prose_regions_while_plain_text_stays_whole_document`,
+  `cli::tests::file_format_detection_is_extension_bounded_and_case_insensitive`,
+  and
+  `binary_contract::markdown_file_colorization_excludes_non_prose_regions`;
+  `crates/colorful-lsp/tests/fixtures/editor_lifecycle_transcript.json`;
+  `crates/colorful-lsp/tests/stdio_contract.rs`
+  `real_server_completes_the_public_stdio_lifecycle`. *Status:* implemented.
+- **EDIT-15d** — *Requirement:* EDIT-15. *Behavior:* the server stores the
+  `didOpen` language identifier with the document generation and preserves that
+  format across incremental edits, stale-result rejection, cached diagnostics,
+  and cached semantic-token responses. *Oracle:* forced generation tests prove
+  one accepted Markdown analysis per generation and unchanged Plain Text
+  behavior. *Evidence type:* deterministic document-state tests. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-lsp` binary test
+  `document_state::tests::incremental_generations_preserve_the_opened_document_format`
+  plus the existing stale-completion, cache-reuse, debounce, and limit tests.
+  *Status:* implemented.
+- **EDIT-15e** — *Requirement:* EDIT-15. *Behavior:* block exclusions separate
+  the prose contexts on either side, and a source view with incompatible byte,
+  line, or UTF-16 coordinates fails closed before semantic-token or diagnostic
+  projection. *Oracle:* a passive-voice candidate cannot bridge a fenced block;
+  an incompatible synthetic view emits no tokens and one stable
+  `colorful/invalid-source-view` diagnostic. *Evidence type:* deterministic LSP
+  unit tests. *Tracking:*
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241).
+  *Evidence:* `colorful-lsp` tests
+  `tests::markdown_blocks_separate_surrounding_prose_contexts` and
+  `tests::incompatible_analysis_coordinates_fail_closed_before_projection`.
+  *Status:* implemented.
 
 ## Zed clean-profile manual oracle
 

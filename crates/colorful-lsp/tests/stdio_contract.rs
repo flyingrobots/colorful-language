@@ -160,6 +160,10 @@ fn substitute_placeholders(value: &Value, session: &Value) -> Value {
                 .get("languageId")
                 .cloned()
                 .expect("$LANGUAGE_ID requires session.languageId"),
+            "$DOCUMENT_TEXT" => session
+                .get("text")
+                .cloned()
+                .expect("$DOCUMENT_TEXT requires session.text"),
             "$PACKAGE_VERSION" => Value::String(env!("CARGO_PKG_VERSION").to_string()),
             _ => panic!("unknown transcript placeholder {value}"),
         },
@@ -318,6 +322,7 @@ fn transcript_placeholders_fail_fast_and_recurse() {
     for (value, session) in [
         (json!("$URI"), json!({})),
         (json!("$LANGUAGE_ID"), json!({})),
+        (json!("$DOCUMENT_TEXT"), json!({})),
         (json!("$URl"), json!({"uri": "file:///fixture.txt"})),
     ] {
         assert!(
@@ -327,10 +332,14 @@ fn transcript_placeholders_fail_fast_and_recurse() {
     }
     assert_eq!(
         substitute_placeholders(
-            &json!({"nested": ["$URI", "$LANGUAGE_ID", "literal"]}),
-            &json!({"uri": "file:///fixture.txt", "languageId": "plaintext"}),
+            &json!({"nested": ["$URI", "$LANGUAGE_ID", "$DOCUMENT_TEXT", "literal"]}),
+            &json!({
+                "uri": "file:///fixture.txt",
+                "languageId": "plaintext",
+                "text": "fixture"
+            }),
         ),
-        json!({"nested": ["file:///fixture.txt", "plaintext", "literal"]}),
+        json!({"nested": ["file:///fixture.txt", "plaintext", "fixture", "literal"]}),
     );
 }
 
