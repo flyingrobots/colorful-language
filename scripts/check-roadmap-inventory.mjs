@@ -141,6 +141,19 @@ function isNoLeadingPipeTableRow(line) {
   for (let index = 0; index < content.length; index += 1) {
     if (content[index] === "\\") {
       index += 1;
+    } else if (content[index] === "`") {
+      let delimiterLength = 1;
+      while (content[index + delimiterLength] === "`") {
+        delimiterLength += 1;
+      }
+      const contentEnd = findExactBacktickRun(
+        content,
+        index + delimiterLength,
+        delimiterLength,
+      );
+      if (contentEnd !== -1) {
+        index = contentEnd + delimiterLength - 1;
+      }
     } else if (content[index] === "|") {
       return true;
     }

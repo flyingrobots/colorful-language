@@ -389,6 +389,23 @@ This comment does not extend the accountability table.
   );
 });
 
+test("ignores pipes inside inline code after the accountability table", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(
+        "| Parser \\| analyzer ports | Analyze deterministic structure. |",
+        [
+          "| Parser \\| analyzer ports | Analyze deterministic structure. |",
+          "Prefer `a|b` ordering when both apply.",
+        ].join("\n"),
+      ),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("rejects a missing architecture-accountability table", () => {
   expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
     source.replace(/\n\| Mechanism \|[\s\S]*$/u, "\n"),
