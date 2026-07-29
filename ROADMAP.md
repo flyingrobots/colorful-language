@@ -328,9 +328,9 @@ was installed, and reach the first useful editor result.
   for Homebrew
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).
   <!-- roadmap-primary: active #37 -->
-- **Public surfaces and ownership:** set the homepage, useful Discussions
-  posture, and deployment ownership only when maintainers and public
-  destinations exist
+- **Delivered public surfaces and ownership:** the repository profile sets the
+  maintained README homepage, records that Discussions are not a supported
+  intake channel, and assigns deployment ownership
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
   <!-- roadmap-primary: delivered #153 -->
 - **Parked theme accessibility tooling:** lint contrast and color-vision

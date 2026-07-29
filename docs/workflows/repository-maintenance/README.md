@@ -16,7 +16,9 @@ The issue chooser keeps actionable work in two forms:
 Issues and milestones are the delivery authority. Discussions are not a
 supported intake channel because no maintainer response commitment has been
 made. The repository may retain GitHub's default Discussion categories, but the
-issue chooser does not advertise Q&A or Ideas as supported routes.
+issue chooser does not advertise Q&A or Ideas as supported routes. The
+maintenance gate rejects both Discussion claims and direct `/discussions`
+links in issue-form Markdown.
 
 ## Public repository and deployment posture
 
@@ -30,6 +32,10 @@ execution, custody of `CARGO_REGISTRY_TOKEN`, `VSCE_PAT`, and `OVSX_PAT`, and
 rollback decisions. Create a protected `release` environment only when a real
 release is scheduled and all three credentials can move atomically; do not
 create an empty environment before that threshold.
+
+Credential and release-evidence inventories are unordered exact sets.
+Reordering is harmless; missing, unexpected, or duplicate entries fail the
+maintenance gate.
 
 Before publication, the owner must run:
 

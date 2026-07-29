@@ -344,15 +344,17 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   and assigns publication credentials, rollback, and release evidence to one
   maintainer without claiming that an environment exists. *Oracle:* profile,
   issue-routing, and documentation mutations reject a missing or alternate
-  homepage, promoted unowned Discussion category, absent owner, unreviewed
-  credential, empty-environment claim, or missing creation threshold; an
-  authenticated witness compares the configured homepage and environment
-  inventory with live GitHub state. *Evidence type:* deterministic
-  configuration mutation tests plus an explicit authenticated GitHub API
+  homepage, promoted unowned Discussion category, direct lowercase Discussion
+  URL, absent owner, unreviewed or duplicate credential, empty-environment
+  claim, or missing creation threshold; reordered credential and evidence
+  inventories remain valid, and an authenticated witness compares the
+  configured homepage and environment inventory with live GitHub state.
+  *Evidence type:* deterministic
+  configuration mutation tests plus an explicit authenticated API
   witness. *Evidence:* `.github/repository-profile.yml`,
   `scripts/check-repository-maintenance.mjs`,
   `scripts/check-repository-maintenance.test.mjs`, and this workflow's current
-  reference; the live witness uses the documented authenticated `gh api`
+  reference; that witness uses the documented authenticated `gh api`
   commands. *Tracking:*
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
   *Status:* implemented.
