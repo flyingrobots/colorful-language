@@ -257,12 +257,6 @@ export async function verifyEditorPublication({
 }
 
 function parseArguments(argv) {
-  if (argv.length !== 4) {
-    reject(
-      "E_EDITOR_PUBLICATION_USAGE",
-      "usage: scripts/verify-editor-publication.mjs --vsix PATH --version X.Y.Z",
-    );
-  }
   const values = new Map();
   for (let index = 0; index < argv.length; index += 2) {
     const option = argv[index];
