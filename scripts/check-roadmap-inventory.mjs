@@ -902,7 +902,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
     if (accountabilityTableState === "searching") {
       if (headerKind !== undefined) {
-        paragraphOpen = false;
+        paragraphOpen = true;
         accountabilityTableState = "delimiter";
         candidateAccountabilityTableLocation = mechanismLocation;
         candidateAccountabilityTableColumnCount = tableCells.length;
@@ -916,7 +916,6 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       continue;
     }
     if (accountabilityTableState === "delimiter") {
-      paragraphOpen = false;
       const matchesCandidateDelimiter = (cells, hasLeadingPipe) =>
         cells !== undefined &&
         hasLeadingPipe === candidateAccountabilityTableHasLeadingPipe &&
@@ -942,6 +941,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         );
       }
       if (visibleDelimiterMatches) {
+        paragraphOpen = false;
         accountabilityTableState = "rows";
         if (candidateAccountabilityHeaderKind === "canonical") {
           accountabilityTableLocation ??=
@@ -949,6 +949,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         }
         candidateAccountabilityTableColumnCount = undefined;
       } else {
+        paragraphOpen = keepsMarkdownParagraphOpen(line, nextLine);
         accountabilityTableState = "searching";
         candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
@@ -960,7 +961,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
     if (accountabilityTableState === "complete") {
       if (headerKind !== undefined) {
-        paragraphOpen = false;
+        paragraphOpen = true;
         accountabilityTableState = "delimiter";
         candidateAccountabilityTableLocation = mechanismLocation;
         candidateAccountabilityTableColumnCount = tableCells.length;

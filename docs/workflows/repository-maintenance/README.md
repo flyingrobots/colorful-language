@@ -233,8 +233,9 @@ The same offline structure gate applies these fail-closed rules:
   `Mechanism` header cell and every delimiter cell must be valid in literal
   source; comments cannot synthesize either. Only ASCII space and tab
   characters count as table-cell padding; Unicode whitespace cannot disguise a
-  header or delimiter. Only a complete table inside the canonical section
-  satisfies the required authority.
+  header or delimiter. A header-shaped line remains paragraph content until a
+  valid delimiter confirms the table. Only a complete table inside the
+  canonical section satisfies the required authority.
 - **Row shape:** The first cell in every canonical row is pipe-delimited on
   both sides, and the row has no more than three leading spaces. Valid
   no-leading-pipe Markdown headers and continuing data rows are refused

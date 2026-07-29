@@ -399,6 +399,24 @@ test("does not let a generic HTML tag interrupt a paragraph", () => {
   );
 });
 
+test("keeps an incomplete accountability header inside its paragraph", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(
+        "## Architecture accountability",
+        [
+          "| Mechanism | Header-shaped paragraph without a delimiter. |",
+          "<custom-element>",
+          "## Architecture accountability",
+        ].join("\n"),
+      ),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("generic HTML tag matching has disjoint attribute separators", () => {
   const checkerSource = readFileSync(script, "utf8");
   assert.doesNotMatch(checkerSource, /\[\^<>"'\]\+/u);

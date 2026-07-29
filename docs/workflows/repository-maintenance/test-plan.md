@@ -250,7 +250,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   numeric-character-reference, fully styled, and partially
   asterisk-emphasized duplicate table headers plus unresolved-reference and
   intraword-underscore negative controls, incomplete plain and styled header
-  controls, an incomplete no-leading-pipe header control,
+  controls, an incomplete header followed by paragraph-inline generic HTML and
+  a structural heading, an incomplete no-leading-pipe header control,
   duplicate tables before and after the canonical section,
   missing or malformed delimiter or data rows, an empty table followed by a
   later valid table, delimiter/header arity mismatches, a missing first-cell
