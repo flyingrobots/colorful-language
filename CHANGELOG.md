@@ -457,6 +457,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Maintained roadmap structure parsing.** The fail-closed roadmap inventory
+  gate now delegates CommonMark and GFM table interpretation to exact-pinned
+  `mdast` and `micromark` packages while retaining every stable fixture,
+  diagnostic category, and source address. `ROADMAP.md` remains the sole
+  disposition and architecture-accountability authority. The parser-owning
+  checker falls from 1,429 lines and 34 top-level helpers to 853 lines and 19
+  helpers; a separate dependency-injected runner owns only bounded GitHub/CLI
+  transport. Source and dependency ratchets prevent the bespoke Markdown state
+  machine or a floating parser from returning.
 - **Derived portable-admission review burden.** The independent-consumer ledger
   now derives its reviewed generator-case count from the same fail-closed
   inventory that registers the generator suite, so missing, extra, or duplicate

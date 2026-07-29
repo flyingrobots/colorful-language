@@ -209,77 +209,38 @@ Ordinary issue links remain non-owning cross-references, so historical and epic
 links do not inflate the inventory. Do not delete completed roadmap history:
 change its primary marker to `delivered`. When opening or moving a slice, add or
 move its one marker in the same change. When a pull request closes a slice,
-change that marker to `delivered` before merge.
+change that marker to `delivered` before merge. Only parsed HTML comment nodes
+can own a disposition; marker-shaped text inside fenced or indented code is an
+example, not authority.
 
-The same offline structure gate applies these fail-closed rules:
+The gate parses CommonMark plus GFM tables through exact direct dependencies:
+`mdast-util-from-markdown` 2.0.3, `mdast-util-gfm-table` 2.0.0,
+`mdast-util-to-string` 4.0.0, and `micromark-extension-gfm-table` 2.1.1.
+Maintained parser nodes and source positions decide headings, tables, code,
+HTML, inline rendering, and section boundaries. Repository code applies only
+the Colorful-specific policy below:
 
-- **Heading:** Exactly one canonical `## Architecture accountability` H2 is
-  required. It is matched case-sensitively, with no more than three leading
-  spaces and no closing-hash sequence. Closed inline comments cannot join or
-  decorate it because its literal source is validated before comment spans are
-  removed. A comment-altered display equivalent is tracked for duplicate
-  detection but never accepted as canonical source.
-- **Table shape:** Exactly one `Mechanism` table is required. A header-shaped
-  line is insufficient: the table needs a delimiter row with the same column
-  count, every delimiter cell needs at least three hyphens with only optional
-  edge colons, and at least one non-empty data row must follow. Once a header
-  and delimiter establish a table location, a later non-empty table cannot
-  replace it merely because the first table had no data row. The first cell in
-  every canonical header is the plain-text cell `Mechanism`. Inline code,
-  whole-span styling, partial asterisk emphasis, whole-cell or partial inline
-  links, numeric character references, or comments that display the same label
-  are refused. Unresolved reference-link source remains literal rather than
-  gaining an invented definition. The
-  `Mechanism` header cell and every delimiter cell must be valid in literal
-  source; comments cannot synthesize either. Only ASCII space and tab
-  characters count as table-cell padding; Unicode whitespace cannot disguise a
-  header or delimiter. A header-shaped line remains paragraph content until a
-  valid delimiter confirms the table. Only a complete table inside the
-  canonical section satisfies the required authority.
-- **Row shape:** The first cell in every canonical row is pipe-delimited on
-  both sides, and the row has no more than three leading spaces. Valid
-  no-leading-pipe Markdown headers and continuing data rows are refused
-  explicitly instead of being silently ignored, whether a header delimiter is
-  compact, space-padded, or tab-padded. Only contiguous canonical rows are
-  authoritative. Skipped blocks terminate the table even without a separating
-  blank line. While the canonical table is active, a pipe-delimited row is
-  validated before any following `---` or `===` line can make it look like a
-  Setext heading.
-- **Non-authoritative blocks:** Indented code, CommonMark fences, raw HTML
-  blocks, and HTML comments cannot stand in for the table. Raw-text elements,
-  processing instructions, declarations, CDATA, block tags, and complete
-  generic tags suspend table discovery through their CommonMark block boundary.
-  A complete generic tag inside an open paragraph remains inline HTML and
-  cannot start a type-7 raw block or hide a following structural heading.
-  Generic tag attributes admit boolean, unquoted, single-quoted, and
-  double-quoted values through a disjoint grammar so hostile incomplete tags
-  cannot trigger ambiguous backtracking. Backtick fence openers whose info
-  strings contain a backtick are treated as visible source, while tilde-fence
-  info strings may contain backticks. A multiline comment is non-authoritative
-  even when its opener follows visible text on the same line, but it cannot
-  begin on a visible table-shaped line. Visible source after a multiline
-  comment closer on the same line re-enters structural scanning. Closed inline
-  HTML comment spans are ignored while the surrounding visible row content
-  remains authoritative; comment-shaped text inside inline code remains
-  literal.
-- **Identity normalization:** Plain text, ASCII-punctuation escapes, and inline
-  code are normalized to their NFC displayed identity, including
-  table-delimiter escapes inside code spans. NUL input is replaced with U+FFFD
-  before identity comparison, matching CommonMark input normalization. An
-  inline-code span closes only on a backtick run exactly as long as its opener,
-  so shorter and longer internal runs remain displayed content.
-  Character-reference-shaped source outside inline code is rejected; the
-  displayed character must be written directly so source and rendered
-  identities cannot diverge. Empty cells, invalid escapes, and other
-  mechanism-cell Markdown are rejected as noncanonical.
-- **Duplication and scan scope:** Every displayed mechanism identity appears
-  exactly once. A repeated heading, table, or mechanism fails with both source
-  locations, while distinct moonshot mechanisms remain independent entries.
-  ATX H1/H2 and Setext H1/H2 peers end the canonical section, but leaving it
-  does not end the duplicate scan: another section cannot supply missing
-  canonical authority or hide a second apparent authority. A closing-hash
-  display equivalent is rejected in either source order. LF and CRLF roadmaps
-  have the same structural result and line addresses.
+- exactly one canonical `## Architecture accountability` H2 and one complete
+  leading-pipe `Mechanism` table inside that section are authoritative;
+- comment- or styling-altered display equivalents, no-leading-pipe rows,
+  malformed literal delimiters, and apparent duplicate authorities fail closed;
+- indented/fenced code, raw HTML, and multiline comments remain
+  non-authoritative, while visible source after a comment closer is still
+  checked;
+- mechanism cells admit plain text, ASCII-punctuation escapes, inline code, and
+  closed comments, then compare NFC displayed identities; empty identities,
+  character references, invalid escapes, and other inline markup are rejected;
+  and
+- duplicate headings, tables, and mechanism identities report stable
+  path-and-line addresses for both LF and CRLF input.
+
+`scripts/check-roadmap-inventory.mjs` now owns 853 lines and 19 top-level
+helpers, down from 1,429 lines and 34 helpers. Its 207-line
+`scripts/roadmap-inventory-runner.mjs` companion owns only argument parsing,
+bounded GitHub transport, JSON loading, and process output; it contains no
+Markdown interpretation. A source-policy regression keeps the parser-owning
+checker below 900 lines and 24 helpers and forbids the retired parser helper
+signatures.
 
 Run the deterministic structure and fixture gates without network access:
 

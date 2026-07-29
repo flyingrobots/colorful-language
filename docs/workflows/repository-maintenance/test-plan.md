@@ -215,11 +215,12 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
 - **RM-9a — Deterministic roadmap inventory.** *Requirement:* RM-9. *Behavior:*
   explicit primary-disposition markers classify each tracked slice as active,
   parked, or delivered, while ordinary historical and epic links remain
-  non-owning references. *Oracle:* a checked-in mocked issue snapshot passes;
-  one minimal mutation for a missing open slice, duplicate primary home,
-  closed active slice, open delivered slice, and unrecognized marker fails with
-  a stable path-addressed category. *Evidence type:* fixture-backed Node unit
-  tests and an offline repository command. *Evidence:*
+  non-owning references and marker-shaped code examples remain
+  non-authoritative. *Oracle:* a checked-in mocked issue snapshot passes; one
+  minimal mutation for a missing open slice, fenced-code-only marker, duplicate
+  primary home, closed active slice, open delivered slice, and unrecognized
+  marker fails with a stable path-addressed category. *Evidence type:*
+  fixture-backed Node unit tests and an offline repository command. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs`, roadmap fixtures, and
   `scripts/check-roadmap-inventory.mjs`. *Status:* implemented.
 - **RM-9b — Authenticated live reconciliation.** *Requirement:* RM-9.
@@ -266,19 +267,20 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   continuing data row, duplicate final rows followed by each Setext underline
   form, indented code plus fenced and commented table-shaped examples, raw HTML
   block variants with boolean, unquoted, single-quoted, double-quoted, and
-  self-closing generic tags, a type-7 generic tag inside an open paragraph
-  followed by a structural heading, plus a source-policy guard against
-  overlapping attribute separators, an indented comment opener followed by a
-  visible table, invalid backtick-fence info strings plus valid tilde-fence
-  controls, multiline comments that open after visible text or an unmatched
-  backtick, a visible duplicate mechanism split by a closed inline HTML
-  comment, a duplicate table beginning after a multiline comment closer, a
-  multiline comment beginning on a visible table row, and post-table prose
-  controls containing a literal or inline-code pipe plus a comment-shaped
-  inline-code literal control, inline-code styling and longer internal backtick
-  runs, an empty identity, invalid escaping inside and outside inline code,
-  named/decimal/hexadecimal character references, canonically equivalent
-  Unicode, NUL/replacement-character equivalence, and unsupported emphasis.
+  self-closing generic tags, comment-shaped script text, a type-7 generic tag
+  inside an open paragraph followed by a structural heading, plus a
+  source-policy guard against reintroducing generic HTML grammar, an indented
+  comment opener followed by a visible table, invalid backtick-fence info
+  strings plus valid tilde-fence controls, multiline comments that open after
+  visible text or an unmatched backtick, a visible duplicate mechanism split
+  by a closed inline HTML comment, duplicate tables beginning after inline and
+  multiline comment closers, a multiline comment beginning on a visible table
+  row, and post-table prose controls containing a literal or inline-code pipe
+  plus a comment-shaped inline-code literal control, inline-code styling and
+  longer internal backtick runs, an empty identity, invalid escaping inside and
+  outside inline code, named/decimal/hexadecimal character references,
+  canonically equivalent Unicode, NUL/replacement-character equivalence, and
+  unsupported emphasis.
   They fail with
   their stable `E_ROADMAP_*` categories, including both source addresses for a
   duplicate heading, table, or mechanism and identical LF/CRLF failure
@@ -310,11 +312,15 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   unpinned parser packages; and the before/after responsibility inventory is
   recorded in the current workflow reference. *Evidence type:* fixture-backed
   characterization suite, deterministic source/dependency policy, and measured
-  maintained-source inventory. *Evidence:* planned in
+  maintained-source inventory. *Evidence:*
+  `scripts/check-roadmap-inventory.mjs`,
+  `scripts/roadmap-inventory-runner.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
-  `package-lock.json`. *Tracking:*
+  `package-lock.json`. The parser-owning checker measures 853 lines and 19
+  top-level helpers; the 207-line transport runner contains no Markdown
+  interpretation. *Tracking:*
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and

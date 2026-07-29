@@ -112,6 +112,19 @@ test("rejects an open slice missing from the primary inventory", () => {
   );
 });
 
+test("ignores primary markers inside non-authoritative code blocks", () => {
+  expectCategory("E_ROADMAP_MISSING_OPEN", (source) =>
+    source.replace(
+      "  <!-- roadmap-primary: active #101 -->",
+      [
+        "  ```markdown",
+        "  <!-- roadmap-primary: active #101 -->",
+        "  ```",
+      ].join("\n"),
+    ),
+  );
+});
+
 test("rejects duplicate primary homes", () => {
   expectCategory(
     "E_ROADMAP_DUPLICATE_PRIMARY",
@@ -381,6 +394,26 @@ test("ignores accountability tables inside raw HTML blocks", () => {
   }
 });
 
+test("does not scan comment-shaped text inside raw HTML blocks", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(
+        "## Architecture accountability",
+        [
+          "<script>",
+          "<!-- comment-shaped script text",
+          "</script>",
+          "",
+          "## Architecture accountability",
+        ].join("\n"),
+      ),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("does not let a generic HTML tag interrupt a paragraph", () => {
   assert.doesNotThrow(() =>
     validateRoadmapInventory({
@@ -417,9 +450,10 @@ test("keeps an incomplete accountability header inside its paragraph", () => {
   );
 });
 
-test("generic HTML tag matching has disjoint attribute separators", () => {
+test("does not reintroduce a generic HTML block grammar", () => {
   const checkerSource = readFileSync(script, "utf8");
-  assert.doesNotMatch(checkerSource, /\[\^<>"'\]\+/u);
+  assert.match(checkerSource, /from "mdast-util-from-markdown";/u);
+  assert.doesNotMatch(checkerSource, /GENERIC_HTML_(?:OPEN|CLOSE)_TAG/u);
 });
 
 test("rejects a table hidden by an invalid backtick-fence interpretation", () => {
@@ -484,6 +518,18 @@ test("resumes table scanning after a multiline comment closer", () => {
 --> | Mechanism | Second authority |
 | --- | --- |
 | Parser ports | Visible after the comment closer. |
+`,
+  );
+});
+
+test("resumes table scanning after a closed inline comment", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+<!-- explanatory note --> | Mechanism | Second authority |
+| --- | --- |
+| Parser ports | Visible after the inline comment. |
 `,
   );
 });
@@ -1194,13 +1240,13 @@ test("rejects malformed issue JSON with a stable snapshot error", () => {
 });
 
 test("bounds live GitHub calls by time and response size", () => {
-  const checker = readFileSync(
-    new URL("./check-roadmap-inventory.mjs", import.meta.url),
+  const runner = readFileSync(
+    new URL("./roadmap-inventory-runner.mjs", import.meta.url),
     "utf8",
   );
 
-  assert.match(checker, /timeout:\s*30_000/u);
-  assert.match(checker, /maxBuffer:\s*16 \* 1024 \* 1024/u);
+  assert.match(runner, /timeout:\s*30_000/u);
+  assert.match(runner, /maxBuffer:\s*16 \* 1024 \* 1024/u);
 });
 
 test("defines the canonical accountability heading in one source location", () => {
@@ -1238,6 +1284,10 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
     new URL("./check-roadmap-inventory.mjs", import.meta.url),
     "utf8",
   );
+  const runner = readFileSync(
+    new URL("./roadmap-inventory-runner.mjs", import.meta.url),
+    "utf8",
+  );
   const packageJson = JSON.parse(
     readFileSync(new URL("../package.json", import.meta.url), "utf8"),
   );
@@ -1272,7 +1322,7 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
   ]) {
     assert.doesNotMatch(
       checker,
-      new RegExp(`function ${bespokeParserHelper}\\\\(`, "u"),
+      new RegExp(`function ${bespokeParserHelper}\\(`, "u"),
       `${bespokeParserHelper} must not recreate maintained Markdown parsing`,
     );
   }
@@ -1286,6 +1336,16 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
   assert.ok(
     topLevelHelpers <= 24,
     `roadmap checker has ${topLevelHelpers} helpers; reviewed ceiling is 24`,
+  );
+  assert.doesNotMatch(
+    runner,
+    /(?:fromMarkdown|mdast|micromark)/u,
+    "the transport runner must not acquire Markdown interpretation",
+  );
+  const runnerLines = runner.match(/\n/gu)?.length ?? 0;
+  assert.ok(
+    runnerLines <= 250,
+    `roadmap transport runner has ${runnerLines} lines; reviewed ceiling is 250`,
   );
 });
 

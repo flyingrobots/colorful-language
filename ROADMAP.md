@@ -177,12 +177,11 @@ observe public-contract regressions before they ship.
   architecture decision cannot drift through two apparent authorities
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).
   <!-- roadmap-primary: delivered #243 -->
-- **Active roadmap-parser simplification:** replace the bespoke Markdown
-  recognition surface behind roadmap accountability with exact-pinned
-  maintained CommonMark/GFM structure while characterization preserves its
-  fail-closed policy and diagnostics
+- **Delivered roadmap-parser simplification:** delegate CommonMark/GFM
+  interpretation to exact-pinned maintained tooling while preserving the
+  roadmap's sole authority, fail-closed policy, and stable diagnostics
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
-  <!-- roadmap-primary: active #250 -->
+  <!-- roadmap-primary: delivered #250 -->
 - **Delivered process-test determinism:** replace the Vale timeout fixture's
   scheduler race with an explicit test-only worker-ready seam while preserving
   production timeout and descendant-cleanup postconditions
