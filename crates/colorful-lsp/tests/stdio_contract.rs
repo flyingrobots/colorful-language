@@ -149,136 +149,136 @@ impl Drop for LspProcess {
     }
 }
 
-#[test]
-fn real_server_completes_the_public_stdio_lifecycle() {
-    const URI: &str = "file:///tmp/colorful-lsp-contract.txt";
-
-    let mut server = LspProcess::spawn();
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "initialize",
-        "params": {
-            "processId": null,
-            "rootUri": null,
-            "capabilities": {}
+fn substitute_placeholders(value: &Value, session: &Value) -> Value {
+    match value {
+        Value::String(value) if value == "$URI" => session["uri"].clone(),
+        Value::String(value) if value == "$LANGUAGE_ID" => session["languageId"].clone(),
+        Value::String(value) if value == "$PACKAGE_VERSION" => {
+            Value::String(env!("CARGO_PKG_VERSION").to_string())
         }
-    }));
-    let initialize = server.receive("initialize response", |message| message["id"] == 1);
-    assert_eq!(initialize["result"]["serverInfo"]["name"], "colorful-lsp");
-    assert_eq!(
-        initialize["result"]["capabilities"]["textDocumentSync"],
-        json!(2)
-    );
-    let legend = initialize["result"]["capabilities"]["semanticTokensProvider"]["legend"]
-        ["tokenTypes"]
-        .as_array()
-        .expect("semantic-token legend array");
-    assert!(legend.iter().any(|token_type| token_type == "noun"));
+        Value::Array(values) => Value::Array(
+            values
+                .iter()
+                .map(|value| substitute_placeholders(value, session))
+                .collect(),
+        ),
+        Value::Object(values) => Value::Object(
+            values
+                .iter()
+                .map(|(key, value)| (key.clone(), substitute_placeholders(value, session)))
+                .collect(),
+        ),
+        _ => value.clone(),
+    }
+}
 
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "method": "initialized",
-        "params": {}
-    }));
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "method": "textDocument/didOpen",
-        "params": {
-            "textDocument": {
-                "uri": URI,
-                "languageId": "plaintext",
-                "version": 1,
-                "text": "The cat is really clear."
+fn contains_partial(actual: &Value, expected: &Value) -> bool {
+    match expected {
+        Value::Object(expected) => expected.iter().all(|(key, value)| {
+            actual
+                .get(key)
+                .is_some_and(|actual| contains_partial(actual, value))
+        }),
+        Value::Array(expected) => actual.as_array().is_some_and(|actual| actual == expected),
+        _ => actual == expected,
+    }
+}
+
+fn replay_transcript_session(fixture: &Value, session: &Value) {
+    let mut server = LspProcess::spawn();
+    let steps = fixture["steps"].as_array().expect("transcript steps");
+
+    for step in steps {
+        if let Some(message) = step.get("send") {
+            server.send(substitute_placeholders(message, session));
+            continue;
+        }
+
+        let receive = step.get("receive").expect("send or receive step");
+        let description = receive["description"]
+            .as_str()
+            .expect("receive description");
+        let selector = substitute_placeholders(&receive["where"], session);
+        let message = server.receive(description, |message| contains_partial(message, &selector));
+
+        if let Some(equals) = receive.get("equals") {
+            for (pointer, expected) in equals.as_object().expect("pointer equality map") {
+                let expected = substitute_placeholders(expected, session);
+                assert_eq!(
+                    message.pointer(pointer),
+                    Some(&expected),
+                    "{description}: unexpected value at {pointer}: {message}"
+                );
             }
         }
-    }));
-    let opened = server.receive("version 1 diagnostics", |message| {
-        message["method"] == "textDocument/publishDiagnostics" && message["params"]["version"] == 1
-    });
-    assert_eq!(opened["params"]["uri"], URI);
-    assert!(opened["params"]["diagnostics"]
-        .as_array()
-        .is_some_and(|diagnostics| !diagnostics.is_empty()));
-
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "id": 2,
-        "method": "textDocument/semanticTokens/full",
-        "params": {"textDocument": {"uri": URI}}
-    }));
-    let first_tokens = server.receive("first semantic-token response", |message| {
-        message["id"] == 2
-    });
-    let first_data = first_tokens["result"]["data"]
-        .as_array()
-        .expect("semantic-token data");
-    assert_eq!(first_tokens["result"]["resultId"], "1");
-    assert!(!first_data.is_empty());
-    assert_eq!(first_data.len() % 5, 0);
-
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "method": "textDocument/didChange",
-        "params": {
-            "textDocument": {"uri": URI, "version": 2},
-            "contentChanges": [{
-                "range": {
-                    "start": {"line": 0, "character": 11},
-                    "end": {"line": 0, "character": 17}
-                },
-                "text": "plain"
-            }]
+        if let Some(paths) = receive.get("arraysContain") {
+            for (pointer, expected) in paths.as_object().expect("array containment map") {
+                let expected = substitute_placeholders(expected, session);
+                assert!(
+                    message
+                        .pointer(pointer)
+                        .and_then(Value::as_array)
+                        .is_some_and(|values| values.contains(&expected)),
+                    "{description}: {pointer} does not contain {expected}: {message}"
+                );
+            }
         }
-    }));
-    let changed = server.receive("version 2 diagnostics", |message| {
-        message["method"] == "textDocument/publishDiagnostics" && message["params"]["version"] == 2
-    });
-    assert_eq!(changed["params"]["uri"], URI);
-    assert_eq!(changed["params"]["diagnostics"], json!([]));
+        if let Some(paths) = receive.get("nonEmptyArrays") {
+            for pointer in paths.as_array().expect("non-empty array paths") {
+                let pointer = pointer.as_str().expect("JSON pointer");
+                assert!(
+                    message
+                        .pointer(pointer)
+                        .and_then(Value::as_array)
+                        .is_some_and(|values| !values.is_empty()),
+                    "{description}: expected non-empty array at {pointer}: {message}"
+                );
+            }
+        }
+        if let Some(paths) = receive.get("arrayLengthsMultipleOf") {
+            for (pointer, factor) in paths.as_object().expect("array multiple map") {
+                let factor = factor.as_u64().expect("positive array factor") as usize;
+                let length = message
+                    .pointer(pointer)
+                    .and_then(Value::as_array)
+                    .map(Vec::len)
+                    .unwrap_or_default();
+                assert!(
+                    factor > 0 && length > 0 && length % factor == 0,
+                    "{description}: array length {length} at {pointer} is not a positive multiple \
+                     of {factor}: {message}"
+                );
+            }
+        }
+        if let Some(paths) = receive.get("absent") {
+            for pointer in paths.as_array().expect("absent pointer paths") {
+                let pointer = pointer.as_str().expect("JSON pointer");
+                assert!(
+                    message.pointer(pointer).is_none(),
+                    "{description}: expected no value at {pointer}: {message}"
+                );
+            }
+        }
+    }
 
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "id": 3,
-        "method": "textDocument/semanticTokens/full",
-        "params": {"textDocument": {"uri": URI}}
-    }));
-    let changed_tokens = server.receive("changed semantic-token response", |message| {
-        message["id"] == 3
-    });
-    assert_eq!(changed_tokens["result"]["resultId"], "2");
-    assert!(changed_tokens["result"]["data"]
-        .as_array()
-        .is_some_and(|data| !data.is_empty()));
+    assert_eq!(
+        server.finish().code().map(i64::from),
+        fixture["exitCode"].as_i64()
+    );
+}
 
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "method": "textDocument/didClose",
-        "params": {"textDocument": {"uri": URI}}
-    }));
-    let closed = server.receive("close diagnostics", |message| {
-        message["method"] == "textDocument/publishDiagnostics"
-            && message["params"]["uri"] == URI
-            && message["params"]["diagnostics"] == json!([])
-            && message["params"].get("version").is_none()
-    });
-    assert_eq!(closed["params"]["diagnostics"], json!([]));
-
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "id": 4,
-        "method": "shutdown",
-        "params": null
-    }));
-    let shutdown = server.receive("shutdown response", |message| message["id"] == 4);
-    assert_eq!(shutdown["result"], Value::Null);
-    server.send(json!({
-        "jsonrpc": "2.0",
-        "method": "exit",
-        "params": null
-    }));
-
-    assert_eq!(server.finish().code(), Some(0));
+#[test]
+fn real_server_completes_the_public_stdio_lifecycle() {
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/editor_lifecycle_transcript.json"))
+            .expect("valid editor transcript fixture");
+    assert_eq!(
+        fixture["schemaVersion"], "colorful.lsp.transcript/v1",
+        "unexpected transcript schema"
+    );
+    for session in fixture["sessions"].as_array().expect("transcript sessions") {
+        replay_transcript_session(&fixture, session);
+    }
 }
 
 #[test]
