@@ -13,6 +13,12 @@ fn fixture_path(name: &str) -> PathBuf {
         .join(name)
 }
 
+fn editor_fixture_path(name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../editors/fixtures")
+        .join(name)
+}
+
 fn run<I, S>(args: I, stdin: &[u8], no_color: bool) -> Output
 where
     I: IntoIterator<Item = S>,
@@ -112,4 +118,17 @@ fn invalid_input_operands_and_lint_findings_have_stable_process_failures() {
     assert_eq!(finding.status.code(), Some(1));
     assert!(stdout(&finding).contains("[weak-word]"));
     assert!(stderr(&finding).is_empty());
+}
+
+#[test]
+fn markdown_file_colorization_excludes_non_prose_regions() {
+    let fixture = editor_fixture_path("editor-smoke.md");
+    let output = run([fixture.as_os_str()], b"", false);
+
+    assert_eq!(output.status.code(), Some(0));
+    assert!(stderr(&output).is_empty());
+    let rendered = stdout(&output);
+    let lines: Vec<_> = rendered.lines().collect();
+    assert!(lines[0].contains("\u{1b}["), "{rendered:?}");
+    assert_eq!(&lines[2..5], ["```text", "The cat is really clear.", "```"]);
 }
