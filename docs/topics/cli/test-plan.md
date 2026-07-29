@@ -5,9 +5,10 @@ Requirements:
 - **CLI-1** The `colorful-cli` crate root remains a stable public facade for
   `run`, `colorize`, `try_colorize`, `decide_color`, `lint_report`, and
   `line_col`.
-- **CLI-2** Argument parsing, ANSI coloring, diagnosis/IR output, and lint
-  reporting live in separate implementation modules so a change to one adapter
-  does not require editing unrelated command logic.
+- **CLI-2** Argument parsing, source-format selection, ANSI coloring,
+  diagnosis/IR output, and lint reporting live in separate implementation
+  modules so a change to one adapter does not require editing unrelated command
+  logic.
 - **CLI-3** The module split preserves command output bytes, exit statuses,
   error behavior, `NO_COLOR`, canonical IR, and CLI/LSP coordinate parity.
 
@@ -23,10 +24,10 @@ Requirements:
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
   *Status:* implemented.
 - **CLI-2a** — *Requirement:* CLI-2. *Behavior:* the crate root delegates to
-  dedicated argument, coloring, diagnosis, and lint modules and contains no
-  implementation copy of their owned public functions. *Oracle:* exact module
-  inventory and source-owner assertions. *Evidence type:* deterministic source
-  layout test. *Evidence:*
+  dedicated argument, source-format, coloring, diagnosis, and lint modules and
+  contains no implementation copy of their owned functions. *Oracle:* exact
+  module inventory and source-owner assertions. *Evidence type:* deterministic
+  source layout test. *Evidence:*
   `crates/colorful-cli/tests/module_layout.rs`
   `command_responsibilities_have_exactly_one_module_owner`. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).

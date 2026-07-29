@@ -1,6 +1,7 @@
 use super::args::*;
 use super::color::*;
 use super::diagnose::*;
+use super::format::*;
 use super::lint::*;
 use std::io;
 
@@ -29,6 +30,33 @@ fn markdown_lint_matches_lsp_prose_regions_while_plain_text_stays_whole_document
     assert_eq!(markdown.lines().count(), 1, "{markdown}");
     assert_eq!(plain_text.lines().count(), 2, "{plain_text}");
     assert!(markdown.starts_with("fixture.md:1:12: info [weak-word]"));
+}
+
+#[test]
+fn file_format_detection_is_extension_bounded_and_case_insensitive() {
+    let source = "Prose.\n\n```text\nThe cat connects.\n```\n";
+
+    for name in ["fixture.md", "fixture.MARKDOWN"] {
+        let analysis = analysis_source_for(Some(name), source);
+        assert_ne!(analysis, source, "{name}");
+        assert!(
+            analysis
+                .lines()
+                .nth(3)
+                .expect("fenced content line")
+                .chars()
+                .all(char::is_whitespace),
+            "{name}: {analysis:?}"
+        );
+    }
+    for name in [
+        None,
+        Some("<stdin>"),
+        Some("fixture.txt"),
+        Some("fixture.md.txt"),
+    ] {
+        assert_eq!(analysis_source_for(name, source), source, "{name:?}");
+    }
 }
 
 #[test]

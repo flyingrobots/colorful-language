@@ -20,7 +20,9 @@ colorful diagnose [--json] [FILE]
 ```
 
 - The default command writes the source with manifest-backed ANSI styling.
-  `--no-color` and `NO_COLOR` produce an exact text passthrough.
+  `.md` and `.markdown` files style only reviewed prose regions; other files and
+  stdin retain whole-document behavior. `--no-color` and `NO_COLOR` produce an
+  exact text passthrough.
 - `lint` writes compiler-style findings and exits nonzero when it finds any.
 - `ir` writes one canonical `colorful.syntax/v1` JSON document.
 - `diagnose --json` writes token axes, presentation projections, and lint
@@ -49,12 +51,13 @@ arguments to `run`, prints process errors, and converts them to failure status.
 ## Source ownership
 
 `crates/colorful-cli/src/lib.rs` is a stable facade. It re-exports the existing
-public functions from four private implementation modules:
+public functions from five private implementation modules:
 
 - `cli/args.rs` owns command selection, help/version rendering, and shared
   single-document argument parsing;
 - `cli/color.rs` owns classification-to-ANSI rendering and color policy;
 - `cli/diagnose.rs` owns canonical IR emission and diagnostic JSON;
+- `cli/format.rs` owns filename-to-prose-view selection shared by ANSI and lint;
 - `cli/lint.rs` owns lint execution, report rendering, and human positions.
 
 These modules are not public API. Callers continue to import every supported

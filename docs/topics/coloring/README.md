@@ -51,10 +51,17 @@ emitted verbatim, so stripping the escapes reproduces the input exactly.
 `--no-color` and the `NO_COLOR` environment variable disable color and pass the
 text through unchanged.
 
-The binary uses the fallible `try_colorize()` entry point and reports an invalid
-built-in classification as input-data failure. The compatibility `colorize()`
-function keeps its existing total signature and fails closed to unchanged text
-if that internal invariant ever regresses.
+When the file's final extension is `.md` or `.markdown`, the default command
+styles only the shared Markdown prose view. Reviewed code, opening front matter,
+link destinations, and HTML regions remain byte-for-byte unstyled. Other file
+extensions and stdin retain whole-document Plain Text behavior. The public
+`colorize()` and `try_colorize()` string helpers also retain Plain Text behavior
+because a source string carries no filename or explicit format.
+
+The binary uses the same fallible rendering path as `try_colorize()` and reports
+an invalid built-in classification as input-data failure. The compatibility
+`colorize()` function keeps its existing total signature and fails closed to
+unchanged text if that internal invariant ever regresses.
 
 `colorful diagnose --json <file>` emits a compact machine-readable report for
 troubleshooting CLI and editor output. The report uses the same production parser
@@ -112,14 +119,15 @@ advance the generation, and debounce replacement analysis for 50 ms. The server
 clones a rope snapshot while it holds the document entry, then converts and
 analyzes that snapshot on the blocking pool after releasing the map guard.
 
-Analysis remains whole-document, but it runs once per accepted generation:
-parsing and classification produce one cached value that supplies both
-diagnostics and semantic tokens. A semantic-token request waits for that
+Each accepted generation runs one complete analysis of its selected prose view:
+the entire source for Plain Text or the coordinate-preserving masked source for
+Markdown. Parsing and classification produce one cached value that supplies
+both diagnostics and semantic tokens. A semantic-token request waits for that
 generation's cache and returns the generation as its `resultId`; it does not
-start a second parse. A per-document publication gate and generation/cancellation
-check prevent late old work from replacing the cache or publishing diagnostics.
-If parser/annotator validation fails, the server emits no semantic tokens and
-publishes one error diagnostic with code
+start a second parse. A per-document publication gate and
+generation/cancellation check prevent late old work from replacing the cache or
+publishing diagnostics. If parser/annotator validation fails, the server emits
+no semantic tokens and publishes one error diagnostic with code
 `colorful/invalid-classification`; it never publishes a valid-looking prefix.
 
 Normal analysis accepts documents through 5 MiB (5,242,880 bytes). A larger

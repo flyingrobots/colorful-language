@@ -1,10 +1,10 @@
 use super::args::{parse_input_args, Command, ParseOutcome};
 use super::color::{classification_io_error, default_annotator};
+use super::format::analysis_source_for;
 use colorful_core::{Analyzer, Finding, Severity, ValidatedClassification};
 use colorful_lint::ProseLinter;
-use colorful_parse::{markdown::mask_non_prose, ProseParser};
+use colorful_parse::ProseParser;
 use std::io::{self, Read, Write};
-use std::path::Path;
 use std::process::ExitCode;
 
 /// Report prose problems for a file (the `lint` subcommand).
@@ -51,11 +51,7 @@ where
 /// code. Factored out of [`run_lint`] so the format and the exit decision are
 /// testable without touching the filesystem.
 pub(super) fn lint_to_writer<W: Write>(name: &str, source: &str, out: &mut W) -> io::Result<bool> {
-    let analysis_source = if is_markdown_path(name) {
-        mask_non_prose(source)
-    } else {
-        std::borrow::Cow::Borrowed(source)
-    };
+    let analysis_source = analysis_source_for(Some(name), source);
     let classification = ValidatedClassification::from_ports(
         &analysis_source,
         &ProseParser::new(),
@@ -69,15 +65,6 @@ pub(super) fn lint_to_writer<W: Write>(name: &str, source: &str, out: &mut W) ->
     );
     out.write_all(lint_report(name, source, &findings).as_bytes())?;
     Ok(!findings.is_empty())
-}
-
-fn is_markdown_path(name: &str) -> bool {
-    Path::new(name)
-        .extension()
-        .and_then(|extension| extension.to_str())
-        .is_some_and(|extension| {
-            extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown")
-        })
 }
 
 /// Render `findings` as compiler-style diagnostic lines:

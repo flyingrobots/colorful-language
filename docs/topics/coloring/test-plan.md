@@ -108,7 +108,10 @@ Requirements:
   in retained prose, exact excluded-region bytes, and unchanged Plain Text
   controls. *Evidence type:* real-binary and pure unit tests. *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Status:* planned.
+  *Evidence:* `colorful-cli` tests
+  `binary_contract::markdown_file_colorization_excludes_non_prose_regions` and
+  `cli::tests::file_format_detection_is_extension_bounded_and_case_insensitive`.
+  *Status:* implemented.
 - **COL-4a** — *Requirement:* COL-4. *Behavior:* single-line and multi-line tokens
   are delta-encoded; columns count UTF-16 code units. *Oracle:* `SemanticToken`
   vector equality. *Evidence:* `colorful-lsp`

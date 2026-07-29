@@ -1,6 +1,7 @@
 mod args;
 mod color;
 mod diagnose;
+mod format;
 mod lint;
 
 pub use args::run;

@@ -318,7 +318,14 @@ Verification for editor adapters and the `colorful-lsp` surface.
   code-looking text. *Evidence type:* cross-surface process and unit fixtures.
   *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Status:* planned.
+  *Evidence:* `colorful-cli` tests
+  `cli::tests::markdown_lint_matches_lsp_prose_regions_while_plain_text_stays_whole_document`,
+  `cli::tests::file_format_detection_is_extension_bounded_and_case_insensitive`,
+  and
+  `binary_contract::markdown_file_colorization_excludes_non_prose_regions`;
+  `crates/colorful-lsp/tests/fixtures/editor_lifecycle_transcript.json`;
+  `crates/colorful-lsp/tests/stdio_contract.rs`
+  `real_server_completes_the_public_stdio_lifecycle`. *Status:* implemented.
 - **EDIT-15d** — *Requirement:* EDIT-15. *Behavior:* the server stores the
   `didOpen` language identifier with the document generation and preserves that
   format across incremental edits, stale-result rejection, cached diagnostics,
