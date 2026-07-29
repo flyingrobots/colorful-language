@@ -521,6 +521,23 @@ fn kill_process(pid: u32) {
 }
 
 #[test]
+fn worker_cleanup_waits_for_delayed_pid_artifact() {
+    let fixture = success_fixture();
+    let worker_pid = fixture.worker_pid.clone();
+    let writer = thread::spawn(move || {
+        thread::sleep(Duration::from_millis(20));
+        fs::write(worker_pid, u32::MAX.to_string()).expect("record delayed worker PID");
+    });
+
+    let result = std::panic::catch_unwind(|| assert_worker_terminated(&fixture));
+    writer.join().expect("delayed PID writer");
+    assert!(
+        result.is_ok(),
+        "cleanup must wait for a delayed PID artifact"
+    );
+}
+
+#[test]
 fn malformed_outputs_fail_closed_by_category() {
     let fixtures = [
         (
@@ -591,6 +608,50 @@ fn duplicate_source_key_error_is_bounded_and_redacted() {
     assert_eq!(error.kind(), ValeErrorKind::MalformedOutput);
     assert_eq!(error.message(), "Vale returned a duplicate source key");
     assert!(!error.message().contains(&source_key));
+}
+
+#[test]
+fn additive_vale_v3_fields_are_ignored() {
+    let json = SUCCESS_JSON
+        .replacen(
+            r#""Action": {"Name": "", "Params": null}"#,
+            r#""Action": {"Name": "", "Params": null, "FutureAction": {"enabled": true}}"#,
+            1,
+        )
+        .replacen(
+            r#""Span": [9, 12]"#,
+            r#""FutureAlert": {"revision": 1}, "Span": [9, 12]"#,
+            1,
+        );
+    let fixture = FakeVale::new(
+        "3.14.2",
+        &format!("printf '%s\\n' '{}'", json.replace('\'', "'\\''")),
+    );
+    let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale");
+
+    let findings = analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect("additive v3 fields must remain compatible")
+        .findings()
+        .to_vec();
+
+    assert_eq!(findings.len(), 2);
+    assert_eq!(findings[1].rule.code(), "vale/Style.Clarity");
+}
+
+#[test]
+fn unexpected_source_key_error_is_bounded_and_redacted() {
+    let source_key = "s".repeat(8192);
+    let fixture = FakeVale::new("3.14.2", &format!("printf '%s' '{{\"{source_key}\":[]}}'"));
+    let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover mismatched-key Vale");
+
+    let error = analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect_err("reject unexpected source key");
+    assert_eq!(error.kind(), ValeErrorKind::SourceMismatch);
+    assert_eq!(error.message(), "Vale returned an unexpected source key");
+    assert!(!error.message().contains(&source_key));
+    assert!(!error.message().contains("stdin.txt"));
 }
 
 #[test]

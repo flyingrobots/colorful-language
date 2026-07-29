@@ -12,6 +12,28 @@ use crate::{CancellationToken, ValeError, ValeErrorKind};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(2);
 
+#[cfg(test)]
+thread_local! {
+    static BEFORE_COMPLETION_ACCEPTANCE: std::cell::RefCell<Option<Box<dyn FnOnce()>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+fn set_before_completion_acceptance(hook: impl FnOnce() + 'static) {
+    BEFORE_COMPLETION_ACCEPTANCE.with(|slot| {
+        *slot.borrow_mut() = Some(Box::new(hook));
+    });
+}
+
+#[cfg(test)]
+fn run_before_completion_acceptance() {
+    BEFORE_COMPLETION_ACCEPTANCE.with(|slot| {
+        if let Some(hook) = slot.borrow_mut().take() {
+            hook();
+        }
+    });
+}
+
 pub(crate) enum ProcessInput {
     None,
     Bytes(Vec<u8>),
@@ -137,9 +159,14 @@ pub(crate) fn run_process(
                 format!("Vale process exceeded {} ms", timeout.as_millis()),
             ));
         }
-        if let Some(status) = status.filter(|_| {
+        let completed = status.filter(|_| {
             input_finished && stdout_reader.is_finished() && stderr_reader.is_finished()
-        }) {
+        });
+        #[cfg(test)]
+        if completed.is_some() {
+            run_before_completion_acceptance();
+        }
+        if let Some(status) = completed {
             break Ok(status);
         }
         thread::sleep(POLL_INTERVAL);
@@ -244,4 +271,37 @@ fn read_capped(mut reader: impl Read, limit: usize) -> io::Result<CapturedStream
         }
     }
     Ok(CapturedStream { bytes, exceeded })
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use std::ffi::OsString;
+    use std::path::Path;
+    use std::time::Duration;
+
+    use super::{run_process, set_before_completion_acceptance, ProcessInput};
+    use crate::{CancellationToken, ValeErrorKind};
+
+    #[test]
+    fn cancellation_wins_at_the_completion_boundary() {
+        let cancellation = CancellationToken::new();
+        let late_cancellation = cancellation.clone();
+        set_before_completion_acceptance(move || late_cancellation.cancel());
+
+        let result = run_process(
+            Path::new("/bin/sh"),
+            &[OsString::from("-c"), OsString::from("printf complete")],
+            Path::new("/"),
+            ProcessInput::None,
+            Duration::from_secs(2),
+            1024,
+            &cancellation,
+        );
+        let error = match result {
+            Ok(_) => panic!("late cancellation must precede completed output"),
+            Err(error) => error,
+        };
+
+        assert_eq!(error.kind(), ValeErrorKind::Cancelled);
+    }
 }

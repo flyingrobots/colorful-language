@@ -19,6 +19,19 @@ fn adapter_source(file: &str) -> String {
         .unwrap_or_else(|error| panic!("read adapter source {file}: {error}"))
 }
 
+fn adapter_test_source(file: &str) -> String {
+    fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests")
+            .join(file),
+    )
+    .unwrap_or_else(|error| panic!("read adapter test source {file}: {error}"))
+}
+
+fn workspace_flag(dependencies: &toml::value::Table, dependency: &str) -> Option<bool> {
+    dependencies[dependency]["workspace"].as_bool()
+}
+
 fn production_dependencies(manifest: &toml::Value) -> BTreeSet<String> {
     let mut dependencies: BTreeSet<String> = manifest
         .get("dependencies")
@@ -193,6 +206,54 @@ fn linting_reference_resolves_an_absolute_vale_executable() {
 }
 
 #[test]
+fn adapter_process_tests_do_not_mutate_global_environment() {
+    let source = adapter_test_source("vale_adapter.rs");
+    assert!(!source.contains("std::env::set_var"));
+    assert!(!source.contains("std::env::remove_var"));
+    assert!(!source.contains("ENVIRONMENT_LOCK"));
+
+    let process = adapter_source("process.rs");
+    assert!(
+        process.contains("const ISOLATED_PATH"),
+        "the minimal child search path needs one documented owner"
+    );
+}
+
+#[test]
+fn workspace_dependency_entry_requires_a_workspace_flag() {
+    let manifest = toml::from_str::<toml::Value>(
+        r#"
+[dev-dependencies]
+colorful-cli = "0.4.0"
+"#,
+    )
+    .expect("parse scalar dependency fixture");
+    let dependencies = manifest["dev-dependencies"]
+        .as_table()
+        .expect("fixture dependencies");
+
+    let result = std::panic::catch_unwind(|| workspace_flag(dependencies, "colorful-cli"));
+    assert!(
+        matches!(result, Ok(None)),
+        "a scalar dependency must reach the explicit workspace assertion"
+    );
+}
+
+#[test]
+fn maintenance_reference_names_the_workspace_acceptance_floor() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("workspace root");
+    let reference =
+        fs::read_to_string(root.join("docs/workflows/repository-maintenance/README.md"))
+            .expect("read maintenance reference");
+
+    assert!(reference.contains("The 92% workspace acceptance floor"));
+    assert!(!reference.contains("The 92% workspace percentage"));
+}
+
+#[test]
 fn workspace_dependency_entries_have_actual_consumers() {
     let workspace = manifest("Cargo.toml");
     let workspace_dependencies = workspace["workspace"]["dependencies"]
@@ -212,7 +273,7 @@ fn workspace_dependency_entries_have_actual_consumers() {
         .expect("adapter development dependencies");
     for dependency in ["colorful-cli", "colorful-lsp"] {
         assert_eq!(
-            development_dependencies[dependency]["workspace"].as_bool(),
+            workspace_flag(development_dependencies, dependency),
             Some(true),
             "{dependency} must not duplicate the workspace version"
         );
