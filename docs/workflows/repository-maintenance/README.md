@@ -226,7 +226,9 @@ The same offline structure gate applies these fail-closed rules:
   and delimiter establish a table location, a later non-empty table cannot
   replace it merely because the first table had no data row. The first cell in
   every canonical header is the plain-text cell `Mechanism`; inline-code
-  styling that displays the same label is refused.
+  styling that displays the same label is refused. The `Mechanism` header cell
+  and every delimiter cell must be valid in literal source; comments cannot
+  synthesize either.
 - **Row shape:** The first cell in every canonical row is pipe-delimited on
   both sides, and the row has no more than three leading spaces. Valid
   no-leading-pipe Markdown headers and continuing data rows are refused

@@ -593,6 +593,14 @@ test("rejects a comment-altered accountability table header", () => {
   );
 });
 
+test("rejects a comment-altered accountability table delimiter", () => {
+  expectCategory(
+    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+    (source) =>
+      source.replace("| --- | --- |", "| --<!--note-->- | --- |"),
+  );
+});
+
 test("rejects unsupported Markdown in a duplicate table header", () => {
   expectCategory(
     "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",

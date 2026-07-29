@@ -594,13 +594,31 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       continue;
     }
     if (accountabilityTableState === "delimiter") {
-      if (
-        tableCells !== undefined &&
-        tableHasLeadingPipe ===
-          candidateAccountabilityTableHasLeadingPipe &&
-        tableCells.length === candidateAccountabilityTableColumnCount &&
-        tableCells.every((cell) => MARKDOWN_DELIMITER_CELL.test(cell))
-      ) {
+      const matchesCandidateDelimiter = (cells, hasLeadingPipe) =>
+        cells !== undefined &&
+        hasLeadingPipe === candidateAccountabilityTableHasLeadingPipe &&
+        cells.length === candidateAccountabilityTableColumnCount &&
+        cells.every((cell) => MARKDOWN_DELIMITER_CELL.test(cell));
+      const visibleDelimiterMatches = matchesCandidateDelimiter(
+        tableCells,
+        tableHasLeadingPipe,
+      );
+      const literalLeadingPipeTableCells = markdownTableCells(literalLine);
+      const literalTableCells =
+        literalLeadingPipeTableCells ??
+        noLeadingPipeTableCells(literalLine);
+      const literalDelimiterMatches = matchesCandidateDelimiter(
+        literalTableCells,
+        literalLeadingPipeTableCells !== undefined,
+      );
+      if (visibleDelimiterMatches && !literalDelimiterMatches) {
+        fail(
+          "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+          mechanismLocation,
+          "accountability table delimiter must be valid in literal source",
+        );
+      }
+      if (visibleDelimiterMatches) {
         accountabilityTableState = "rows";
         if (candidateAccountabilityHeaderKind === "canonical") {
           accountabilityTableLocation ??=
