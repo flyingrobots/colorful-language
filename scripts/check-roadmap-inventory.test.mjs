@@ -224,6 +224,26 @@ test("requires a delimiter and data row for the accountability table", () => {
     "| Mechanism | Example only |",
     ["| Mechanism | Example only |", "| --- | --- |"].join("\n"),
     [
+      "| Mechanism | Example only |",
+      "| - | --- |",
+      "| Parser ports | Invalid first delimiter. |",
+    ].join("\n"),
+    [
+      "| Mechanism | Example only |",
+      "| --- | nope |",
+      "| Parser ports | Invalid second delimiter. |",
+    ].join("\n"),
+    [
+      "| Mechanism | Example only |",
+      "| --- |",
+      "| Parser ports | Missing second delimiter. |",
+    ].join("\n"),
+    [
+      "| Mechanism | Example only |",
+      "| --- | --- | --- |",
+      "| Parser ports | Unexpected third delimiter. |",
+    ].join("\n"),
+    [
       "```markdown",
       "| Mechanism | Example only |",
       "| --- | --- |",

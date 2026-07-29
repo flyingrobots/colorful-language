@@ -244,11 +244,12 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   by displayed identity. Unsupported mechanism-cell Markdown is
   noncanonical. *Oracle:* fixture mutations cover exact duplicate rows,
   missing/recased, code-indented, or duplicate headings, duplicate tables,
-  missing delimiter or data rows or first-cell closing pipe, no-leading-pipe
-  syntax, indented code plus fenced and commented table-shaped examples,
-  inline-code styling, an empty identity, invalid escaping inside and outside
-  inline code, named/decimal/hexadecimal character references, canonically
-  equivalent Unicode, and unsupported emphasis. They fail with their stable
+  missing or malformed delimiter or data rows, delimiter/header arity
+  mismatches, a missing first-cell closing pipe, no-leading-pipe syntax,
+  indented code plus fenced and commented table-shaped examples, inline-code
+  styling, an empty identity, invalid escaping inside and outside inline code,
+  named/decimal/hexadecimal character references, canonically equivalent
+  Unicode, and unsupported emphasis. They fail with their stable
   `E_ROADMAP_*` categories, including both source addresses for a duplicate
   heading, table, or mechanism, while indented, fenced, and commented examples
   immediately after the real authority remain non-authoritative. A later H2
