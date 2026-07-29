@@ -141,18 +141,7 @@ function fixture() {
     },
     issueConfig: {
       blank_issues_enabled: false,
-      contact_links: [
-        {
-          name: "Support",
-          url: "https://github.com/flyingrobots/colorful-language/discussions/categories/q-a",
-          about: "Ask a usage question.",
-        },
-        {
-          name: "Design",
-          url: "https://github.com/flyingrobots/colorful-language/discussions/categories/ideas",
-          about: "Explore an early design.",
-        },
-      ],
+      contact_links: [],
     },
     rustPolicy: `
 [advisories]
@@ -224,6 +213,17 @@ allow-git = []
         },
       ],
     },
+    maintenanceReference: [
+      "Issues and milestones are the delivery authority",
+      "Discussions are not a supported intake channel",
+      "No GitHub deployment environment exists",
+      "CARGO_REGISTRY_TOKEN",
+      "OVSX_PAT",
+      "VSCE_PAT",
+      "bash scripts/release-prep.sh",
+      "node scripts/verify-editor-publication.mjs",
+      "npm --prefix editors/vscode run smoke:package",
+    ].join("\n"),
     securityWorkflow: {
       on: {
         push: { branches: ["main"] },
@@ -416,8 +416,53 @@ test("rejects deployment credentials without a named custodian", () => {
   }, "E_DEPLOYMENT_OWNERSHIP");
 });
 
+test("rejects deployment environment and evidence drift", () => {
+  for (const [mutate, code] of [
+    [
+      ({ deployment }) => {
+        deployment.environment = "release";
+      },
+      "E_DEPLOYMENT_OWNERSHIP",
+    ],
+    [
+      ({ deployment }) => {
+        deployment.credential_secrets.pop();
+      },
+      "E_DEPLOYMENT_CREDENTIALS",
+    ],
+    [
+      ({ deployment }) => {
+        deployment.evidence.pop();
+      },
+      "E_DEPLOYMENT_EVIDENCE",
+    ],
+    [
+      ({ deployment }) => {
+        deployment.create_environment_when = "";
+      },
+      "E_DEPLOYMENT_OWNERSHIP",
+    ],
+  ]) {
+    expectCode(({ repositoryProfile }) => {
+      mutate(repositoryProfile);
+    }, code);
+  }
+});
+
+test("rejects a stale public-posture reference", () => {
+  expectCode((candidate) => {
+    candidate.maintenanceReference = "";
+  }, "E_REPOSITORY_REFERENCE");
+});
+
 test("rejects promoted Discussion routes without supported intake", () => {
-  expectCode(() => {}, "E_DISCUSSION_ROUTE");
+  expectCode(({ issueConfig }) => {
+    issueConfig.contact_links.push({
+      name: "Support",
+      url: "https://github.com/flyingrobots/colorful-language/discussions/categories/q-a",
+      about: "Ask a usage question.",
+    });
+  }, "E_DISCUSSION_ROUTE");
 });
 
 test("accepts reviewed workflow-security exceptions in any order", () => {
@@ -489,10 +534,24 @@ test("rejects an unstructured blank issue escape hatch", () => {
   }, "E_ISSUE_BLANK");
 });
 
-test("rejects a Discussion route outside the reviewed categories", () => {
+test("rejects any Discussion route without a supported owner", () => {
   expectCode(({ issueConfig }) => {
-    issueConfig.contact_links[0].url =
-      "https://github.com/flyingrobots/colorful-language/discussions";
+    issueConfig.contact_links.push({
+      name: "Design",
+      url: "https://github.com/flyingrobots/colorful-language/discussions/categories/ideas",
+      about: "Explore an early design.",
+    });
+  }, "E_DISCUSSION_ROUTE");
+});
+
+test("rejects an issue form that advertises an unowned Discussion", () => {
+  expectCode(({ bugForm }) => {
+    bugForm.body.unshift({
+      type: "markdown",
+      attributes: {
+        value: "Use the Q&A Discussion for support.",
+      },
+    });
   }, "E_DISCUSSION_ROUTE");
 });
 

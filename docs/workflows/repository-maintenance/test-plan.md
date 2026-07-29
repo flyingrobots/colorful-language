@@ -21,8 +21,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   public crates.io registry unless a narrow exception names its owner and
   removal trigger.
 - **RM-3 — Actionable intake.** Bug and feature intake must collect enough
-  evidence for a maintainer to act. Support and exploratory design conversations
-  may route to Discussions without hiding an actionable defect or proposal.
+  evidence for a maintainer to act. Discussions must not be advertised as a
+  support or design route without an explicit response owner.
 - **RM-4 — Dependency change review.** Weekly dependency updates must remain
   grouped by rollback boundary, and every pull request must reject newly
   introduced dependencies with detected disallowed licenses or
@@ -113,10 +113,11 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
 - **RM-3a — Reproducible issue forms and routing.** *Requirement:* RM-3.
   *Behavior:* the bug form requires reproduction, observed and expected
   behavior, version, and environment; the feature form requires the problem,
-  proposed outcome, and alternatives; support and exploratory design contact
-  links target the repository's Q&A and Ideas Discussion categories.
-  *Oracle:* malformed, weakened, or misrouted fixtures fail with stable error
-  categories, while both actionable forms remain directly selectable.
+  proposed outcome, and alternatives; because Discussions have no supported
+  intake owner, the issue chooser exposes no support or design contact link.
+  *Oracle:* malformed or weakened forms and any promoted Discussion route fail
+  with stable error categories, while both actionable forms remain directly
+  selectable.
   *Evidence type:* YAML policy checker and deterministic mutation tests.
   *Evidence:* `.github/ISSUE_TEMPLATE/bug.yml`,
   `.github/ISSUE_TEMPLATE/feature.yml`,
@@ -348,12 +349,13 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   authenticated witness compares the configured homepage and environment
   inventory with live GitHub state. *Evidence type:* deterministic
   configuration mutation tests plus an explicit authenticated GitHub API
-  witness. *Evidence:* planned in `.github/repository-profile.yml`,
+  witness. *Evidence:* `.github/repository-profile.yml`,
   `scripts/check-repository-maintenance.mjs`,
   `scripts/check-repository-maintenance.test.mjs`, and this workflow's current
-  reference. *Tracking:*
+  reference; the live witness uses the documented authenticated `gh api`
+  commands. *Tracking:*
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Hosted evidence boundary
 

@@ -332,7 +332,7 @@ was installed, and reach the first useful editor result.
   posture, and deployment ownership only when maintainers and public
   destinations exist
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
-  <!-- roadmap-primary: active #153 -->
+  <!-- roadmap-primary: delivered #153 -->
 - **Parked theme accessibility tooling:** lint contrast and color-vision
   distinguishability only after the shipped theme format and visual oracle are
   stable

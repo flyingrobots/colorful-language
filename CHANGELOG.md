@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Governed repository public posture.** A versioned repository profile now
+  keeps Issues and milestones as the delivery authority, points the public
+  homepage at the maintained README, and prevents unowned Discussion categories
+  from being advertised as support or design intake. The same profile assigns
+  release, credential, and rollback ownership to `@flyingrobots`, inventories
+  the three publication secrets and release evidence, and forbids claiming a
+  deployment environment before a real release can move all credentials
+  atomically.
 - **Signed native and editor distribution machinery.** Tagged releases now
   build `colorful` and `colorful-lsp` natively for Linux x86-64, Apple Silicon,
   and Windows x86-64, package matching release metadata and SHA-256 sidecars,

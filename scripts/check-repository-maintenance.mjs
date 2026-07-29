@@ -13,6 +13,18 @@ import {
 
 const scriptPath = fileURLToPath(import.meta.url);
 const REPOSITORY_URL = "https://github.com/flyingrobots/colorful-language";
+const REPOSITORY_HOMEPAGE = `${REPOSITORY_URL}#readme`;
+const REPOSITORY_OWNER = "@flyingrobots";
+const DEPLOYMENT_CREDENTIALS = [
+  "CARGO_REGISTRY_TOKEN",
+  "OVSX_PAT",
+  "VSCE_PAT",
+];
+const DEPLOYMENT_EVIDENCE = [
+  "bash scripts/release-prep.sh",
+  "node scripts/verify-editor-publication.mjs",
+  "npm --prefix editors/vscode run smoke:package",
+];
 const CHECKOUT_ACTION =
   "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
 const RUST_TOOLCHAIN_ACTION =
@@ -100,6 +112,150 @@ function sameStrings(actual, expected) {
   );
 }
 
+function requireExactKeys(value, expected, code, path) {
+  const wanted = expected.toSorted();
+  const keys = Object.keys(requireObject(value, code, path)).toSorted();
+  if (!sameStrings(keys, wanted)) {
+    reject(
+      code,
+      path,
+      `must contain only ${wanted.join(", ")}`,
+    );
+  }
+}
+
+function validateRepositoryProfile(profile, maintenanceReference) {
+  const path = ".github/repository-profile.yml";
+  requireExactKeys(
+    profile,
+    [
+      "delivery_tracker",
+      "deployment",
+      "discussions",
+      "homepage",
+      "version",
+    ],
+    "E_REPOSITORY_PROFILE",
+    path,
+  );
+  if (
+    profile.version !== 1 ||
+    profile.homepage !== REPOSITORY_HOMEPAGE ||
+    profile.delivery_tracker !== "github-issues-and-milestones"
+  ) {
+    reject(
+      "E_REPOSITORY_PROFILE",
+      path,
+      "must retain the reviewed version, homepage, and delivery authority",
+    );
+  }
+
+  const discussionsPath = `${path}:discussions`;
+  requireExactKeys(
+    profile.discussions,
+    ["owner", "promoted_categories", "supported_intake"],
+    "E_DISCUSSION_ROUTE",
+    discussionsPath,
+  );
+  if (
+    profile.discussions.supported_intake !== false ||
+    profile.discussions.owner !== null ||
+    !Array.isArray(profile.discussions.promoted_categories) ||
+    profile.discussions.promoted_categories.length !== 0
+  ) {
+    reject(
+      "E_DISCUSSION_ROUTE",
+      discussionsPath,
+      "must not promote Discussions without a supported intake owner",
+    );
+  }
+
+  const deploymentPath = `${path}:deployment`;
+  requireExactKeys(
+    profile.deployment,
+    [
+      "create_environment_when",
+      "credential_owner",
+      "credential_secrets",
+      "environment",
+      "evidence",
+      "owner",
+      "rollback_owner",
+    ],
+    "E_DEPLOYMENT_OWNERSHIP",
+    deploymentPath,
+  );
+  if (
+    profile.deployment.environment !== null ||
+    profile.deployment.owner !== REPOSITORY_OWNER ||
+    profile.deployment.credential_owner !== REPOSITORY_OWNER ||
+    profile.deployment.rollback_owner !== REPOSITORY_OWNER
+  ) {
+    reject(
+      "E_DEPLOYMENT_OWNERSHIP",
+      deploymentPath,
+      "must name the solo owner and must not claim an environment exists",
+    );
+  }
+  if (
+    !Array.isArray(profile.deployment.credential_secrets) ||
+    !sameStrings(
+      profile.deployment.credential_secrets,
+      DEPLOYMENT_CREDENTIALS,
+    )
+  ) {
+    reject(
+      "E_DEPLOYMENT_CREDENTIALS",
+      `${deploymentPath}.credential_secrets`,
+      "must equal the reviewed release-secret inventory",
+    );
+  }
+  if (
+    !Array.isArray(profile.deployment.evidence) ||
+    !sameStrings(profile.deployment.evidence, DEPLOYMENT_EVIDENCE)
+  ) {
+    reject(
+      "E_DEPLOYMENT_EVIDENCE",
+      `${deploymentPath}.evidence`,
+      "must equal the reviewed release-evidence inventory",
+    );
+  }
+  if (
+    typeof profile.deployment.create_environment_when !== "string" ||
+    profile.deployment.create_environment_when.trim() === ""
+  ) {
+    reject(
+      "E_DEPLOYMENT_OWNERSHIP",
+      `${deploymentPath}.create_environment_when`,
+      "must name the environment-creation threshold",
+    );
+  }
+
+  const requiredReference = [
+    "Issues and milestones are the delivery authority",
+    "Discussions are not a supported intake channel",
+    "No GitHub deployment environment exists",
+    ...DEPLOYMENT_CREDENTIALS,
+    ...DEPLOYMENT_EVIDENCE,
+  ];
+  const normalizedReference =
+    typeof maintenanceReference === "string"
+      ? maintenanceReference.replace(/\s+/gu, " ")
+      : maintenanceReference;
+  if (
+    typeof normalizedReference !== "string" ||
+    requiredReference.some(
+      (required) => !normalizedReference.includes(required),
+    )
+  ) {
+    reject(
+      "E_REPOSITORY_REFERENCE",
+      "docs/workflows/repository-maintenance/README.md",
+      "must describe the reviewed public and deployment posture",
+    );
+  }
+}
+
 function validateIssueForm(form, { path, label, requiredFields }) {
   requireObject(form, "E_ISSUE_FORM", path);
   for (const key of ["name", "description", "title"]) {
@@ -153,7 +309,7 @@ function validateIssueForm(form, { path, label, requiredFields }) {
   }
 }
 
-function validateIssueConfig(config) {
+function validateIssueConfig(config, repositoryProfile) {
   const path = ".github/ISSUE_TEMPLATE/config.yml";
   requireObject(config, "E_ISSUE_CONFIG", path);
   if (config.blank_issues_enabled !== false) {
@@ -163,52 +319,38 @@ function validateIssueConfig(config) {
       "must be false so intake uses the reviewed forms",
     );
   }
-  const expected = new Map([
-    [
-      "support",
-      `${REPOSITORY_URL}/discussions/categories/q-a`,
-    ],
-    [
-      "design",
-      `${REPOSITORY_URL}/discussions/categories/ideas`,
-    ],
-  ]);
-  if (!Array.isArray(config.contact_links) || config.contact_links.length !== 2) {
+  if (
+    repositoryProfile?.discussions?.supported_intake !== false ||
+    !Array.isArray(config.contact_links) ||
+    config.contact_links.length !== 0
+  ) {
     reject(
       "E_DISCUSSION_ROUTE",
       `${path}:contact_links`,
-      "must contain exactly the support and design routes",
+      "must stay empty while Discussions have no supported intake owner",
     );
   }
-  const observed = new Map();
-  for (const [index, link] of config.contact_links.entries()) {
-    if (
-      typeof link?.name !== "string" ||
-      typeof link?.url !== "string" ||
-      typeof link?.about !== "string" ||
-      link.about.trim() === ""
-    ) {
-      reject(
-        "E_DISCUSSION_ROUTE",
-        `${path}:contact_links[${index}]`,
-        "must provide name, URL, and explanatory text",
-      );
-    }
-    const route = [...expected].find(([, url]) => url === link.url);
-    if (route === undefined || observed.has(route[0])) {
-      reject(
-        "E_DISCUSSION_ROUTE",
-        `${path}:contact_links[${index}].url`,
-        "must target the repository Q&A or Ideas category exactly once",
-      );
-    }
-    observed.set(route[0], link);
-  }
-  if ([...expected.keys()].some((route) => !observed.has(route))) {
+}
+
+function validateIssueFormDiscussionClaims(
+  forms,
+  repositoryProfile,
+) {
+  const markdown = forms.flatMap((form) =>
+    Array.isArray(form?.body)
+      ? form.body
+        .filter((entry) => entry?.type === "markdown")
+        .map((entry) => String(entry.attributes?.value ?? ""))
+      : [],
+  );
+  if (
+    repositoryProfile?.discussions?.supported_intake === false &&
+    /\b(?:Discussions?|Q&A)\b/u.test(markdown.join("\n"))
+  ) {
     reject(
       "E_DISCUSSION_ROUTE",
-      `${path}:contact_links`,
-      "must retain both the support and design routes",
+      ".github/ISSUE_TEMPLATE",
+      "forms must not advertise an unowned Discussion intake surface",
     );
   }
 }
@@ -761,11 +903,11 @@ function validateCommandWiring(ciWorkflow, releasePrep) {
 }
 
 function validateOwnership(codeowners, ruleset) {
-  if (codeowners !== "* @flyingrobots\n") {
+  if (codeowners !== `* ${REPOSITORY_OWNER}\n`) {
     reject(
       "E_CODEOWNERS",
       ".github/CODEOWNERS",
-      "must assign the repository to @flyingrobots exactly",
+      `must assign the repository to ${REPOSITORY_OWNER} exactly`,
     );
   }
   const pullRequestRule = ruleset?.rules?.find(
@@ -788,6 +930,10 @@ function validateOwnership(codeowners, ruleset) {
 }
 
 export function validateRepositoryMaintenance(candidate) {
+  validateRepositoryProfile(
+    candidate.repositoryProfile,
+    candidate.maintenanceReference,
+  );
   validateIssueForm(candidate.bugForm, {
     path: ".github/ISSUE_TEMPLATE/bug.yml",
     label: "bug",
@@ -804,7 +950,11 @@ export function validateRepositoryMaintenance(candidate) {
     label: "enhancement",
     requiredFields: ["problem", "outcome", "alternatives"],
   });
-  validateIssueConfig(candidate.issueConfig);
+  validateIssueConfig(candidate.issueConfig, candidate.repositoryProfile);
+  validateIssueFormDiscussionClaims(
+    [candidate.bugForm, candidate.featureForm],
+    candidate.repositoryProfile,
+  );
   validateRustPolicy(candidate.rustPolicy, candidate.advisoryExceptions);
   let workflowSecurityPolicy;
   try {
@@ -874,6 +1024,12 @@ function parseWorkflowFiles() {
 export function repositoryCandidate() {
   const workflowFiles = parseWorkflowFiles();
   return {
+    repositoryProfile: parseOptionalYaml(
+      ".github/repository-profile.yml",
+    ),
+    maintenanceReference: readOptional(
+      "docs/workflows/repository-maintenance/README.md",
+    ),
     bugForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/bug.yml"),
     featureForm: parseOptionalYaml(".github/ISSUE_TEMPLATE/feature.yml"),
     issueConfig: parseOptionalYaml(".github/ISSUE_TEMPLATE/config.yml"),

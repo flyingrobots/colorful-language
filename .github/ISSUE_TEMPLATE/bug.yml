@@ -7,8 +7,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting an actionable defect. For usage questions, use the
-        Q&A link on the issue chooser instead.
+        Thanks for reporting an actionable defect. General support is not
+        currently staffed; search the documentation and existing issues before
+        filing a reproducible defect.
   - type: input
     id: version
     attributes:
