@@ -577,6 +577,25 @@ test("bounds live GitHub calls by time and response size", () => {
   assert.match(checker, /maxBuffer:\s*16 \* 1024 \* 1024/u);
 });
 
+test("the workflow reference pins the canonical accountability heading", () => {
+  const reference = readFileSync(
+    new URL(
+      "../docs/workflows/repository-maintenance/README.md",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(
+    reference,
+    /canonical\n`## Architecture accountability` H2/u,
+  );
+  assert.doesNotMatch(
+    reference,
+    /canonical Architecture\nAccountability H2/u,
+  );
+});
+
 test("the repository wires offline and live reconciliation into distinct lanes", () => {
   const ci = readFileSync(
     new URL("../.github/workflows/ci.yml", import.meta.url),
