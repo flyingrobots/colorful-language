@@ -39,7 +39,7 @@ release version. For an adapter release `0.Y.Z`, the supported
 `colorful-lsp` range is the stable same-minor line:
 
 ```text
->=0.Y.0, <0.(Y+1).0
+>=0.Y.0 <0.(Y+1).0
 ```
 
 Patch-level server updates are therefore compatible with adapters from the same

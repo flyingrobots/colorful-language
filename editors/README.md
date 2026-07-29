@@ -17,7 +17,7 @@ put it on your `PATH`).
 
 The VS Code and Zed adapters share the repository release version. Use a stable
 `colorful-lsp` from the same pre-1.0 minor line; for adapter `0.Y.Z`, the
-supported server range is `>=0.Y.0, <0.(Y+1).0`.
+supported server range is `>=0.Y.0 <0.(Y+1).0`.
 
 | Editor | Integration |
 | --- | --- |

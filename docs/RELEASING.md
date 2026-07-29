@@ -178,7 +178,7 @@ For an adapter version `0.Y.Z`, compatible `colorful-lsp` versions are stable
 releases in:
 
 ```text
->=0.Y.0, <0.(Y+1).0
+>=0.Y.0 <0.(Y+1).0
 ```
 
 This admits server patch releases from the same minor line. A server minor bump

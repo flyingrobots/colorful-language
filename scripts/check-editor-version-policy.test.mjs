@@ -20,6 +20,15 @@ const EDITOR_INSTALL_GUIDANCE = [
   "editors/vscode/package.json",
   "editors/zed/README.md",
 ];
+const EDITOR_COMPATIBILITY_GUIDANCE = [
+  "docs/RELEASING.md",
+  "docs/design/0006-editor-adapter-versioning.md",
+  "docs/topics/editor-integrations/README.md",
+  "docs/topics/editor-integrations/test-plan.md",
+  "editors/README.md",
+  "editors/vscode/README.md",
+  "editors/zed/README.md",
+];
 
 function validSnapshot() {
   return {
@@ -134,6 +143,14 @@ test("editor install guidance selects the synchronized server minor", () => {
     zedSource.includes("--version '{COMPATIBLE_SERVER_REQ}'"),
     "the Zed missing-server error must apply its compatible requirement",
   );
+});
+
+test("editor references use the executable compatibility range notation", () => {
+  const range = ">=0.Y.0 <0.(Y+1).0";
+  for (const path of EDITOR_COMPATIBILITY_GUIDANCE) {
+    const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+    assert.ok(source.includes(range), `${path} must include ${range}`);
+  }
 });
 
 test("treats the workspace manifest as the synchronized version authority", () => {

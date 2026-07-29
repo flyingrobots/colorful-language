@@ -176,7 +176,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
   requires the Cargo workspace, VS Code manifest and lockfile root, Zed
   extension manifest, and standalone Zed crate and lockfile entry to carry one
   stable release version. For `0.Y.Z`, the compatible server range is
-  `>=0.Y.0, <0.(Y+1).0`. *Oracle:* every version source equals the workspace
+  `>=0.Y.0 <0.(Y+1).0`. *Oracle:* every version source equals the workspace
   version; a deliberate source mismatch, prerelease, or next-minor server
   version makes the deterministic policy check fail. *Evidence type:*
   manifest-policy checker and mutation tests. *Tracking:*

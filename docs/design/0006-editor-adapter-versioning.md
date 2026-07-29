@@ -38,7 +38,7 @@ For an adapter released as `0.Y.Z`, the compatible `colorful-lsp` range is the
 same pre-1.0 minor line:
 
 ```text
->=0.Y.0, <0.(Y+1).0
+>=0.Y.0 <0.(Y+1).0
 ```
 
 This admits compatible server patch releases and rejects the next minor as

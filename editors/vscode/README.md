@@ -13,7 +13,7 @@ Use VS Code 1.91 or newer. The extension's supported
 
 The extension version is synchronized with the Colorful workspace release. For
 extension `0.Y.Z`, use a stable `colorful-lsp` in
-`>=0.Y.0, <0.(Y+1).0`; prereleases and a different minor line are unsupported.
+`>=0.Y.0 <0.(Y+1).0`; prereleases and a different minor line are unsupported.
 
 The extension drives the `colorful-lsp` binary; install it once:
 
