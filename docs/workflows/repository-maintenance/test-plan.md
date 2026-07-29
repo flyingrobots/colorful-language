@@ -234,9 +234,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   presented as pending; reaching the 10,000-item listing ceiling fails closed
   instead of admitting a potentially truncated response; repeated runner
   options and malformed `OWNER/NAME` repository coordinates fail with
-  `E_ROADMAP_USAGE` before transport. *Evidence type:* authenticated GitHub API
-  witness and deterministic argument tests kept outside the ordinary offline
-  documentation gate. *Evidence:*
+  `E_ROADMAP_USAGE` before transport. *Evidence type:* deterministic argument
+  tests in the ordinary offline documentation gate plus an authenticated GitHub
+  API witness kept outside it. *Evidence:*
+  `scripts/check-roadmap-inventory.test.mjs`,
   `scripts/check-roadmap-inventory.mjs --live`,
   `.github/workflows/ci.yml`, and `.github/workflows/maintenance.yml`.
   *Status:* implemented.
