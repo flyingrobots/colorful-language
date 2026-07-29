@@ -312,6 +312,23 @@ test("compares displayed mechanism identity across inline-code styling", () => {
   );
 });
 
+test("does not close an inline-code span at a longer backtick run", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(
+        "| Parser ports | Substitute deterministic adapters. |",
+        [
+          "| foobarbaz | Plain identity. |",
+          "| `foo``bar``baz` | Internal backtick runs remain displayed. |",
+        ].join("\n"),
+      ),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("normalizes escaped pipes inside inline-code mechanism identities", () => {
   const mechanismRow =
     String.raw`| Parser \| compiler ports | Compile deterministic structure. |`;

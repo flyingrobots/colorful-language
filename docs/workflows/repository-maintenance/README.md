@@ -224,9 +224,11 @@ instead of being silently ignored, whether the first delimiter is compact,
 space-padded, or tab-padded. Only contiguous canonical rows are authoritative,
 so indented code, fenced examples, and HTML comments cannot stand in for the
 table. A multiline comment is non-authoritative even when its opener follows
-visible text on the same line. Plain text, ASCII-punctuation escapes, and inline
-code are normalized to their NFC displayed identity, including table-delimiter
-escapes inside code spans. Character-reference-shaped source outside inline
+visible text on the same line. Plain text, ASCII-punctuation escapes, and
+inline code are normalized to their NFC displayed identity, including
+table-delimiter escapes inside code spans. An inline-code span closes only on a
+backtick run exactly as long as its opener, so shorter and longer internal runs
+remain displayed content. Character-reference-shaped source outside inline
 code is rejected; the displayed character must be written directly so source
 and rendered identities cannot diverge. Skipped blocks also terminate the table
 even without a separating blank line. Empty cells, invalid escapes, and other

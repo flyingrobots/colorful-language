@@ -156,6 +156,24 @@ function isAsciiPunctuation(character) {
   );
 }
 
+function findExactBacktickRun(source, start, length) {
+  for (let index = start; index < source.length; ) {
+    if (source[index] !== "`") {
+      index += 1;
+      continue;
+    }
+    let runLength = 1;
+    while (source[index + runLength] === "`") {
+      runLength += 1;
+    }
+    if (runLength === length) {
+      return index;
+    }
+    index += runLength;
+  }
+  return -1;
+}
+
 function canonicalMechanismIdentity(mechanism, location) {
   let identity = "";
 
@@ -185,9 +203,12 @@ function canonicalMechanismIdentity(mechanism, location) {
       while (mechanism[index + delimiterLength] === "`") {
         delimiterLength += 1;
       }
-      const delimiter = "`".repeat(delimiterLength);
       const contentStart = index + delimiterLength;
-      const contentEnd = mechanism.indexOf(delimiter, contentStart);
+      const contentEnd = findExactBacktickRun(
+        mechanism,
+        contentStart,
+        delimiterLength,
+      );
       if (contentEnd === -1) {
         fail(
           "E_ROADMAP_NONCANONICAL_MECHANISM",
