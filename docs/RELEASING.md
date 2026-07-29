@@ -538,9 +538,6 @@ Validate the identities with the exact lockfile-backed tools before tagging:
 ```bash
 npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots
 npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
-node scripts/verify-editor-publication.mjs \
-  --vsix target/editor-smoke/colorful-language-X.Y.Z.vsix \
-  --version X.Y.Z
 ```
 
 Zed publication is not token-driven from this repository. The owner submits a
@@ -554,10 +551,15 @@ After the workflow succeeds, verify public availability:
 
 ```bash
 gh release view vX.Y.Z --json url,tagName,name,publishedAt,assets
+gh release download vX.Y.Z \
+  --pattern "colorful-language-X.Y.Z.vsix"
 gh attestation verify colorful-language-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz \
   --repo flyingrobots/colorful-language
 gh attestation verify colorful-language-X.Y.Z.vsix \
   --repo flyingrobots/colorful-language
+node scripts/verify-editor-publication.mjs \
+  --vsix colorful-language-X.Y.Z.vsix \
+  --version X.Y.Z
 cargo info colorful-core@X.Y.Z
 cargo info colorful-cli@X.Y.Z
 cargo install colorful-cli --version X.Y.Z --locked

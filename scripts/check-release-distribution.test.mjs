@@ -182,6 +182,7 @@ function validSnapshot() {
     documentation: {
       runbook: [
         "Publication and rollback owner: `@flyingrobots`",
+        "gh release download vX.Y.Z",
         "gh attestation verify",
         "vsce show",
         "ovsx get",

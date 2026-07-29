@@ -406,6 +406,7 @@ function validateDocumentation(documentation) {
   const normalizedTopic = topic.replace(/\s+/gu, " ");
   const requiredRunbookText = [
     "Publication and rollback owner: `@flyingrobots`",
+    "gh release download vX.Y.Z",
     "gh attestation verify",
     "vsce show",
     "ovsx get",
@@ -417,6 +418,18 @@ function validateDocumentation(documentation) {
     if (!normalizedRunbook.includes(text)) {
       throw new Error(`docs/RELEASING.md must include ${text}`);
     }
+  }
+  const postPublication =
+    runbook.indexOf("## Post-publication verification");
+  const publicByteVerification =
+    runbook.indexOf("node scripts/verify-editor-publication.mjs");
+  if (
+    postPublication === -1 ||
+    publicByteVerification <= postPublication
+  ) {
+    throw new Error(
+      "public byte verification must follow publication in docs/RELEASING.md",
+    );
   }
   if (
     !normalizedTopic.includes("installation-to-first-highlight") ||
