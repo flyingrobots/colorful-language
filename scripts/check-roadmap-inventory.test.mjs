@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
+  chmodSync,
   mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter as pathDelimiter, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -1266,6 +1267,59 @@ test("bounds live GitHub calls by time and response size", () => {
 
   assert.match(runner, /timeout:\s*30_000/u);
   assert.match(runner, /maxBuffer:\s*16 \* 1024 \* 1024/u);
+});
+
+test("fails closed when the live issue listing reaches its ceiling", () => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-live-"));
+  const fakeGh = join(root, "gh");
+  const issueOutput = join(root, "issues.json");
+  const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
+  const fillerCount = 10_000 - issues.length;
+  const liveIssues = [
+    ...issues,
+    ...Array.from({ length: fillerCount }, (_, index) => ({
+      number: 1_000_000 + index,
+      state: "CLOSED",
+      title: `historical epic ${index}`,
+      labels: ["epic"],
+    })),
+  ];
+
+  try {
+    writeFileSync(
+      fakeGh,
+      '#!/bin/sh\ncat "$ROADMAP_FAKE_ISSUES"\n',
+      "utf8",
+    );
+    chmodSync(fakeGh, 0o755);
+    writeFileSync(issueOutput, JSON.stringify(liveIssues), "utf8");
+    const result = spawnSync(
+      process.execPath,
+      [
+        script,
+        "--roadmap",
+        roadmapPath,
+        "--live",
+        "--repo",
+        "flyingrobots/colorful-language",
+      ],
+      {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${root}${pathDelimiter}${process.env.PATH}`,
+          ROADMAP_FAKE_ISSUES: issueOutput,
+        },
+      },
+    );
+
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /^E_ROADMAP_GITHUB: /u);
+    assert.match(result.stderr, /10,000-issue ceiling/u);
+    assert.equal(result.stdout, "");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("defines the canonical accountability heading in one source location", () => {

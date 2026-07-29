@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+const LIVE_ISSUE_LIMIT = 10_000;
+
 export function createRoadmapInventoryRun({
   InventoryError,
   closingIssueNumbersForRepository,
@@ -126,17 +128,25 @@ export function createRoadmapInventoryRun({
         "--state",
         "all",
         "--limit",
-        "10000",
+        String(LIVE_ISSUE_LIMIT),
         "--json",
         "number,state,title,labels",
       ],
       `github:${repo}:issues`,
     );
-    return parseJson(
+    const issues = parseJson(
       output,
       "E_ROADMAP_GITHUB",
       `github:${repo}:issues`,
     );
+    if (Array.isArray(issues) && issues.length >= LIVE_ISSUE_LIMIT) {
+      fail(
+        "E_ROADMAP_GITHUB",
+        `github:${repo}:issues`,
+        "issue listing reached the 10,000-issue ceiling; results may be truncated",
+      );
+    }
+    return issues;
   };
 
   const loadClosingIssueNumbers = (repo, pullRequest) => {
