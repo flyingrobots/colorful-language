@@ -34,6 +34,70 @@ const NONCANONICAL_MECHANISM_MARKUP = new Set([
   "<",
   ">",
 ]);
+const RAW_HTML_BLOCK_TAGS = new Set([
+  "address",
+  "article",
+  "aside",
+  "base",
+  "basefont",
+  "blockquote",
+  "body",
+  "caption",
+  "center",
+  "col",
+  "colgroup",
+  "dd",
+  "details",
+  "dialog",
+  "dir",
+  "div",
+  "dl",
+  "dt",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "frame",
+  "frameset",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "head",
+  "header",
+  "hr",
+  "html",
+  "iframe",
+  "legend",
+  "li",
+  "link",
+  "main",
+  "menu",
+  "menuitem",
+  "nav",
+  "noframes",
+  "ol",
+  "optgroup",
+  "option",
+  "p",
+  "param",
+  "search",
+  "section",
+  "summary",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "title",
+  "tr",
+  "track",
+  "ul",
+]);
 const ACTIVE_DISPOSITIONS = new Set(["active", "parked"]);
 
 export class InventoryError extends Error {
@@ -212,6 +276,53 @@ function isRoadmapSetextHeading(line, nextLine) {
     line.trim().length > 0 &&
     /^ {0,3}(?:=+|-+)[ \t]*$/u.test(nextLine)
   );
+}
+
+function rawHtmlBlockStart(line) {
+  const match = line.match(/^ {0,3}(\S.*)$/u);
+  if (match === null) {
+    return undefined;
+  }
+  const content = match[1];
+  const rawTextElement = content.match(
+    /^<(script|pre|style|textarea)(?:[ \t>]|$)/iu,
+  );
+  if (rawTextElement !== null) {
+    return {
+      endMarker: `</${rawTextElement[1].toLowerCase()}>`,
+      caseInsensitive: true,
+    };
+  }
+  if (content.startsWith("<?")) {
+    return { endMarker: "?>", caseInsensitive: false };
+  }
+  if (/^<![A-Z]/u.test(content)) {
+    return { endMarker: ">", caseInsensitive: false };
+  }
+  if (content.startsWith("<![CDATA[")) {
+    return { endMarker: "]]>", caseInsensitive: false };
+  }
+
+  const tag = content.match(/^<\/?([A-Za-z][A-Za-z0-9-]*)(?:[ \t/>]|$)/u);
+  if (tag !== null && RAW_HTML_BLOCK_TAGS.has(tag[1].toLowerCase())) {
+    return { endsOnBlank: true };
+  }
+  if (
+    /^<\/?[A-Za-z][A-Za-z0-9-]*(?:[ \t]+(?:[^<>"']+|"[^"]*"|'[^']*'))*[ \t]*\/?>[ \t]*$/u.test(
+      content,
+    )
+  ) {
+    return { endsOnBlank: true };
+  }
+  return undefined;
+}
+
+function rawHtmlBlockEnds(block, line) {
+  if (block.endsOnBlank) {
+    return line.trim().length === 0;
+  }
+  const source = block.caseInsensitive ? line.toLowerCase() : line;
+  return source.includes(block.endMarker);
 }
 
 function isAsciiPunctuation(character) {
@@ -492,6 +603,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let fenceCharacter;
   let fenceLength = 0;
   let inHtmlComment = false;
+  let rawHtmlBlock;
   let foundAccountabilitySection = false;
   let accountabilitySectionLocation;
   let displayEquivalentAccountabilitySectionLocation;
@@ -521,6 +633,12 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       ) {
         fenceCharacter = undefined;
         fenceLength = 0;
+      }
+      continue;
+    }
+    if (rawHtmlBlock !== undefined) {
+      if (rawHtmlBlockEnds(rawHtmlBlock, line)) {
+        rawHtmlBlock = undefined;
       }
       continue;
     }
@@ -561,6 +679,23 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       }
       fenceCharacter = openingFence[1][0];
       fenceLength = openingFence[1].length;
+      continue;
+    }
+    const openingRawHtmlBlock = rawHtmlBlockStart(line);
+    if (openingRawHtmlBlock !== undefined) {
+      if (accountabilityTableState === "rows") {
+        accountabilityTableState = "complete";
+      } else if (accountabilityTableState === "delimiter") {
+        accountabilityTableState = "searching";
+        candidateAccountabilityTableLocation = undefined;
+        candidateAccountabilityTableColumnCount = undefined;
+        candidateAccountabilityHeaderKind = undefined;
+        candidateAccountabilityTableHasLeadingPipe = undefined;
+        candidateAccountabilityTableInCanonicalSection = undefined;
+      }
+      if (!rawHtmlBlockEnds(openingRawHtmlBlock, line)) {
+        rawHtmlBlock = openingRawHtmlBlock;
+      }
       continue;
     }
     if (isCanonicalAccountabilityHeading(line)) {

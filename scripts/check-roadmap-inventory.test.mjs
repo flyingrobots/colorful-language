@@ -337,6 +337,29 @@ test("ignores table-like examples outside the accountability table", () => {
   }
 });
 
+test("ignores accountability tables inside raw HTML blocks", () => {
+  const table = [
+    "| Mechanism | Example only |",
+    "| --- | --- |",
+    "| Parser ports | Hidden inside raw HTML. |",
+  ];
+  for (const rawHtmlBlock of [
+    ["<div>", ...table, "</div>"],
+    ["<script>", ...table, "</script>"],
+    ["<?instruction", ...table, "?>"],
+    ["<!DECLARATION", ...table, ">"],
+    ["<![CDATA[", ...table, "]]>"],
+    ["<custom-element>", ...table, "</custom-element>"],
+  ]) {
+    expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
+      source.replace(
+        /\n\| Mechanism \|[\s\S]*$/u,
+        `\n${rawHtmlBlock.join("\n")}\n`,
+      ),
+    );
+  }
+});
+
 test("rejects a table hidden by an invalid backtick-fence interpretation", () => {
   const hiddenTable = [
     "```markdown`",

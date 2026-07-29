@@ -238,14 +238,17 @@ The same offline structure gate applies these fail-closed rules:
   compact, space-padded, or tab-padded. Only contiguous canonical rows are
   authoritative. Skipped blocks terminate the table even without a separating
   blank line.
-- **Non-authoritative blocks:** Indented code, CommonMark fences, and HTML
-  comments cannot stand in for the table. Backtick fence openers whose info
-  strings contain a backtick are treated as visible source, while tilde-fence
-  info strings may contain backticks. A multiline comment is
-  non-authoritative even when its opener follows visible text on the same line,
-  but it cannot begin on a visible table-shaped line. Closed inline HTML
-  comment spans are ignored while the surrounding visible row content remains
-  authoritative; comment-shaped text inside inline code remains literal.
+- **Non-authoritative blocks:** Indented code, CommonMark fences, raw HTML
+  blocks, and HTML comments cannot stand in for the table. Raw-text elements,
+  processing instructions, declarations, CDATA, block tags, and complete
+  generic tags suspend table discovery through their CommonMark block
+  boundary. Backtick fence openers whose info strings contain a backtick are
+  treated as visible source, while tilde-fence info strings may contain
+  backticks. A multiline comment is non-authoritative even when its opener
+  follows visible text on the same line, but it cannot begin on a visible
+  table-shaped line. Closed inline HTML comment spans are ignored while the
+  surrounding visible row content remains authoritative; comment-shaped text
+  inside inline code remains literal.
 - **Identity normalization:** Plain text, ASCII-punctuation escapes, and inline
   code are normalized to their NFC displayed identity, including
   table-delimiter escapes inside code spans. An inline-code span closes only on
