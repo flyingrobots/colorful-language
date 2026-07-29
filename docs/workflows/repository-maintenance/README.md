@@ -213,12 +213,13 @@ change that marker to `delivered` before merge. Only parsed HTML comment nodes
 can own a disposition; marker-shaped text inside fenced or indented code is an
 example, not authority.
 
-The gate parses CommonMark plus GFM tables through exact direct dependencies:
-`mdast-util-from-markdown` 2.0.3, `mdast-util-gfm-table` 2.0.0,
-`mdast-util-to-string` 4.0.0, and `micromark-extension-gfm-table` 2.1.1.
-Maintained parser nodes and source positions decide headings, tables, code,
-HTML, inline rendering, and section boundaries. Repository code applies only
-the Colorful-specific policy below:
+The gate parses CommonMark plus GFM tables through the exact direct
+`mdast-util-from-markdown`, `mdast-util-gfm-table`, `mdast-util-to-string`, and
+`micromark-extension-gfm-table` dependencies declared in the root
+`package.json` and resolved by `package-lock.json`. Maintained parser nodes and
+source positions decide headings, tables, code, HTML, inline rendering, and
+section boundaries. Repository code applies only the Colorful-specific policy
+below:
 
 - exactly one canonical `## Architecture accountability` H2 and one complete
   leading-pipe `Mechanism` table inside that section are authoritative;
@@ -234,13 +235,12 @@ the Colorful-specific policy below:
 - duplicate headings, tables, and mechanism identities report stable
   path-and-line addresses for both LF and CRLF input.
 
-`scripts/check-roadmap-inventory.mjs` now owns 887 lines and 19 top-level
-helpers, down from 1,429 lines and 34 helpers. Its 207-line
-`scripts/roadmap-inventory-runner.mjs` companion owns only argument parsing,
-bounded GitHub transport, JSON loading, and process output; it contains no
-Markdown interpretation. A source-policy regression keeps the parser-owning
-checker below 900 lines and 24 helpers and forbids the retired parser helper
-signatures.
+`scripts/check-roadmap-inventory.mjs` now owns 899 lines and 22 top-level
+helpers, down from 1,429 lines and 38 helpers.
+`scripts/roadmap-inventory-runner.mjs` owns only argument parsing, bounded
+GitHub transport, JSON loading, and process output; it contains no Markdown
+interpretation. A source-policy regression keeps the parser-owning checker
+below 900 lines and 24 helpers and forbids the retired parser helper signatures.
 
 Run the deterministic structure and fixture gates without network access:
 

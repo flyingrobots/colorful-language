@@ -75,7 +75,9 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   identities, while exact-pinned maintained CommonMark/GFM tooling owns
   heading, block, table, and inline interpretation. Repository code must not
   recreate a general Markdown fence, raw-HTML, paragraph, table, or inline
-  parser to enforce the roadmap policy.
+  parser to enforce the roadmap policy. Narrow literal-source pipe recognition
+  may only reject table-like source that the AST cannot represent after an HTML
+  comment closer; it must never accept or establish canonical authority.
 
 ## Cases
 
@@ -313,16 +315,18 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   full existing roadmap inventory suite remains green; a source-policy
   regression rejects the former parser helper/state signatures or a checker at
   or above the reviewed line ceiling; dependency-policy evidence rejects
-  unpinned parser packages; and the before/after responsibility inventory is
-  recorded in the current workflow reference. *Evidence type:* fixture-backed
-  characterization suite, deterministic source/dependency policy, and measured
-  maintained-source inventory. *Evidence:*
+  unpinned parser packages; rejection-only scans using `pipeCells`,
+  `isDelimiter`, and `corruptedCanonicalTableLine` cannot establish authority;
+  and the before/after responsibility inventory is recorded in the current
+  workflow reference. *Evidence type:* fixture-backed characterization suite,
+  deterministic source/dependency policy, and measured maintained-source
+  inventory. *Evidence:*
   `scripts/check-roadmap-inventory.mjs`,
   `scripts/roadmap-inventory-runner.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
-  `package-lock.json`. The parser-owning checker measures 887 lines and 19
-  top-level helpers; the 207-line transport runner contains no Markdown
-  interpretation. *Tracking:*
+  `package-lock.json`. The parser-owning checker measures 899 lines and 22
+  top-level helpers, down from 1,429 lines and 38 helpers; the transport runner
+  contains no Markdown interpretation. *Tracking:*
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
   *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.

@@ -413,6 +413,7 @@ function markdownCommentRanges(source, tree) {
 }
 
 function hasStructuralPipe(line) {
+  // GFM tables are omitted: this parse only locates inline-code ranges.
   const tree = fromMarkdown(line);
   const inlineCodeRanges = [];
   const stack = [tree];

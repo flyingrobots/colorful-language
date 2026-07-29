@@ -1353,10 +1353,7 @@ test("the workflow reference pins the canonical accountability heading", () => {
 });
 
 test("delegates roadmap Markdown structure to exact-pinned maintained tooling", () => {
-  const checker = readFileSync(
-    new URL("./check-roadmap-inventory.mjs", import.meta.url),
-    "utf8",
-  );
+  const checker = readFileSync(script, "utf8");
   const runner = readFileSync(
     new URL("./roadmap-inventory-runner.mjs", import.meta.url),
     "utf8",
@@ -1400,8 +1397,9 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
     );
   }
 
-  const sourceLines = checker.match(/\n/gu)?.length ?? 0;
-  const topLevelHelpers = checker.match(/^function /gmu)?.length ?? 0;
+  const sourceLines = checker.trimEnd().split(/\r?\n/u).length;
+  const topLevelHelpers =
+    checker.match(/^(?:export )?function /gmu)?.length ?? 0;
   assert.ok(
     sourceLines <= 900,
     `roadmap checker has ${sourceLines} lines; reviewed ceiling is 900`,
@@ -1420,6 +1418,24 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
     runnerLines <= 250,
     `roadmap transport runner has ${runnerLines} lines; reviewed ceiling is 250`,
   );
+  const expectedMeasurement = new RegExp(
+    `${sourceLines}\\s+lines\\s+and\\s+${topLevelHelpers}\\s+top-level\\s+helpers`,
+    "u",
+  );
+  for (const referencePath of [
+    "../docs/workflows/repository-maintenance/README.md",
+    "../docs/workflows/repository-maintenance/test-plan.md",
+  ]) {
+    const reference = readFileSync(
+      new URL(referencePath, import.meta.url),
+      "utf8",
+    );
+    assert.match(
+      reference,
+      expectedMeasurement,
+      `${referencePath} must publish the source-policy measurement`,
+    );
+  }
 });
 
 test("the repository wires offline and live reconciliation into distinct lanes", () => {
