@@ -235,6 +235,18 @@ test("the extension-host smoke rejects cross-drive install paths", () => {
   assert.match(source, /!path\.isAbsolute\(relative\)/u);
 });
 
+test("the semantic-token smoke checks protocol stride, not buffer capacity", () => {
+  const source = readFileSync(
+    "editors/vscode/smoke/suite/index.cjs",
+    "utf8",
+  );
+  assert.doesNotMatch(
+    source,
+    /encoded\.buffer\.byteLength\s*===\s*encoded\.byteLength/u,
+  );
+  assert.match(source, /encoded\.byteLength\s*%\s*5\s*===\s*0/u);
+});
+
 test("documentation lint excludes the downloaded VS Code test application", () => {
   assert.match(
     readFileSync(".markdownlint-cli2.jsonc", "utf8"),

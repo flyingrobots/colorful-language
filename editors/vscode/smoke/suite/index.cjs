@@ -147,7 +147,7 @@ async function assertSemanticTokens(document) {
     encoded &&
       ArrayBuffer.isView(encoded.buffer) &&
       encoded.byteLength > 0 &&
-      encoded.buffer.byteLength === encoded.byteLength,
+      encoded.byteLength % 5 === 0,
     "installed adapter returned no encoded semantic tokens",
   );
 }
