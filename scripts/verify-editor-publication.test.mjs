@@ -5,8 +5,10 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import test from "node:test";
 
 import {
@@ -82,6 +84,56 @@ test("accepts exact bytes from both public registries", async () => {
       OPEN_VSX_DOWNLOAD,
     ]);
   });
+});
+
+test("hashes decoded VSIX bytes from a gzip-encoded Marketplace response", async () => {
+  const compressed = gzipSync(PACKAGE);
+  const server = createServer((request, responseStream) => {
+    assert.equal(request.url, "/marketplace.vsix");
+    responseStream.writeHead(200, {
+      "content-encoding": "gzip",
+      "content-length": String(compressed.byteLength),
+      "content-type": "application/octet-stream",
+    });
+    responseStream.end(compressed);
+  });
+  await new Promise((resolveListen) =>
+    server.listen(0, "127.0.0.1", resolveListen),
+  );
+  try {
+    const address = server.address();
+    assert.notEqual(address, null);
+    assert.equal(typeof address, "object");
+    await withVsix(async (vsixPath) => {
+      const fetchImpl = async (url) => {
+        if (url === marketplacePackageUrl(VERSION)) {
+          return fetch(
+            `http://127.0.0.1:${String(address.port)}/marketplace.vsix`,
+          );
+        }
+        if (url === openVsxMetadataUrl(VERSION)) {
+          return response(metadata());
+        }
+        return response(PACKAGE);
+      };
+      const result = await verifyEditorPublication({
+        vsixPath,
+        version: VERSION,
+        fetchImpl,
+        sleep: async () => {},
+      });
+      assert.deepEqual(result.channels, [
+        "visual-studio-marketplace",
+        "open-vsx",
+      ]);
+    });
+  } finally {
+    await new Promise((resolveClose, rejectClose) =>
+      server.close((error) =>
+        error === undefined ? resolveClose() : rejectClose(error),
+      ),
+    );
+  }
 });
 
 test("rejects a pre-existing Marketplace version with different bytes", async () => {
