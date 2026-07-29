@@ -346,9 +346,14 @@ function validateIssueFormDiscussionClaims(
         .map((entry) => String(entry.attributes?.value ?? ""))
       : [],
   );
+  const claims = markdown.join("\n");
+  const advertisesDiscussion =
+    /\b(?:Discussions?|Q&A)\b/u.test(claims) ||
+    /https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/discussions(?:[/?#]|\b)/iu
+      .test(claims);
   if (
     repositoryProfile?.discussions?.supported_intake === false &&
-    /\b(?:Discussions?|Q&A)\b/u.test(markdown.join("\n"))
+    advertisesDiscussion
   ) {
     reject(
       "E_DISCUSSION_ROUTE",
