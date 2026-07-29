@@ -20,6 +20,8 @@ use std::time::Instant;
 
 use serde_json::{json, Value};
 
+#[cfg(test)]
+mod cross_stage_dependency;
 mod cross_stage_support;
 
 use cross_stage_support::{Corpus, PreparedStageInput, Stage, CORPORA, STAGES};
