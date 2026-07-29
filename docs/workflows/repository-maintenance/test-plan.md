@@ -247,7 +247,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   code-indented headings, comment-altered and closing-hash variants in both
   source orders, duplicate headings, plain, inline-code-styled, and
   unsupported-emphasis duplicate table headers, incomplete plain and styled
-  header controls, duplicate tables,
+  header controls, an incomplete no-leading-pipe header control, duplicate
+  tables,
   missing or malformed delimiter or data rows, an empty table followed by a
   later valid table, delimiter/header arity mismatches, a missing first-cell
   closing pipe, compact/multi-space/tab-padded no-leading-pipe headers, a

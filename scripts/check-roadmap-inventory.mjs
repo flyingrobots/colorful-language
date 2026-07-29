@@ -156,6 +156,16 @@ function isNoLeadingPipeMechanismHeader(line) {
   );
 }
 
+function noLeadingPipeTableCells(line) {
+  if (!isNoLeadingPipeTableRow(line)) {
+    return undefined;
+  }
+  const firstNonWhitespace = line.search(/\S/u);
+  return markdownTableCells(
+    `${line.slice(0, firstNonWhitespace)}|${line.slice(firstNonWhitespace)}`,
+  );
+}
+
 function isCanonicalAccountabilityHeading(line) {
   return /^ {0,3}## Architecture accountability[ \t]*$/u.test(line);
 }
@@ -364,6 +374,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let candidateAccountabilityTableLocation;
   let candidateAccountabilityTableColumnCount;
   let candidateAccountabilityHeaderKind;
+  let candidateAccountabilityTableHasLeadingPipe;
 
   for (const [index, rawLine] of roadmap.split("\n").entries()) {
     let line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
@@ -395,6 +406,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
+        candidateAccountabilityTableHasLeadingPipe = undefined;
       }
       continue;
     }
@@ -411,6 +423,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
+        candidateAccountabilityTableHasLeadingPipe = undefined;
       }
       fenceCharacter = openingFence[1][0];
       fenceLength = openingFence[1].length;
@@ -484,6 +497,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
+        candidateAccountabilityTableHasLeadingPipe = undefined;
       }
       inHtmlComment = true;
       continue;
@@ -518,17 +532,11 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       candidateAccountabilityTableLocation = undefined;
       candidateAccountabilityTableColumnCount = undefined;
       candidateAccountabilityHeaderKind = undefined;
+      candidateAccountabilityTableHasLeadingPipe = undefined;
       continue;
     }
     if (!inAccountabilitySection && !foundAccountabilityTable) {
       continue;
-    }
-    if (isNoLeadingPipeMechanismHeader(line)) {
-      fail(
-        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        `${roadmapPath}:${index + 1}`,
-        'canonical table rows must begin with "|"',
-      );
     }
     if (
       accountabilityTableState === "rows" &&
@@ -541,25 +549,37 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       );
     }
 
-    const tableCells = markdownTableCells(line);
+    const leadingPipeTableCells = markdownTableCells(line);
+    const noLeadingTableCells =
+      leadingPipeTableCells === undefined
+        ? noLeadingPipeTableCells(line)
+        : undefined;
+    const tableCells = leadingPipeTableCells ?? noLeadingTableCells;
+    const tableHasLeadingPipe = leadingPipeTableCells !== undefined;
     const mechanism = tableCells?.[0];
     const mechanismLocation = `${roadmapPath}:${index + 1}`;
-    const headerKind =
+    let headerKind =
       mechanism === undefined
         ? undefined
         : accountabilityHeaderKind(mechanism, mechanismLocation);
+    if (headerKind !== undefined && !tableHasLeadingPipe) {
+      headerKind = "no-leading";
+    }
     if (accountabilityTableState === "searching") {
       if (headerKind !== undefined) {
         accountabilityTableState = "delimiter";
         candidateAccountabilityTableLocation = mechanismLocation;
         candidateAccountabilityTableColumnCount = tableCells.length;
         candidateAccountabilityHeaderKind = headerKind;
+        candidateAccountabilityTableHasLeadingPipe = tableHasLeadingPipe;
       }
       continue;
     }
     if (accountabilityTableState === "delimiter") {
       if (
         tableCells !== undefined &&
+        tableHasLeadingPipe ===
+          candidateAccountabilityTableHasLeadingPipe &&
         tableCells.length === candidateAccountabilityTableColumnCount &&
         tableCells.every((cell) => MARKDOWN_DELIMITER_CELL.test(cell))
       ) {
@@ -574,6 +594,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableLocation = undefined;
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
+        candidateAccountabilityTableHasLeadingPipe = undefined;
       }
       continue;
     }
@@ -583,6 +604,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableLocation = mechanismLocation;
         candidateAccountabilityTableColumnCount = tableCells.length;
         candidateAccountabilityHeaderKind = headerKind;
+        candidateAccountabilityTableHasLeadingPipe = tableHasLeadingPipe;
       }
       continue;
     }
@@ -593,6 +615,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       candidateAccountabilityTableLocation = undefined;
       candidateAccountabilityTableColumnCount = undefined;
       candidateAccountabilityHeaderKind = undefined;
+      candidateAccountabilityTableHasLeadingPipe = undefined;
       continue;
     }
 
@@ -602,6 +625,13 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
         candidateAccountabilityTableLocation,
         'accountability table header must use the plain-text cell "Mechanism"',
+      );
+    }
+    if (candidateAccountabilityHeaderKind === "no-leading") {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        candidateAccountabilityTableLocation,
+        'canonical table rows must begin with "|"',
       );
     }
     if (candidateAccountabilityHeaderKind === "display-equivalent") {
@@ -630,6 +660,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       candidateAccountabilityTableLocation = location;
       candidateAccountabilityTableColumnCount = tableCells.length;
       candidateAccountabilityHeaderKind = "canonical";
+      candidateAccountabilityTableHasLeadingPipe = true;
       continue;
     }
     const identity = canonicalMechanismIdentity(mechanism, location);

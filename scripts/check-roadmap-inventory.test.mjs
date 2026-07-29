@@ -516,6 +516,28 @@ Parser ports | Alternate apparent authority.
   }
 });
 
+test("requires a complete table before rejecting a no-leading header", () => {
+  for (const header of [
+    "Mechanism | Current user job",
+    "Mechanism|Current user job",
+    "Mechanism  | Current user job",
+    "Mechanism\t| Current user job",
+  ]) {
+    assert.doesNotThrow(() =>
+      validateRoadmapInventory({
+        roadmap: `${roadmap}
+${header}
+
+This header-shaped line has no delimiter or data row.
+`,
+        issues,
+        roadmapPath: "fixture/roadmap.md",
+        issuePath: "fixture/issues.json",
+      }),
+    );
+  }
+});
+
 test("rejects a no-leading-pipe data row inside the accountability table", () => {
   expectCategory(
     "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
