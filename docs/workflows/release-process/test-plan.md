@@ -280,6 +280,18 @@ Verification for release preparation, tag automation, and release witnesses.
   `docs/workflows/release-process/README.md`. *Tracking:*
   [#261](https://github.com/flyingrobots/colorful-language/issues/261).
   *Status:* implemented.
+- **REL-17b — Policy-compliant release-tracker labels.** *Requirement:* REL-17.
+  *Behavior:* the copy-paste release-tracker command carries exactly one
+  `area:*` label from the repository's current live axis family, alongside the
+  `documentation` and `slice` role labels, without coupling the check to one
+  release version. *Oracle:* removing, duplicating, or substituting the
+  reviewed area label fails at `docs/RELEASING.md` with the stable
+  `E_DELIVERY_TRACKING` category, while one aligned future-version example
+  remains valid. *Evidence type:* deterministic repository-maintenance policy
+  mutations and checked-in release-runbook validation. *Tracking:*
+  [#263](https://github.com/flyingrobots/colorful-language/issues/263).
+  *Evidence:* planned in `scripts/check-repository-maintenance.test.mjs`.
+  *Status:* planned.
 
 ## Open verification gaps
 

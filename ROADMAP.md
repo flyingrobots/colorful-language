@@ -193,6 +193,11 @@ observe public-contract regressions before they ship.
   independently representable before formal v0.4.0 planning begins
   [#261](https://github.com/flyingrobots/colorful-language/issues/261).
   <!-- roadmap-primary: delivered #261 -->
+- **Active release-tracker label repair:** make the reviewed tracker command
+  satisfy the repository's live issue-axis policy and reject missing,
+  duplicate, or substituted area labels before formal v0.4.0 planning begins
+  [#263](https://github.com/flyingrobots/colorful-language/issues/263).
+  <!-- roadmap-primary: active #263 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog
