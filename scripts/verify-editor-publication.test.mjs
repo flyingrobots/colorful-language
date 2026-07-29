@@ -129,6 +129,28 @@ test("retries bounded eventual publication without accepting another status", as
   });
 });
 
+test("reports the actual attempt count for a non-retryable response", async () => {
+  await withVsix(async (vsixPath) => {
+    let requests = 0;
+    await assert.rejects(
+      verifyEditorPublication({
+        vsixPath,
+        version: VERSION,
+        fetchImpl: async () => {
+          requests += 1;
+          return response("unauthorized", 401);
+        },
+        sleep: async () => {},
+      }),
+      (error) =>
+        error instanceof EditorPublicationError &&
+        error.code === "E_EDITOR_PUBLICATION_FETCH" &&
+        /after 1 attempt \(/u.test(error.message),
+    );
+    assert.equal(requests, 1);
+  });
+});
+
 test("rejects Open VSX metadata that redirects outside the requested version", async () => {
   await withVsix(async (vsixPath) => {
     const fetchImpl = async (url) => {
