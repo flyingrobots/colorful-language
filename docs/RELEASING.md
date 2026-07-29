@@ -77,7 +77,7 @@ that passed release prep.
 | Git tag `vX.Y.Z` | Immutable public source anchor. |
 | GitHub Release | Public release surface for checksummed native archives, the exact smoke-tested VSIX, and Zed registry source. |
 | Homebrew formula | Attested GitHub Release asset derived from the exact Linux x86-64 and Apple Silicon archives; not a public tap claim. |
-| GitHub attestations | Sigstore-backed provenance for every native archive, the VSIX, and the Zed source archive. |
+| GitHub attestations | Sigstore-backed provenance for every native archive, the Homebrew formula, the VSIX, and the Zed source archive. |
 | Editor registry records | Public VS Code Marketplace, Open VSX, and Zed extension entries for the synchronized version. |
 | Retrospective | Plan-versus-actual record, fallout issues, next recommendation. |
 

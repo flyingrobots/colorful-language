@@ -233,14 +233,14 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-16a** — *Requirement:* REL-16. *Behavior:* after the release job
   downloads the native archive and checksum set, the generator verifies the
   Linux x86-64 and Apple Silicon formula inputs and derives one deterministic
-  Homebrew formula, subjects it to release policy and available-host Homebrew
-  checks, and attaches it to the same immutable GitHub Release. The formula
-  installs the CLI and LSP from those archives; public tap publication and
-  clean-machine rollback proof remain separate authority. *Oracle:* workflow
-  mutations reject generation before native download, missing or mismatched
-  formula checksum inputs, rebuilt binaries, unsupported platform claims, an
-  unpinned or drifted formula-syntax Ruby, and a formula omitted from release
-  assets.
+  Homebrew formula, subjects it to release policy and the workflow-pinned Ruby
+  syntax check, and attaches it to the same immutable GitHub Release. The
+  formula installs the CLI and LSP from those archives; public tap publication
+  and clean-machine rollback proof remain separate authority. *Oracle:*
+  workflow mutations reject generation before native download, missing or
+  mismatched formula checksum inputs, rebuilt binaries, unsupported platform
+  claims, an unpinned or drifted formula-syntax Ruby, and a formula omitted
+  from release assets.
   *Evidence type:* deterministic generator and release-policy mutation tests.
   *Tracking:*
   [#251](https://github.com/flyingrobots/colorful-language/issues/251).
