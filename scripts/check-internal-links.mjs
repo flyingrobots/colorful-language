@@ -10,7 +10,7 @@
 // Self-test: node scripts/check-internal-links.mjs --self-test
 
 import { readFileSync, readdirSync, statSync, mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
-import { join, dirname, relative, resolve, isAbsolute } from "node:path";
+import { join, dirname, relative, resolve, isAbsolute, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
@@ -216,7 +216,7 @@ function runSelfTest() {
 
     const discovered = findMarkdownFiles(dir).map((path) => relative(dir, path));
     assert.ok(
-      !discovered.some((path) => path.startsWith(".vscode-test/")),
+      !discovered.some((path) => path.split(sep)[0] === ".vscode-test"),
       "downloaded VS Code test fixtures must not enter the repository documentation corpus",
     );
 

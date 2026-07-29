@@ -298,6 +298,14 @@ test("documentation lint excludes the downloaded VS Code test application", () =
     readFileSync(".markdownlint-cli2.jsonc", "utf8"),
     /"\*\*\/\.vscode-test\/\*\*"/u,
   );
+  for (const filename of [
+    "scripts/check-doc-citations.mjs",
+    "scripts/check-internal-links.mjs",
+  ]) {
+    const source = readFileSync(filename, "utf8");
+    assert.doesNotMatch(source, /startsWith\("\.vscode-test\/"\)/u);
+    assert.match(source, /split\(sep\)\[0\]\s*===\s*"\.vscode-test"/u);
+  }
 });
 
 test("CI runs the headless package smoke from the editor directory", () => {
