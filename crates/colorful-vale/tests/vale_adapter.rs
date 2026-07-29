@@ -558,6 +558,11 @@ fn malformed_outputs_fail_closed_by_category() {
             ValeConfig::default_output_limit(),
             ValeErrorKind::SourceMismatch,
         ),
+        (
+            "printf '%s' '{\"stdin.txt\":[],\"stdin.txt\":[]}'",
+            ValeConfig::default_output_limit(),
+            ValeErrorKind::MalformedOutput,
+        ),
     ];
 
     for (body, limit, expected) in fixtures {
