@@ -214,9 +214,10 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-release-distribution.test.mjs`
   `requires every release gate and rollback reference` and
   `keeps public byte verification after publication` and
-  `downloads every release asset before integrity verification`. *Status:*
-  implemented in the runbook and package witness; public rollback rehearsal
-  remains planned.
+  `downloads every release asset before integrity verification` and
+  `verifies checksums and provenance for the complete release matrix`.
+  *Status:* implemented in the runbook and package witness; public rollback
+  rehearsal remains planned.
 
 ## Open verification gaps
 

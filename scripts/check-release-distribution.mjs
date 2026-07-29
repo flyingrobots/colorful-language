@@ -419,13 +419,28 @@ function validateDocumentation(documentation) {
       throw new Error(`docs/RELEASING.md must include ${text}`);
     }
   }
+  const releaseDownloadLine = runbook
+    .split(/\r?\n/u)
+    .find((line) => line.trim().startsWith("gh release download vX.Y.Z"));
+  const releaseDownload = runbook.indexOf("gh release download vX.Y.Z");
+  const attestationVerification = runbook.indexOf("gh attestation verify");
   if (
-    !normalizedRunbook.includes(
-      "gh release download vX.Y.Z gh attestation verify",
-    )
+    releaseDownloadLine?.trim() !== "gh release download vX.Y.Z" ||
+    releaseDownload === -1 ||
+    attestationVerification <= releaseDownload
   ) {
     throw new Error(
       "release verification must download every release asset before attestation",
+    );
+  }
+  if (
+    !runbook.includes("shasum -a 256 -c ./*.sha256") ||
+    !normalizedRunbook.includes(
+      "for artifact in colorful-language-vX.Y.Z-*.tar.gz colorful-language-X.Y.Z.vsix",
+    )
+  ) {
+    throw new Error(
+      "release verification must verify checksums and provenance for every release artifact",
     );
   }
   const postPublication =

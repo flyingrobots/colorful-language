@@ -552,10 +552,10 @@ After the workflow succeeds, verify public availability:
 ```bash
 gh release view vX.Y.Z --json url,tagName,name,publishedAt,assets
 gh release download vX.Y.Z
-gh attestation verify colorful-language-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz \
-  --repo flyingrobots/colorful-language
-gh attestation verify colorful-language-X.Y.Z.vsix \
-  --repo flyingrobots/colorful-language
+shasum -a 256 -c ./*.sha256
+for artifact in colorful-language-vX.Y.Z-*.tar.gz colorful-language-X.Y.Z.vsix; do
+  gh attestation verify "$artifact" --repo flyingrobots/colorful-language
+done
 node scripts/verify-editor-publication.mjs \
   --vsix colorful-language-X.Y.Z.vsix \
   --version X.Y.Z
