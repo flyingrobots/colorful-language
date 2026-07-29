@@ -6,7 +6,7 @@ use std::sync::{
 };
 use std::time::Duration;
 
-use colorful_lsp::{apply_change, DocumentAnalysis};
+use colorful_lsp::{apply_change, DocumentAnalysis, DocumentFormat};
 use dashmap::DashMap;
 use ropey::Rope;
 use serde::Serialize;
@@ -20,7 +20,7 @@ use tower_lsp::lsp_types::{
 pub(crate) const MAX_DOCUMENT_BYTES: usize = 5 * 1024 * 1024;
 
 pub(crate) type AnalysisComputer =
-    Arc<dyn Fn(String, u64) -> DocumentAnalysis + Send + Sync + 'static>;
+    Arc<dyn Fn(String, DocumentFormat, u64) -> DocumentAnalysis + Send + Sync + 'static>;
 type PublishFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 pub(crate) type AnalysisPublisher =
     Arc<dyn Fn(CompletedAnalysis) -> PublishFuture + Send + Sync + 'static>;
@@ -61,6 +61,7 @@ struct DocumentState {
     rope: Rope,
     generation: u64,
     version: i32,
+    format: DocumentFormat,
     cached: Option<Arc<CachedAnalysis>>,
     cancellation: CancellationHandle,
     updates: watch::Sender<Option<Arc<CachedAnalysis>>>,
@@ -72,6 +73,7 @@ struct WorkItem {
     snapshot: Rope,
     generation: u64,
     version: i32,
+    format: DocumentFormat,
     scheduled_at: Instant,
     cancellation: CancellationHandle,
     publication_gate: Arc<Mutex<()>>,
@@ -178,6 +180,7 @@ impl DocumentStore {
         uri: Url,
         text: &str,
         version: i32,
+        format: DocumentFormat,
         publisher: AnalysisPublisher,
     ) {
         let previous_gate = self
@@ -195,6 +198,7 @@ impl DocumentStore {
             rope: Rope::from_str(text),
             generation: 1,
             version,
+            format,
             cached: None,
             cancellation: cancellation.clone(),
             updates,
@@ -205,6 +209,7 @@ impl DocumentStore {
             snapshot: state.rope.clone(),
             generation: state.generation,
             version: state.version,
+            format: state.format,
             scheduled_at: Instant::now(),
             cancellation,
             publication_gate: Arc::clone(&state.publication_gate),
@@ -253,6 +258,7 @@ impl DocumentStore {
                 snapshot: state.rope.clone(),
                 generation: state.generation,
                 version: state.version,
+                format: state.format,
                 scheduled_at: Instant::now(),
                 cancellation: state.cancellation.clone(),
                 publication_gate: Arc::clone(&state.publication_gate),
@@ -364,8 +370,11 @@ impl DocumentStore {
                 let compute = Arc::clone(&store.compute);
                 let generation = work.generation;
                 let snapshot = work.snapshot;
-                match tokio::task::spawn_blocking(move || compute(snapshot.to_string(), generation))
-                    .await
+                let format = work.format;
+                match tokio::task::spawn_blocking(move || {
+                    compute(snapshot.to_string(), format, generation)
+                })
+                .await
                 {
                     Ok(analysis) => (analysis, true),
                     Err(_) => {
@@ -462,7 +471,7 @@ mod tests {
     };
     use std::time::Duration;
 
-    use colorful_lsp::DocumentAnalysis;
+    use colorful_lsp::{DocumentAnalysis, DocumentFormat};
     use tower_lsp::lsp_types::{
         Diagnostic, NumberOrString, SemanticToken, TextDocumentContentChangeEvent, Url,
     };
@@ -523,7 +532,7 @@ mod tests {
         let (old_started_tx, old_started_rx) = mpsc::channel();
         let (release_old_tx, release_old_rx) = mpsc::channel();
         let release_old_rx = Arc::new(Mutex::new(release_old_rx));
-        let compute: AnalysisComputer = Arc::new(move |_text, generation| {
+        let compute: AnalysisComputer = Arc::new(move |_text, _format, generation| {
             if generation == 1 {
                 old_started_tx.send(()).expect("signal old start");
                 release_old_rx
@@ -540,7 +549,13 @@ mod tests {
         let publisher = recording_publisher(Arc::clone(&publications));
 
         store
-            .open(uri.clone(), "old", 1, Arc::clone(&publisher))
+            .open(
+                uri.clone(),
+                "old",
+                1,
+                DocumentFormat::PlainText,
+                Arc::clone(&publisher),
+            )
             .await;
         old_started_rx
             .recv_timeout(Duration::from_secs(2))
@@ -596,7 +611,7 @@ mod tests {
         let invocations = Arc::new(AtomicUsize::new(0));
         let compute: AnalysisComputer = {
             let invocations = Arc::clone(&invocations);
-            Arc::new(move |_text, generation| {
+            Arc::new(move |_text, _format, generation| {
                 invocations.fetch_add(1, Ordering::SeqCst);
                 analysis_for(generation)
             })
@@ -610,6 +625,7 @@ mod tests {
                 uri.clone(),
                 "The cat is calm.",
                 7,
+                DocumentFormat::PlainText,
                 recording_publisher(Arc::clone(&publications)),
             )
             .await;
@@ -641,12 +657,66 @@ mod tests {
         );
     }
 
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn incremental_generations_preserve_the_opened_document_format() {
+        let observed = Arc::new(Mutex::new(Vec::new()));
+        let compute: AnalysisComputer = {
+            let observed = Arc::clone(&observed);
+            Arc::new(move |_text, format, generation| {
+                observed
+                    .lock()
+                    .expect("format observation lock")
+                    .push((generation, format));
+                analysis_for(generation)
+            })
+        };
+        let store = DocumentStore::new(compute, Duration::ZERO, MAX_DOCUMENT_BYTES);
+        let uri = Url::parse("file:///format.md").expect("test URI");
+        let publications = Arc::new(Mutex::new(Vec::new()));
+        let publisher = recording_publisher(Arc::clone(&publications));
+
+        store
+            .open(
+                uri.clone(),
+                "one",
+                1,
+                DocumentFormat::Markdown,
+                Arc::clone(&publisher),
+            )
+            .await;
+        store
+            .semantic_tokens(&uri)
+            .await
+            .expect("initial semantic tokens");
+        store
+            .change(
+                &uri,
+                2,
+                vec![TextDocumentContentChangeEvent {
+                    range: None,
+                    range_length: None,
+                    text: "two".to_string(),
+                }],
+                publisher,
+            )
+            .await;
+        store
+            .semantic_tokens(&uri)
+            .await
+            .expect("changed semantic tokens");
+
+        assert_eq!(
+            observed.lock().expect("format observation lock").as_slice(),
+            [(1, DocumentFormat::Markdown), (2, DocumentFormat::Markdown)]
+        );
+    }
+
     #[tokio::test(start_paused = true)]
     async fn rapid_edits_cancel_debounced_work_before_analysis() {
         let invocations = Arc::new(Mutex::new(Vec::new()));
         let compute: AnalysisComputer = {
             let invocations = Arc::clone(&invocations);
-            Arc::new(move |_text, generation| {
+            Arc::new(move |_text, _format, generation| {
                 invocations
                     .lock()
                     .expect("invocation log lock")
@@ -660,7 +730,13 @@ mod tests {
         let publisher = recording_publisher(Arc::clone(&publications));
 
         store
-            .open(uri.clone(), "one", 1, Arc::clone(&publisher))
+            .open(
+                uri.clone(),
+                "one",
+                1,
+                DocumentFormat::PlainText,
+                Arc::clone(&publisher),
+            )
             .await;
         store
             .semantic_tokens(&uri)
@@ -724,7 +800,7 @@ mod tests {
         let invocations = Arc::new(AtomicUsize::new(0));
         let compute: AnalysisComputer = {
             let invocations = Arc::clone(&invocations);
-            Arc::new(move |_text, generation| {
+            Arc::new(move |_text, _format, generation| {
                 invocations.fetch_add(1, Ordering::SeqCst);
                 analysis_for(generation)
             })
@@ -736,11 +812,23 @@ mod tests {
         let publisher = recording_publisher(Arc::clone(&publications));
 
         store
-            .open(at_limit.clone(), "1234", 1, Arc::clone(&publisher))
+            .open(
+                at_limit.clone(),
+                "1234",
+                1,
+                DocumentFormat::PlainText,
+                Arc::clone(&publisher),
+            )
             .await;
         wait_until(|| invocations.load(Ordering::SeqCst) == 1).await;
         store
-            .open(oversized.clone(), "12345", 1, Arc::clone(&publisher))
+            .open(
+                oversized.clone(),
+                "12345",
+                1,
+                DocumentFormat::PlainText,
+                Arc::clone(&publisher),
+            )
             .await;
         wait_until(|| store.cached_generation(&oversized) == Some(1)).await;
 
@@ -765,7 +853,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn failed_analysis_is_reported_but_not_counted_as_accepted() {
-        let compute: AnalysisComputer = Arc::new(move |_text, _generation| {
+        let compute: AnalysisComputer = Arc::new(move |_text, _format, _generation| {
             panic!("deterministic analysis failure");
         });
         let store = DocumentStore::new(compute, Duration::ZERO, MAX_DOCUMENT_BYTES);
@@ -777,6 +865,7 @@ mod tests {
                 uri.clone(),
                 "failure",
                 1,
+                DocumentFormat::PlainText,
                 recording_publisher(Arc::clone(&publications)),
             )
             .await;

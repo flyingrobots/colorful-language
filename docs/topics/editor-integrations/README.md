@@ -11,6 +11,17 @@ text or Markdown buffers to it.
 and incremental changes, emits semantic tokens, and publishes prose-lint
 diagnostics. The same server backs every editor path.
 
+Plain Text uses the complete document as prose. A buffer opened with LSP
+language ID `markdown` instead passes through the shared
+`colorful_parse::markdown` format adapter. Fenced and indented code blocks,
+inline code, opening YAML/TOML front matter, link destinations, and HTML blocks
+are replaced with coordinate-equivalent whitespace before the one parse,
+classification, and lint pass. Link labels and ordinary Markdown text remain
+prose. The replacement preserves byte offsets, line endings, and UTF-16
+positions, so diagnostics and semantic tokens still point into the original
+source. Incremental generations retain the format selected by `didOpen`;
+unknown language IDs keep the historical whole-document behavior.
+
 The repository currently ships source integrations and recipes:
 
 - VS Code and Cursor use the source extension in

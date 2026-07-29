@@ -250,11 +250,7 @@ where
     A: Annotator,
     An: Analyzer,
 {
-    let classification = ValidatedClassification::from_ports(text, parser, annotator)?;
-    let semantic_tokens = semantic_tokens_from(text, classification.tokens());
-    let findings = analyzer.analyze(text, classification.tree(), classification.tokens());
-    let diagnostics = diagnostics_from(text, findings);
-    Ok(DocumentAnalysis::new(semantic_tokens, diagnostics))
+    analyze_document_sources(text, text, parser, annotator, analyzer)
 }
 
 /// Analyze one document according to its source format.
@@ -265,7 +261,7 @@ where
 /// malformed public tree/token data.
 pub fn analyze_document_for_format<P, A, An>(
     text: &str,
-    _format: DocumentFormat,
+    format: DocumentFormat,
     parser: &P,
     annotator: &A,
     analyzer: &An,
@@ -275,7 +271,34 @@ where
     A: Annotator,
     An: Analyzer,
 {
-    analyze_document(text, parser, annotator, analyzer)
+    let analysis_text = match format {
+        DocumentFormat::PlainText => std::borrow::Cow::Borrowed(text),
+        DocumentFormat::Markdown => colorful_parse::markdown::mask_non_prose(text),
+    };
+    analyze_document_sources(text, &analysis_text, parser, annotator, analyzer)
+}
+
+fn analyze_document_sources<P, A, An>(
+    source_text: &str,
+    analysis_text: &str,
+    parser: &P,
+    annotator: &A,
+    analyzer: &An,
+) -> Result<DocumentAnalysis, ClassificationError>
+where
+    P: Parser,
+    A: Annotator,
+    An: Analyzer,
+{
+    let classification = ValidatedClassification::from_ports(analysis_text, parser, annotator)?;
+    let semantic_tokens = semantic_tokens_from(source_text, classification.tokens());
+    let findings = analyzer.analyze(
+        analysis_text,
+        classification.tree(),
+        classification.tokens(),
+    );
+    let diagnostics = diagnostics_from(source_text, findings);
+    Ok(DocumentAnalysis::new(semantic_tokens, diagnostics))
 }
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
@@ -533,7 +556,7 @@ mod tests {
             "fenced code emitted semantic tokens: {decoded:?}"
         );
         assert!(
-            decoded.iter().any(|token| *token == (6, 4, 3, 4)),
+            decoded.contains(&(6, 4, 3, 4)),
             "the noun after the fence lost its source coordinate: {decoded:?}"
         );
     }

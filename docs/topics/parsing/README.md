@@ -40,6 +40,23 @@ sentence holds `Node::Word` and `Node::Punct` children, and every node carries a
   *Known limitations* below); the shipped release binaries do not have this
   limitation, so this is the guarantee that actually holds for them.
 
+## Markdown prose view
+
+`colorful_parse::markdown::mask_non_prose` is a format adapter, not a second
+prose grammar. It uses CommonMark structure to replace fenced and indented code
+blocks, inline code, opening YAML/TOML front matter, HTML blocks, inline HTML
+markup, and link destinations with whitespace before the existing
+`ProseParser` runs. Link labels and ordinary Markdown text remain analyzable.
+An unmatched inline-code or front-matter opener does not suppress the rest of
+the document.
+
+Every replacement preserves the original byte length, `LF`/`CRLF`/bare-`CR`
+line endings, and UTF-16 length before retained prose. ASCII, two-byte BMP,
+three-byte BMP, and astral scalars each receive a whitespace representation
+with the same byte and UTF-16 width. This lets CLI findings and LSP diagnostics
+or semantic tokens project their spans directly onto the unmodified source.
+Plain prose returns as a borrowed string without allocation.
+
 ## Invariants
 
 - Leaf spans are non-empty, in bounds, on `char` boundaries, and strictly

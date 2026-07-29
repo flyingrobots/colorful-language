@@ -206,6 +206,13 @@ Line and column are 1-based; columns count characters. The command exits
 fails a CI gate on bad prose (I/O errors stay non-zero too). Clean input prints
 nothing.
 
+Files whose final extension is `.md` or `.markdown` use the shared Markdown
+prose view: code, front matter, link destinations, and HTML blocks do not
+produce editorial findings, while link labels and ordinary prose do. Other
+paths and stdin retain whole-document Plain Text behavior. The adapter
+preserves source positions, so the displayed line and column still refer to the
+original file and match the LSP diagnostic for the same prose span.
+
 ## Editor output (`colorful-lsp`)
 
 The server schedules generation processing after `didOpen` and debounced
@@ -226,14 +233,16 @@ position arithmetic unit-testable without the transport.
 
 The production binary does not call that helper independently on each
 `didChange`. For snapshots through the size limit, its `DocumentStore` schedules
-`analyze_document()` after `didOpen` or a debounced edit. Analysis is still
-whole-document, but each accepted generation within the size limit is parsed
-and classified once; the resulting `DocumentAnalysis` supplies both published
+`analyze_document_for_format()` after `didOpen` or a debounced edit. Plain Text
+analyzes the whole document; Markdown analyzes the shared coordinate-preserving
+prose view. Each accepted generation within the size limit is parsed and
+classified once; the resulting `DocumentAnalysis` supplies both published
 diagnostics and cached semantic tokens. An accepted oversized generation
-bypasses parsing, classification, and linting while caching the limit diagnostic
-and empty tokens. A semantic-token request waits for that generation's cached
-value in either case rather than starting another parse. The release-mode SLO
-and overload harness for this combined production path are published by
+bypasses parsing, classification, and linting while caching the limit
+diagnostic and empty tokens. A semantic-token request waits for that
+generation's cached value in either case rather than starting another parse.
+The release-mode SLO and overload harness for this combined production path are
+published by
 [#122](https://github.com/flyingrobots/colorful-language/issues/122), while
 the broader cross-stage comparison is published by
 [#135](https://github.com/flyingrobots/colorful-language/issues/135). See the

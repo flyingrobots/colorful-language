@@ -283,7 +283,13 @@ Verification for editor adapters and the `colorful-lsp` surface.
   semantic-token ranges. *Evidence type:* deterministic Rust unit and real-LSP
   transcript tests plus the packaged Markdown fixture. *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Status:* planned.
+  *Evidence:* `colorful-lsp` test
+  `tests::markdown_analysis_excludes_fenced_code_from_both_lsp_surfaces`;
+  `crates/colorful-lsp/tests/fixtures/editor_lifecycle_transcript.json`;
+  `crates/colorful-lsp/tests/stdio_contract.rs`
+  `real_server_completes_the_public_stdio_lifecycle`;
+  `editors/fixtures/editor-smoke.md`; packaged VS Code smoke. *Status:*
+  implemented.
 - **EDIT-15b** — *Requirement:* EDIT-15. *Behavior:* inline code, indented code
   blocks, opening YAML/TOML front matter, link destinations, and HTML blocks are
   non-prose; link labels and ordinary text remain prose. Unterminated inline
@@ -293,7 +299,15 @@ Verification for editor adapters and the `colorful-lsp` surface.
   equality after ASCII, combining-mark, BMP, and astral content. *Evidence
   type:* pure format-adapter unit tests. *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Status:* planned.
+  *Evidence:* `colorful-parse` Markdown tests
+  `fenced_code_is_whitespace_while_surrounding_prose_is_unchanged`,
+  `reviewed_markdown_regions_have_explicit_suppression_decisions`,
+  `link_labels_remain_prose_while_destinations_are_suppressed`,
+  `nested_and_reference_link_destinations_are_suppressed`,
+  `inline_html_markup_is_suppressed_but_its_text_remains_prose`,
+  `unterminated_constructs_do_not_hide_the_rest_of_the_document`, and
+  `masking_preserves_byte_and_utf16_coordinates_after_unicode`. *Status:*
+  implemented.
 - **EDIT-15c** — *Requirement:* EDIT-15. *Behavior:* LSP `languageId:
   "markdown"` and CLI `.md`/`.markdown` lint inputs use the same format adapter;
   stdin and non-Markdown files remain Plain Text unless a future explicit
@@ -302,7 +316,11 @@ Verification for editor adapters and the `colorful-lsp` surface.
   control still analyzes code-looking text. *Evidence type:* cross-surface
   process and unit fixtures. *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Status:* planned.
+  *Evidence:* `colorful-cli` test
+  `cli::tests::markdown_lint_matches_lsp_prose_regions_while_plain_text_stays_whole_document`;
+  `crates/colorful-lsp/tests/fixtures/editor_lifecycle_transcript.json`;
+  `crates/colorful-lsp/tests/stdio_contract.rs`
+  `real_server_completes_the_public_stdio_lifecycle`. *Status:* implemented.
 - **EDIT-15d** — *Requirement:* EDIT-15. *Behavior:* the server stores the
   `didOpen` language identifier with the document generation and preserves that
   format across incremental edits, stale-result rejection, cached diagnostics,
@@ -310,7 +328,10 @@ Verification for editor adapters and the `colorful-lsp` surface.
   one accepted Markdown analysis per generation and unchanged Plain Text
   behavior. *Evidence type:* deterministic document-state tests. *Tracking:*
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
-  *Status:* planned.
+  *Evidence:* `colorful-lsp` binary test
+  `document_state::tests::incremental_generations_preserve_the_opened_document_format`
+  plus the existing stale-completion, cache-reuse, debounce, and limit tests.
+  *Status:* implemented.
 
 ## Zed clean-profile manual oracle
 
@@ -368,8 +389,6 @@ text-equivalent result in step 6.
   exposes a supported headless dev-extension installation surface.
 - Signed publication, rollback, visual/theme evidence, and measured
   install-to-first-highlight time remain open in EDIT-10a and EDIT-10b.
-- Markdown non-prose region filtering remains open in EDIT-15a through
-  EDIT-15d.
 - A shipped theme remains a planned artifact. Theme fallback belongs in #136;
   create a separate topic and fixtures only when Colorful owns an actual theme
   package, not as an empty documentation surface.
