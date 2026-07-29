@@ -413,6 +413,17 @@ test("rejects repository homepage drift", () => {
   }, "E_REPOSITORY_PROFILE");
 });
 
+test("rejects a competing release-milestone delivery axis", () => {
+  expectCode((candidate) => {
+    candidate.releaseProfile = {
+      versioning: {
+        milestone_format: "v{version}",
+        release_tracking_issue_format: "[release] v{version}",
+      },
+    };
+  }, "E_DELIVERY_TRACKING");
+});
+
 test("rejects deployment credentials without a named custodian", () => {
   expectCode(({ repositoryProfile }) => {
     repositoryProfile.deployment.credential_owner = null;
