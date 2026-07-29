@@ -239,15 +239,19 @@ roadmap-to-issue reconciliation is tracked in
   *Behavior:* the maintenance reference records the exact toolchain, command,
   source commit, observed workspace and transport percentages, floor-selection
   rule, artifact contents, and the reviewed procedure for raising or lowering a
-  floor. *Oracle:* policy tests reject stale or incomplete reference values,
-  while lowering a floor remains a visible source-controlled change rather
-  than an automatic side effect of adding uncovered code. *Evidence type:*
-  deterministic documentation-policy parity test. *Evidence:*
+  floor. The Unreleased changelog coverage note quotes the same current
+  workspace percentage. *Oracle:* policy tests reject stale or incomplete
+  reference values and a stale Unreleased coverage bullet, while lowering a
+  floor remains a visible source-controlled change rather than an automatic
+  side effect of adding uncovered code. *Evidence type:* deterministic
+  documentation-policy parity test. *Evidence:*
   `docs/workflows/repository-maintenance/README.md`,
+  `CHANGELOG.md`,
   `.github/coverage-policy.json`, and
-  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
+  `scripts/check-coverage-policy.test.mjs` (the changelog parity leg is
+  planned). *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
-  *Status:* implemented.
+  *Status:* planned.
 - **RM-10d — Coverage follows transport source ownership.** *Requirement:*
   RM-10. *Behavior:* when CLI transport responsibilities move behind the
   crate-root facade, the per-file ratchet follows every executable source owner
