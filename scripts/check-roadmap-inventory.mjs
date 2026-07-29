@@ -96,7 +96,9 @@ function markdownTableMechanism(line) {
 function validateArchitectureAccountability(roadmap, roadmapPath) {
   const mechanisms = new Map();
   let inAccountabilitySection = false;
+  let inAccountabilityTable = false;
   let foundAccountabilitySection = false;
+  let foundAccountabilityTable = false;
 
   for (const [index, line] of roadmap.split("\n").entries()) {
     if (line.trim() === ACCOUNTABILITY_HEADING) {
@@ -112,11 +114,18 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
 
     const mechanism = markdownTableMechanism(line);
-    if (
-      mechanism === undefined ||
-      mechanism === "Mechanism" ||
-      MARKDOWN_DELIMITER_CELL.test(mechanism)
-    ) {
+    if (!inAccountabilityTable) {
+      if (mechanism === "Mechanism") {
+        inAccountabilityTable = true;
+        foundAccountabilityTable = true;
+      }
+      continue;
+    }
+    if (mechanism === undefined) {
+      inAccountabilityTable = false;
+      continue;
+    }
+    if (MARKDOWN_DELIMITER_CELL.test(mechanism)) {
       continue;
     }
 
@@ -137,6 +146,13 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
       roadmapPath,
       `expected canonical heading "${ACCOUNTABILITY_HEADING}"`,
+    );
+  }
+  if (!foundAccountabilityTable) {
+    fail(
+      "E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE",
+      roadmapPath,
+      'expected a table whose first header cell is "Mechanism"',
     );
   }
 }

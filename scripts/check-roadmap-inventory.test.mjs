@@ -116,6 +116,30 @@ test("rejects a missing canonical architecture-accountability section", () => {
   }
 });
 
+test("ignores table-like examples outside the accountability table", () => {
+  const withExample = `${roadmap}
+
+\`\`\`markdown
+| Parser ports | Historical example only. |
+\`\`\`
+`;
+
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: withExample,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
+test("rejects a missing architecture-accountability table", () => {
+  expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
+    source.replace(/\n\| Mechanism \|[\s\S]*$/u, "\n"),
+  );
+});
+
 test("rejects a closed slice presented as active", () => {
   expectCategory("E_ROADMAP_CLOSED_ACTIVE", (source) =>
     source.replace(
