@@ -188,6 +188,8 @@ function validSnapshot() {
         "zed-industries/extensions",
         "Do not move the tag",
         "observational",
+        "## Post-publication verification",
+        "node scripts/verify-editor-publication.mjs",
       ].join("\n"),
       topic:
         "installation-to-first-highlight is observational and not a correctness threshold",
@@ -473,6 +475,21 @@ test("requires every release gate and rollback reference", () => {
       "not a correctness\nthreshold",
     );
   assert.doesNotThrow(() => validateReleaseDistribution(reflowed));
+});
+
+test("keeps public byte verification after publication", () => {
+  const snapshot = validSnapshot();
+  snapshot.documentation.runbook =
+    snapshot.documentation.runbook.replace(
+      "## Post-publication verification\n" +
+        "node scripts/verify-editor-publication.mjs",
+      "node scripts/verify-editor-publication.mjs\n" +
+        "## Post-publication verification",
+    );
+  assert.throws(
+    () => validateReleaseDistribution(snapshot),
+    /public byte verification must follow publication/u,
+  );
 });
 
 test("the checked-in repository satisfies the distribution policy", () => {
