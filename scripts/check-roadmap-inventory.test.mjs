@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import {
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -87,8 +82,7 @@ test("rejects duplicate primary homes", () => {
 });
 
 test("rejects a duplicate architecture-accountability mechanism by line", () => {
-  const mechanismRow =
-    "| Parser ports | Substitute deterministic adapters. |";
+  const mechanismRow = "| Parser ports | Substitute deterministic adapters. |";
   const duplicated = roadmap.replace(
     mechanismRow,
     `${mechanismRow}\n${mechanismRow}`,
@@ -128,10 +122,8 @@ test("rejects a missing canonical architecture-accountability section", () => {
     "\t## Architecture accountability",
     "",
   ]) {
-    expectCategory(
-      "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
-      (source) =>
-        source.replace("## Architecture accountability", replacement),
+    expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION", (source) =>
+      source.replace("## Architecture accountability", replacement),
     );
   }
 });
@@ -279,8 +271,7 @@ ${commentedTable}
 });
 
 test("compares visible mechanism identity around inline HTML comments", () => {
-  const mechanismRow =
-    "| Parser ports | Substitute deterministic adapters. |";
+  const mechanismRow = "| Parser ports | Substitute deterministic adapters. |";
   expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
     source.replace(
       mechanismRow,
@@ -310,20 +301,17 @@ test("preserves comment-shaped text inside inline code", () => {
 });
 
 test("rejects a multiline comment beginning on a visible table row", () => {
-  const mechanismRow =
-    "| Parser ports | Substitute deterministic adapters. |";
-  expectCategory(
-    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-    (source) =>
-      source.replace(
+  const mechanismRow = "| Parser ports | Substitute deterministic adapters. |";
+  expectCategory("E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE", (source) =>
+    source.replace(
+      mechanismRow,
+      [
         mechanismRow,
-        [
-          mechanismRow,
-          "| Parser ports | Duplicate visible row. | <!--",
-          "Comment body.",
-          "-->",
-        ].join("\n"),
-      ),
+        "| Parser ports | Duplicate visible row. | <!--",
+        "Comment body.",
+        "-->",
+      ].join("\n"),
+    ),
   );
 });
 
@@ -367,6 +355,46 @@ test("rejects a second architecture-accountability mechanism table", () => {
   );
 });
 
+test("rejects a second accountability table after a later H2", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+## Appendix
+
+| Mechanism | Current user job |
+| --- | --- |
+| Appendix-only mechanism | Must not create another apparent authority. |
+`,
+    {
+      messagePattern:
+        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture\/roadmap\.md:\d+: canonical table already begins at fixture\/roadmap\.md:23$/u,
+    },
+  );
+});
+
+test("requires a complete table after a later H2 before rejecting it", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: `${roadmap}
+
+## Appendix
+
+| Mechanism | Current user job |
+
+The header-shaped line has no delimiter or data row.
+
+| Subject | Description |
+| --- | --- |
+| Appendix | An unrelated table remains ordinary roadmap content. |
+`,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("rejects a styled duplicate accountability table header", () => {
   expectCategory(
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
@@ -398,16 +426,14 @@ Parser ports | Alternate apparent authority.
 });
 
 test("rejects a no-leading-pipe data row inside the accountability table", () => {
-  expectCategory(
-    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-    (source) =>
-      source.replace(
+  expectCategory("E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE", (source) =>
+    source.replace(
+      "| Parser ports | Substitute deterministic adapters. |",
+      [
         "| Parser ports | Substitute deterministic adapters. |",
-        [
-          "| Parser ports | Substitute deterministic adapters. |",
-          "Parser ports | Duplicate decision.",
-        ].join("\n"),
-      ),
+        "Parser ports | Duplicate decision.",
+      ].join("\n"),
+    ),
   );
 });
 
@@ -492,8 +518,7 @@ test("does not close an inline-code span at a longer backtick run", () => {
 });
 
 test("normalizes escaped pipes inside inline-code mechanism identities", () => {
-  const mechanismRow =
-    String.raw`| Parser \| compiler ports | Compile deterministic structure. |`;
+  const mechanismRow = String.raw`| Parser \| compiler ports | Compile deterministic structure. |`;
   expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
     source.replace(
       mechanismRow,
@@ -619,8 +644,7 @@ test("treats issues closed by the current pull request as delivered", () => {
 test("requires a delivered marker for a slice closed by the pull request", () => {
   expectCategory(
     "E_ROADMAP_MISSING_DELIVERED",
-    (source) =>
-      source.replace("  <!-- roadmap-primary: active #101 -->\n", ""),
+    (source) => source.replace("  <!-- roadmap-primary: active #101 -->\n", ""),
     { closingIssueNumbers: new Set([101]) },
   );
 });
@@ -674,9 +698,7 @@ test("rejects a missing option value with a stable usage error", () => {
 
 test("rejects malformed issue JSON with a stable snapshot error", () => {
   const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
-  const issuePath = fileURLToPath(
-    new URL("invalid-issues.txt", fixtureRoot),
-  );
+  const issuePath = fileURLToPath(new URL("invalid-issues.txt", fixtureRoot));
 
   assert.throws(
     () => run(["--roadmap", roadmapPath, "--issues", issuePath]),
@@ -715,10 +737,7 @@ test("the workflow reference pins the canonical accountability heading", () => {
     reference.replace("canonical\n`", "canonical `"),
     canonicalHeadingPattern,
   );
-  assert.doesNotMatch(
-    reference,
-    /canonical Architecture\nAccountability H2/u,
-  );
+  assert.doesNotMatch(reference, /canonical Architecture\nAccountability H2/u);
 });
 
 test("the repository wires offline and live reconciliation into distinct lanes", () => {
@@ -740,10 +759,7 @@ test("the repository wires offline and live reconciliation into distinct lanes",
       source,
       /node --test scripts\/check-roadmap-inventory\.test\.mjs/u,
     );
-    assert.match(
-      source,
-      /node scripts\/check-roadmap-inventory\.mjs(?:\s|$)/u,
-    );
+    assert.match(source, /node scripts\/check-roadmap-inventory\.mjs(?:\s|$)/u);
   }
   assert.match(ci, /--closing-pr "\$PULL_REQUEST"/u);
   assert.match(
