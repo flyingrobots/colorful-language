@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdtempSync,
@@ -82,6 +84,45 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
     "node smoke/run-packaged-smoke.mjs",
   );
   assert.equal(packageJson.repository?.directory, "editors/vscode");
+});
+
+test("VSIX packaging is reproducible across ambient build times", () => {
+  const scratch = mkdtempSync(path.join(tmpdir(), "colorful-vsix-repro-"));
+  const first = path.join(scratch, "first.vsix");
+  const second = path.join(scratch, "second.vsix");
+  const packageVsix = (output, sourceDateEpoch) => {
+    const result = spawnSync(
+      "npm",
+      [
+        "--prefix",
+        VSCODE_DIRECTORY,
+        "run",
+        "package:vsix",
+        "--",
+        "--out",
+        output,
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: { ...process.env, SOURCE_DATE_EPOCH: sourceDateEpoch },
+      },
+    );
+    assert.equal(
+      result.status,
+      0,
+      `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
+    );
+  };
+  try {
+    packageVsix(first, "1600000000");
+    packageVsix(second, "1700000000");
+    const digest = (filename) =>
+      createHash("sha256").update(readFileSync(filename)).digest("hex");
+    assert.equal(digest(first), digest(second));
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 test("the packaged VS Code license stays byte-identical to repository authority", () => {
