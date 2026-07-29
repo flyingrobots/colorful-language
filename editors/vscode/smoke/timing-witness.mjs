@@ -1,22 +1,40 @@
 const SCHEMA_VERSION = "colorful.install-to-first-highlight/v1";
 const START_EVENT = "before-isolated-vsix-install";
 const END_EVENT = "first-plaintext-diagnostic-and-semantic-tokens";
-const REQUIRED_ENVIRONMENT_FIELDS = Object.freeze([
+const STRING_ENVIRONMENT_FIELDS = Object.freeze([
   "architecture",
   "cpu",
   "extension",
-  "logicalCpuCount",
-  "memoryBytes",
   "node",
   "operatingSystem",
   "rustc",
   "server",
   "vscode",
 ]);
+const POSITIVE_INTEGER_ENVIRONMENT_FIELDS = Object.freeze([
+  "logicalCpuCount",
+  "memoryBytes",
+]);
+const REQUIRED_ENVIRONMENT_FIELDS = Object.freeze([
+  ...STRING_ENVIRONMENT_FIELDS,
+  ...POSITIVE_INTEGER_ENVIRONMENT_FIELDS,
+]);
 
 function requireNonNegativeInteger(value, name) {
   if (!Number.isSafeInteger(value) || value < 0) {
     throw new TypeError(`${name} must be a non-negative safe integer`);
+  }
+}
+
+function requireNonEmptyString(value, name) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new TypeError(`${name} must be a non-empty string`);
+  }
+}
+
+function requirePositiveInteger(value, name) {
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new TypeError(`${name} must be a positive safe integer`);
   }
 }
 
@@ -42,6 +60,12 @@ function requireEnvironment(environment) {
     if (!Object.hasOwn(environment, name)) {
       throw new TypeError(`environment.${name} is required`);
     }
+  }
+  for (const name of STRING_ENVIRONMENT_FIELDS) {
+    requireNonEmptyString(environment[name], `environment.${name}`);
+  }
+  for (const name of POSITIVE_INTEGER_ENVIRONMENT_FIELDS) {
+    requirePositiveInteger(environment[name], `environment.${name}`);
   }
 }
 
