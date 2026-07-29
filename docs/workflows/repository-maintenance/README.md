@@ -211,6 +211,11 @@ change its primary marker to `delivered`. When opening or moving a slice, add or
 move its one marker in the same change. When a pull request closes a slice,
 change that marker to `delivered` before merge.
 
+The same offline structure gate also requires each mechanism in the
+Architecture Accountability table to appear exactly once. A duplicate fails
+with both the repeated row's line and the original row's line; distinct
+moonshot mechanisms remain independent entries.
+
 Run the deterministic structure and fixture gates without network access:
 
 ```bash

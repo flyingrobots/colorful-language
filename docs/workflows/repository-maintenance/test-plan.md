@@ -241,9 +241,11 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   with `E_ROADMAP_DUPLICATE_MECHANISM`, the current and previous
   `ROADMAP.md` line addresses, and a nonzero process status. *Evidence type:*
   deterministic fixture-backed Node test plus the existing offline repository
-  command. *Tracking:*
+  command. *Evidence:* `scripts/check-roadmap-inventory.mjs`,
+  `scripts/check-roadmap-inventory.test.mjs`, and
+  `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and

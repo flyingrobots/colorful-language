@@ -24,3 +24,5 @@ Ordinary historical [#104](https://example.test/issues/104) and epic
 | --- | --- |
 | Parser ports | Substitute deterministic adapters. |
 | Portable IR | Cross a process boundary. |
+| Parser \| compiler ports | Compile deterministic structure. |
+| Parser \| analyzer ports | Analyze deterministic structure. |

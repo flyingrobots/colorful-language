@@ -7,6 +7,8 @@ import { pathToFileURL } from "node:url";
 
 const PRIMARY_MARKER = /<!--\s*roadmap-primary:\s*([\s\S]*?)-->/gu;
 const VALID_MARKER = /^(active|parked|delivered)((?:\s+#\d+)+)$/u;
+const ACCOUNTABILITY_HEADING = "## Architecture accountability";
+const MARKDOWN_DELIMITER_CELL = /^:?-+:?$/u;
 const ACTIVE_DISPOSITIONS = new Set(["active", "parked"]);
 
 export class InventoryError extends Error {
@@ -75,10 +77,65 @@ function normalizeIssues(issues, issuePath, closingIssueNumbers) {
   return byNumber;
 }
 
+function markdownTableMechanism(line) {
+  const firstNonWhitespace = line.search(/\S/u);
+  if (firstNonWhitespace === -1 || line[firstNonWhitespace] !== "|") {
+    return undefined;
+  }
+
+  for (let index = firstNonWhitespace + 1; index < line.length; index += 1) {
+    if (line[index] === "\\") {
+      index += 1;
+    } else if (line[index] === "|") {
+      return line.slice(firstNonWhitespace + 1, index).trim();
+    }
+  }
+  return undefined;
+}
+
+function validateArchitectureAccountability(roadmap, roadmapPath) {
+  const mechanisms = new Map();
+  let inAccountabilitySection = false;
+
+  for (const [index, line] of roadmap.split("\n").entries()) {
+    if (line.trim() === ACCOUNTABILITY_HEADING) {
+      inAccountabilitySection = true;
+      continue;
+    }
+    if (inAccountabilitySection && /^##\s+/u.test(line.trimStart())) {
+      break;
+    }
+    if (!inAccountabilitySection) {
+      continue;
+    }
+
+    const mechanism = markdownTableMechanism(line);
+    if (
+      mechanism === undefined ||
+      mechanism === "Mechanism" ||
+      MARKDOWN_DELIMITER_CELL.test(mechanism)
+    ) {
+      continue;
+    }
+
+    const location = `${roadmapPath}:${index + 1}`;
+    const previous = mechanisms.get(mechanism);
+    if (previous !== undefined) {
+      fail(
+        "E_ROADMAP_DUPLICATE_MECHANISM",
+        location,
+        `architecture-accountability mechanism "${mechanism}" already appears at ${previous}`,
+      );
+    }
+    mechanisms.set(mechanism, location);
+  }
+}
+
 export function parseRoadmapInventory(
   roadmap,
   { roadmapPath = "ROADMAP.md" } = {},
 ) {
+  validateArchitectureAccountability(roadmap, roadmapPath);
   const inventory = new Map();
 
   for (const match of roadmap.matchAll(PRIMARY_MARKER)) {
