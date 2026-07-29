@@ -14,50 +14,38 @@
     fixture reports really as a weak word to remove or replace.
   </desc>
   <style>
-    svg {
-      --page: #1f2328;
-      --surface: #262c33;
-      --border: #57606a;
-      --body: #f0f3f6;
-      --muted: #b6bec9;
-      --noun: #fc9867;
-      --verb: #a9dc76;
-      --adjective: #ab9df2;
-      --adverb: #ffd866;
-    }
-
     .page {
-      fill: var(--page);
+      fill: #1f2328;
     }
 
     .panel {
-      fill: var(--surface);
-      stroke: var(--border);
+      fill: #262c33;
+      stroke: #57606a;
       stroke-width: 2;
     }
 
     .body {
-      fill: var(--body);
+      fill: #f0f3f6;
     }
 
     .muted {
-      fill: var(--muted);
+      fill: #b6bec9;
     }
 
     .noun {
-      fill: var(--noun);
+      fill: #fc9867;
     }
 
     .verb {
-      fill: var(--verb);
+      fill: #a9dc76;
     }
 
     .adjective {
-      fill: var(--adjective);
+      fill: #ab9df2;
     }
 
     .adverb {
-      fill: var(--adverb);
+      fill: #ffd866;
     }
 
     .code {

@@ -320,7 +320,12 @@ test("the visual demo has a text-equivalent accessible role mapping", () => {
     "demo paint must render without CSS custom-property support",
   );
 
-  const surface = /--surface:\s*(#[0-9a-f]{6})/u.exec(svg)?.[1];
+  const classFill = (className) =>
+    new RegExp(
+      `\\.${className}\\s*\\{\\s*fill:\\s*(#[0-9a-f]{6})`,
+      "u",
+    ).exec(svg)?.[1];
+  const surface = classFill("panel");
   assert.ok(surface, "demo must declare one semantic surface token");
   const roles = {
     noun: ["cat", "prose"],
@@ -329,10 +334,7 @@ test("the visual demo has a text-equivalent accessible role mapping", () => {
     adverb: ["quickly"],
   };
   for (const [role, words] of Object.entries(roles)) {
-    const color = new RegExp(
-      `--${role}:\\s*(#[0-9a-f]{6})`,
-      "u",
-    ).exec(svg)?.[1];
+    const color = classFill(role);
     assert.ok(color, `demo must declare the ${role} reference color`);
     assert.ok(
       contrastRatio(color, surface) >= 4.5,
