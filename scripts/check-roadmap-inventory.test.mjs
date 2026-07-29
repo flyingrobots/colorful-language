@@ -1512,6 +1512,12 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
       expectedMeasurement,
       `${referencePath} must publish the source-policy measurement`,
     );
+    assert.match(
+      reference,
+      /down from 1,429\s+lines and 38\s+(?:top-level\s+)?helpers/u,
+      `${referencePath} must publish the measured baseline`,
+    );
+    assert.doesNotMatch(reference, /34-helper baseline/u);
   }
 });
 

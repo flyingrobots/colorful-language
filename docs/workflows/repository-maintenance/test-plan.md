@@ -313,7 +313,7 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   authority. The checker retains every existing accepted fixture and stable,
   path-addressed `E_ROADMAP_*` failure category and source line, removes its
   bespoke fence/raw-HTML/paragraph/table/inline state machine, and ratchets the
-  maintained checker below its 1,429-line and 34-helper baseline. *Oracle:* the
+  maintained checker below its 1,429-line and 38-helper baseline. *Oracle:* the
   full existing roadmap inventory suite remains green; a source-policy
   regression rejects the former parser helper/state signatures or a checker at
   or above the reviewed line ceiling; dependency-policy evidence rejects
