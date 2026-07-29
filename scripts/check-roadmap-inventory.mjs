@@ -115,6 +115,14 @@ function isNoLeadingPipeMechanismHeader(line) {
   );
 }
 
+function isRoadmapLevelTwoHeading(line) {
+  const match = line.match(/^ {0,3}##(?:[ \t]+|$)/u);
+  if (match === null) {
+    return false;
+  }
+  return !line.slice(match[0].length).startsWith("#");
+}
+
 function isAsciiPunctuation(character) {
   const codePoint = character.codePointAt(0);
   return (
@@ -263,8 +271,12 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       accountabilitySectionLocation = location;
       continue;
     }
-    if (inAccountabilitySection && /^##\s+/u.test(line.trimStart())) {
-      break;
+    if (
+      inAccountabilitySection &&
+      isRoadmapLevelTwoHeading(line)
+    ) {
+      inAccountabilitySection = false;
+      continue;
     }
     if (!inAccountabilitySection) {
       continue;

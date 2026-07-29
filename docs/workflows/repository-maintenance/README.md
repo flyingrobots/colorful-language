@@ -224,7 +224,9 @@ their NFC displayed identity; skipped blocks also terminate the table even
 without a separating blank line. Empty cells, invalid escapes, and other
 mechanism-cell Markdown are rejected as noncanonical. A repeated heading,
 table, or mechanism fails with both source locations, while distinct moonshot
-mechanisms remain independent entries.
+mechanisms remain independent entries. Leaving the canonical section does not
+end the structural scan: a later H2 cannot hide a second accountability
+authority.
 
 Run the deterministic structure and fixture gates without network access:
 

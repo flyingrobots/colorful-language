@@ -121,6 +121,10 @@ test("rejects a second architecture-accountability section", () => {
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
     (source) => `${source}
 
+## Later roadmap section
+
+This section separates the duplicate from the canonical authority.
+
 ## Architecture accountability
 
 | Mechanism | Current user job |
@@ -162,6 +166,8 @@ test("rejects a second architecture-accountability mechanism table", () => {
   expectCategory(
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
     (source) => `${source}
+
+## ## Architecture accountability
 
 | Mechanism | Current user job |
 | --- | --- |
