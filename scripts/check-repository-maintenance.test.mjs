@@ -30,7 +30,9 @@ const DELIVERY_REFERENCE = [
 ].join("\n");
 const RELEASE_TRACKING_COMMANDS = [
   '--title "[release] v0.4.0"',
+  "--label documentation",
   "--label slice",
+  "--label area:core",
   "--body-file docs/goalposts/v0.4.0/release.md",
   "complete and review the packet's release thesis",
   "git switch -c release/v0.4.0",
@@ -398,13 +400,15 @@ bash scripts/check-rust-dependency-policy.sh
   };
 }
 
-function expectCode(mutate, code) {
+function expectCode(mutate, code, path) {
   const candidate = fixture();
   mutate(candidate);
   assert.throws(
     () => validateRepositoryMaintenance(candidate),
     (error) =>
-      error instanceof RepositoryMaintenanceError && error.code === code,
+      error instanceof RepositoryMaintenanceError &&
+      error.code === code &&
+      (path === undefined || error.message.startsWith(`${path}:`)),
   );
 }
 
@@ -540,6 +544,31 @@ test("rejects an incomplete v0.4.0 tracking and prep sequence", () => {
         ),
       ].join("\n");
     }, "E_DELIVERY_TRACKING");
+  }
+});
+
+test("rejects a noncompliant release-tracker label set", () => {
+  for (const mutate of [
+    (reference) => reference.replace("--label area:core", ""),
+    (reference) =>
+      reference.replace(
+        "--label area:core",
+        "--label area:core --label area:core",
+      ),
+    (reference) =>
+      reference.replace("--label area:core", "--label area:lsp"),
+    (reference) => reference.replace("--label documentation", ""),
+    (reference) =>
+      reference.replace(
+        "--label slice",
+        "--label slice --label slice",
+      ),
+  ]) {
+    expectCode(({ deliveryReferences }) => {
+      deliveryReferences.releasing = mutate(
+        deliveryReferences.releasing,
+      );
+    }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
   }
 });
 
