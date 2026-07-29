@@ -439,6 +439,17 @@ Implemented and planned cases are listed below.
   maintenance_reference_names_the_workspace_acceptance_floor}`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
+- **LINT-13q** — *Requirement:* LINT-13. *Behavior:* delayed PID-publication
+  evidence uses a real short-lived child whose handle is owned and reaped by the
+  test; it never sends a signal to a synthetic or narrowing-prone PID sentinel.
+  *Oracle:* a source-policy regression rejects `u32::MAX` and requires the
+  delayed writer to publish the PID of an explicitly spawned sleep child before
+  waiting for it. *Evidence type:* process-fixture safety regression. *Evidence:*
+  planned in `colorful-vale`
+  `workspace_boundary::delayed_pid_evidence_uses_a_reaped_child` and
+  `vale_adapter::worker_cleanup_waits_for_delayed_pid_artifact`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* planned.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
