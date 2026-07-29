@@ -1233,6 +1233,62 @@ test("the workflow reference pins the canonical accountability heading", () => {
   );
 });
 
+test("delegates roadmap Markdown structure to exact-pinned maintained tooling", () => {
+  const checker = readFileSync(
+    new URL("./check-roadmap-inventory.mjs", import.meta.url),
+    "utf8",
+  );
+  const packageJson = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  const expectedParserPins = {
+    "mdast-util-from-markdown": "2.0.3",
+    "mdast-util-gfm-table": "2.0.0",
+    "mdast-util-to-string": "4.0.0",
+    "micromark-extension-gfm-table": "2.1.1",
+  };
+
+  for (const [packageName, version] of Object.entries(expectedParserPins)) {
+    assert.equal(
+      packageJson.devDependencies?.[packageName],
+      version,
+      `${packageName} must be an exact direct development dependency`,
+    );
+  }
+  assert.match(
+    checker,
+    /from "mdast-util-from-markdown";/u,
+    "the checker must delegate block interpretation to mdast",
+  );
+  for (const bespokeParserHelper of [
+    "findExactBacktickRun",
+    "keepsMarkdownParagraphOpen",
+    "markdownInlineLinkAt",
+    "markdownTableCells",
+    "rawHtmlBlockEnds",
+    "rawHtmlBlockStart",
+    "renderInlineLinkLabels",
+    "stripClosedInlineHtmlComments",
+  ]) {
+    assert.doesNotMatch(
+      checker,
+      new RegExp(`function ${bespokeParserHelper}\\\\(`, "u"),
+      `${bespokeParserHelper} must not recreate maintained Markdown parsing`,
+    );
+  }
+
+  const sourceLines = checker.match(/\n/gu)?.length ?? 0;
+  const topLevelHelpers = checker.match(/^function /gmu)?.length ?? 0;
+  assert.ok(
+    sourceLines <= 900,
+    `roadmap checker has ${sourceLines} lines; reviewed ceiling is 900`,
+  );
+  assert.ok(
+    topLevelHelpers <= 24,
+    `roadmap checker has ${topLevelHelpers} helpers; reviewed ceiling is 24`,
+  );
+});
+
 test("the repository wires offline and live reconciliation into distinct lanes", () => {
   const ci = readFileSync(
     new URL("../.github/workflows/ci.yml", import.meta.url),
