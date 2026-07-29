@@ -137,6 +137,7 @@ jobs:
       - run: cargo clippy --manifest-path fuzz/Cargo.toml --locked --bins -- -D warnings
       - run: cargo check --manifest-path fuzz/Cargo.toml --locked --bins
       - run: cargo test --doc --workspace --locked
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc --locked -p colorful-lexicon --no-deps
       - run: bash scripts/check-ir-validator-mutants.sh
 
   coverage:

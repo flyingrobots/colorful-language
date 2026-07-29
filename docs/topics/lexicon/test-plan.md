@@ -142,7 +142,9 @@ lives in `crates/colorful-lexicon/src/lib.rs`.
   command. *Evidence type:* warning-denying package documentation build plus
   deterministic policy tests. *Tracking:*
   [#230](https://github.com/flyingrobots/colorful-language/issues/230).
-  *Status:* planned.
+  *Evidence:* public rustdoc in `crates/colorful-lexicon/src/lib.rs`;
+  `scripts/check-public-api-doctests.test.mjs`; the Rust job in
+  `.github/workflows/ci.yml`; `scripts/release-prep.sh`. *Status:* implemented.
 
 ## Known gaps
 

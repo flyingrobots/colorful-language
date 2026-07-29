@@ -441,7 +441,7 @@ static AMBIGUOUS_WORDS: phf::Map<&'static str, &'static [Sense]> = phf_map! {
     ],
 };
 
-/// A [`Lexicon`] backed by the closed-class [`FUNCTION_WORDS`] set.
+/// A [`Lexicon`] backed by a finite compile-time set of closed-class words.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ClosedClassLexicon;
 
@@ -507,7 +507,7 @@ impl Lexicon for SeedOpenClassLexicon {
 /// It first delegates to [`LexicalAnnotator`] with the supplied [`Lexicon`], so
 /// closed-class, number, seed-open-class, punctuation, and proper-noun behavior
 /// remain centralized. It then refines only undifferentiated [`PosClass::Content`]
-/// tokens whose lexeme appears in the small [`AMBIGUOUS_WORDS`] table.
+/// tokens whose lexeme has a reviewed contextual rule in the built-in rule set.
 #[derive(Debug, Clone, Copy)]
 pub struct ContextualOpenClassAnnotator<L = SeedOpenClassLexicon> {
     lexicon: L,

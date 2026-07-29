@@ -14,11 +14,14 @@ const APIS = Object.freeze([
   ["vocabulary", "vocabulary", "pub fn visual_role", "visual_role("],
 ]);
 const DOCTEST_COMMAND = "cargo test --doc --workspace --locked";
+const RUSTDOC_COMMAND =
+  'RUSTDOCFLAGS="-D warnings" cargo doc --locked -p colorful-lexicon --no-deps';
 const INPUT_PATHS = Object.freeze({
   core: "crates/colorful-core/src/lib.rs",
   projection: "crates/colorful-projection/src/lib.rs",
   vocabulary: "crates/colorful-ir/src/vocabulary.rs",
   workflow: ".github/workflows/ci.yml",
+  releasePrep: "scripts/release-prep.sh",
 });
 const RUSTDOC_FENCE =
   /^\s*\/\/\/ ```(?<info>[A-Za-z0-9_-]+(?:\s*,\s*[A-Za-z0-9_-]+)*)?\s*$/u;
@@ -127,7 +130,7 @@ function executableLines(example) {
     .filter((line) => line !== "" && !line.startsWith("//"));
 }
 
-function rustJobRunsDoctests(workflow) {
+function rustJobRunsBlockingCommand(workflow, command, policy) {
   let document;
   try {
     document = parse(workflow);
@@ -140,27 +143,26 @@ function rustJobRunsDoctests(workflow) {
 
   const rustJob = document?.jobs?.rust;
   const steps = rustJob?.steps;
-  const doctestStep = Array.isArray(steps)
+  const commandStep = Array.isArray(steps)
     ? steps.find(
         (step) =>
-          typeof step?.run === "string" &&
-          step.run.trim() === DOCTEST_COMMAND,
+          typeof step?.run === "string" && step.run.trim() === command,
       )
     : undefined;
-  if (doctestStep === undefined) {
+  if (commandStep === undefined) {
     return false;
   }
 
   if (Object.hasOwn(rustJob, "if")) {
     throw new PublicApiDoctestPolicyError(
-      "E_API_DOCTEST_CI_DISABLED",
-      "the Rust job containing the required doctest command must not have an execution guard",
+      policy.disabledCode,
+      `the Rust job containing the required ${policy.label} command must not have an execution guard`,
     );
   }
-  if (Object.hasOwn(doctestStep, "if")) {
+  if (Object.hasOwn(commandStep, "if")) {
     throw new PublicApiDoctestPolicyError(
-      "E_API_DOCTEST_CI_DISABLED",
-      "the required doctest step must not have an execution guard",
+      policy.disabledCode,
+      `the required ${policy.label} step must not have an execution guard`,
     );
   }
   if (
@@ -168,21 +170,43 @@ function rustJobRunsDoctests(workflow) {
     rustJob["continue-on-error"] !== false
   ) {
     throw new PublicApiDoctestPolicyError(
-      "E_API_DOCTEST_CI_NON_BLOCKING",
-      "the Rust job containing the required doctest command must be blocking",
+      policy.nonBlockingCode,
+      `the Rust job containing the required ${policy.label} command must be blocking`,
     );
   }
   if (
-    Object.hasOwn(doctestStep, "continue-on-error") &&
-    doctestStep["continue-on-error"] !== false
+    Object.hasOwn(commandStep, "continue-on-error") &&
+    commandStep["continue-on-error"] !== false
   ) {
     throw new PublicApiDoctestPolicyError(
-      "E_API_DOCTEST_CI_NON_BLOCKING",
-      "the required doctest step must be blocking",
+      policy.nonBlockingCode,
+      `the required ${policy.label} step must be blocking`,
     );
   }
 
   return true;
+}
+
+function rustJobRunsDoctests(workflow) {
+  return rustJobRunsBlockingCommand(workflow, DOCTEST_COMMAND, {
+    disabledCode: "E_API_DOCTEST_CI_DISABLED",
+    nonBlockingCode: "E_API_DOCTEST_CI_NON_BLOCKING",
+    label: "doctest",
+  });
+}
+
+function rustJobRunsWarningDenyingRustdoc(workflow) {
+  return rustJobRunsBlockingCommand(workflow, RUSTDOC_COMMAND, {
+    disabledCode: "E_API_RUSTDOC_CI_DISABLED",
+    nonBlockingCode: "E_API_RUSTDOC_CI_NON_BLOCKING",
+    label: "rustdoc",
+  });
+}
+
+function releasePrepRunsWarningDenyingRustdoc(releasePrep) {
+  return releasePrep
+    .split("\n")
+    .some((line) => line.trim() === RUSTDOC_COMMAND);
 }
 
 export function validatePublicApiDoctestPolicy(snapshot) {
@@ -222,6 +246,18 @@ export function validatePublicApiDoctestPolicy(snapshot) {
     throw new PublicApiDoctestPolicyError(
       "E_API_DOCTEST_CI_MISSING",
       `.github/workflows/ci.yml's Rust job must run \`${DOCTEST_COMMAND}\` as an explicit step`,
+    );
+  }
+  if (!rustJobRunsWarningDenyingRustdoc(snapshot.workflow)) {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_RUSTDOC_CI_MISSING",
+      `.github/workflows/ci.yml's Rust job must run \`${RUSTDOC_COMMAND}\` as an explicit step`,
+    );
+  }
+  if (!releasePrepRunsWarningDenyingRustdoc(snapshot.releasePrep)) {
+    throw new PublicApiDoctestPolicyError(
+      "E_API_RUSTDOC_RELEASE_MISSING",
+      `scripts/release-prep.sh must run \`${RUSTDOC_COMMAND}\` as an explicit command`,
     );
   }
 }

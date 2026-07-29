@@ -38,6 +38,11 @@ The set holds the finite closed-class vocabulary across the `FunctionKind`s:
 and `Negator`, plus common contractions. `ClosedClassLexicon::word_count()` is
 the authoritative current size.
 
+The exported lexicon adapters document these data sources as implementation
+concepts rather than exposing private table names. The Rust CI job and the full
+local release-preparation gate build `colorful-lexicon` documentation with
+rustdoc warnings denied, so an invalid public documentation link is blocking.
+
 ## Design notes
 
 - **Closed class as keywords.** Function words are a fixed, enumerable list, so

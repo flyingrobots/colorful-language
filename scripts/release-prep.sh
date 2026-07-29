@@ -46,6 +46,7 @@ cargo fmt --manifest-path fuzz/Cargo.toml --all -- --check
 cargo clippy --manifest-path fuzz/Cargo.toml --locked --bins -- -D warnings
 cargo check --manifest-path fuzz/Cargo.toml --locked --bins
 cargo test --doc --workspace --locked
+RUSTDOCFLAGS="-D warnings" cargo doc --locked -p colorful-lexicon --no-deps
 bash scripts/check-ir-validator-mutants.sh
 bash scripts/package-witness.sh
 bash scripts/smoke-test-install-local.sh
