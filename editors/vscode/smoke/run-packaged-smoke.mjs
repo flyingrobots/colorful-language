@@ -6,7 +6,6 @@ import { createHash } from "node:crypto";
 import {
   mkdirSync,
   readFileSync,
-  readdirSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -16,6 +15,7 @@ import { fileURLToPath } from "node:url";
 
 import vscodeTest from "@vscode/test-electron";
 
+import { readTextFile, textFiles } from "./log-files.mjs";
 import {
   stageZedExtension,
   validateZedSourcePackage,
@@ -79,31 +79,11 @@ function digestTree(directory, files) {
   return hash.digest("hex");
 }
 
-function textFiles(directory) {
-  const files = [];
-  const visit = (current) => {
-    for (const entry of readdirSync(current, { withFileTypes: true })) {
-      const absolute = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        visit(absolute);
-      } else if (
-        entry.isFile() &&
-        statSync(absolute).size <= 5 * 1024 * 1024 &&
-        /\.(?:log|txt)$/u.test(entry.name)
-      ) {
-        files.push(absolute);
-      }
-    }
-  };
-  visit(directory);
-  return files;
-}
-
 function assertMissingServerLog(userDataDirectory) {
   const matches = [];
   for (const filename of textFiles(userDataDirectory)) {
-    const text = readFileSync(filename, "utf8");
-    if (text.includes(`[${SERVER_NOT_FOUND_CATEGORY}]`)) {
+    const text = readTextFile(filename);
+    if (text?.includes(`[${SERVER_NOT_FOUND_CATEGORY}]`)) {
       matches.push(filename);
     }
   }

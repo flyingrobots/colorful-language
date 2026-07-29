@@ -31,6 +31,7 @@ const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/.vscodeignore",
   "editors/vscode/LICENSE",
   "editors/vscode/smoke/harness/package.json",
+  "editors/vscode/smoke/log-files.mjs",
   "editors/vscode/smoke/run-packaged-smoke.mjs",
   "editors/vscode/smoke/suite/index.cjs",
   "scripts/stage-zed-extension.mjs",
@@ -109,6 +110,47 @@ test("the package smoke never delegates argument parsing to a shell", () => {
     "utf8",
   );
   assert.doesNotMatch(source, /\bshell\s*:/u);
+});
+
+test("the persisted-log scan skips transient profile entries", async () => {
+  const { readTextFile, textFiles } = await import(
+    "../editors/vscode/smoke/log-files.mjs"
+  );
+  const transient = (code) => Object.assign(new Error(code), { code });
+  const directory = (name) => ({
+    name,
+    isDirectory: () => true,
+    isFile: () => false,
+  });
+  const file = (name) => ({
+    name,
+    isDirectory: () => false,
+    isFile: () => true,
+  });
+  const filesystem = {
+    readdirSync(current) {
+      if (current.endsWith("busy")) {
+        throw transient("EPERM");
+      }
+      return [directory("busy"), file("gone.log"), file("kept.log")];
+    },
+    statSync(filename) {
+      if (filename.endsWith("gone.log")) {
+        throw transient("ENOENT");
+      }
+      return { size: 12 };
+    },
+    readFileSync(filename) {
+      if (filename.endsWith("gone.log")) {
+        throw transient("EBUSY");
+      }
+      return "kept";
+    },
+  };
+
+  assert.deepEqual(textFiles("/profile", filesystem), ["/profile/kept.log"]);
+  assert.equal(readTextFile("/profile/gone.log", filesystem), undefined);
+  assert.equal(readTextFile("/profile/kept.log", filesystem), "kept");
 });
 
 test("Zed package validation is table-aware and formatting-independent", () => {
