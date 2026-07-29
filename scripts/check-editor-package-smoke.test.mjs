@@ -306,6 +306,14 @@ test("the visual demo has a text-equivalent accessible role mapping", () => {
   );
   assert.match(svg, /<title[^>]*>Colorful semantic-role editor demo<\/title>/u);
   assert.match(svg, /<desc[^>]*>[\s\S]*cat: noun[\s\S]*writes: verb/u);
+  assert.match(
+    svg,
+    /<desc[^>]*>[\s\S]*separate diagnostic fixture[\s\S]*really/iu,
+  );
+  assert.match(
+    readme,
+    /Separate diagnostic example[\s\S]*`really`[\s\S]*`weak-word`/u,
+  );
 
   const surface = /--surface:\s*(#[0-9a-f]{6})/u.exec(svg)?.[1];
   assert.ok(surface, "demo must declare one semantic surface token");
