@@ -245,17 +245,24 @@ jobs:
             target/editor-smoke/*.vsix
             dist/*zed-source.tar.gz
 
-      - name: Verify and publish editor extension
+      - name: Verify and publish VS Marketplace extension
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
           set -euo pipefail
           npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots
-          npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
           version="${GITHUB_REF_NAME#v}"
           vsix="target/editor-smoke/colorful-language-${version}.vsix"
           npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate --no-dependencies --no-yarn
+
+      - name: Verify and publish Open VSX extension
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          set -euo pipefail
+          npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
+          version="${GITHUB_REF_NAME#v}"
+          vsix="target/editor-smoke/colorful-language-${version}.vsix"
           npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate --no-dependencies
 
       - name: Verify published editor bytes

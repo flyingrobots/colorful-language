@@ -63,9 +63,14 @@ function fixture() {
       release: {
         steps: [
           {
-            name: "Verify and publish editor extension",
+            name: "Verify and publish VS Marketplace extension",
             env: {
               VSCE_PAT: "${{ secrets.VSCE_PAT }}",
+            },
+          },
+          {
+            name: "Verify and publish Open VSX extension",
+            env: {
               OVSX_PAT: "${{ secrets.OVSX_PAT }}",
             },
           },
@@ -174,7 +179,7 @@ allow-git = []
         },
         {
           rule: "secrets-outside-env",
-          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish editor extension].env.VSCE_PAT",
+          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish VS Marketplace extension].env.VSCE_PAT",
           selector: "VSCE_PAT",
           owner: "@flyingrobots",
           reason: "The release environment is not configured yet.",
@@ -182,7 +187,7 @@ allow-git = []
         },
         {
           rule: "secrets-outside-env",
-          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish editor extension].env.OVSX_PAT",
+          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish Open VSX extension].env.OVSX_PAT",
           selector: "OVSX_PAT",
           owner: "@flyingrobots",
           reason: "The release environment is not configured yet.",
@@ -542,7 +547,8 @@ test("rejects a publisher token missing from its reviewed step", () => {
     const release =
       workflowFiles[".github/workflows/release.yml"];
     const publish = release.jobs.release.steps.find(
-      (step) => step.name === "Verify and publish editor extension",
+      (step) =>
+        step.name === "Verify and publish VS Marketplace extension",
     );
     delete publish.env.VSCE_PAT;
   }, "E_WORKFLOW_SECURITY_EXCEPTION");

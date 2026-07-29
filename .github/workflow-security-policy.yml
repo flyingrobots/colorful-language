@@ -23,8 +23,8 @@ exceptions:
       Deployment ownership and a protected release environment are configured.
   - rule: secrets-outside-env
     path: >-
-      .github/workflows/release.yml:jobs.release.steps[Verify and publish editor
-      extension].env.VSCE_PAT
+      .github/workflows/release.yml:jobs.release.steps[Verify and publish VS
+      Marketplace extension].env.VSCE_PAT
     selector: VSCE_PAT
     owner: "@flyingrobots"
     reason: >-
@@ -35,8 +35,8 @@ exceptions:
       Deployment ownership and a protected release environment are configured.
   - rule: secrets-outside-env
     path: >-
-      .github/workflows/release.yml:jobs.release.steps[Verify and publish editor
-      extension].env.OVSX_PAT
+      .github/workflows/release.yml:jobs.release.steps[Verify and publish Open
+      VSX extension].env.OVSX_PAT
     selector: OVSX_PAT
     owner: "@flyingrobots"
     reason: >-

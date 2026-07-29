@@ -162,16 +162,17 @@ Verification for release preparation, tag automation, and release witnesses.
   workflow; hosted release evidence remains planned.
 - **REL-13a** — *Requirement:* REL-13. *Behavior:* the tag workflow runs the
   packaged VS Code smoke once, publishes that witness's exact VSIX path to both
-  registries, verifies both publisher credentials before crates or editor
-  packages are published, and treats an already-present version as a rerun-safe
-  success only when both downloaded registry packages match the witness
-  SHA-256. Packaging normalizes ZIP timestamps to the immutable source commit,
-  so ambient time cannot change the VSIX bytes. *Oracle:* workflow and lockfile
-  mutations reject a second package command, different publication paths,
-  missing credential or byte verification, floating publisher tooling, absent
-  duplicate handling, a mismatched remote package, or time-dependent packaging.
-  *Evidence type:* deterministic distribution-policy checker and mutation
-  tests. *Tracking:*
+  registries, isolates each registry credential to its own verification and
+  publication step, verifies both credentials before crates or editor packages
+  are published, and treats an already-present version as a rerun-safe success
+  only when both downloaded registry packages match the witness SHA-256.
+  Packaging normalizes ZIP timestamps to the immutable source commit, so
+  ambient time cannot change the VSIX bytes. *Oracle:* workflow and lockfile
+  mutations reject shared publisher credentials, a second package command,
+  different publication paths, missing credential or byte verification,
+  floating publisher tooling, absent duplicate handling, a mismatched remote
+  package, or time-dependent packaging. *Evidence type:* deterministic
+  distribution-policy checker and mutation tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Evidence:* `.github/workflows/release.yml`;
   `editors/vscode/smoke/run-packaged-smoke.mjs`;
@@ -179,7 +180,9 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/verify-editor-publication.mjs`;
   `scripts/verify-editor-publication.test.mjs`;
   `scripts/check-release-distribution.test.mjs`
+  `isolates each editor registry credential to its publisher step`,
   `requires publisher credential verification before crates`,
+  `rejects credentials shared between editor publisher steps`,
   `requires one smoke-tested VSIX for both rerun-safe publishers`, and
   `requires published registry bytes to match the smoke-tested VSIX`, and
   `requires exact lockfile-backed publisher tools`;

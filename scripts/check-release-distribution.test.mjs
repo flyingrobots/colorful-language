@@ -152,16 +152,23 @@ function validSnapshot() {
               },
             },
             {
-              name: "Verify and publish editor extension",
+              name: "Verify and publish VS Marketplace extension",
               env: {
                 VSCE_PAT: "${{ secrets.VSCE_PAT }}",
-                OVSX_PAT: "${{ secrets.OVSX_PAT }}",
               },
               run:
                 "npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots\n" +
+                smokeVsix +
+                'npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate\n',
+            },
+            {
+              name: "Verify and publish Open VSX extension",
+              env: {
+                OVSX_PAT: "${{ secrets.OVSX_PAT }}",
+              },
+              run:
                 "npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots\n" +
                 smokeVsix +
-                'npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate\n' +
                 'npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate\n',
             },
             {
@@ -367,7 +374,8 @@ test("binds native dispatch and release side effects to the reviewed topology", 
     "Download native archives",
     "Build and smoke editor packages",
     "Attest editor artifacts",
-    "Verify and publish editor extension",
+    "Verify and publish VS Marketplace extension",
+    "Verify and publish Open VSX extension",
     "Verify published editor bytes",
     "Publish to crates.io",
     "Create GitHub Release",
@@ -446,20 +454,48 @@ test("rejects native artifact paths that can omit release assets", () => {
 });
 
 test("requires publisher credential verification before crates", () => {
-  const snapshot = validSnapshot();
-  const steps = snapshot.workflow.jobs.release.steps;
-  const publishIndex = steps.findIndex(
-    (step) => step.name === "Verify and publish editor extension",
-  );
-  const [publish] = steps.splice(publishIndex, 1);
-  const cratesIndex = steps.findIndex(
-    (step) => step.name === "Publish to crates.io",
-  );
-  steps.splice(cratesIndex + 1, 0, publish);
-  assert.throws(
-    () => validateReleaseDistribution(snapshot),
-    /must preserve the reviewed release step order/u,
-  );
+  for (const name of [
+    "Verify and publish VS Marketplace extension",
+    "Verify and publish Open VSX extension",
+  ]) {
+    const snapshot = validSnapshot();
+    const steps = snapshot.workflow.jobs.release.steps;
+    const publishIndex = steps.findIndex((step) => step.name === name);
+    const [publish] = steps.splice(publishIndex, 1);
+    const cratesIndex = steps.findIndex(
+      (step) => step.name === "Publish to crates.io",
+    );
+    steps.splice(cratesIndex + 1, 0, publish);
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /must preserve the reviewed release step order/u,
+      `${name} may not run after immutable publication`,
+    );
+  }
+});
+
+test("rejects credentials shared between editor publisher steps", () => {
+  for (const [name, selector, expected] of [
+    [
+      "Verify and publish VS Marketplace extension",
+      "OVSX_PAT",
+      /isolate the VS Marketplace publisher secret/u,
+    ],
+    [
+      "Verify and publish Open VSX extension",
+      "VSCE_PAT",
+      /isolate the Open VSX publisher secret/u,
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    releaseStep(snapshot, name).env[selector] =
+      `\${{ secrets.${selector} }}`;
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${selector} may not be exposed to ${name}`,
+    );
+  }
 });
 
 test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
@@ -475,7 +511,7 @@ test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
     } else if (mutation === "different-path") {
       const publish = releaseStep(
         snapshot,
-        "Verify and publish editor extension",
+        "Verify and publish Open VSX extension",
       );
       publish.run = publish.run.replace(
         'ovsx publish --packagePath "$vsix"',
@@ -484,7 +520,7 @@ test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
     } else {
       const publish = releaseStep(
         snapshot,
-        "Verify and publish editor extension",
+        "Verify and publish VS Marketplace extension",
       );
       publish.run = publish.run.replaceAll(" --skip-duplicate", "");
     }

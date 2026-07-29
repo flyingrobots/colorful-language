@@ -56,7 +56,8 @@ const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Download native archives",
   "Build and smoke editor packages",
   "Attest editor artifacts",
-  "Verify and publish editor extension",
+  "Verify and publish VS Marketplace extension",
+  "Verify and publish Open VSX extension",
   "Verify published editor bytes",
   "Publish to crates.io",
   "Create GitHub Release",
@@ -340,23 +341,34 @@ function validateReleaseJob(job) {
     throw new Error(`${context} must download native archives into dist`);
   }
 
-  const publish = requiredStep(
+  const marketplace = requiredStep(
     steps,
-    "Verify and publish editor extension",
+    "Verify and publish VS Marketplace extension",
+    context,
+  );
+  const openVsx = requiredStep(
+    steps,
+    "Verify and publish Open VSX extension",
     context,
   );
   if (
-    publish.env?.VSCE_PAT !== "${{ secrets.VSCE_PAT }}" ||
-    publish.env?.OVSX_PAT !== "${{ secrets.OVSX_PAT }}"
+    !isDeepStrictEqual(marketplace.env, {
+      VSCE_PAT: "${{ secrets.VSCE_PAT }}",
+    })
   ) {
-    throw new Error(`${context} must bind both reviewed publisher secrets`);
+    throw new Error(
+      `${context} must isolate the VS Marketplace publisher secret`,
+    );
   }
-  const publishSource = String(publish.run ?? "");
-  for (const command of ["vsce verify-pat", "ovsx verify-pat"]) {
-    if (!publishSource.includes(command)) {
-      throw new Error(`${context} must run ${command}`);
-    }
+  if (
+    !isDeepStrictEqual(openVsx.env, {
+      OVSX_PAT: "${{ secrets.OVSX_PAT }}",
+    })
+  ) {
+    throw new Error(`${context} must isolate the Open VSX publisher secret`);
   }
+  const marketplaceSource = String(marketplace.run ?? "");
+  const openVsxSource = String(openVsx.run ?? "");
 
   const packageStep = requiredStep(
     steps,
@@ -383,13 +395,21 @@ function validateReleaseJob(job) {
 
   const vsixAssignment =
     'vsix="target/editor-smoke/colorful-language-${version}.vsix"';
-  if (!publishSource.includes(vsixAssignment)) {
-    throw new Error(`${context} must select the smoke-tested VSIX path`);
-  }
-  for (const command of ["vsce publish", "ovsx publish"]) {
-    const commandLine = publishSource
+  for (const [source, command] of [
+    [marketplaceSource, "vsce"],
+    [openVsxSource, "ovsx"],
+  ]) {
+    if (
+      !source.includes(`${command} verify-pat`) ||
+      !source.includes(vsixAssignment)
+    ) {
+      throw new Error(
+        `${context} must verify credentials and select the smoke-tested VSIX for ${command}`,
+      );
+    }
+    const commandLine = source
       .split(/\r?\n/u)
-      .find((line) => line.includes(command));
+      .find((line) => line.includes(`${command} publish`));
     if (
       commandLine === undefined ||
       !commandLine.includes('--packagePath "$vsix"') ||

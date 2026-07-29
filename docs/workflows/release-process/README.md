@@ -74,8 +74,9 @@ bash scripts/release-prep.sh
 The prep gate runs the deterministic distribution policy and mutation suite.
 That policy pins the three native host/target pairs, requires checksums and
 GitHub/Sigstore provenance, requires one clean-install-tested VSIX for both
-editor registries, verifies publisher credentials before immutable
-publication, and keeps observational startup timing outside correctness gates.
+editor registries, isolates each registry credential to its publisher step,
+verifies those credentials before immutable publication, and keeps
+observational startup timing outside correctness gates.
 The tag workflow reruns its profile, editor compatibility, Rust, release-build,
 and package-witness guards in `validate-release`; native jobs cannot build,
 attest, or upload artifacts until that read-only admission job passes.

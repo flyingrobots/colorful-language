@@ -8,15 +8,15 @@ const REVIEWED_RELEASE_SECRET_EXCEPTIONS = Object.freeze([
     secret: "${{ secrets.CARGO_REGISTRY_TOKEN }}",
   },
   {
-    path: `${RELEASE_WORKFLOW_PATH}:jobs.release.steps[Verify and publish editor extension].env.VSCE_PAT`,
+    path: `${RELEASE_WORKFLOW_PATH}:jobs.release.steps[Verify and publish VS Marketplace extension].env.VSCE_PAT`,
     selector: "VSCE_PAT",
-    stepName: "Verify and publish editor extension",
+    stepName: "Verify and publish VS Marketplace extension",
     secret: "${{ secrets.VSCE_PAT }}",
   },
   {
-    path: `${RELEASE_WORKFLOW_PATH}:jobs.release.steps[Verify and publish editor extension].env.OVSX_PAT`,
+    path: `${RELEASE_WORKFLOW_PATH}:jobs.release.steps[Verify and publish Open VSX extension].env.OVSX_PAT`,
     selector: "OVSX_PAT",
-    stepName: "Verify and publish editor extension",
+    stepName: "Verify and publish Open VSX extension",
     secret: "${{ secrets.OVSX_PAT }}",
   },
 ]);
