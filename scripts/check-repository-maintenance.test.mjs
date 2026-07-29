@@ -216,7 +216,9 @@ allow-git = []
     maintenanceReference: [
       "Issues and milestones are the delivery authority",
       "Discussions are not a supported intake channel",
+      "https://github.com/flyingrobots/colorful-language#readme",
       "No GitHub deployment environment exists",
+      "@flyingrobots owns release execution",
       "CARGO_REGISTRY_TOKEN",
       "OVSX_PAT",
       "VSCE_PAT",
@@ -453,6 +455,18 @@ test("rejects a stale public-posture reference", () => {
   expectCode((candidate) => {
     candidate.maintenanceReference = "";
   }, "E_REPOSITORY_REFERENCE");
+});
+
+test("rejects a public-posture reference without homepage or owner", () => {
+  for (const claim of [
+    "https://github.com/flyingrobots/colorful-language#readme",
+    "@flyingrobots owns release execution",
+  ]) {
+    expectCode((candidate) => {
+      candidate.maintenanceReference =
+        candidate.maintenanceReference.replace(claim, "");
+    }, "E_REPOSITORY_REFERENCE");
+  }
 });
 
 test("rejects promoted Discussion routes without supported intake", () => {
