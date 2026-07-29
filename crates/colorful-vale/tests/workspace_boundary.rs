@@ -185,6 +185,17 @@ fn delayed_pid_evidence_uses_a_reaped_child() {
 }
 
 #[test]
+fn fake_executable_is_published_atomically() {
+    let source = adapter_test_source("vale_adapter.rs");
+    assert!(
+        source.contains("let staged_executable = root.join(\"vale.staging\")")
+            && source.contains("staged_file.sync_all()")
+            && source.contains("fs::rename(&staged_executable, &executable)"),
+        "the final fake executable path must appear only after a closed, durable staging file"
+    );
+}
+
+#[test]
 fn workspace_dependency_entry_requires_a_workspace_flag() {
     let manifest = toml::from_str::<toml::Value>(
         r#"
