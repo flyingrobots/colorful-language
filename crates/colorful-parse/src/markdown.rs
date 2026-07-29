@@ -9,6 +9,7 @@ use pulldown_cmark::{Event, LinkType, Options, Parser, Tag, TagEnd};
 struct MarkdownRanges {
     excluded: Vec<Range<usize>>,
     inline_links: Vec<Range<usize>>,
+    rendered: Vec<Range<usize>>,
 }
 
 /// Replace reviewed Markdown non-prose regions with coordinate-equivalent
@@ -67,11 +68,15 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
             .map(|(_, definition)| definition.span.clone())
             .collect(),
         inline_links: Vec::new(),
+        rendered: Vec::new(),
     };
     let mut code_block_start = None;
     let mut metadata_block_start = None;
 
     for (event, range) in parser.into_offset_iter() {
+        if !matches!(&event, Event::Start(_) | Event::End(_)) {
+            ranges.rendered.push(range.clone());
+        }
         match event {
             Event::Start(Tag::CodeBlock(_)) => code_block_start = Some(range.start),
             Event::End(TagEnd::CodeBlock) => {
@@ -105,7 +110,70 @@ fn parser_ranges(source: &str) -> MarkdownRanges {
             _ => {}
         }
     }
+    ranges.excluded.extend(hidden_reference_definition_ranges(
+        source,
+        &mut ranges.rendered,
+    ));
     ranges
+}
+
+fn hidden_reference_definition_ranges(
+    source: &str,
+    rendered: &mut [Range<usize>],
+) -> Vec<Range<usize>> {
+    rendered.sort_unstable_by_key(|range| (range.start, range.end));
+    let bytes = source.as_bytes();
+    let mut hidden = Vec::new();
+    let mut line_start = 0usize;
+
+    while line_start < bytes.len() {
+        let content_end = bytes[line_start..]
+            .iter()
+            .position(|byte| matches!(byte, b'\r' | b'\n'))
+            .map_or(bytes.len(), |offset| line_start + offset);
+        let terminator_len = match bytes.get(content_end..) {
+            Some([b'\r', b'\n', ..]) => 2,
+            Some([b'\r' | b'\n', ..]) => 1,
+            _ => 0,
+        };
+        let line_end = content_end + terminator_len;
+        let content = &source[line_start..content_end];
+
+        if has_reference_definition_marker(content) {
+            let first_possible = rendered.partition_point(|range| range.end <= line_start);
+            let overlaps_rendered = rendered
+                .get(first_possible)
+                .is_some_and(|range| range.start < content_end);
+            if !overlaps_rendered {
+                let next_rendered = rendered.partition_point(|range| range.start < line_end);
+                let hidden_end = rendered
+                    .get(next_rendered)
+                    .map_or(source.len(), |range| range.start);
+                hidden.push(line_start..hidden_end);
+            }
+        }
+
+        line_start = line_end;
+    }
+    hidden
+}
+
+fn has_reference_definition_marker(line: &str) -> bool {
+    let bytes = line.as_bytes();
+    let indent = bytes.iter().take_while(|byte| **byte == b' ').count();
+    if indent > 3 || bytes.get(indent) != Some(&b'[') {
+        return false;
+    }
+
+    let mut cursor = indent + 1;
+    while let Some(byte) = bytes.get(cursor) {
+        match byte {
+            b'\\' => cursor = cursor.saturating_add(2),
+            b']' => return bytes.get(cursor + 1) == Some(&b':'),
+            _ => cursor += 1,
+        }
+    }
+    false
 }
 
 fn inline_link_destination_range(source: &str, link: Range<usize>) -> Option<Range<usize>> {
