@@ -289,6 +289,20 @@ Parser ports | Alternate apparent authority.
   }
 });
 
+test("rejects a no-leading-pipe data row inside the accountability table", () => {
+  expectCategory(
+    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+    (source) =>
+      source.replace(
+        "| Parser ports | Substitute deterministic adapters. |",
+        [
+          "| Parser ports | Substitute deterministic adapters. |",
+          "Parser ports | Duplicate decision.",
+        ].join("\n"),
+      ),
+  );
+});
+
 test("requires a delimiter and data row for the accountability table", () => {
   for (const replacement of [
     "| Mechanism",

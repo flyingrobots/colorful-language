@@ -125,11 +125,31 @@ function markdownTableCells(line) {
   return cells;
 }
 
+function isNoLeadingPipeTableRow(line) {
+  const firstNonWhitespace = line.search(/\S/u);
+  if (
+    firstNonWhitespace === -1 ||
+    !/^ {0,3}$/u.test(line.slice(0, firstNonWhitespace)) ||
+    line[firstNonWhitespace] === "|"
+  ) {
+    return false;
+  }
+
+  const content = line.slice(firstNonWhitespace);
+  for (let index = 0; index < content.length; index += 1) {
+    if (content[index] === "\\") {
+      index += 1;
+    } else if (content[index] === "|") {
+      return true;
+    }
+  }
+  return false;
+}
+
 function isNoLeadingPipeMechanismHeader(line) {
   const firstNonWhitespace = line.search(/\S/u);
   return (
-    firstNonWhitespace !== -1 &&
-    /^ {0,3}$/u.test(line.slice(0, firstNonWhitespace)) &&
+    isNoLeadingPipeTableRow(line) &&
     /^Mechanism[ \t]*\|/u.test(line.slice(firstNonWhitespace))
   );
 }
@@ -342,6 +362,16 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       continue;
     }
     if (isNoLeadingPipeMechanismHeader(line)) {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        `${roadmapPath}:${index + 1}`,
+        'canonical table rows must begin with "|"',
+      );
+    }
+    if (
+      accountabilityTableState === "rows" &&
+      isNoLeadingPipeTableRow(line)
+    ) {
       fail(
         "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
         `${roadmapPath}:${index + 1}`,

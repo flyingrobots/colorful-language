@@ -220,12 +220,13 @@ every delimiter cell requires at least three hyphens with only optional edge
 colons, and at least one non-empty data row follows. LF and CRLF roadmaps have
 the same structural result and line addresses. The first cell in every
 canonical row is pipe-delimited on both sides, and the row has no more than
-three leading spaces. Valid no-leading-pipe Markdown is refused explicitly
-instead of being silently ignored, whether the first delimiter is compact,
-space-padded, or tab-padded. Only contiguous canonical rows are authoritative,
-so indented code, CommonMark fences, and HTML comments cannot stand in for the
-table. Backtick fence openers whose info strings contain a backtick are treated
-as visible source, while tilde-fence info strings may contain backticks. A
+three leading spaces. Valid no-leading-pipe Markdown headers and continuing
+data rows are refused explicitly instead of being silently ignored, whether a
+header delimiter is compact, space-padded, or tab-padded. Only contiguous
+canonical rows are authoritative, so indented code, CommonMark fences, and
+HTML comments cannot stand in for the table. Backtick fence openers whose info
+strings contain a backtick are treated as visible source, while tilde-fence
+info strings may contain backticks. A
 multiline comment is non-authoritative even when its opener follows visible
 text on the same line. Plain text, ASCII-punctuation escapes, and inline code
 are normalized to their NFC displayed identity, including table-delimiter

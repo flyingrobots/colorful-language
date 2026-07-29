@@ -247,12 +247,13 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   or duplicate headings, duplicate tables,
   missing or malformed delimiter or data rows, delimiter/header arity
   mismatches, a missing first-cell closing pipe, compact/multi-space/tab-padded
-  no-leading-pipe syntax, indented code plus fenced and commented table-shaped
-  examples, invalid backtick-fence info strings plus valid tilde-fence controls,
-  multiline comments that open after visible text, inline-code styling and
-  longer internal backtick runs, an empty identity, invalid escaping inside and
-  outside inline code, named/decimal/hexadecimal character references,
-  canonically equivalent Unicode, and unsupported emphasis. They fail with
+  no-leading-pipe headers, a no-leading-pipe continuing data row, indented code
+  plus fenced and commented table-shaped examples, invalid backtick-fence info
+  strings plus valid tilde-fence controls, multiline comments that open after
+  visible text, inline-code styling and longer internal backtick runs, an empty
+  identity, invalid escaping inside and outside inline code,
+  named/decimal/hexadecimal character references, canonically equivalent
+  Unicode, and unsupported emphasis. They fail with
   their stable `E_ROADMAP_*` categories, including both source addresses for a
   duplicate heading, table, or mechanism, while indented, fenced, and
   commented examples immediately after the real authority remain
