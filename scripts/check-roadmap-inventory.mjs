@@ -159,7 +159,9 @@ function isCanonicalAccountabilityHeading(line) {
 }
 
 function isAccountabilityHeadingWithClosingHashes(line) {
-  return /^ {0,3}## Architecture accountability[ \t]+#+[ \t]*$/u.test(line);
+  return /^ {0,3}## Architecture accountability[ \t]+#+[ \t]*$/u.test(
+    line,
+  );
 }
 
 function isRoadmapLevelTwoHeading(line) {
@@ -181,7 +183,7 @@ function isAsciiPunctuation(character) {
 }
 
 function findExactBacktickRun(source, start, length) {
-  for (let index = start; index < source.length;) {
+  for (let index = start; index < source.length; ) {
     if (source[index] !== "`") {
       index += 1;
       continue;
@@ -200,7 +202,7 @@ function findExactBacktickRun(source, start, length) {
 
 function stripClosedInlineHtmlComments(line) {
   let visible = "";
-  for (let index = 0; index < line.length;) {
+  for (let index = 0; index < line.length; ) {
     if (line[index] === "\\") {
       visible += line[index];
       index += 1;
@@ -351,7 +353,9 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   for (const [index, rawLine] of roadmap.split("\n").entries()) {
     let line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
     if (fenceCharacter !== undefined) {
-      const closingFence = line.match(/^ {0,3}(`{3,}|~{3,})[ \t]*$/u);
+      const closingFence = line.match(
+        /^ {0,3}(`{3,}|~{3,})[ \t]*$/u,
+      );
       if (
         closingFence !== null &&
         closingFence[1][0] === fenceCharacter &&
@@ -473,7 +477,10 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         'canonical table rows must begin with "|"',
       );
     }
-    if (accountabilityTableState === "rows" && isNoLeadingPipeTableRow(line)) {
+    if (
+      accountabilityTableState === "rows" &&
+      isNoLeadingPipeTableRow(line)
+    ) {
       fail(
         "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
         `${roadmapPath}:${index + 1}`,
@@ -739,7 +746,11 @@ function parseArguments(argv) {
     const optionValue = () => {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) {
-        fail("E_ROADMAP_USAGE", "arguments", `${argument} requires a value`);
+        fail(
+          "E_ROADMAP_USAGE",
+          "arguments",
+          `${argument} requires a value`,
+        );
       }
       index += 1;
       return value;
@@ -771,7 +782,11 @@ function parseArguments(argv) {
     );
   }
   if (options.closingPr && !options.live) {
-    fail("E_ROADMAP_USAGE", "arguments", "--closing-pr requires --live");
+    fail(
+      "E_ROADMAP_USAGE",
+      "arguments",
+      "--closing-pr requires --live",
+    );
   }
   if (options.live && !options.repo) {
     fail(
@@ -780,7 +795,10 @@ function parseArguments(argv) {
       "--live requires --repo OWNER/NAME or GITHUB_REPOSITORY",
     );
   }
-  if (options.closingPr && !/^[1-9]\d*$/u.test(String(options.closingPr))) {
+  if (
+    options.closingPr &&
+    !/^[1-9]\d*$/u.test(String(options.closingPr))
+  ) {
     fail(
       "E_ROADMAP_USAGE",
       "arguments",
@@ -834,7 +852,11 @@ function loadLiveIssues(repo) {
     ],
     `github:${repo}:issues`,
   );
-  return parseJson(output, "E_ROADMAP_GITHUB", `github:${repo}:issues`);
+  return parseJson(
+    output,
+    "E_ROADMAP_GITHUB",
+    `github:${repo}:issues`,
+  );
 }
 
 export function closingIssueNumbersForRepository(references, repo) {
