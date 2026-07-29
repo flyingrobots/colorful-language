@@ -216,14 +216,264 @@ Implemented and planned cases are listed below.
   `docs/topics/linting/README.md`. *Tracking:*
   [#139](https://github.com/flyingrobots/colorful-language/issues/139).
   *Status:* implemented.
-- **LINT-13a** — *Requirement:* LINT-13. *Behavior:* a Harper or Vale adapter
-  lives outside `colorful-core`, normalizes findings deterministically, leaves
-  the built-in analyzer usable without network or external binaries, and emits
-  identical CLI/LSP results. *Oracle:* exact ordered finding equality for
-  built-in and external adapters plus stable unavailable-engine behavior.
-  *Evidence type:* adapter contract and process-level parity tests. *Tracking:*
+- **LINT-13a** — *Requirement:* LINT-13. *Behavior:* a Vale v3 process adapter
+  lives in an outer crate that depends on `colorful-core`; neither
+  `colorful-core` nor either production binary depends on the adapter. A
+  successful process result becomes a document-bound, I/O-free analyzer
+  snapshot behind the existing `Analyzer` port. *Oracle:* the workspace
+  dependency graph has the required direction; default CLI/LSP analysis stays
+  built-in and succeeds with no `vale` executable; and the prepared snapshot
+  implements `Analyzer`. *Evidence type:* manifest-boundary test and analyzer
+  contract test. *Evidence:*
+  `colorful-vale`
+  `workspace_boundary::adapter_dependency_direction_preserves_pure_core_and_default_binaries`
+  and
+  `vale_adapter::built_in_and_vale_findings_have_cli_lsp_parity_without_ir_drift`.
+  *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
+- **LINT-13b** — *Requirement:* LINT-13. *Behavior:* explicit configuration and
+  capability discovery admit supported Vale v3 JSON/stdin behavior, isolate
+  ambient global configuration, and reject a missing configuration,
+  unavailable executable, or incompatible major version before analysis. The
+  current-reference example resolves an absolute caller-selected executable
+  before the child environment is cleared. *Oracle:* exact typed error
+  categories and spawned argument/environment witnesses from a deterministic
+  mock process; a documentation oracle rejects the non-resolvable bare
+  `ValeConfig::new("vale", ...)` example. *Evidence type:* process-level adapter
+  and documentation-structure tests. *Evidence:* `colorful-vale`
+  `vale_adapter::{discovery_is_explicit_versioned_and_ambient_config_free,
+  discovery_rejects_missing_config_executable_and_major,
+  permission_denied_executable_is_unavailable,
+  analysis_uses_exact_isolated_stdin_contract,
+  analysis_honors_the_explicit_document_extension}`,
+  `config::tests::relative_paths_are_resolved_before_the_process_changes_directory`,
+  and the checksum-verified official Vale 3.14.2 output retained at
+  `crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json` and admitted by
+  `vale_adapter::pinned_real_vale_v3_smoke_shape_remains_admitted`; the
+  documentation oracle is
+  `workspace_boundary::linting_reference_resolves_an_absolute_vale_executable`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13c** — *Requirement:* LINT-13. *Behavior:* timeout, cancellation,
+  non-zero process failure, oversized output, invalid UTF-8, malformed JSON,
+  an unexpected JSON source key, and invalid Vale alert fields fail explicitly
+  without fallback findings or a panic. *Oracle:* one exact typed error
+  category per fault; a synchronized cancellation witness proves an
+  already-started child is terminated.
+  *Evidence type:* deterministic process and parser fault matrix. *Evidence:*
+  `colorful-vale`
+  `vale_adapter::{pre_cancelled_analysis_does_not_start_a_process,
+  running_process_can_be_cancelled_after_start,
+  timeout_and_process_failure_are_distinct,
+  malformed_outputs_fail_closed_by_category}`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13d** — *Requirement:* LINT-13. *Behavior:* Vale alert line/column
+  coordinates, severities, check identities, and messages normalize into
+  Colorful `Finding`s with legal byte spans and a total deterministic order.
+  The coordinate corpus includes ASCII, an astral scalar, a combining mark, and
+  CRLF. *Oracle:* exact span, external rule code, severity, message, and order
+  vectors; malformed, reversed, or out-of-range coordinates are rejected.
+  *Evidence type:* normalization contract test. *Evidence:* `colorful-vale`
+  `vale_adapter::{alerts_normalize_to_legal_ordered_colorful_findings,
+  invalid_coordinate_matrix_is_rejected_without_panicking}`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13e** — *Requirement:* LINT-13. *Behavior:* the built-in
+  `ProseLinter` and a prepared Vale analyzer each project the same ordered
+  findings through CLI text and LSP diagnostics without turning external
+  editorial rules into syntax classifications or canonical IR axes. *Oracle:*
+  for each analyzer, exact code/severity/message/order equality and equivalent
+  CLI scalar versus LSP UTF-16 ranges; semantic tokens and canonical IR remain
+  unchanged when the analyzer changes. *Evidence type:* cross-surface
+  integration test. *Evidence:* `colorful-vale`
+  `vale_adapter::built_in_and_vale_findings_have_cli_lsp_parity_without_ir_drift`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13f** — *Requirement:* LINT-13. *Behavior:* cancelling or timing out a
+  configured wrapper executable on Unix terminates every descendant in the
+  spawned analyzer process group before output capture is joined. *Oracle:* a
+  deterministic wrapper starts a long-lived worker with redirected output;
+  timeout returns its exact typed category, and the recorded worker process no
+  longer exists. *Evidence type:* process-tree regression test. *Evidence:*
+  `colorful-vale`
+  `vale_adapter::{running_process_can_be_cancelled_after_start,
+  timeout_terminates_wrapper_process_group}`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13g** — *Requirement:* LINT-13. *Behavior:* external rule identifiers
+  enforce their exact ASCII length and namespace boundaries; malformed or
+  overflowing version output returns a typed discovery error without panic;
+  process-failure detail is bounded; and a bound analyzer mismatch does not
+  expose either source document. *Oracle:* exact boundary matrices and error
+  categories, a maximum failure-message length, and a panic payload that omits
+  both source strings. *Evidence type:* public-contract and process-error
+  regression tests. *Evidence:* `colorful-core`
+  `tests::external_rule_codes_require_a_non_colliding_namespace`;
+  `colorful-vale`
+  `vale_adapter::{discovery_distinguishes_malformed_and_incompatible_versions,
+  bound_analyzer_rejects_source_identity_bypass_without_exposing_text}`; and
+  `error::tests::process_failure_bounds_stderr_and_formats_exit_status`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13h** — *Requirement:* LINT-13. *Behavior:* Vale's JSON result is
+  admitted in one typed deserialization pass; required check, message, and
+  match text is validated before coordinate work; documented one-based
+  inclusive rune spans preserve their exact Unicode source slice; and severity
+  collapse is explicit. *Oracle:* syntax failures, non-object roots, typed
+  shape failures, empty fields, astral/combining endpoints, and every supported
+  severity have stable results. *Evidence type:* JSON and coordinate contract
+  matrix. *Evidence:* `colorful-vale`
+  `output::tests::one_response_deserializes_and_indexes_once` and
+  `vale_adapter::{malformed_outputs_fail_closed_by_category,
+  required_alert_text_precedes_coordinate_validation,
+  alerts_normalize_to_legal_ordered_colorful_findings,
+  vale_v3_inclusive_rune_endpoints_and_severities_are_preserved}`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13i** — *Requirement:* LINT-13. *Behavior:* discovery and analysis do
+  not inherit ambient user configuration, home, XDG, or proxy variables while
+  retaining the minimum platform environment required to execute the
+  explicitly selected engine. *Oracle:* a fake executable rejects any ambient
+  variable or executable path outside the documented allowlist in both phases.
+  *Evidence type:* process-environment contract test. *Evidence:*
+  `colorful-vale`
+  `vale_adapter::discovery_is_explicit_versioned_and_ambient_config_free`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13j** — *Requirement:* LINT-13. *Behavior:* the configured timeout and
+  cancellation token remain authoritative until stdin writing and captured
+  stdout/stderr draining finish, even when the selected wrapper exits before a
+  descendant that inherited its pipes. *Oracle:* a wrapper exits after
+  recording a finite-lived descendant that retains the capture pipes; analysis
+  returns the exact timeout category and terminates the descendant rather than
+  waiting for pipe closure. *Evidence type:* process-lifecycle regression test.
+  *Evidence:* `colorful-vale`
+  `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13k** — *Requirement:* LINT-13. *Behavior:* one Vale response indexes
+  document line boundaries once before normalizing any alerts; individual alert
+  lookups do not rescan the source prefix. *Oracle:* test-only runtime counters
+  observe one typed response deserialization and one `LineIndex` construction
+  while a two-alert response is normalized.
+  *Evidence type:* unit and line-boundary regression tests. *Evidence:*
+  `colorful-vale`
+  `output::tests::{one_response_deserializes_and_indexes_once,
+  line_index_preserves_crlf_and_terminal_empty_lines}`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13l** — *Requirement:* LINT-13. *Behavior:* deterministic fake-engine
+  evidence transports fixture paths without embedding ambient temporary paths
+  into shell literals. *Oracle:* discovery and analysis succeed under an
+  explicit temporary parent containing an apostrophe, while every captured
+  artifact remains under that parent and no process-global environment changes
+  race parallel tests. *Evidence type:* hostile-path process-fixture regression
+  test. *Evidence:* `colorful-vale`
+  `vale_adapter::fixture_paths_with_shell_metacharacters_are_supported`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13m** — *Requirement:* LINT-13. *Behavior:* duplicate JSON source keys
+  are rejected before map insertion can overwrite an earlier alert list.
+  *Oracle:* a response containing the expected stdin key twice returns
+  `MalformedOutput` with no prepared findings while preserving the single typed
+  deserialization pass; a long duplicate key is absent from an exact bounded
+  error message. *Evidence type:* malformed process-output mutation and
+  bounded-error tests. *Evidence:* `colorful-vale`
+  `vale_adapter::{malformed_outputs_fail_closed_by_category,
+  duplicate_source_key_error_is_bounded_and_redacted}`.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13n** — *Requirement:* LINT-13. *Behavior:* the Vale v3 compatibility
+  boundary ignores additive unknown alert and action fields while continuing to
+  require and validate every field Colorful consumes. A single unexpected
+  source key fails with a fixed message that contains neither the
+  process-controlled key nor the expected key. *Oracle:* a valid finding with
+  nested future fields remains admissible; a missing required field remains
+  `InvalidAlert`; and an 8 KiB unexpected key returns exact bounded
+  `SourceMismatch` text. *Evidence type:* JSON compatibility and bounded-error
+  regression tests. *Evidence:* `colorful-vale`
+  `vale_adapter::{additive_vale_v3_fields_are_ignored,
+  unexpected_source_key_error_is_bounded_and_redacted}`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13o** — *Requirement:* LINT-13. *Behavior:* process-isolation evidence
+  configures ambient variables on a dedicated test subprocess rather than
+  mutating the concurrent test runner; the final completion boundary rechecks
+  cancellation before accepting output; timeout cleanup tolerates a delayed PID
+  artifact; and the fixed minimal Unix search path has one documented owner.
+  *Oracle:* a source-policy regression forbids process-global environment
+  mutation in the adapter integration test, a synchronized completion hook
+  cancels after the initial poll but before acceptance, and a delayed PID writer
+  is observed within a bounded deadline. *Evidence type:* subprocess-isolation,
+  deterministic race, and cleanup regression tests. *Evidence:*
+  `colorful-vale`
+  `workspace_boundary::adapter_process_tests_do_not_mutate_global_environment`,
+  `process::tests::cancellation_wins_at_the_completion_boundary`, and
+  `vale_adapter::worker_cleanup_waits_for_delayed_pid_artifact`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13p** — *Requirement:* LINT-13. *Behavior:* adapter architecture
+  evidence observes deserialization and line-index construction at runtime
+  rather than pinning source whitespace, the process deadline is owned by its
+  process-level regression, and manifest drift failures retain their intended
+  assertion messages for absent or scalar dependency entries. The maintenance
+  reference names 92% as the acceptance floor rather than a measurement.
+  *Oracle:* test-only counters report one typed response deserialization and one
+  line-index construction for a multi-alert response; source-order proxy tests
+  are absent; malformed manifest-value fixtures fail through explicit
+  assertions rather than indexing panics; and the exact reference phrase is
+  present. *Evidence type:* unit, mutation, and documentation-oracle tests.
+  *Evidence:* `colorful-vale`
+  `output::tests::one_response_deserializes_and_indexes_once` and
+  `workspace_boundary::{workspace_dependency_entry_requires_a_workspace_flag,
+  maintenance_reference_names_the_workspace_acceptance_floor}`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13q** — *Requirement:* LINT-13. *Behavior:* delayed PID-publication
+  evidence uses a real short-lived child whose handle is owned and reaped by the
+  test; it never sends a signal to a synthetic or narrowing-prone PID sentinel.
+  *Oracle:* a source-policy regression rejects `u32::MAX` and requires the
+  delayed writer to publish the PID of an explicitly spawned sleep child before
+  waiting for it. *Evidence type:* process-fixture safety regression. *Evidence:*
+  `colorful-vale`
+  `workspace_boundary::delayed_pid_evidence_uses_a_reaped_child` and
+  `vale_adapter::worker_cleanup_waits_for_delayed_pid_artifact`. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13r** — *Requirement:* LINT-13. *Behavior:* fake executable fixtures
+  publish a ready-to-execute path only after script bytes and permissions are
+  durable and every writer handle is closed. *Oracle:* a source-policy
+  regression requires a staging script, `sync_all`, and an atomic rename into
+  the final executable path; the full parallel adapter suite has no Linux
+  `ETXTBSY` failures. *Evidence type:* fixture-publication policy and hosted
+  parallel regression. *Evidence:* `colorful-vale`
+  `workspace_boundary::fake_executable_is_published_atomically` and the full
+  `vale_adapter` integration test binary. *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
+- **LINT-13s** — *Requirement:* LINT-13. *Behavior:* Unix process startup
+  retries only the explicit `ETXTBSY` condition under a fixed 50 ms budget;
+  every other spawn failure remains immediate and retains its existing typed
+  category. *Oracle:* an injected spawn closure returns executable-busy twice
+  and succeeds on the third call, while a non-busy failure is attempted once.
+  Hosted Linux Rust and coverage jobs run the complete parallel adapter suite
+  without executable-busy failures. *Evidence type:* deterministic retry unit
+  tests and hosted process integration. *Evidence:* `colorful-vale`
+  `process::tests::{executable_busy_spawn_is_retried,
+  non_busy_spawn_failure_is_not_retried}` and the full `vale_adapter` binary.
+  *Tracking:*
+  [#157](https://github.com/flyingrobots/colorful-language/issues/157).
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
@@ -244,6 +494,5 @@ Implemented and planned cases are listed below.
 
 ## Open verification gaps
 
-- Optional external-analyzer parity remains open in LINT-13a.
 - Product-level comparative evidence remains open in LINT-14a; built-in rule
   fixtures are not a substitute for the held-out oracle.

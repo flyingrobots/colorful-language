@@ -54,6 +54,98 @@ reproducible regardless of rule evaluation order.
 Passive analysis joins the ordered syntax leaves and classified tokens with one
 forward cursor; it does not allocate a whole-document token lookup.
 
+## Optional Vale comparison adapter
+
+`colorful-vale` is a non-publishable prototype outer crate for Vale v3. It is
+not a dependency of `colorful-core`, `colorful-cli`, or `colorful-lsp`, and
+neither production binary selects or invokes it. The built-in `ProseLinter`
+therefore remains the default, offline analyzer even when no `vale` executable
+or configuration exists.
+
+The prototype requires the caller to provide both a Vale executable and an
+explicit `.vale.ini`. Discovery accepts major version 3, and analysis invokes
+Vale with JSON output, stdin using a caller-selected document extension
+(`.txt` by default), no global configuration, a bounded output capture, and a
+caller-cancellable timeout. It never runs `vale sync` or downloads a style.
+Each child starts from an empty environment. Unix receives only the fixed
+`/usr/bin:/bin` executable path; Windows retains `SystemRoot` and `WINDIR` when
+present so the selected executable can use platform services. User `HOME`, XDG,
+proxy, and Vale override variables are not inherited.
+Unix process startup retries only `ETXTBSY` for at most 50 ms; other spawn
+failures remain immediate.
+On Unix, each invocation owns a dedicated process group so timeout and
+cancellation terminate configured wrappers and their descendants before
+joining captured output. The same deadline and cancellation token remain active
+while stdin and captured output drain, including after a wrapper exits while a
+descendant still owns its pipes. Cancellation is rechecked immediately before
+completed output is accepted. Other targets retain direct-child termination.
+Missing configuration, an unavailable engine, unrecognized version output, an
+incompatible engine, timeout, cancellation, process failure, excessive output,
+invalid UTF-8, malformed JSON, duplicate JSON source keys, invalid alert data,
+and source-identity mismatch are different `ValeErrorKind` values; none
+silently becomes an empty result or a fallback to the built-in rules.
+Additive unknown Vale v3 alert and action fields are ignored, while every field
+Colorful consumes remains required and validated. Source-key failures use fixed
+messages and do not echo process-controlled key material.
+
+Set `VALE_BIN` to the absolute path of the selected executable before running
+this example. Resolving the path first is required because the child receives
+the isolated environment described above.
+
+```rust
+use colorful_vale::{CancellationToken, ValeAnalyzer, ValeConfig};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let source = "This is very clear.";
+    let executable = std::env::var_os("VALE_BIN")
+        .map(std::path::PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "VALE_BIN must name an absolute Vale executable",
+            )
+        })?;
+    let config = ValeConfig::new(executable, ".vale.ini").with_extension(".md");
+    let adapter = ValeAnalyzer::discover(config)?;
+    let cancellation = CancellationToken::new();
+    let prepared = adapter.analyze(source, &cancellation)?;
+    let _analyzer = prepared.bind(source)?;
+    Ok(())
+}
+```
+
+Only the successful, document-bound value returned by `bind` implements the
+pure `Analyzer` port. Vale suggestions become Colorful `Info`; Vale warnings
+and errors become `Warning`: Colorful has no higher editorial severity, so a
+Vale error deliberately maps to the highest available tier rather than being
+dropped. Vale v3 reports
+[one-based, inclusive rune columns](https://github.com/vale-cli/vale/blob/v3.14.2/internal/core/file.go#L181-L220);
+the adapter converts those endpoints to Rust byte ranges and validates the
+required, non-empty `Match` against the exact source slice. Each response
+indexes document line boundaries once before normalizing its alerts; individual
+findings do not rescan the source prefix. Check names become validated
+`vale/<check>` rule codes. Findings are sorted by complete range, rule code,
+severity, and message. The external findings can then use the same CLI-report
+and LSP-diagnostic projection helpers as `ProseLinter`, but they do not alter
+semantic tokens, parser/classifier output, or canonical IR.
+
+The prototype's reviewed maintenance surface is six production source modules
+and exactly four production dependencies (`colorful-core`, Unix-only `rustix`,
+`serde`, and `serde_json`); a workspace-boundary test fails if either measure
+changes.
+Utility evidence exercises deterministic process, normalization, configuration,
+and boundary tests, including two external findings projected through both
+surfaces with no semantic-token or canonical-IR drift. A one-off 2026-07-28
+compatibility probe used the checksum-verified official Vale 3.14.2 macOS arm64
+archive
+(`vale_3.14.2_macOS_arm64.tar.gz`, SHA-256
+`14305f4e5e0756351ffd4ff8dd1e561c5d49f6a27360834238d832d9e64ac70f`);
+the exact JSON output is retained at
+[`crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json`](../../../crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json)
+and remains admitted by the normal test suite. This proves the comparison seam,
+not enough product utility to make Vale a supported or mandatory surface.
+
 ### Quotation policy
 
 Weak-word findings are evaluated inside quoted text. Straight and curly quote

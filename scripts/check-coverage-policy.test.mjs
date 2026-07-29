@@ -35,6 +35,10 @@ const COVERAGE_REFERENCE = readFileSync(
   ),
   "utf8",
 );
+const CHANGELOG = readFileSync(
+  new URL("../CHANGELOG.md", import.meta.url),
+  "utf8",
+);
 const EXPECTED_CLI_TRANSPORT_PATHS = [
   "crates/colorful-cli/src/cli/args.rs",
   "crates/colorful-cli/src/cli/color.rs",
@@ -49,6 +53,13 @@ function lineSummary(count, covered) {
     covered,
     percent: (covered * 100) / count,
   };
+}
+
+function renderedWorkspacePercent() {
+  const measuredPercent = ACTUAL_POLICY.workspace.measuredLinePercent;
+  return Number.isInteger(measuredPercent)
+    ? `${measuredPercent}%`
+    : `${measuredPercent.toFixed(2)}%`;
 }
 
 function policy() {
@@ -229,8 +240,7 @@ function expectPolicyError(code, mutatePolicy, mutateReport = () => {}) {
       validateCoveragePolicy(candidatePolicy, candidateReport, {
         workspaceRoot: "/checkout/colorful-language",
       }),
-    (error) =>
-      error instanceof CoveragePolicyError && error.code === code,
+    (error) => error instanceof CoveragePolicyError && error.code === code,
   );
 }
 
@@ -239,8 +249,7 @@ function expectWorkflowError(code, mutate) {
   mutate(candidate);
   assert.throws(
     () => validateCoverageWorkflow(candidate, policy()),
-    (error) =>
-      error instanceof CoveragePolicyError && error.code === code,
+    (error) => error instanceof CoveragePolicyError && error.code === code,
   );
 }
 
@@ -263,10 +272,7 @@ test("accepts the reviewed workspace and transport coverage", () => {
 test("resolves repository-relative report paths from the workspace root", () => {
   const relativeReport = structuredClone(report());
   for (const file of relativeReport.data[0].files) {
-    file.filename = file.filename.replace(
-      "/checkout/colorful-language/",
-      "",
-    );
+    file.filename = file.filename.replace("/checkout/colorful-language/", "");
   }
   assert.doesNotThrow(() =>
     validateCoveragePolicy(policy(), relativeReport, {
@@ -278,6 +284,22 @@ test("resolves repository-relative report paths from the workspace root", () => 
 test("accepts coverage documentation generated from the machine policy", () => {
   assert.doesNotThrow(() =>
     validateCoverageReference(COVERAGE_REFERENCE, ACTUAL_POLICY),
+  );
+});
+
+test("unreleased coverage note matches the machine policy", () => {
+  const start = CHANGELOG.indexOf("## [Unreleased]");
+  assert.notEqual(start, -1, "missing Unreleased changelog section");
+  const followingRelease = CHANGELOG.indexOf("\n## [", start + 1);
+  const unreleased = CHANGELOG.slice(
+    start,
+    followingRelease === -1 ? undefined : followingRelease,
+  );
+  assert(
+    unreleased.includes(
+      `ratchet the ${renderedWorkspacePercent()} measured baseline`,
+    ),
+    "Unreleased coverage evidence must quote the current workspace baseline",
   );
 });
 
@@ -294,8 +316,14 @@ test("coverage follows every executable CLI source owner", () => {
 });
 
 test("rejects stale coverage measurements in the maintained reference", () => {
-  const staleReference = COVERAGE_REFERENCE.replace("95.22%", "95.21%");
+  const measuredPercent = ACTUAL_POLICY.workspace.measuredLinePercent;
+  const renderedPercent = renderedWorkspacePercent();
+  const staleReference = COVERAGE_REFERENCE.replaceAll(
+    renderedPercent,
+    `${(measuredPercent - 0.01).toFixed(2)}%`,
+  );
   assert.notEqual(staleReference, COVERAGE_REFERENCE);
+  assert(!staleReference.includes(renderedPercent));
   assert.throws(
     () => validateCoverageReference(staleReference, ACTUAL_POLICY),
     (error) =>
@@ -401,10 +429,9 @@ test("rejects checkout credential persistence in the coverage job", () => {
 
 test("rejects a workflow that omits clean-checkout output preparation", () => {
   expectWorkflowError("E_COVERAGE_COMMAND", (candidate) => {
-    candidate.jobs.coverage.steps =
-      candidate.jobs.coverage.steps.filter(
-        (step) => step.name !== "Prepare coverage output",
-      );
+    candidate.jobs.coverage.steps = candidate.jobs.coverage.steps.filter(
+      (step) => step.name !== "Prepare coverage output",
+    );
   });
 });
 

@@ -224,7 +224,8 @@ roadmap-to-issue reconciliation is tracked in
 - **RM-10b — Conservative ratcheting floors.** *Requirement:* RM-10.
   *Behavior:* a versioned policy records a freshly measured workspace line
   baseline, a conservative initial floor below it, and separate floors for the
-  CLI and LSP binary transport files. No generated Rust source is excluded.
+  CLI, LSP, and optional Vale process-transport files. No generated Rust source
+  is excluded.
   *Oracle:* a deterministic checker accepts the reviewed report, rejects a
   workspace or transport regression below its floor, rejects missing files and
   malformed/non-finite counters, and requires a policy edit to lower any
@@ -238,13 +239,17 @@ roadmap-to-issue reconciliation is tracked in
   *Behavior:* the maintenance reference records the exact toolchain, command,
   source commit, observed workspace and transport percentages, floor-selection
   rule, artifact contents, and the reviewed procedure for raising or lowering a
-  floor. *Oracle:* policy tests reject stale or incomplete reference values,
-  while lowering a floor remains a visible source-controlled change rather
-  than an automatic side effect of adding uncovered code. *Evidence type:*
-  deterministic documentation-policy parity test. *Evidence:*
+  floor. The Unreleased changelog coverage note quotes the same current
+  workspace percentage. *Oracle:* policy tests reject stale or incomplete
+  reference values and a stale Unreleased coverage bullet, while lowering a
+  floor remains a visible source-controlled change rather than an automatic
+  side effect of adding uncovered code. *Evidence type:* deterministic
+  documentation-policy parity test. *Evidence:*
   `docs/workflows/repository-maintenance/README.md`,
+  `CHANGELOG.md`,
   `.github/coverage-policy.json`, and
-  `scripts/check-coverage-policy.test.mjs`. *Tracking:*
+  `scripts/check-coverage-policy.test.mjs`
+  `unreleased coverage note matches the machine policy`. *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
   *Status:* implemented.
 - **RM-10d — Coverage follows transport source ownership.** *Requirement:*

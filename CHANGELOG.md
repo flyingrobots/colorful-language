@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Optional Vale v3 analyzer comparison.** A non-publishable
+  `colorful-vale` outer crate now discovers an explicitly configured Vale v3
+  executable, isolates ambient global configuration, bounds and cancels the
+  process, selects an explicit stdin document extension, validates its
+  JSON/Unicode coordinates, and prepares deterministic namespaced Colorful
+  findings for the existing pure `Analyzer` port. Missing
+  configuration, unavailable engines, unrecognized version output, incompatible
+  engines, timeout, cancellation, process failure, excessive output, invalid
+  UTF-8, malformed alerts, and source mismatch remain distinct typed failures
+  with no silent built-in fallback. Additive Vale v3 fields remain compatible,
+  while duplicate or unexpected source keys fail with bounded redacted
+  messages. Unix startup retries only transient executable-busy failures under
+  a 50 ms cap. Unix invocations own dedicated process
+  groups so timeout and cancellation terminate configured wrappers and their
+  descendants before captured output is joined. Process fixtures prove CLI/LSP
+  parity and semantic-token/canonical-IR non-interference; a retained
+  checksum-verified Vale 3.14.2 smoke output anchors the mock contract. The
+  default CLI/LSP dependency graphs remain offline and Vale-free.
 - **Schema-generated portable IR admission.** Every registered
   `colorful.syntax/v1` generation now derives a dependency-free JavaScript
   structural validator from its compatibility-selected GraphQL SDL. Graft and
@@ -87,10 +105,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ratcheted Rust coverage evidence.** A required, full-SHA-pinned CI job now
   measures the workspace with all features and targets, uploads machine-readable
   JSON plus browsable HTML, and enforces a conservative 92% workspace line
-  floor. Exact uncovered-line ceilings ratchet the 95.36% measured baseline,
-  while separate CLI and LSP transport floors prevent a high workspace average
-  from hiding binary-boundary regressions. The versioned policy excludes no
-  generated or authored Rust source and can change only through review.
+  floor. Exact uncovered-line ceilings ratchet the 94.00% measured baseline,
+  while separate CLI, LSP, and optional Vale process-transport floors prevent a
+  high workspace average from hiding boundary regressions. The versioned policy
+  excludes no generated or authored Rust source and can change only through
+  review.
 - **Cross-stage performance and allocation evidence.** A release-mode harness
   now measures parsing, contextual annotation, mandatory classification
   validation, lint analysis, guarded IR projection, canonical serialization,
@@ -365,6 +384,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking diagnostic-rule API queued for v0.4.0.** `Rule` can now carry a
+  validated owned external diagnostic code via `Rule::external`, and
+  `Rule::code` returns a borrow tied to `&self`. Consequently `Rule` is no
+  longer `Copy`; callers must borrow or clone a rule when retaining it. Built-in
+  codes and CLI/LSP rendering remain unchanged.
 - **Product maturity is now an explicit third roadmap axis.** The preserved
   moonshot phases now sit alongside M0–M4 evidence tracks that organize the
   34-issue non-epic intake snapshot around reproducibility, boundary integrity,
@@ -423,6 +447,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Vale configuration paths preserve platform bytes.** The optional process
+  adapter now builds `--config=` as an `OsString` instead of formatting
+  `Path::display()`, so a valid non-UTF-8 path is not replaced with lossy
+  Unicode before process launch.
+- **Unstartable Vale executables report as unavailable.** Missing and
+  permission-denied executables now share the explicit `Unavailable` adapter
+  category instead of classifying a permission error as a generic process
+  failure.
 - **Stable public-API policy input failures.** Missing, moved, or unreadable
   source and workflow inputs now fail the doctest policy checker with
   `E_API_DOCTEST_INPUT`, the repository-relative path, empty standard output,

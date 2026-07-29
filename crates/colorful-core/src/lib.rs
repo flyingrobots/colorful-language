@@ -234,7 +234,7 @@ pub enum Severity {
 /// Each rule carries a stable [`code`](Rule::code) that both surfaces use
 /// verbatim — the CLI prints it as a `[tag]`, the language server sets it as the
 /// diagnostic `code` — so a rule is identified the same way everywhere.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Rule {
     /// A weak or filler word (`very`, `really`, `just`, ...).
     WeakWord,
@@ -244,20 +244,89 @@ pub enum Rule {
     LengthOutlier,
     /// A passive-voice candidate: a `be`-auxiliary then a past participle.
     PassiveVoice,
+    /// A validated rule identifier produced by an optional external analyzer.
+    External(ExternalRuleCode),
 }
 
 impl Rule {
     /// The stable, machine-readable code for this rule (e.g. `"run-on"`).
     #[must_use]
-    pub fn code(self) -> &'static str {
+    pub fn code(&self) -> &str {
         match self {
             Rule::WeakWord => "weak-word",
             Rule::RunOn => "run-on",
             Rule::LengthOutlier => "length-outlier",
             Rule::PassiveVoice => "passive-voice",
+            Rule::External(code) => &code.0,
         }
     }
+
+    /// Construct a validated, namespaced external rule code.
+    ///
+    /// Codes must contain 3–128 ASCII alphanumeric, `.`, `_`, `/`, or `-`
+    /// characters and at least two non-empty `/`-separated segments. The first
+    /// segment names the engine, for example `vale/Style.Rule`; requiring that
+    /// namespace prevents a dynamic code from colliding with a built-in rule.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidRuleCode`] when the code is not namespaced, has an
+    /// empty segment, is too long, or contains a character that is unsafe in
+    /// CLI and LSP diagnostic output.
+    pub fn external(code: impl Into<String>) -> Result<Self, InvalidRuleCode> {
+        let code = code.into();
+        let valid_length = code.len() >= 3 && code.len() <= 128;
+        let valid_characters = code
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'/' | b'-'));
+        let mut segments = code.split('/');
+        let has_engine = segments.next().is_some_and(|segment| !segment.is_empty());
+        let has_rule = segments.next().is_some_and(|segment| !segment.is_empty());
+        let remaining_segments_valid = segments.all(|segment| !segment.is_empty());
+        if !valid_length
+            || !valid_characters
+            || !has_engine
+            || !has_rule
+            || !remaining_segments_valid
+        {
+            return Err(InvalidRuleCode { code });
+        }
+        Ok(Self::External(ExternalRuleCode(code)))
+    }
 }
+
+/// The validated identifier carried by [`Rule::External`].
+///
+/// Construct external rules through [`Rule::external`]; the inner string stays
+/// private so invalid diagnostic codes cannot be assembled directly.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ExternalRuleCode(String);
+
+/// An invalid external diagnostic rule code.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InvalidRuleCode {
+    code: String,
+}
+
+impl InvalidRuleCode {
+    /// Return the rejected code.
+    #[must_use]
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+}
+
+impl std::fmt::Display for InvalidRuleCode {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "external rule code must contain 3–128 safe ASCII characters in at least two non-empty '/'-separated segments: {:?}",
+            self.code
+        )
+    }
+}
+
+impl std::error::Error for InvalidRuleCode {}
 
 /// A single lint finding: a span of source flagged by a [`Rule`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1808,6 +1877,28 @@ mod tests {
         sorted.sort_unstable();
         sorted.dedup();
         assert_eq!(sorted.len(), codes.len());
+    }
+
+    #[test]
+    fn external_rule_codes_require_a_non_colliding_namespace() {
+        let minimum = "a/b";
+        let maximum = format!("a/{}", "b".repeat(126));
+        assert_eq!(Rule::external(minimum).unwrap().code(), minimum);
+        assert_eq!(Rule::external(&maximum).unwrap().code(), maximum);
+
+        let too_long = format!("a/{}", "b".repeat(127));
+        for invalid in [
+            "",
+            "a/",
+            "weak-word",
+            "vale/",
+            "/Style.Rule",
+            "vale/has space",
+            "vale/rulé",
+            &too_long,
+        ] {
+            assert!(Rule::external(invalid).is_err(), "{invalid:?}");
+        }
     }
 
     #[test]
