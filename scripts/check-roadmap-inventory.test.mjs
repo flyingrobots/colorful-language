@@ -170,6 +170,17 @@ test("rejects a second architecture-accountability mechanism table", () => {
   );
 });
 
+test("rejects a no-leading-pipe accountability table explicitly", () => {
+  expectCategory(
+    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+    (source) => {
+      const heading = "## Architecture accountability";
+      const [before, section] = source.split(heading);
+      return `${before}${heading}${section.replace(/^\| /gmu, "")}`;
+    },
+  );
+});
+
 test("requires a delimiter and data row for the accountability table", () => {
   for (const replacement of [
     "| Mechanism | Example only |",

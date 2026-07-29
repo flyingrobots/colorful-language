@@ -106,6 +106,15 @@ function markdownTableMechanism(line) {
   return undefined;
 }
 
+function isNoLeadingPipeMechanismHeader(line) {
+  const firstNonWhitespace = line.search(/\S/u);
+  return (
+    firstNonWhitespace !== -1 &&
+    /^ {0,3}$/u.test(line.slice(0, firstNonWhitespace)) &&
+    line.slice(firstNonWhitespace).startsWith("Mechanism |")
+  );
+}
+
 function isAsciiPunctuation(character) {
   const codePoint = character.codePointAt(0);
   return (
@@ -259,6 +268,13 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
     if (!inAccountabilitySection) {
       continue;
+    }
+    if (isNoLeadingPipeMechanismHeader(line)) {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        `${roadmapPath}:${index + 1}`,
+        'canonical table rows must begin with "|"',
+      );
     }
 
     const mechanism = markdownTableMechanism(line);
