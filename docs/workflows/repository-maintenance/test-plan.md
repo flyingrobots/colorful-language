@@ -267,7 +267,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   internal backtick runs, an empty identity, invalid escaping inside and
   outside inline code,
   named/decimal/hexadecimal character references, canonically equivalent
-  Unicode, and unsupported emphasis. They fail with
+  Unicode, NUL/replacement-character equivalence, and unsupported emphasis.
+  They fail with
   their stable `E_ROADMAP_*` categories, including both source addresses for a
   duplicate heading, table, or mechanism and identical LF/CRLF failure
   addresses, while indented, fenced, and commented examples immediately after

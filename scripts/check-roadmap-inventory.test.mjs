@@ -963,6 +963,18 @@ test("compares canonically equivalent Unicode mechanism identities", () => {
   );
 });
 
+test("compares NUL-normalized mechanism identities", () => {
+  expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
+    source.replace(
+      "| Parser ports | Substitute deterministic adapters. |",
+      [
+        "| A\u0000B | NUL input normalizes before rendering. |",
+        "| A\uFFFDB | Same displayed mechanism. |",
+      ].join("\n"),
+    ),
+  );
+});
+
 test("rejects a closed slice presented as active", () => {
   expectCategory("E_ROADMAP_CLOSED_ACTIVE", (source) =>
     source.replace(

@@ -254,12 +254,14 @@ The same offline structure gate applies these fail-closed rules:
   inside inline code remains literal.
 - **Identity normalization:** Plain text, ASCII-punctuation escapes, and inline
   code are normalized to their NFC displayed identity, including
-  table-delimiter escapes inside code spans. An inline-code span closes only on
-  a backtick run exactly as long as its opener, so shorter and longer internal
-  runs remain displayed content. Character-reference-shaped source outside
-  inline code is rejected; the displayed character must be written directly so
-  source and rendered identities cannot diverge. Empty cells, invalid escapes,
-  and other mechanism-cell Markdown are rejected as noncanonical.
+  table-delimiter escapes inside code spans. NUL input is replaced with U+FFFD
+  before identity comparison, matching CommonMark input normalization. An
+  inline-code span closes only on a backtick run exactly as long as its opener,
+  so shorter and longer internal runs remain displayed content.
+  Character-reference-shaped source outside inline code is rejected; the
+  displayed character must be written directly so source and rendered
+  identities cannot diverge. Empty cells, invalid escapes, and other
+  mechanism-cell Markdown are rejected as noncanonical.
 - **Duplication and scan scope:** Every displayed mechanism identity appears
   exactly once. A repeated heading, table, or mechanism fails with both source
   locations, while distinct moonshot mechanisms remain independent entries.

@@ -406,36 +406,37 @@ function stripClosedInlineHtmlComments(line) {
 
 function canonicalMechanismIdentity(mechanism, location) {
   let identity = "";
+  const normalizedMechanism = mechanism.replaceAll("\u0000", "\uFFFD");
 
-  for (let index = 0; index < mechanism.length; index += 1) {
-    const character = mechanism[index];
+  for (let index = 0; index < normalizedMechanism.length; index += 1) {
+    const character = normalizedMechanism[index];
     if (character === "\\") {
-      if (index + 1 === mechanism.length) {
+      if (index + 1 === normalizedMechanism.length) {
         fail(
           "E_ROADMAP_NONCANONICAL_MECHANISM",
           location,
           "mechanism ends with an incomplete Markdown escape",
         );
       }
-      if (!isAsciiPunctuation(mechanism[index + 1])) {
+      if (!isAsciiPunctuation(normalizedMechanism[index + 1])) {
         fail(
           "E_ROADMAP_NONCANONICAL_MECHANISM",
           location,
           "Markdown escapes are only valid before ASCII punctuation",
         );
       }
-      identity += mechanism[index + 1];
+      identity += normalizedMechanism[index + 1];
       index += 1;
       continue;
     }
     if (character === "`") {
       let delimiterLength = 1;
-      while (mechanism[index + delimiterLength] === "`") {
+      while (normalizedMechanism[index + delimiterLength] === "`") {
         delimiterLength += 1;
       }
       const contentStart = index + delimiterLength;
       const contentEnd = findExactBacktickRun(
-        mechanism,
+        normalizedMechanism,
         contentStart,
         delimiterLength,
       );
@@ -446,7 +447,7 @@ function canonicalMechanismIdentity(mechanism, location) {
           "mechanism contains an unterminated inline-code span",
         );
       }
-      identity += mechanism
+      identity += normalizedMechanism
         .slice(contentStart, contentEnd)
         .replaceAll("\\|", "|");
       index = contentEnd + delimiterLength - 1;
@@ -454,7 +455,7 @@ function canonicalMechanismIdentity(mechanism, location) {
     }
     if (
       character === "&" &&
-      MARKDOWN_CHARACTER_REFERENCE.test(mechanism.slice(index))
+      MARKDOWN_CHARACTER_REFERENCE.test(normalizedMechanism.slice(index))
     ) {
       fail(
         "E_ROADMAP_NONCANONICAL_MECHANISM",
