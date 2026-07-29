@@ -217,6 +217,25 @@ impl DocumentAnalysis {
         )
     }
 
+    /// Degrade a coordinate-incompatible analysis view into one stable
+    /// diagnostic before any span is projected onto the source document.
+    #[must_use]
+    pub fn invalid_source_view() -> Self {
+        Self::new(
+            vec![],
+            vec![Diagnostic {
+                range: Range::new(Position::new(0, 0), Position::new(0, 0)),
+                severity: Some(DiagnosticSeverity::ERROR),
+                code: Some(NumberOrString::String(
+                    "colorful/invalid-source-view".to_string(),
+                )),
+                source: Some("colorful".to_string()),
+                message: "analysis view does not preserve source coordinates".to_string(),
+                ..Diagnostic::default()
+            }],
+        )
+    }
+
     /// The delta-encoded semantic tokens for this document generation.
     #[must_use]
     pub fn semantic_tokens(&self) -> &[SemanticToken] {
@@ -290,8 +309,23 @@ where
     A: Annotator,
     An: Analyzer,
 {
+    let shares_storage = source_text.len() == analysis_text.len()
+        && std::ptr::eq(source_text.as_ptr(), analysis_text.as_ptr());
+    if !shares_storage && !source_views_share_coordinates(source_text, analysis_text) {
+        return Ok(DocumentAnalysis::invalid_source_view());
+    }
+
     let classification = ValidatedClassification::from_ports(analysis_text, parser, annotator)?;
-    let semantic_tokens = semantic_tokens_from(source_text, classification.tokens());
+    let semantic_tokens = if shares_storage {
+        semantic_tokens_from(source_text, classification.tokens())
+    } else {
+        let source_projection = ValidatedClassification::new(
+            source_text,
+            classification.tree().clone(),
+            classification.tokens().to_vec(),
+        )?;
+        semantic_tokens_from(source_text, source_projection.tokens())
+    };
     let findings = analyzer.analyze(
         analysis_text,
         classification.tree(),
@@ -299,6 +333,65 @@ where
     );
     let diagnostics = diagnostics_from(source_text, findings);
     Ok(DocumentAnalysis::new(semantic_tokens, diagnostics))
+}
+
+fn source_views_share_coordinates(source_text: &str, analysis_text: &str) -> bool {
+    if source_text.len() != analysis_text.len() {
+        return false;
+    }
+    let source_lines = LineIndex::new(source_text);
+    let analysis_lines = LineIndex::new(analysis_text);
+    if source_lines.line_starts != analysis_lines.line_starts {
+        return false;
+    }
+
+    let mut source_chars = source_text.chars();
+    let mut analysis_chars = analysis_text.chars();
+    let mut source_bytes = 0usize;
+    let mut analysis_bytes = 0usize;
+    let mut source_utf16 = 0usize;
+    let mut analysis_utf16 = 0usize;
+
+    while source_bytes < source_text.len() || analysis_bytes < analysis_text.len() {
+        match source_bytes.cmp(&analysis_bytes) {
+            std::cmp::Ordering::Equal => {
+                let (Some(source_character), Some(analysis_character)) =
+                    (source_chars.next(), analysis_chars.next())
+                else {
+                    return false;
+                };
+                source_bytes += source_character.len_utf8();
+                source_utf16 += source_character.len_utf16();
+                analysis_bytes += analysis_character.len_utf8();
+                analysis_utf16 += analysis_character.len_utf16();
+            }
+            std::cmp::Ordering::Less => {
+                let Some(character) = source_chars.next() else {
+                    return false;
+                };
+                source_bytes += character.len_utf8();
+                source_utf16 += character.len_utf16();
+            }
+            std::cmp::Ordering::Greater => {
+                let Some(character) = analysis_chars.next() else {
+                    return false;
+                };
+                analysis_bytes += character.len_utf8();
+                analysis_utf16 += character.len_utf16();
+            }
+        }
+        if source_bytes == analysis_bytes {
+            if source_utf16 != analysis_utf16 {
+                return false;
+            }
+            source_utf16 = 0;
+            analysis_utf16 = 0;
+        }
+    }
+
+    source_bytes == analysis_bytes
+        && source_chars.next().is_none()
+        && analysis_chars.next().is_none()
 }
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.

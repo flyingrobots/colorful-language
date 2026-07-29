@@ -80,8 +80,8 @@ pub fn mask_non_prose(source: &str) -> Cow<'_, str> {
         copied_until = range.bytes.end;
     }
     masked.push_str(&source[copied_until..]);
-    debug_assert_eq!(masked.len(), source.len());
-    debug_assert_eq!(masked.encode_utf16().count(), source.encode_utf16().count());
+    assert_eq!(masked.len(), source.len());
+    assert_eq!(masked.encode_utf16().count(), source.encode_utf16().count());
     Cow::Owned(masked)
 }
 
