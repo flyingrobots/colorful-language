@@ -248,10 +248,10 @@ roadmap-to-issue reconciliation is tracked in
   `docs/workflows/repository-maintenance/README.md`,
   `CHANGELOG.md`,
   `.github/coverage-policy.json`, and
-  `scripts/check-coverage-policy.test.mjs` (the changelog parity leg is
-  planned). *Tracking:*
+  `scripts/check-coverage-policy.test.mjs`
+  `unreleased coverage note matches the machine policy`. *Tracking:*
   [#137](https://github.com/flyingrobots/colorful-language/issues/137).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-10d — Coverage follows transport source ownership.** *Requirement:*
   RM-10. *Behavior:* when CLI transport responsibilities move behind the
   crate-root facade, the per-file ratchet follows every executable source owner
