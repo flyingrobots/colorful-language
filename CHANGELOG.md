@@ -510,10 +510,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Unique roadmap architecture accountability.** The offline roadmap gate now
-  fails closed without the canonical accountability table, ignores
-  table-shaped examples outside it, compares displayed mechanism identities,
-  and rejects duplicates with both source-line addresses, preventing one
-  architecture decision from drifting through two apparent authorities.
+  fails closed without a non-empty canonical accountability table, ignores
+  fenced or commented table-shaped examples, compares canonical displayed
+  mechanism identities, rejects malformed cells, and reports duplicates with
+  both source-line addresses. One architecture decision can no longer drift
+  through two apparent authorities.
 - **Warning-free public lexicon documentation.** Public adapter rustdoc now
   describes stable concepts rather than linking private tables, and
   warning-denying `colorful-lexicon` documentation is a blocking CI and

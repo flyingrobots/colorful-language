@@ -213,13 +213,14 @@ change that marker to `delivered` before merge.
 
 The same offline structure gate requires the canonical Architecture
 Accountability heading and its `Mechanism` table, then requires each displayed
-mechanism identity to appear exactly once. Only contiguous rows in that table
-are authoritative, so later examples and comments cannot create findings.
-Plain text, escaped punctuation, and inline code are normalized to their
-displayed identity; other mechanism-cell Markdown is rejected as
-noncanonical. A duplicate fails with both the repeated row's line and the
-original row's line, while distinct moonshot mechanisms remain independent
-entries.
+mechanism identity to appear exactly once. A header-shaped line is not enough:
+the table requires its delimiter and at least one non-empty data row. Only
+contiguous rows in that table are authoritative, and fenced examples or HTML
+comments cannot stand in for it. Plain text, ASCII-punctuation escapes, and
+inline code are normalized to their displayed identity; empty cells, invalid
+escapes, and other mechanism-cell Markdown are rejected as noncanonical. A
+duplicate fails with both the repeated row's line and the original row's line,
+while distinct moonshot mechanisms remain independent entries.
 
 Run the deterministic structure and fixture gates without network access:
 

@@ -243,12 +243,13 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   outside the authoritative table, and compares plain and inline-code labels
   by displayed identity. Unsupported mechanism-cell Markdown is
   noncanonical. *Oracle:* fixture mutations cover exact duplicate rows,
-  missing/recased headings, a missing table, a fenced table example,
-  inline-code styling, and unsupported emphasis. They fail with their stable
+  missing/recased headings, missing delimiter or data rows, fenced and
+  commented table-shaped examples, inline-code styling, an empty identity,
+  invalid escaping, and unsupported emphasis. They fail with their stable
   `E_ROADMAP_*` categories, including both source addresses for a duplicate,
-  while the fenced example remains valid. The process-level duplicate leg
-  exits nonzero with empty stdout and exact stderr. *Evidence type:*
-  deterministic fixture-backed Node tests plus the existing offline
+  while a fenced example after the real table remains valid. The process-level
+  duplicate leg exits nonzero with empty stdout and exact stderr. *Evidence
+  type:* deterministic fixture-backed Node tests plus the existing offline
   repository command. *Evidence:* `scripts/check-roadmap-inventory.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, and
   `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
