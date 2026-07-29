@@ -157,10 +157,16 @@ export async function generateHomebrewFormula({ distDir, version }) {
       "distribution directory must be a non-empty path",
     );
   }
-  const [linuxX64Sha256, macosArm64Sha256] = await Promise.all([
-    checksumFromDist(distDir, releaseVersion, PLATFORMS.linuxX64),
-    checksumFromDist(distDir, releaseVersion, PLATFORMS.macosArm64),
-  ]);
+  const linuxX64Sha256 = await checksumFromDist(
+    distDir,
+    releaseVersion,
+    PLATFORMS.linuxX64,
+  );
+  const macosArm64Sha256 = await checksumFromDist(
+    distDir,
+    releaseVersion,
+    PLATFORMS.macosArm64,
+  );
   return renderHomebrewFormula({
     linuxX64Sha256,
     macosArm64Sha256,

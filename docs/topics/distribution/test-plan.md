@@ -102,7 +102,8 @@ Verification for install paths and published artifacts.
   `scripts/generate-homebrew-formula.test.mjs`
   `renders exact synchronized Homebrew formula bytes`,
   `rejects missing native archives even when a sidecar exists`,
-  `rejects native bytes that do not match their sidecar`, and
+  `rejects native bytes that do not match their sidecar`,
+  `reports invalid release inputs in fixed platform order`, and
   `the CLI emits the verified formula on stdout only`;
   `scripts/check-release-distribution.test.mjs`
   `rejects every Homebrew policy mutation` and

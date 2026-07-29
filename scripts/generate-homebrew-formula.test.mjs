@@ -208,6 +208,29 @@ test("rejects native bytes that do not match their sidecar", async () => {
   });
 });
 
+test("reports invalid release inputs in fixed platform order", async () => {
+  const distDir = await mkdtemp(
+    path.join(tmpdir(), "colorful-homebrew-order-"),
+  );
+  try {
+    const linuxArchive =
+      `colorful-language-v${version}-${archiveTargets[0]}.tar.gz`;
+    await writeFile(
+      path.join(distDir, `${linuxArchive}.sha256`),
+      Buffer.alloc(16 * 1024 * 1024, "x"),
+    );
+    await assert.rejects(
+      generateHomebrewFormula({ distDir, version }),
+      (error) =>
+        error instanceof HomebrewFormulaError &&
+        error.code === "invalid-sidecar" &&
+        error.message.includes(linuxArchive),
+    );
+  } finally {
+    await rm(distDir, { force: true, recursive: true });
+  }
+});
+
 test("the CLI emits the verified formula on stdout only", async () => {
   await withReleaseArchives(async (distDir) => {
     const result = spawnSync(
