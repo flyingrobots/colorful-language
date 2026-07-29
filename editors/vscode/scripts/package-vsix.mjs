@@ -1,18 +1,28 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const editorRoot = path.resolve(path.dirname(scriptPath), "..");
 const repositoryRoot = path.resolve(editorRoot, "../..");
-const vscePath = path.join(
-  editorRoot,
-  "node_modules",
-  "@vscode",
-  "vsce",
-  "vsce",
+const requireFromScript = createRequire(import.meta.url);
+const vsceManifestPath = requireFromScript.resolve(
+  "@vscode/vsce/package.json",
+);
+const vsceManifest = requireFromScript("@vscode/vsce/package.json");
+const vsceRelativePath =
+  typeof vsceManifest.bin === "string"
+    ? vsceManifest.bin
+    : vsceManifest.bin?.vsce;
+if (typeof vsceRelativePath !== "string" || vsceRelativePath.length === 0) {
+  throw new Error("@vscode/vsce does not declare its 'vsce' binary");
+}
+const vscePath = path.resolve(
+  path.dirname(vsceManifestPath),
+  vsceRelativePath,
 );
 
 function run(command, args, options) {
