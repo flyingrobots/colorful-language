@@ -127,7 +127,7 @@ function validateException(exception, index, workflowFiles, expected) {
     !Array.isArray(publishSteps) ||
     publishSteps.length !== 1 ||
     publishSteps[0]?.env?.[expected.selector] !== expected.secret ||
-    countSubstring(workflowFiles, exception.selector) !== 1
+    countSubstring(workflowFiles, expected.selector) !== 1
   ) {
     reject(
       code,
@@ -209,13 +209,33 @@ export function validateWorkflowSecurityPolicy(policy, workflowFiles) {
       "must contain exactly the reviewed release-token exceptions",
     );
   }
-  for (const [index, expected] of
-    REVIEWED_RELEASE_SECRET_EXCEPTIONS.entries()) {
+  const expectedBySelector = new Map(
+    REVIEWED_RELEASE_SECRET_EXCEPTIONS.map((expected) => [
+      expected.selector,
+      expected,
+    ]),
+  );
+  const expectedSelectors = [...expectedBySelector.keys()].toSorted();
+  const actualSelectors = policy.exceptions
+    .map((exception) => exception?.selector)
+    .toSorted();
+  if (
+    actualSelectors.some(
+      (selector, index) => selector !== expectedSelectors[index],
+    )
+  ) {
+    reject(
+      "E_WORKFLOW_SECURITY_EXCEPTION",
+      `${POLICY_PATH}:exceptions`,
+      `selectors must equal ${expectedSelectors.join(", ")}`,
+    );
+  }
+  for (const [index, exception] of policy.exceptions.entries()) {
     validateException(
-      policy.exceptions[index],
+      exception,
       index,
       workflowFiles,
-      expected,
+      expectedBySelector.get(exception.selector),
     );
   }
   return policy;
