@@ -127,6 +127,10 @@ Text equivalent:
 | prose | `noun` | Open-class noun |
 | quickly | `adverb` | Open-class adverb |
 
+Separate diagnostic example: in the editor-smoke fixture, `really` produces the
+`weak-word` finding “weak word 'really'.” The visual labels it as a separate
+fixture so it is not mistaken for a finding over the semantic-role sentence.
+
 The custom-role colors use the same starter values documented for Zed and each
 meets at least 4.5:1 contrast against the demo surface. Role labels and this
 table are the primary oracle; color is supplementary.

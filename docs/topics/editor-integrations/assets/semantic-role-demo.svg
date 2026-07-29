@@ -10,7 +10,8 @@
   <desc id="description">
     A dark editor panel renders “The cat writes careful prose quickly.”
     Every colored word is also labeled in text: cat: noun; writes: verb;
-    careful: adjective; prose: noun; quickly: adverb.
+    careful: adjective; prose: noun; quickly: adverb. A separate diagnostic
+    fixture reports really as a weak word to remove or replace.
   </desc>
   <style>
     svg {
@@ -99,7 +100,7 @@
   <text class="role adverb" x="784" y="248">adverb</text>
 
   <text class="caption body" x="104" y="322">
-    Diagnostic: weak word “really” → remove or replace
+    Separate diagnostic fixture: weak word “really” → remove or replace
   </text>
   <text class="caption muted" x="104" y="356">
     Plain Text and Markdown use the same LSP analysis and source coordinates.
