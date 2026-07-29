@@ -267,6 +267,13 @@ mod tests {
     }
 
     #[test]
+    fn quoted_link_titles_do_not_confuse_destination_boundaries() {
+        let source = r#"[label](https://really.example "title (")"#;
+
+        assert_masked(source, r#"(https://really.example "title (")"#);
+    }
+
+    #[test]
     fn destination_masking_follows_commonmark_admission() {
         let malformed = "Ordinary prose can contain text](really) literally.";
         let autolink = "Visit <https://really.example/weak> for prose.";
