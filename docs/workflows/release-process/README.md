@@ -113,12 +113,13 @@ can continue without moving the tag. The release job timeout is sized for the
 aggregate index-readiness polling window across all eight crates.
 
 Editor publication is also rerun-safe: both publishers receive the exact
-smoke-tested VSIX with duplicate-version handling enabled. The workflow then
-downloads the exact public version from both registries and requires both
-SHA-256 digests to match the smoke witness before publishing crates. Credential
-checks run before crates or editor packages are published, so a missing
-publisher identity fails closed before the workflow creates a partial
-multi-registry release.
+smoke-tested VSIX with duplicate-version handling enabled. VSIX packaging
+normalizes archive timestamps to the immutable source commit time, so rerunning
+the same tag reproduces the same package bytes. The workflow then downloads the
+exact public version from both registries and requires both SHA-256 digests to
+match the smoke witness before publishing crates. Credential checks run before
+crates or editor packages are published, so a missing publisher identity fails
+closed before the workflow creates a partial multi-registry release.
 
 PR CI and release preparation derive internal normal, build, and dev
 dependencies from `cargo metadata`, require the release profile and tag

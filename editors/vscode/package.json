@@ -114,7 +114,7 @@
   "scripts": {
     "bundle": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --sourcemap --outfile=dist/extension.js",
     "compile": "tsc -p ./ --noEmit && npm run bundle",
-    "package:vsix": "vsce package --no-yarn --no-dependencies",
+    "package:vsix": "node scripts/package-vsix.mjs",
     "smoke:package": "node smoke/run-packaged-smoke.mjs",
     "watch": "tsc -watch -p ./",
     "vscode:prepublish": "npm run compile"

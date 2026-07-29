@@ -159,10 +159,11 @@ Verification for release preparation, tag automation, and release witnesses.
   registries, verifies both publisher credentials before crates or editor
   packages are published, and treats an already-present version as a rerun-safe
   success only when both downloaded registry packages match the witness
-  SHA-256. *Oracle:* workflow and lockfile mutations reject a second package
-  command, different publication paths, missing credential or byte
-  verification, floating publisher tooling, absent duplicate handling, or a
-  mismatched remote package.
+  SHA-256. Packaging normalizes ZIP timestamps to the immutable source commit,
+  so ambient time cannot change the VSIX bytes. *Oracle:* workflow and lockfile
+  mutations reject a second package command, different publication paths,
+  missing credential or byte verification, floating publisher tooling, absent
+  duplicate handling, a mismatched remote package, or time-dependent packaging.
   *Evidence type:* deterministic distribution-policy checker and mutation
   tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
@@ -175,8 +176,10 @@ Verification for release preparation, tag automation, and release witnesses.
   `requires publisher credential verification before crates`,
   `requires one smoke-tested VSIX for both rerun-safe publishers`, and
   `requires published registry bytes to match the smoke-tested VSIX`, and
-  `requires exact lockfile-backed publisher tools`. *Status:* implemented in
-  workflow; public registry evidence remains planned.
+  `requires exact lockfile-backed publisher tools`;
+  `scripts/check-editor-package-smoke.test.mjs`
+  `VSIX packaging is reproducible across ambient build times`. *Status:*
+  implemented in workflow; public registry evidence remains planned.
 - **REL-14a** — *Requirement:* REL-14. *Behavior:* the repository-owned
   `editors/zed` path and its staged clean-room copy carry the same accepted
   license, synchronized manifest and crate versions, lockfile, source, and

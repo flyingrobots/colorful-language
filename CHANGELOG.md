@@ -18,9 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   those VSIX bytes for VS Code Marketplace and Open VSX, and packages the
   licensed Zed registry-source tree without manufacturing a second editor
   artifact. Exact lockfile-backed publisher tools, fail-closed credential
-  verification, duplicate-safe retries followed by public-package SHA-256
-  parity, an accessible text-equivalent visual demo, and deterministic policy
-  mutation tests protect the workflow.
+  verification, commit-time-normalized reproducible VSIX bytes, duplicate-safe
+  retries followed by public-package SHA-256 parity, an accessible
+  text-equivalent visual demo, and deterministic policy mutation tests protect
+  the workflow.
   Public marketplace, Zed registry, and new platform-install claims remain
   withheld until a tagged release supplies real URLs, clean-machine evidence,
   and rollback results.

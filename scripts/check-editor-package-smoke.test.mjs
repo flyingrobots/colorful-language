@@ -38,6 +38,7 @@ const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/smoke/run-packaged-smoke.mjs",
   "editors/vscode/smoke/suite/index.cjs",
   "editors/vscode/smoke/timing-witness.mjs",
+  "editors/vscode/scripts/package-vsix.mjs",
   "scripts/stage-zed-extension.mjs",
 ];
 
@@ -71,13 +72,14 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
   }
   assert.equal(
     packageJson.scripts?.["package:vsix"],
-    "vsce package --no-yarn --no-dependencies",
+    "node scripts/package-vsix.mjs",
   );
   const packageIgnore = readFileSync(
     "editors/vscode/.vscodeignore",
     "utf8",
   );
   assert.match(packageIgnore, /^node_modules\/\*\*$/mu);
+  assert.match(packageIgnore, /^scripts\/\*\*$/mu);
   assert.match(packageIgnore, /^\*\*\/\*\.map$/mu);
   assert.equal(
     packageJson.scripts?.["smoke:package"],
