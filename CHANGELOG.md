@@ -105,7 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ratcheted Rust coverage evidence.** A required, full-SHA-pinned CI job now
   measures the workspace with all features and targets, uploads machine-readable
   JSON plus browsable HTML, and enforces a conservative 92% workspace line
-  floor. Exact uncovered-line ceilings ratchet the 93.97% measured baseline,
+  floor. Exact uncovered-line ceilings ratchet the 94.00% measured baseline,
   while separate CLI, LSP, and optional Vale process-transport floors prevent a
   high workspace average from hiding boundary regressions. The versioned policy
   excludes no generated or authored Rust source and can change only through
