@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
+use std::fmt;
 
 use colorful_core::{Finding, Rule, Severity, Span};
-use serde::Deserialize;
+use serde::de::{MapAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 
 use crate::{ValeError, ValeErrorKind};
 
@@ -37,6 +39,49 @@ struct ValeAlert {
     matched: String,
     #[serde(rename = "Line")]
     line: i64,
+}
+
+struct ValeFiles {
+    entries: BTreeMap<String, Vec<ValeAlert>>,
+    duplicate_source: Option<String>,
+}
+
+impl<'de> Deserialize<'de> for ValeFiles {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ValeFilesVisitor;
+
+        impl<'de> Visitor<'de> for ValeFilesVisitor {
+            type Value = ValeFiles;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an object keyed by one Vale stdin source")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                let mut entries = BTreeMap::new();
+                let mut duplicate_source = None;
+                while let Some((source, alerts)) = map.next_entry::<String, Vec<ValeAlert>>()? {
+                    if entries.insert(source.clone(), alerts).is_some()
+                        && duplicate_source.is_none()
+                    {
+                        duplicate_source = Some(source);
+                    }
+                }
+                Ok(ValeFiles {
+                    entries,
+                    duplicate_source,
+                })
+            }
+        }
+
+        deserializer.deserialize_map(ValeFilesVisitor)
+    }
 }
 
 struct LineIndex<'source> {
@@ -86,7 +131,7 @@ pub(crate) fn parse_findings(
             "Vale JSON output must be an object keyed by one stdin source",
         ));
     }
-    let files: BTreeMap<String, Vec<ValeAlert>> = serde_json::from_str(json).map_err(|error| {
+    let parsed: ValeFiles = serde_json::from_str(json).map_err(|error| {
         let (kind, context) = match error.classify() {
             serde_json::error::Category::Data => (
                 ValeErrorKind::InvalidAlert,
@@ -99,6 +144,13 @@ pub(crate) fn parse_findings(
         };
         ValeError::new(kind, format!("{context}: {error}"))
     })?;
+    if let Some(source) = parsed.duplicate_source {
+        return Err(ValeError::new(
+            ValeErrorKind::MalformedOutput,
+            format!("Vale returned duplicate source key {source:?}"),
+        ));
+    }
+    let files = parsed.entries;
     if files.len() > 1 {
         return Err(ValeError::new(
             ValeErrorKind::MalformedOutput,

@@ -383,10 +383,10 @@ Implemented and planned cases are listed below.
   *Oracle:* a response containing the expected stdin key twice returns
   `MalformedOutput` with no prepared findings while preserving the single typed
   deserialization pass. *Evidence type:* malformed process-output mutation
-  test. *Evidence:* planned in `colorful-vale`
+  test. *Evidence:* `colorful-vale`
   `vale_adapter::malformed_outputs_fail_closed_by_category`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered

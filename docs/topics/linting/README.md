@@ -78,9 +78,9 @@ while stdin and captured output drain, including after a wrapper exits while a
 descendant still owns its pipes. Other targets retain direct-child termination.
 Missing configuration, an unavailable engine, unrecognized version output, an
 incompatible engine, timeout, cancellation, process failure, excessive output,
-invalid UTF-8, malformed JSON, invalid alert data, and source-identity mismatch
-are different `ValeErrorKind` values; none silently becomes an empty result or
-a fallback to the built-in rules.
+invalid UTF-8, malformed JSON, duplicate JSON source keys, invalid alert data,
+and source-identity mismatch are different `ValeErrorKind` values; none
+silently becomes an empty result or a fallback to the built-in rules.
 
 ```rust
 use colorful_vale::{CancellationToken, ValeAnalyzer, ValeConfig};
