@@ -551,8 +551,7 @@ After the workflow succeeds, verify public availability:
 
 ```bash
 gh release view vX.Y.Z --json url,tagName,name,publishedAt,assets
-gh release download vX.Y.Z \
-  --pattern "colorful-language-X.Y.Z.vsix"
+gh release download vX.Y.Z
 gh attestation verify colorful-language-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz \
   --repo flyingrobots/colorful-language
 gh attestation verify colorful-language-X.Y.Z.vsix \

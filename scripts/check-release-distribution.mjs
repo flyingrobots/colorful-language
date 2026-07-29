@@ -419,6 +419,15 @@ function validateDocumentation(documentation) {
       throw new Error(`docs/RELEASING.md must include ${text}`);
     }
   }
+  if (
+    !normalizedRunbook.includes(
+      "gh release download vX.Y.Z gh attestation verify",
+    )
+  ) {
+    throw new Error(
+      "release verification must download every release asset before attestation",
+    );
+  }
   const postPublication =
     runbook.indexOf("## Post-publication verification");
   const publicByteVerification =

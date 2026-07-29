@@ -213,8 +213,10 @@ Verification for release preparation, tag automation, and release witnesses.
   `installation timing is ordered observational evidence`;
   `scripts/check-release-distribution.test.mjs`
   `requires every release gate and rollback reference` and
-  `keeps public byte verification after publication`. *Status:* implemented in
-  the runbook and package witness; public rollback rehearsal remains planned.
+  `keeps public byte verification after publication` and
+  `downloads every release asset before integrity verification`. *Status:*
+  implemented in the runbook and package witness; public rollback rehearsal
+  remains planned.
 
 ## Open verification gaps
 
