@@ -36,7 +36,7 @@ Requirements:
   golden, unit, and seeded property suites remain unchanged and pass after the
   split. *Oracle:* exact output/status assertions and property oracles in the
   existing suites. *Evidence type:* characterization and public-contract tests.
-  *Evidence:* `colorful-cli`'s 27 unit tests;
+  *Evidence:* `colorful-cli`'s 29 unit tests;
   `crates/colorful-cli/tests/binary_contract.rs`;
   `crates/colorful-cli/tests/lint_golden_fixtures.rs`;
   `crates/colorful-cli/tests/property_boundaries.rs`.

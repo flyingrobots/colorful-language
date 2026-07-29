@@ -54,6 +54,19 @@ fn stderr(output: &Output) -> &str {
 }
 
 #[test]
+fn default_help_is_a_process_contract() {
+    let output = run(["--help"], b"", false);
+
+    assert_eq!(output.status.code(), Some(0));
+    assert!(stderr(&output).is_empty());
+    assert!(stdout(&output).starts_with(&format!(
+        "colorful {} — color English prose by part of speech\n",
+        env!("CARGO_PKG_VERSION")
+    )));
+    assert!(stdout(&output).contains("USAGE:\n    colorful [OPTIONS] [FILE]\n"));
+}
+
+#[test]
 fn stdin_file_no_color_and_canonical_ir_are_process_contracts() {
     const SOURCE: &str = "The cat connects quickly.\n";
 
