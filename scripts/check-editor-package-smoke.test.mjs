@@ -23,6 +23,9 @@ import {
 
 const VSCODE_DIRECTORY = "editors/vscode";
 const PACKAGE_SMOKE_COMMAND = "npm run smoke:package";
+const PACKAGE_POLICY_COMMAND =
+  "node --test scripts/check-editor-package-smoke.test.mjs";
+const EDITOR_INSTALL_COMMAND = "npm --prefix editors/vscode ci";
 const RELEASE_PACKAGE_SMOKE_COMMAND =
   "npm --prefix editors/vscode run smoke:package";
 const EXPECTED_TOOL_VERSIONS = {
@@ -611,6 +614,36 @@ test("CI runs the headless package smoke from the editor directory", () => {
   const smokeStep = steps.find((step) => step.run === PACKAGE_SMOKE_COMMAND);
   assert.ok(smokeStep, `editors job must run ${PACKAGE_SMOKE_COMMAND}`);
   assert.equal(smokeStep["working-directory"], VSCODE_DIRECTORY);
+});
+
+test("clean gates install editor dependencies before package policy", () => {
+  const workflow = parseYaml(
+    readFileSync(".github/workflows/ci.yml", "utf8"),
+  );
+  const steps = workflow?.jobs?.editors?.steps;
+  assert.ok(Array.isArray(steps), "workflow job editors must have steps");
+  const hostedInstall = steps.findIndex(
+    (step) =>
+      step.run === "npm ci" &&
+      step["working-directory"] === VSCODE_DIRECTORY,
+  );
+  const hostedPolicy = steps.findIndex(
+    (step) => step.run === PACKAGE_POLICY_COMMAND,
+  );
+  assert.ok(
+    hostedInstall >= 0 && hostedPolicy > hostedInstall,
+    "hosted editor dependencies must precede package policy",
+  );
+
+  const commands = readFileSync("scripts/release-prep.sh", "utf8")
+    .split(/\r?\n/u)
+    .map((line) => line.trim());
+  const localInstall = commands.indexOf(EDITOR_INSTALL_COMMAND);
+  const localPolicy = commands.indexOf(PACKAGE_POLICY_COMMAND);
+  assert.ok(
+    localInstall >= 0 && localPolicy > localInstall,
+    "release-prep editor dependencies must precede package policy",
+  );
 });
 
 test("release preparation reruns the packaged editor smoke", () => {
