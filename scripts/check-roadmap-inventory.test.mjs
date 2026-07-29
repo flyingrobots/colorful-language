@@ -249,6 +249,19 @@ test("rejects a closing-hash heading before the canonical authority", () => {
   );
 });
 
+test("reports a missing canonical section for repeated closing-hash headings", () => {
+  expectCategory(
+    "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
+    (source) => `${source.replace(
+      "## Architecture accountability",
+      "## Architecture accountability ##",
+    )}
+
+## Architecture accountability ##
+`,
+  );
+});
+
 test("ignores table-like examples outside the accountability table", () => {
   for (const block of [
     ["```markdown", "| Example | Only |", "```"].join("\n"),

@@ -373,6 +373,28 @@ function accountabilityHeaderKind(mechanism, location) {
     : undefined;
 }
 
+function rejectDuplicateAccountabilityHeading(
+  location,
+  accountabilitySectionLocation,
+  displayEquivalentAccountabilitySectionLocation,
+) {
+  const previousLocation =
+    accountabilitySectionLocation ??
+    displayEquivalentAccountabilitySectionLocation;
+  if (previousLocation === undefined) {
+    return;
+  }
+  const previousKind =
+    accountabilitySectionLocation === undefined
+      ? "display-equivalent heading"
+      : "canonical heading";
+  fail(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+    location,
+    `${previousKind} already appears at ${previousLocation}`,
+  );
+}
+
 function validateArchitectureAccountability(roadmap, roadmapPath) {
   const mechanisms = new Map();
   let inAccountabilitySection = false;
@@ -445,23 +467,11 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
     if (isCanonicalAccountabilityHeading(line)) {
       const location = `${roadmapPath}:${index + 1}`;
-      if (
-        foundAccountabilitySection ||
-        displayEquivalentAccountabilitySectionLocation !== undefined
-      ) {
-        const previousLocation =
-          accountabilitySectionLocation ??
-          displayEquivalentAccountabilitySectionLocation;
-        const previousKind =
-          accountabilitySectionLocation === undefined
-            ? "display-equivalent heading"
-            : "canonical heading";
-        fail(
-          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
-          location,
-          `${previousKind} already appears at ${previousLocation}`,
-        );
-      }
+      rejectDuplicateAccountabilityHeading(
+        location,
+        accountabilitySectionLocation,
+        displayEquivalentAccountabilitySectionLocation,
+      );
       inAccountabilitySection = true;
       foundAccountabilitySection = true;
       accountabilitySectionLocation = location;
@@ -469,24 +479,14 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
     if (isAccountabilityHeadingWithClosingHashes(line)) {
       const location = `${roadmapPath}:${index + 1}`;
-      if (
-        foundAccountabilitySection ||
-        displayEquivalentAccountabilitySectionLocation !== undefined
-      ) {
-        const previousLocation =
-          accountabilitySectionLocation ??
-          displayEquivalentAccountabilitySectionLocation;
-        const previousKind =
-          accountabilitySectionLocation === undefined
-            ? "display-equivalent heading"
-            : "canonical heading";
-        fail(
-          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+      if (foundAccountabilitySection) {
+        rejectDuplicateAccountabilityHeading(
           location,
-          `${previousKind} already appears at ${previousLocation}`,
+          accountabilitySectionLocation,
+          undefined,
         );
       }
-      displayEquivalentAccountabilitySectionLocation = location;
+      displayEquivalentAccountabilitySectionLocation ??= location;
       continue;
     }
     const commentScan = stripClosedInlineHtmlComments(line);
@@ -520,24 +520,14 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
 
     if (isCanonicalAccountabilityHeading(line)) {
       const location = `${roadmapPath}:${index + 1}`;
-      if (
-        foundAccountabilitySection ||
-        displayEquivalentAccountabilitySectionLocation !== undefined
-      ) {
-        const previousLocation =
-          accountabilitySectionLocation ??
-          displayEquivalentAccountabilitySectionLocation;
-        const previousKind =
-          accountabilitySectionLocation === undefined
-            ? "display-equivalent heading"
-            : "canonical heading";
-        fail(
-          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+      if (foundAccountabilitySection) {
+        rejectDuplicateAccountabilityHeading(
           location,
-          `${previousKind} already appears at ${previousLocation}`,
+          accountabilitySectionLocation,
+          undefined,
         );
       }
-      displayEquivalentAccountabilitySectionLocation = location;
+      displayEquivalentAccountabilitySectionLocation ??= location;
       continue;
     }
     if (inAccountabilitySection && isRoadmapLevelTwoHeading(line)) {
