@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import {
+  generateHomebrewFormula,
   HomebrewFormulaError,
   parseChecksumSidecar,
   renderHomebrewFormula,
@@ -9,6 +15,11 @@ import {
 
 const linuxChecksum = "a".repeat(64);
 const macosChecksum = "b".repeat(64);
+const version = "0.4.0";
+const archiveTargets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-apple-darwin",
+];
 
 const expectedFormula = `class Colorful < Formula
   desc "Deterministic English structure coloring and prose linting"
@@ -50,6 +61,31 @@ function assertFormulaError(action, code) {
       error.code === code &&
       error.message.startsWith(`${code}: `),
   );
+}
+
+function digest(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
+async function withReleaseArchives(action) {
+  const distDir = await mkdtemp(
+    path.join(tmpdir(), "colorful-homebrew-formula-"),
+  );
+  try {
+    for (const target of archiveTargets) {
+      const archive = `colorful-language-v${version}-${target}.tar.gz`;
+      const bytes = Buffer.from(`fixture:${target}\n`, "utf8");
+      await writeFile(path.join(distDir, archive), bytes);
+      await writeFile(
+        path.join(distDir, `${archive}.sha256`),
+        `${digest(bytes)}  ${archive}\n`,
+        "utf8",
+      );
+    }
+    return await action(distDir);
+  } finally {
+    await rm(distDir, { force: true, recursive: true });
+  }
 }
 
 test("renders exact synchronized Homebrew formula bytes", () => {
@@ -127,4 +163,67 @@ test("rejects malformed or mismatched checksum sidecars", () => {
       "invalid-sidecar",
     );
   }
+});
+
+test("loads checksums only after verifying the exact native archives", async () => {
+  await withReleaseArchives(async (distDir) => {
+    const formula = await generateHomebrewFormula({ distDir, version });
+    for (const target of archiveTargets) {
+      assert.match(
+        formula,
+        new RegExp(
+          `colorful-language-v0\\.4\\.0-${target}\\.tar\\.gz`,
+          "u",
+        ),
+      );
+    }
+  });
+});
+
+test("rejects missing native archives even when a sidecar exists", async () => {
+  await withReleaseArchives(async (distDir) => {
+    const target = archiveTargets[0];
+    const archive = `colorful-language-v${version}-${target}.tar.gz`;
+    await rm(path.join(distDir, archive));
+    await assert.rejects(
+      generateHomebrewFormula({ distDir, version }),
+      (error) =>
+        error instanceof HomebrewFormulaError &&
+        error.code === "missing-archive",
+    );
+  });
+});
+
+test("rejects native bytes that do not match their sidecar", async () => {
+  await withReleaseArchives(async (distDir) => {
+    const target = archiveTargets[1];
+    const archive = `colorful-language-v${version}-${target}.tar.gz`;
+    await writeFile(path.join(distDir, archive), "mutated archive\n", "utf8");
+    await assert.rejects(
+      generateHomebrewFormula({ distDir, version }),
+      (error) =>
+        error instanceof HomebrewFormulaError &&
+        error.code === "checksum-mismatch",
+    );
+  });
+});
+
+test("the CLI emits the verified formula on stdout only", async () => {
+  await withReleaseArchives(async (distDir) => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(import.meta.dirname, "generate-homebrew-formula.mjs"),
+        "--version",
+        version,
+        "--dist-dir",
+        distDir,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stderr, "");
+    assert.match(result.stdout, /^class Colorful < Formula\n/u);
+    assert.match(result.stdout, /\nend\n$/u);
+  });
 });

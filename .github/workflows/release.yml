@@ -79,6 +79,9 @@ jobs:
       - name: Check release distribution policy
         run: node scripts/check-release-distribution.mjs
 
+      - name: Self-test Homebrew formula generation
+        run: node --test scripts/generate-homebrew-formula.test.mjs
+
       - name: Validate Rust formatting
         run: cargo fmt --all -- --check
 
@@ -221,6 +224,16 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: Generate Homebrew formula
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          node scripts/generate-homebrew-formula.mjs \
+            --version "$version" \
+            --dist-dir dist \
+            > dist/colorful.rb
+          ruby -c dist/colorful.rb
+
       - name: Build and smoke editor packages
         run: |
           set -euo pipefail
@@ -238,12 +251,13 @@ jobs:
             sha256sum "$zed_archive" > "${zed_archive}.sha256"
           )
 
-      - name: Attest editor artifacts
+      - name: Attest Homebrew and editor artifacts
         uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
         with:
           subject-path: |
             target/editor-smoke/*.vsix
             dist/*zed-source.tar.gz
+            dist/colorful.rb
 
       - name: Verify and publish VS Marketplace extension
         env:

@@ -95,10 +95,22 @@ Verification for install paths and published artifacts.
   formula bytes; one mutation per refused input produces a stable error
   category; workflow-order evidence proves formula generation consumes the
   already-built native artifacts rather than rebuilding them. *Evidence type:*
-  deterministic generator tests, release-policy tests, and an available-host
-  Homebrew smoke script. *Tracking:*
+  deterministic generator, archive-integrity, and release-policy mutation
+  tests. *Tracking:*
   [#251](https://github.com/flyingrobots/colorful-language/issues/251).
-  *Status:* planned.
+  *Evidence:* `scripts/generate-homebrew-formula.mjs`;
+  `scripts/generate-homebrew-formula.test.mjs`
+  `renders exact synchronized Homebrew formula bytes`,
+  `rejects missing native archives even when a sidecar exists`,
+  `rejects native bytes that do not match their sidecar`, and
+  `the CLI emits the verified formula on stdout only`;
+  `scripts/check-release-distribution.test.mjs`
+  `rejects every Homebrew policy mutation` and
+  `derives and attests Homebrew formulae from downloaded native assets`;
+  `.github/workflows/release.yml`; `.github/workflows/ci.yml`;
+  `scripts/release-prep.sh`. *Status:* implemented for generation, syntax, and
+  release attachment; public tap audit/install/upgrade/rollback evidence
+  remains planned in DIST-6a.
 
 ## Open verification gaps
 

@@ -11,6 +11,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FULL_ACTION_SHA = /^[^@\s]+@[0-9a-f]{40}$/u;
 
 export const CHECK_COMMAND = "node scripts/check-release-distribution.mjs";
+export const HOMEBREW_SELF_TEST_COMMAND =
+  "node --test scripts/generate-homebrew-formula.test.mjs";
 export const PUBLICATION_SELF_TEST_COMMAND =
   "node --test scripts/verify-editor-publication.test.mjs";
 export const EXPECTED_OWNER = "@flyingrobots";
@@ -48,14 +50,36 @@ export const EXPECTED_EDITOR_POLICY = Object.freeze({
     publication: "pull-request",
   }),
 });
+export const EXPECTED_HOMEBREW_POLICY = Object.freeze({
+  formula: "dist/colorful.rb",
+  binaries: Object.freeze(["colorful", "colorful-lsp"]),
+  platforms: Object.freeze([
+    Object.freeze({
+      os: "linux",
+      arch: "x86_64",
+      target: "x86_64-unknown-linux-gnu",
+    }),
+    Object.freeze({
+      os: "macos",
+      arch: "arm64",
+      target: "aarch64-apple-darwin",
+    }),
+  ]),
+  publication: Object.freeze({
+    authority: "github-release-asset",
+    tap: null,
+    tracking_issue: 37,
+  }),
+});
 export const EXPECTED_PUBLISHER_TOOLS = Object.freeze({
   "@vscode/vsce": "3.9.2",
   ovsx: "1.0.2",
 });
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Download native archives",
+  "Generate Homebrew formula",
   "Build and smoke editor packages",
-  "Attest editor artifacts",
+  "Attest Homebrew and editor artifacts",
   "Verify and publish VS Marketplace extension",
   "Verify and publish Open VSX extension",
   "Verify published editor bytes",
@@ -66,6 +90,7 @@ const REQUIRED_ADMISSION_COMMANDS = Object.freeze([
   "bash scripts/release-profile-check.sh",
   "node scripts/check-editor-version-policy.mjs",
   CHECK_COMMAND,
+  HOMEBREW_SELF_TEST_COMMAND,
   "cargo fmt --all -- --check",
   "cargo clippy --locked --all-targets --all-features -- -D warnings",
   "cargo test --all --locked",
@@ -341,6 +366,32 @@ function validateReleaseJob(job) {
     throw new Error(`${context} must download native archives into dist`);
   }
 
+  const homebrew = requiredStep(
+    steps,
+    "Generate Homebrew formula",
+    context,
+  );
+  const homebrewSource = String(homebrew.run ?? "");
+  for (const required of [
+    'version="${GITHUB_REF_NAME#v}"',
+    "node scripts/generate-homebrew-formula.mjs",
+    '--version "$version"',
+    "--dist-dir dist",
+    "> dist/colorful.rb",
+    "ruby -c dist/colorful.rb",
+  ]) {
+    if (!homebrewSource.includes(required)) {
+      throw new Error(
+        `${context} Homebrew generation must include ${required}`,
+      );
+    }
+  }
+  if (/\bcargo\s+(?:build|install|package)\b/u.test(homebrewSource)) {
+    throw new Error(
+      `${context} Homebrew generation must not rebuild native artifacts`,
+    );
+  }
+
   const marketplace = requiredStep(
     steps,
     "Verify and publish VS Marketplace extension",
@@ -386,11 +437,21 @@ function validateReleaseJob(job) {
     );
   }
 
-  const attest = requiredStep(steps, "Attest editor artifacts", context);
+  const attest = requiredStep(
+    steps,
+    "Attest Homebrew and editor artifacts",
+    context,
+  );
   requirePinnedAction(attest, "actions/attest", context);
   const attested = String(attest.with?.["subject-path"] ?? "");
-  if (!attested.includes("*.vsix") || !attested.includes("*zed-source.tar.gz")) {
-    throw new Error(`${context} must attest the VSIX and Zed source archive`);
+  if (
+    !attested.includes("*.vsix") ||
+    !attested.includes("*zed-source.tar.gz") ||
+    !attested.includes("dist/colorful.rb")
+  ) {
+    throw new Error(
+      `${context} must attest the formula, VSIX, and Zed source archive`,
+    );
   }
 
   const vsixAssignment =
@@ -535,6 +596,11 @@ export function validateReleaseDistribution(snapshot) {
       ".continuum/release.yml editor distribution policy has drifted",
     );
   }
+  if (!isDeepStrictEqual(policy.homebrew, EXPECTED_HOMEBREW_POLICY)) {
+    throw new Error(
+      ".continuum/release.yml Homebrew distribution policy has drifted",
+    );
+  }
   if (
     !isDeepStrictEqual(snapshot.publisherTools, EXPECTED_PUBLISHER_TOOLS)
   ) {
@@ -564,6 +630,11 @@ export function validateReleaseDistribution(snapshot) {
     CHECK_COMMAND,
   );
   validateGateCommands(
+    snapshot.gates,
+    ["ci", "release", "releasePrep"],
+    HOMEBREW_SELF_TEST_COMMAND,
+  );
+  validateGateCommands(
     snapshot.publicationVerificationGates,
     ["ci", "releasePrep"],
     PUBLICATION_SELF_TEST_COMMAND,
@@ -573,6 +644,7 @@ export function validateReleaseDistribution(snapshot) {
   return {
     owner: policy.owner,
     platformCount: policy.binaries.length,
+    homebrewPlatformCount: policy.homebrew.platforms.length,
     editorRegistryCount: policy.editors.vscode.registries.length + 1,
   };
 }
@@ -641,7 +713,7 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
   try {
     const result = validateReleaseDistribution(loadRepositorySnapshot());
     process.stdout.write(
-      `check-release-distribution passed: ${result.platformCount} native platforms, ${result.editorRegistryCount} editor registries\n`,
+      `check-release-distribution passed: ${result.platformCount} native platforms, ${result.homebrewPlatformCount} Homebrew platforms, ${result.editorRegistryCount} editor registries\n`,
     );
   } catch (error) {
     process.stderr.write(`check-release-distribution: ${error.message}\n`);

@@ -38,6 +38,19 @@ current install claims. No macOS, Windows, VS Code Marketplace, Open VSX, or Zed
 public URL is documented as available until the tagged workflow and external
 registries provide verification evidence.
 
+The same tag workflow generates `colorful.rb` only after downloading the
+already-built Linux x86-64 and Apple Silicon archives. The generator requires
+the canonical archive names, reads their exact SHA-256 sidecars, streams each
+archive to verify its digest, emits deterministic formula bytes, checks Ruby
+syntax, and includes the formula in GitHub/Sigstore provenance. The formula
+installs the synchronized `colorful` and `colorful-lsp` binaries from one
+archive and tests the CLI version plus server executable presence.
+
+This is release machinery, not a public Homebrew channel. The formula is
+prepared as a GitHub Release asset; no tap is declared or documented as
+available. Public `brew install`, upgrade, and rollback evidence remains
+tracked by [#37](https://github.com/flyingrobots/colorful-language/issues/37).
+
 For source-checkout development, especially with Graft or jedit, install the
 local CLI into a stable user directory:
 
@@ -69,10 +82,10 @@ ordinary crates.io packages.
 
 ## Known gaps
 
-There is no Homebrew formula or tap yet. That belongs to a separate packaging
-slice because it needs release assets, install docs, and smoke tests for a
-different distribution channel; the canonical tracker is
-[#37](https://github.com/flyingrobots/colorful-language/issues/37).
+There is no public Homebrew tap yet. The tag workflow can generate and attest
+the formula release asset, but a normal `brew install` claim still needs a
+public channel, clean-machine evidence, upgrade proof, and rollback proof; the
+canonical tracker is [#37](https://github.com/flyingrobots/colorful-language/issues/37).
 
 There are no publicly verified native macOS or Windows binary archives yet.
 Signed editor artifacts, public registry URLs, and clean-install/rollback

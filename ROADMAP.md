@@ -330,12 +330,12 @@ was installed, and reach the first useful editor result.
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   <!-- roadmap-primary: delivered #245 -->
   <!-- roadmap-primary: active #154 -->
-- **Active operator installation:** generate and verify one formula from the
+- **Delivered operator-install machinery:** generate and verify one formula from
   synchronized native CLI/LSP archives
   [#251](https://github.com/flyingrobots/colorful-language/issues/251), then
   publish it through Homebrew and retain clean-machine upgrade/rollback proof
   under [#37](https://github.com/flyingrobots/colorful-language/issues/37).
-  <!-- roadmap-primary: active #251 -->
+  <!-- roadmap-primary: delivered #251 -->
   <!-- roadmap-primary: active #37 -->
 - **Delivered public surfaces and ownership:** the repository profile sets the
   maintained README homepage, records that Discussions are not a supported

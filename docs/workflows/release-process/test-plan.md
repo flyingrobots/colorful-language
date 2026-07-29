@@ -242,7 +242,15 @@ Verification for release preparation, tag automation, and release witnesses.
   omitted from release assets. *Evidence type:* deterministic generator and
   release-policy mutation tests. *Tracking:*
   [#251](https://github.com/flyingrobots/colorful-language/issues/251).
-  *Status:* planned.
+  *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `scripts/generate-homebrew-formula.mjs`;
+  `scripts/generate-homebrew-formula.test.mjs`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `derives and attests Homebrew formulae from downloaded native assets`;
+  `.github/workflows/ci.yml`; `scripts/release-prep.sh`. *Status:* implemented
+  for the GitHub Release formula; public tap publication remains planned under
+  [#37](https://github.com/flyingrobots/colorful-language/issues/37).
 
 ## Open verification gaps
 
