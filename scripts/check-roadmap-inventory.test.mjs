@@ -158,6 +158,19 @@ test("rejects a duplicate architecture-accountability mechanism by line", () => 
   }
 });
 
+test("processes active table rows before Setext heading lookahead", () => {
+  const mechanismRow =
+    "| Parser \\| analyzer ports | Analyze deterministic structure. |";
+  for (const underline of ["---", "==="]) {
+    expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
+      source.replace(
+        mechanismRow,
+        [mechanismRow, mechanismRow, underline].join("\n"),
+      ),
+    );
+  }
+});
+
 test("rejects a missing canonical architecture-accountability section", () => {
   for (const replacement of [
     "## Architecture Accountability",

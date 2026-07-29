@@ -256,16 +256,17 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   later valid table, delimiter/header arity mismatches, a missing first-cell
   closing pipe, non-breaking-space-padded header and delimiter cells,
   compact/multi-space/tab-padded no-leading-pipe headers, a no-leading-pipe
-  continuing data row, indented code plus fenced and commented table-shaped
-  examples, raw HTML block variants with boolean, unquoted, single-quoted,
-  double-quoted, and self-closing generic tags, a type-7 generic tag inside an
-  open paragraph followed by a structural heading, plus a source-policy guard
-  against overlapping attribute separators, an indented comment opener
-  followed by a visible table, invalid backtick-fence info strings plus valid
-  tilde-fence controls, multiline comments that open after visible text or an
-  unmatched backtick, a visible duplicate mechanism split by a closed inline
-  HTML comment, a duplicate table beginning after a multiline comment closer,
-  a multiline comment beginning on a visible table row, and post-table prose
+  continuing data row, duplicate final rows followed by each Setext underline
+  form, indented code plus fenced and commented table-shaped examples, raw HTML
+  block variants with boolean, unquoted, single-quoted, double-quoted, and
+  self-closing generic tags, a type-7 generic tag inside an open paragraph
+  followed by a structural heading, plus a source-policy guard against
+  overlapping attribute separators, an indented comment opener followed by a
+  visible table, invalid backtick-fence info strings plus valid tilde-fence
+  controls, multiline comments that open after visible text or an unmatched
+  backtick, a visible duplicate mechanism split by a closed inline HTML
+  comment, a duplicate table beginning after a multiline comment closer, a
+  multiline comment beginning on a visible table row, and post-table prose
   controls containing a literal or inline-code pipe plus a comment-shaped
   inline-code literal control, inline-code styling and longer internal backtick
   runs, an empty identity, invalid escaping inside and outside inline code,

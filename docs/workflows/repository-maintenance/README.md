@@ -241,7 +241,9 @@ The same offline structure gate applies these fail-closed rules:
   explicitly instead of being silently ignored, whether a header delimiter is
   compact, space-padded, or tab-padded. Only contiguous canonical rows are
   authoritative. Skipped blocks terminate the table even without a separating
-  blank line.
+  blank line. While the canonical table is active, a pipe-delimited row is
+  validated before any following `---` or `===` line can make it look like a
+  Setext heading.
 - **Non-authoritative blocks:** Indented code, CommonMark fences, raw HTML
   blocks, and HTML comments cannot stand in for the table. Raw-text elements,
   processing instructions, declarations, CDATA, block tags, and complete

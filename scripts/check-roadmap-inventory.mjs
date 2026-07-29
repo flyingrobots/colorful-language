@@ -854,7 +854,8 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     if (
       inAccountabilitySection &&
       (isRoadmapPeerOrHigherAtxHeading(line) ||
-        isRoadmapSetextHeading(line, nextLine))
+        (accountabilityTableState !== "rows" &&
+          isRoadmapSetextHeading(line, nextLine)))
     ) {
       paragraphOpen = false;
       inAccountabilitySection = false;
