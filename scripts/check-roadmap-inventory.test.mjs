@@ -117,21 +117,25 @@ test("rejects a missing canonical architecture-accountability section", () => {
 });
 
 test("ignores table-like examples outside the accountability table", () => {
-  const withExample = `${roadmap}
+  for (const block of [
+    ["```markdown", "| Example | Only |", "```"].join("\n"),
+    ["<!--", "| Example | Only |", "-->"].join("\n"),
+  ]) {
+    const withExample = [
+      roadmap.trimEnd(),
+      block,
+      "| Parser ports | Historical example only. |",
+    ].join("\n");
 
-\`\`\`markdown
-| Parser ports | Historical example only. |
-\`\`\`
-`;
-
-  assert.doesNotThrow(() =>
-    validateRoadmapInventory({
-      roadmap: withExample,
-      issues,
-      roadmapPath: "fixture/roadmap.md",
-      issuePath: "fixture/issues.json",
-    }),
-  );
+    assert.doesNotThrow(() =>
+      validateRoadmapInventory({
+        roadmap: withExample,
+        issues,
+        roadmapPath: "fixture/roadmap.md",
+        issuePath: "fixture/issues.json",
+      }),
+    );
+  }
 });
 
 test("rejects a missing architecture-accountability table", () => {

@@ -210,6 +210,11 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
 
     const openingFence = line.match(/^ {0,3}(`{3,}|~{3,}).*$/u);
     if (openingFence !== null) {
+      if (accountabilityTableState === "rows") {
+        accountabilityTableState = "complete";
+      } else if (accountabilityTableState === "delimiter") {
+        accountabilityTableState = "searching";
+      }
       fenceCharacter = openingFence[1][0];
       fenceLength = openingFence[1].length;
       continue;
@@ -219,6 +224,11 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       commentStart !== -1 &&
       line.slice(0, commentStart).trim().length === 0
     ) {
+      if (accountabilityTableState === "rows") {
+        accountabilityTableState = "complete";
+      } else if (accountabilityTableState === "delimiter") {
+        accountabilityTableState = "searching";
+      }
       inHtmlComment = !line.slice(commentStart + 4).includes("-->");
       continue;
     }
