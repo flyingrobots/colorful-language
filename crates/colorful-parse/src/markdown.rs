@@ -278,6 +278,21 @@ mod tests {
     }
 
     #[test]
+    fn destination_masking_follows_commonmark_admission() {
+        let malformed = "Ordinary prose can contain text](really) literally.";
+        let autolink = "Visit <https://really.example/weak> for prose.";
+        let reference =
+            "[really weak][ref]\n\n[ref]: https://example.invalid/really \"really weak title\"\n";
+
+        assert_eq!(mask_non_prose(malformed), malformed);
+        assert_masked(autolink, "<https://really.example/weak>");
+        assert_masked(
+            reference,
+            "[ref]: https://example.invalid/really \"really weak title\"",
+        );
+    }
+
+    #[test]
     fn inline_html_markup_is_suppressed_but_its_text_remains_prose() {
         let source = "Prose <span class=\"really\">really weak</span> prose.";
         let masked = mask_non_prose(source);
