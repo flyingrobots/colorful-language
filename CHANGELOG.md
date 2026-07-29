@@ -14,8 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   versioned tracking issue and packet. Slice issues therefore keep their
   goalpost milestone instead of being moved into a competing version bucket.
   The repository and release profiles, contributor/agent guidance, roadmap,
-  release references, and deterministic maintenance mutations reject a
-  reintroduced release-milestone format or stale ownership claim.
+  and release references document that split.
+  `scripts/release-profile-check.sh` and
+  `scripts/check-repository-maintenance.mjs`, backed by deterministic
+  maintenance mutations, reject a reintroduced release-milestone format or
+  stale ownership claim.
 - **Verified Homebrew formula release asset.** Tagged releases now derive one
   deterministic `colorful.rb` from the already-built Linux x86-64 and Apple
   Silicon archives, require canonical SHA-256 sidecars, stream the archive bytes
