@@ -33,6 +33,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-15** Distribution verification and rollback must name an owner, public
   URL and integrity oracle for every channel; observational startup timing must
   remain separate from deterministic correctness gates.
+- **REL-16** Homebrew formula generation must consume the reviewed native
+  archives and checksums after they are built, without rebuilding or
+  repackaging release binaries.
 
 ## Cases
 
@@ -227,6 +230,19 @@ Verification for release preparation, tag automation, and release witnesses.
   `verifies checksums and provenance for the complete release matrix`.
   *Status:* implemented in the runbook and package witness; public rollback
   rehearsal remains planned.
+- **REL-16a** — *Requirement:* REL-16. *Behavior:* after the release job
+  downloads and verifies every native archive and checksum, it derives one
+  deterministic Homebrew formula for the supported Linux x86-64 and Apple
+  Silicon archives, subjects the formula to release policy and available-host
+  Homebrew checks, and attaches it to the same immutable GitHub Release. The
+  formula installs the CLI and LSP from those archives; public tap publication
+  and clean-machine rollback proof remain separate authority. *Oracle:* workflow
+  mutations reject generation before native download, missing or mismatched
+  checksum inputs, rebuilt binaries, unsupported platform claims, and a formula
+  omitted from release assets. *Evidence type:* deterministic generator and
+  release-policy mutation tests. *Tracking:*
+  [#251](https://github.com/flyingrobots/colorful-language/issues/251).
+  *Status:* planned.
 
 ## Open verification gaps
 

@@ -87,7 +87,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — generate portable admission** | Consumers no longer hand-maintain structural wire validation after generation compatibility and module ownership became explicit. | #222 derives both JavaScript runtimes from generation SDLs, retains named semantic checks, and reports generated burden separately. |
 | **Delivered — test analyzer substitution** | An optional external-analyzer adapter proves that the pure port can provide useful substitution without making an external engine mandatory. | #157 keeps Vale v3 process failures outside the pure port, proves built-in/external CLI/LSP parity, and leaves both production binaries Vale-free. |
 | **Delivered — bound external-adapter failures** | A malformed optional-engine response cannot multiply or reproduce process-controlled content in an operator-visible error. | #235 caps and redacts every invalid-alert path before distribution work expands the reachable surface. |
-| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #245 implements the repository machinery while #154 retains public publication proof. |
+| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #245 implements the repository machinery, #251 derives the Homebrew formula from its native artifacts, and #154 retains public publication proof. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
 
@@ -177,6 +177,11 @@ observe public-contract regressions before they ship.
   architecture decision cannot drift through two apparent authorities
   [#243](https://github.com/flyingrobots/colorful-language/issues/243).
   <!-- roadmap-primary: delivered #243 -->
+- **Parked roadmap-parser simplification:** replace the bespoke Markdown
+  recognition surface behind roadmap accountability only after characterization
+  preserves its fail-closed policy and diagnostics
+  [#250](https://github.com/flyingrobots/colorful-language/issues/250).
+  <!-- roadmap-primary: parked #250 -->
 - **Delivered process-test determinism:** replace the Vale timeout fixture's
   scheduler race with an explicit test-only worker-ready seam while preserving
   production timeout and descendant-cleanup postconditions
@@ -325,9 +330,12 @@ was installed, and reach the first useful editor result.
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   <!-- roadmap-primary: delivered #245 -->
   <!-- roadmap-primary: active #154 -->
-- **Operator installation:** package the CLI, and decide the server boundary,
-  for Homebrew
-  [#37](https://github.com/flyingrobots/colorful-language/issues/37).
+- **Active operator installation:** generate and verify one formula from the
+  synchronized native CLI/LSP archives
+  [#251](https://github.com/flyingrobots/colorful-language/issues/251), then
+  publish it through Homebrew and retain clean-machine upgrade/rollback proof
+  under [#37](https://github.com/flyingrobots/colorful-language/issues/37).
+  <!-- roadmap-primary: active #251 -->
   <!-- roadmap-primary: active #37 -->
 - **Delivered public surfaces and ownership:** the repository profile sets the
   maintained README homepage, records that Discussions are not a supported

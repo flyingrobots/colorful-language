@@ -20,6 +20,9 @@ Verification for install paths and published artifacts.
 - **DIST-7** Published editor and server artifacts must have public registry or
   release URLs, integrity evidence, clean-machine installation evidence, and
   rollback instructions.
+- **DIST-8** The repository-controlled Homebrew formula must be generated from
+  exact reviewed native-archive identities, install the synchronized CLI and
+  LSP binaries together, and fail closed before public tap publication.
 
 ## Cases
 
@@ -81,6 +84,20 @@ Verification for install paths and published artifacts.
   activation, binary version, and rollback result equality. *Evidence type:*
   release-matrix witness and clean-machine process tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Status:* planned.
+- **DIST-8a** — *Requirement:* DIST-8. *Behavior:* an exact release version,
+  Linux x86-64 and Apple Silicon archive URLs, and their SHA-256 sidecars
+  deterministically produce one Homebrew formula that installs `colorful` and
+  `colorful-lsp`; malformed versions, checksums, missing platforms, and archive
+  name drift fail before formula output. The formula tests the supported
+  `colorful --version` contract and executable presence for `colorful-lsp`
+  without inventing a server version flag. *Oracle:* fixed inputs produce exact
+  formula bytes; one mutation per refused input produces a stable error
+  category; workflow-order evidence proves formula generation consumes the
+  already-built native artifacts rather than rebuilding them. *Evidence type:*
+  deterministic generator tests, release-policy tests, and an available-host
+  Homebrew smoke script. *Tracking:*
+  [#251](https://github.com/flyingrobots/colorful-language/issues/251).
   *Status:* planned.
 
 ## Open verification gaps
