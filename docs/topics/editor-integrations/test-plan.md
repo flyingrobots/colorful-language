@@ -270,12 +270,30 @@ Verification for editor adapters and the `colorful-lsp` surface.
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.
 - **EDIT-10b** — *Requirement:* EDIT-10. *Behavior:* publication evidence
-  includes a text-equivalent visual demo, a reviewed theme/fallback result, and
-  install-to-first-highlight timing without making the network-dependent timing
-  a correctness gate. *Oracle:* the demo exposes the expected roles in text and
-  pixels; the timing report names hardware, toolchain, package versions, and
-  start/stop events. *Evidence type:* reviewed visual artifact and observational
-  performance report. *Tracking:*
+  includes a text-equivalent visual demo and install-to-first-highlight timing
+  without making host-dependent timing a correctness gate. *Oracle:* the demo
+  exposes the expected roles in text and pixels with at least 4.5:1 custom-role
+  contrast; the timing witness names hardware, toolchain, package versions,
+  start/stop events, and no correctness threshold. *Evidence type:* accessible
+  visual artifact and observational package witness. *Tracking:*
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Evidence:*
+  `docs/topics/editor-integrations/assets/semantic-role-demo.svg`;
+  `docs/topics/editor-integrations/README.md`;
+  `editors/vscode/smoke/timing-witness.mjs`;
+  `editors/vscode/smoke/run-packaged-smoke.mjs`;
+  `scripts/check-editor-package-smoke.test.mjs`
+  `installation timing is ordered observational evidence` and
+  `the visual demo has a text-equivalent accessible role mapping`. *Status:*
+  implemented.
+- **EDIT-10c** — *Requirement:* EDIT-10. *Behavior:* the public release witness
+  records a reviewed theme/fallback result and the observational
+  install-to-first-highlight measurement from a clean installation of the
+  published bytes, including the exact public URLs and environment. *Oracle:*
+  the public VSIX digest equals the smoke witness; expected roles and
+  diagnostics appear; timing event order and environment are complete.
+  *Evidence type:* public registry metadata, clean-machine visual review, and
+  release witness. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.
 - **EDIT-15a** — *Requirement:* EDIT-15. *Behavior:* a Markdown document with

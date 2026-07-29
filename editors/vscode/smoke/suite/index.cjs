@@ -166,6 +166,7 @@ async function exerciseDocument(filename, languageId) {
   });
   assertWeakWordDiagnostic(diagnostics);
   await assertSemanticTokens(document);
+  const firstHighlightAtUnixMs = Date.now();
 
   const edit = new vscode.WorkspaceEdit();
   edit.replace(
@@ -179,6 +180,7 @@ async function exerciseDocument(filename, languageId) {
     return current.length === 0;
   });
   await assertSemanticTokens(document);
+  return firstHighlightAtUnixMs;
 }
 
 async function run() {
@@ -189,7 +191,25 @@ async function run() {
   const mode = requiredEnv("COLORFUL_SMOKE_MODE");
   if (mode === "success") {
     await configureServer(requiredEnv("COLORFUL_LSP_BIN"));
-    await exerciseDocument("editor-smoke.txt", "plaintext");
+    const firstHighlightAtUnixMs = await exerciseDocument(
+      "editor-smoke.txt",
+      "plaintext",
+    );
+    const installationStartedAtUnixMs = Number(
+      requiredEnv("COLORFUL_INSTALL_STARTED_AT_UNIX_MS"),
+    );
+    assert.ok(
+      Number.isSafeInteger(installationStartedAtUnixMs),
+      "installation timing start must be a safe integer",
+    );
+    fs.writeFileSync(
+      requiredEnv("COLORFUL_TIMING_PATH"),
+      `${JSON.stringify({
+        endEvent: "first-plaintext-diagnostic-and-semantic-tokens",
+        installationStartedAtUnixMs,
+        firstHighlightAtUnixMs,
+      })}\n`,
+    );
     await exerciseDocument("editor-smoke.md", "markdown");
     await waitFor("installed extension activation", () => extension.isActive);
     return;

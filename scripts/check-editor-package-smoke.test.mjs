@@ -35,6 +35,7 @@ const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/smoke/log-files.mjs",
   "editors/vscode/smoke/run-packaged-smoke.mjs",
   "editors/vscode/smoke/suite/index.cjs",
+  "editors/vscode/smoke/timing-witness.mjs",
   "scripts/stage-zed-extension.mjs",
 ];
 
@@ -94,6 +95,170 @@ test("the committed package harness has every portable evidence boundary", () =>
   for (const path of EXPECTED_HARNESS_PATHS) {
     assert.equal(existsSync(path), true, `missing package evidence: ${path}`);
   }
+});
+
+test("installation timing is ordered observational evidence", async () => {
+  const { createInstallationTimingWitness } = await import(
+    "../editors/vscode/smoke/timing-witness.mjs"
+  );
+  const witness = createInstallationTimingWitness({
+    installationStartedAtUnixMs: 1_000,
+    firstHighlightAtUnixMs: 1_375,
+    environment: {
+      architecture: "arm64",
+      cpu: "Example CPU",
+      extension: "flyingrobots.colorful-language@0.4.0",
+      logicalCpuCount: 8,
+      memoryBytes: 16_000_000_000,
+      node: "v22.23.1",
+      operatingSystem: "darwin 25.0.0",
+      rustc: "rustc 1.97.1",
+      server: "colorful-lsp@0.4.0",
+      vscode: "1.91.0",
+    },
+  });
+
+  assert.deepEqual(witness, {
+    schemaVersion: "colorful.install-to-first-highlight/v1",
+    observational: true,
+    correctnessThresholdMs: null,
+    startEvent: "before-isolated-vsix-install",
+    endEvent: "first-plaintext-diagnostic-and-semantic-tokens",
+    installationStartedAtUnixMs: 1_000,
+    firstHighlightAtUnixMs: 1_375,
+    durationMs: 375,
+    environment: {
+      architecture: "arm64",
+      cpu: "Example CPU",
+      extension: "flyingrobots.colorful-language@0.4.0",
+      logicalCpuCount: 8,
+      memoryBytes: 16_000_000_000,
+      node: "v22.23.1",
+      operatingSystem: "darwin 25.0.0",
+      rustc: "rustc 1.97.1",
+      server: "colorful-lsp@0.4.0",
+      vscode: "1.91.0",
+    },
+  });
+  assert.throws(
+    () =>
+      createInstallationTimingWitness({
+        installationStartedAtUnixMs: 1_000,
+        firstHighlightAtUnixMs: 999,
+        environment: witness.environment,
+    }),
+    /must not precede installation start/u,
+  );
+  assert.throws(
+    () =>
+      createInstallationTimingWitness({
+        installationStartedAtUnixMs: 1_000,
+        firstHighlightAtUnixMs: 1_375,
+        environment: {
+          ...witness.environment,
+          rustc: undefined,
+        },
+      }),
+    /environment\.rustc/u,
+  );
+
+  const runner = readFileSync(
+    "editors/vscode/smoke/run-packaged-smoke.mjs",
+    "utf8",
+  );
+  const suite = readFileSync(
+    "editors/vscode/smoke/suite/index.cjs",
+    "utf8",
+  );
+  const start = runner.indexOf(
+    "const installationStartedAtUnixMs = Date.now();",
+  );
+  const install = runner.indexOf(
+    "installVsix(vscodeExecutablePath, vsixPath, extensionsDirectory);",
+  );
+  assert.ok(
+    start >= 0 && install > start,
+    "timing must begin immediately before the isolated VSIX installation",
+  );
+  assert.match(runner, /COLORFUL_TIMING_PATH/u);
+  assert.match(runner, /installationToFirstHighlight/u);
+  assert.match(
+    suite,
+    /first-plaintext-diagnostic-and-semantic-tokens/u,
+  );
+});
+
+function relativeLuminance(hex) {
+  const channels = hex
+    .slice(1)
+    .match(/../gu)
+    .map((value) => Number.parseInt(value, 16) / 255)
+    .map((value) =>
+      value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4,
+    );
+  return (
+    0.2126 * channels[0] +
+    0.7152 * channels[1] +
+    0.0722 * channels[2]
+  );
+}
+
+function contrastRatio(left, right) {
+  const leftLuminance = relativeLuminance(left);
+  const rightLuminance = relativeLuminance(right);
+  return (
+    (Math.max(leftLuminance, rightLuminance) + 0.05) /
+    (Math.min(leftLuminance, rightLuminance) + 0.05)
+  );
+}
+
+test("the visual demo has a text-equivalent accessible role mapping", () => {
+  const demoPath =
+    "docs/topics/editor-integrations/assets/semantic-role-demo.svg";
+  assert.equal(existsSync(demoPath), true, `missing editor demo: ${demoPath}`);
+  const svg = readFileSync(demoPath, "utf8");
+  const readme = readFileSync(
+    "docs/topics/editor-integrations/README.md",
+    "utf8",
+  );
+  assert.match(svg, /<title[^>]*>Colorful semantic-role editor demo<\/title>/u);
+  assert.match(svg, /<desc[^>]*>[\s\S]*cat: noun[\s\S]*writes: verb/u);
+
+  const surface = /--surface:\s*(#[0-9a-f]{6})/u.exec(svg)?.[1];
+  assert.ok(surface, "demo must declare one semantic surface token");
+  const roles = {
+    noun: ["cat", "prose"],
+    verb: ["writes"],
+    adjective: ["careful"],
+    adverb: ["quickly"],
+  };
+  for (const [role, words] of Object.entries(roles)) {
+    const color = new RegExp(
+      `--${role}:\\s*(#[0-9a-f]{6})`,
+      "u",
+    ).exec(svg)?.[1];
+    assert.ok(color, `demo must declare the ${role} reference color`);
+    assert.ok(
+      contrastRatio(color, surface) >= 4.5,
+      `${role} must meet 4.5:1 contrast against the demo surface`,
+    );
+    assert.match(
+      svg,
+      new RegExp(`class="[^"]*\\b${role}\\b[^"]*"`, "u"),
+    );
+    for (const word of words) {
+      assert.match(
+        readme,
+        new RegExp(`\\| ${word} \\| \`${role}\` \\|`, "u"),
+      );
+    }
+  }
+  assert.match(
+    readme,
+    /!\[Colorful semantic-role demo with each word labeled by role\]/u,
+  );
 });
 
 test("package evidence has independent validation boundaries", () => {
@@ -280,6 +445,19 @@ test("the VS Code packaging warning precedes every package command", () => {
     warning >= 0 && packageCommand > warning,
     "the package side-effect warning must precede the first package command",
   );
+});
+
+test("immutable editor package READMEs avoid time-bound publication claims", () => {
+  for (const filename of [
+    "editors/vscode/README.md",
+    "editors/zed/README.md",
+  ]) {
+    const readme = readFileSync(filename, "utf8");
+    assert.doesNotMatch(readme, /\bnot yet published\b/iu);
+    assert.doesNotMatch(readme, /\bfirst synchronized editor release\b/iu);
+    assert.match(readme, /matching tag/u);
+    assert.match(readme, /that exact target and version/u);
+  }
 });
 
 test("the extension-host smoke rejects cross-drive install paths", () => {

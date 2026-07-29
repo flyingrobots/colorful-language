@@ -136,7 +136,7 @@ Verification for release preparation, tag automation, and release witnesses.
   *Status:* implemented.
 - **REL-12a** — *Requirement:* REL-12. *Behavior:* the tag workflow builds the
   two public binaries natively on `ubuntu-24.04` /
-  `x86_64-unknown-linux-gnu`, `macos-14` /
+  `x86_64-unknown-linux-gnu`, `macos-15` /
   `aarch64-apple-darwin`, and `windows-2025` /
   `x86_64-pc-windows-msvc`; each archive contains the same reviewed support
   files, has one SHA-256 sidecar, and receives GitHub/Sigstore build
@@ -145,7 +145,14 @@ Verification for release preparation, tag automation, and release witnesses.
   unchecked archive entry. *Evidence type:* deterministic distribution-policy
   checker and mutation tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  *Status:* planned.
+  *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `rejects every platform inventory mutation`,
+  `rejects workflow matrix drift independently of the profile`, and
+  `requires tag admission before provenance-producing jobs`,
+  `requires signed checksummed native archives`. *Status:* implemented in
+  workflow; hosted release evidence remains planned.
 - **REL-13a** — *Requirement:* REL-13. *Behavior:* the tag workflow runs the
   packaged VS Code smoke once, publishes that witness's exact VSIX path to both
   registries, verifies both publisher credentials before crates or editor
@@ -156,7 +163,14 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence type:* deterministic distribution-policy checker and mutation
   tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  *Status:* planned.
+  *Evidence:* `.github/workflows/release.yml`;
+  `editors/vscode/smoke/run-packaged-smoke.mjs`;
+  `editors/vscode/package.json`; `editors/vscode/package-lock.json`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires publisher credential verification before crates`,
+  `requires one smoke-tested VSIX for both rerun-safe publishers`, and
+  `requires exact lockfile-backed publisher tools`. *Status:* implemented in
+  workflow; public registry evidence remains planned.
 - **REL-14a** — *Requirement:* REL-14. *Behavior:* the repository-owned
   `editors/zed` path and its staged clean-room copy carry the same accepted
   license, synchronized manifest and crate versions, lockfile, source, and
@@ -166,7 +180,11 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence type:* deterministic package-policy test and isolated Wasm build.
   *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  *Status:* planned.
+  *Evidence:* `editors/zed/LICENSE`; `scripts/stage-zed-extension.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires the Zed registry path to retain the repository license`; packaged
+  editor smoke. *Status:* implemented in source packaging; external registry
+  submission remains planned.
 - **REL-15a** — *Requirement:* REL-15. *Behavior:* the release runbook names
   `@flyingrobots` as publication and rollback owner; gives exact verification
   commands for GitHub attestations, registry metadata, clean installation, and
@@ -178,7 +196,15 @@ Verification for release preparation, tag automation, and release witnesses.
   as a correctness gate. *Evidence type:* deterministic distribution-policy
   checker and documentation review. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  *Status:* planned.
+  *Evidence:* `docs/RELEASING.md`;
+  `editors/vscode/smoke/timing-witness.mjs`;
+  `editors/vscode/smoke/run-packaged-smoke.mjs`;
+  `scripts/check-editor-package-smoke.test.mjs`
+  `installation timing is ordered observational evidence`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires every release gate and rollback reference`. *Status:* implemented
+  in the runbook and package witness; public rollback rehearsal remains
+  planned.
 
 ## Open verification gaps
 
@@ -189,6 +215,7 @@ Verification for release preparation, tag automation, and release witnesses.
   profile-aware release gate.
 - GitHub Release asset recovery is still a manual inspection path when a release
   exists but assets are missing.
-- Native platform archives, editor-registry publication, signed provenance,
-  Zed registry submission, and distribution rollback evidence remain planned
-  in REL-12a through REL-15a.
+- Native platform archives, editor-registry publication, and signed provenance
+  are implemented in the tag workflow but remain unverified on a public tag.
+  Zed registry submission and public distribution rollback evidence remain
+  planned in REL-12a through REL-15a.

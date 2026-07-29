@@ -311,13 +311,15 @@ roadmap-to-issue reconciliation is tracked in
   workflow in local evidence, a read-only hosted security job, and release
   preparation while `actionlint` remains the syntax and schema oracle. Any
   analyzer exception names one exact rule and workflow location, rationale,
-  owner, and removal trigger. *Oracle:* safe fixtures and the live repository
-  pass; minimal persisted-checkout-credential and workflow-level write-
-  permission fixtures fail with stable, path-addressed categories; a
-  deterministic hanging analyzer fails with a stable timeout category before
-  its process-level watchdog; policy mutations reject a floating version,
-  weakened thresholds, broadened exception, missing hosted command, or missing
-  release-preparation command.
+  owner, and removal trigger. The Cargo, Marketplace, and Open VSX release
+  selectors are each admitted at one named step and may occur only once across
+  all workflows. *Oracle:* safe fixtures and the live repository pass; minimal
+  persisted-checkout-credential and workflow-level write-permission fixtures
+  fail with stable, path-addressed categories; a deterministic hanging analyzer
+  fails with a stable timeout category before its process-level watchdog;
+  policy mutations reject a floating version, weakened thresholds, broadened or
+  missing exceptions, moved or duplicated publisher tokens, missing hosted
+  command, or missing release-preparation command.
   *Evidence type:* pinned analyzer execution, deterministic process fixtures,
   and configuration mutation tests. *Evidence:*
   `.github/workflow-security-policy.yml`,

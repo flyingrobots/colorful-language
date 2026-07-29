@@ -117,11 +117,12 @@ security job or step.
 The workflow-security job grants only `contents: read` and disables checkout
 credential persistence. Its versioned policy fixes the analyzer identity,
 offline workflow-only invocation, finding thresholds, and exception metadata.
-The sole exception allows `CARGO_REGISTRY_TOKEN` only at the named crates.io
-publication step while deployment ownership and a protected release environment
-remain unconfigured; the record names its owner, rationale, and removal trigger.
-Changing the secret location, broadening the exception path, weakening a
-threshold, or drifting the hosted installation from the policy fails the
+Three exceptions allow `CARGO_REGISTRY_TOKEN`, `VSCE_PAT`, and `OVSX_PAT` only
+at their named crates.io or editor-publication steps while deployment ownership
+and a protected release environment remain unconfigured. Each record names its
+owner, rationale, and removal trigger, and each selector may occur once across
+all workflows. Changing a secret location, broadening an exception path,
+weakening a threshold, or drifting the hosted installation from policy fails the
 deterministic maintenance suite.
 
 ## Updates and ownership

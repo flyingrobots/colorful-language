@@ -30,7 +30,37 @@ function validSnapshot() {
     zedLicense: "license\n",
     workflow: {
       jobs: {
+        "validate-release": {
+          "runs-on": "ubuntu-24.04",
+          permissions: { contents: "read" },
+          steps: [
+            {
+              uses: `actions/checkout@${ACTION_SHA}`,
+              with: {
+                "fetch-depth": 0,
+                "persist-credentials": false,
+              },
+            },
+            {
+              name: "Verify release metadata",
+              run:
+                'version="${GITHUB_REF_NAME#v}"\n' +
+                "workspace_version=0.4.0\n" +
+                'grep -F "## [$version]" CHANGELOG.md\n' +
+                'test -f "docs/goalposts/${GITHUB_REF_NAME}/release.md"\n' +
+                'test -f "docs/goalposts/${GITHUB_REF_NAME}/verification.md"\n',
+            },
+            {
+              name: "Verify the tag is on main",
+              run:
+                "git fetch -q origin main\n" +
+                'git rev-parse "${GITHUB_REF_NAME}^{commit}"\n' +
+                "git merge-base --is-ancestor tag origin/main\n",
+            },
+          ],
+        },
         "binary-artifacts": {
+          needs: "validate-release",
           permissions: {
             contents: "read",
             "id-token": "write",
@@ -41,9 +71,21 @@ function validSnapshot() {
           },
           steps: [
             {
-              name: "Package native binaries",
+              name: "Build native binaries",
+              env: { TARGET: "${{ matrix.target }}" },
               run:
-                "cp colorful colorful-lsp README.md LICENSE NOTICE CHANGELOG.md dist/\n" +
+                'cargo build --release --target "$TARGET" ' +
+                "-p colorful-cli -p colorful-lsp",
+            },
+            {
+              name: "Package native binaries",
+              env: {
+                EXECUTABLE_SUFFIX:
+                  "${{ matrix.executable_suffix }}",
+                TARGET: "${{ matrix.target }}",
+              },
+              run:
+                "cp target/$TARGET/colorful$EXECUTABLE_SUFFIX colorful-lsp README.md LICENSE NOTICE CHANGELOG.md dist/\n" +
                 'tar -czf "dist/archive.tar.gz" dist\n' +
                 'sha256sum "dist/archive.tar.gz" > "dist/archive.tar.gz.sha256"\n',
             },
@@ -63,7 +105,8 @@ function validSnapshot() {
           ],
         },
         release: {
-          needs: "binary-artifacts",
+          "runs-on": "ubuntu-24.04",
+          needs: ["validate-release", "binary-artifacts"],
           permissions: {
             contents: "write",
             "id-token": "write",
@@ -83,17 +126,6 @@ function validSnapshot() {
               },
             },
             {
-              name: "Verify editor publisher credentials",
-              env: {
-                VSCE_PAT: "${{ secrets.VSCE_PAT }}",
-                OVSX_PAT: "${{ secrets.OVSX_PAT }}",
-              },
-              run:
-                "npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots\n" +
-                "npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots\n",
-            },
-            { name: "Publish to crates.io", run: "cargo publish" },
-            {
               name: "Build and smoke editor packages",
               run:
                 "npm --prefix editors/vscode run smoke:package\n" +
@@ -105,16 +137,23 @@ function validSnapshot() {
               uses: `actions/attest@${ACTION_SHA}`,
               with: {
                 "subject-path":
-                  "target/editor-smoke/*.vsix\ndist/*zed-source.tar.gz",
+                "target/editor-smoke/*.vsix\ndist/*zed-source.tar.gz",
               },
             },
             {
-              name: "Publish editor extension",
+              name: "Verify and publish editor extension",
+              env: {
+                VSCE_PAT: "${{ secrets.VSCE_PAT }}",
+                OVSX_PAT: "${{ secrets.OVSX_PAT }}",
+              },
               run:
+                "npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots\n" +
+                "npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots\n" +
                 smokeVsix +
                 'npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate\n' +
                 'npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate\n',
             },
+            { name: "Publish to crates.io", run: "cargo publish" },
             {
               name: "Create GitHub Release",
               run: "gh release create \"$GITHUB_REF_NAME\" dist/*",
@@ -142,6 +181,12 @@ function validSnapshot() {
         "installation-to-first-highlight is observational and not a correctness threshold",
     },
   };
+}
+
+function releaseStep(snapshot, name) {
+  return snapshot.workflow.jobs.release.steps.find(
+    (step) => step.name === name,
+  );
 }
 
 test("accepts the complete native and editor distribution contract", () => {
@@ -183,16 +228,75 @@ test("rejects workflow matrix drift independently of the profile", () => {
   );
 });
 
+test("requires a pinned publication runner", () => {
+  const snapshot = validSnapshot();
+  snapshot.workflow.jobs.release["runs-on"] = "ubuntu-latest";
+  assert.throws(
+    () => validateReleaseDistribution(snapshot),
+    /must pin its publication runner/u,
+  );
+});
+
+test("requires tag admission before provenance-producing jobs", () => {
+  const missingDependency = validSnapshot();
+  missingDependency.workflow.jobs["binary-artifacts"].needs = undefined;
+  assert.throws(
+    () => validateReleaseDistribution(missingDependency),
+    /must wait for validate-release/u,
+  );
+
+  const missingAncestry = validSnapshot();
+  const ancestry =
+    missingAncestry.workflow.jobs["validate-release"].steps[2];
+  ancestry.run = ancestry.run.replace("git merge-base --is-ancestor", "true");
+  assert.throws(
+    () => validateReleaseDistribution(missingAncestry),
+    /ancestry admission must include git merge-base --is-ancestor/u,
+  );
+});
+
+test("requires matrix values to enter shell through step-scoped env", () => {
+  const buildInjection = validSnapshot();
+  const build = buildInjection.workflow.jobs["binary-artifacts"].steps.find(
+    (step) => step.name === "Build native binaries",
+  );
+  build.run = 'cargo build --target "${{ matrix.target }}"';
+  assert.throws(
+    () => validateReleaseDistribution(buildInjection),
+    /build must isolate the reviewed target in env/u,
+  );
+
+  const packageInjection = validSnapshot();
+  const packageStep =
+    packageInjection.workflow.jobs["binary-artifacts"].steps.find(
+      (step) => step.name === "Package native binaries",
+    );
+  packageStep.run += '\necho "${{ matrix.executable_suffix }}"';
+  assert.throws(
+    () => validateReleaseDistribution(packageInjection),
+    /package must isolate reviewed matrix values in env/u,
+  );
+});
+
 test("requires signed checksummed native archives", () => {
   for (const mutation of ["sha256sum", "Attest native archive", "*.tar.gz"]) {
     const snapshot = validSnapshot();
     const job = snapshot.workflow.jobs["binary-artifacts"];
     if (mutation === "sha256sum") {
-      job.steps[0].run = job.steps[0].run.replace("sha256sum", "echo");
+      const packageStep = job.steps.find(
+        (step) => step.name === "Package native binaries",
+      );
+      packageStep.run = packageStep.run.replace("sha256sum", "echo");
     } else if (mutation === "Attest native archive") {
-      job.steps[1].uses = "actions/attest@v4";
+      const attest = job.steps.find(
+        (step) => step.name === "Attest native archive",
+      );
+      attest.uses = "actions/attest@v4";
     } else {
-      job.steps[2].with.path = "dist/*.sha256";
+      const upload = job.steps.find(
+        (step) => step.name === "Upload native archive",
+      );
+      upload.with.path = "dist/*.sha256";
     }
     assert.throws(() => validateReleaseDistribution(snapshot));
   }
@@ -201,8 +305,14 @@ test("requires signed checksummed native archives", () => {
 test("requires publisher credential verification before crates", () => {
   const snapshot = validSnapshot();
   const steps = snapshot.workflow.jobs.release.steps;
-  const [verify] = steps.splice(2, 1);
-  steps.splice(4, 0, verify);
+  const publishIndex = steps.findIndex(
+    (step) => step.name === "Verify and publish editor extension",
+  );
+  const [publish] = steps.splice(publishIndex, 1);
+  const cratesIndex = steps.findIndex(
+    (step) => step.name === "Publish to crates.io",
+  );
+  steps.splice(cratesIndex + 1, 0, publish);
   assert.throws(
     () => validateReleaseDistribution(snapshot),
     /verify editor credentials before crates/u,
@@ -212,16 +322,24 @@ test("requires publisher credential verification before crates", () => {
 test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
   for (const mutation of ["rebuild", "different-path", "no-skip"]) {
     const snapshot = validSnapshot();
-    const steps = snapshot.workflow.jobs.release.steps;
     if (mutation === "rebuild") {
-      steps[4].run += "\nnpm run package:vsix";
+      releaseStep(snapshot, "Build and smoke editor packages").run +=
+        "\nnpm run package:vsix";
     } else if (mutation === "different-path") {
-      steps[6].run = steps[6].run.replace(
+      const publish = releaseStep(
+        snapshot,
+        "Verify and publish editor extension",
+      );
+      publish.run = publish.run.replace(
         'ovsx publish --packagePath "$vsix"',
         "ovsx publish other.vsix",
       );
     } else {
-      steps[6].run = steps[6].run.replaceAll(" --skip-duplicate", "");
+      const publish = releaseStep(
+        snapshot,
+        "Verify and publish editor extension",
+      );
+      publish.run = publish.run.replaceAll(" --skip-duplicate", "");
     }
     assert.throws(() => validateReleaseDistribution(snapshot));
   }
@@ -262,6 +380,19 @@ test("requires every release gate and rollback reference", () => {
     () => validateReleaseDistribution(snapshot),
     /docs\/RELEASING\.md must include gh attestation verify/u,
   );
+
+  const reflowed = validSnapshot();
+  reflowed.documentation.runbook =
+    reflowed.documentation.runbook.replace(
+      "Publication and rollback",
+      "Publication and\nrollback",
+    );
+  reflowed.documentation.topic =
+    reflowed.documentation.topic.replace(
+      "not a correctness threshold",
+      "not a correctness\nthreshold",
+    );
+  assert.doesNotThrow(() => validateReleaseDistribution(reflowed));
 });
 
 test("the checked-in repository satisfies the distribution policy", () => {

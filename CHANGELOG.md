@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Signed native and editor distribution machinery.** Tagged releases now
+  build `colorful` and `colorful-lsp` natively for Linux x86-64, Apple Silicon,
+  and Windows x86-64, package matching release metadata and SHA-256 sidecars,
+  and publish GitHub/Sigstore provenance for every archive. The release job
+  clean-installs one exact VSIX, records an observational
+  installation-to-first-highlight witness with host/toolchain identity, reuses
+  those VSIX bytes for VS Code Marketplace and Open VSX, and packages the
+  licensed Zed registry-source tree without manufacturing a second editor
+  artifact. Exact lockfile-backed publisher tools, fail-closed credential
+  verification, duplicate-safe retries, an accessible text-equivalent visual
+  demo, and deterministic policy mutation tests protect the workflow.
+  Public marketplace, Zed registry, and new platform-install claims remain
+  withheld until a tagged release supplies real URLs, clean-machine evidence,
+  and rollback results.
 - **Coordinate-preserving Markdown prose analysis.** The CLI `.md`/`.markdown`
   lint and ANSI file paths and LSP `markdown` language ID now share one format
   adapter outside `colorful-core`. Fenced and indented code, inline code,

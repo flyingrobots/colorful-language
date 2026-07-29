@@ -21,6 +21,11 @@ boring facts automation can check:
 - release branch format `release/v{version}`;
 - milestone format `v{version}`;
 - the eight crates published to crates.io;
+- native Linux x86-64, Apple Silicon, and Windows x86-64 server/CLI
+  distribution targets;
+- the one-smoke-tested-VSIX policy for VS Code Marketplace and Open VSX;
+- GitHub/Sigstore provenance, Zed registry-source packaging, and the named
+  publication/rollback owner;
 - release signposts such as `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
   `docs/topics/`, `docs/workflows/`, and maintainer docs;
 - validation entrypoints in `scripts/release-profile-check.sh`,
@@ -41,7 +46,8 @@ Colorful currently uses:
 
 ```text
 release branch -> PR -> merge to main -> manual annotated tag -> tag workflow
--> crates.io publish -> GitHub Release -> public verification -> retrospective
+-> native/editor build and attestation -> crates.io + editor publication
+-> GitHub Release -> Zed registry PR -> public verification -> retrospective
 ```
 
 There is no autotag workflow yet. Manual tagging is the normal path for now, but
@@ -69,7 +75,9 @@ that passed release prep.
 | `docs/goalposts/vX.Y.Z/verification.md` | Witness: commands, results, tag/commit SHAs, workflow URL, registry evidence, release URL. |
 | `CHANGELOG.md` | Historical ledger of externally meaningful change. |
 | Git tag `vX.Y.Z` | Immutable public source anchor. |
-| GitHub Release | Public release surface and binary archive. |
+| GitHub Release | Public release surface for checksummed native archives, the exact smoke-tested VSIX, and Zed registry source. |
+| GitHub attestations | Sigstore-backed provenance for every native archive, the VSIX, and the Zed source archive. |
+| Editor registry records | Public VS Code Marketplace, Open VSX, and Zed extension entries for the synchronized version. |
 | Retrospective | Plan-versus-actual record, fallout issues, next recommendation. |
 
 `README.md` may link to durable release surfaces, but it must not become a
@@ -129,8 +137,12 @@ forward.
 
 Publication happens from the tag. In this repo, pushing `vX.Y.Z` triggers
 `.github/workflows/release.yml`, which checks out the tag, verifies it is on
-`main`, reruns final Rust/package guards, publishes crates, packages the Linux
-binaries, and creates the GitHub Release.
+`main`, reruns final Rust/package guards, builds and attests the native matrix,
+clean-installs one VSIX, publishes those exact VSIX bytes to both editor
+registries, publishes crates, and creates the GitHub Release. The workflow also
+packages and attests the exact Zed registry-source tree; submission to
+`zed-industries/extensions` remains a maintainer pull request because that
+registry owns publication.
 
 ### verified
 
@@ -321,6 +333,7 @@ That script runs:
 
 - release profile check, including `Cargo.lock` workspace crate versions;
 - synchronized editor/server compatibility and gate wiring;
+- signed native/editor distribution policy and mutation self-tests;
 - Rust format, clippy, and tests;
 - package witness;
 - release build;
@@ -400,6 +413,9 @@ Manual actor required: yes, for the public tag push
 Targets:
 - crates.io
 - GitHub Releases
+- VS Code Marketplace
+- Open VSX
+- zed-industries/extensions
 ```
 
 ## Final preflight and tag
@@ -455,9 +471,27 @@ derives every internal normal, build, and dev edge from `cargo metadata`,
 requires the release profile and tag workflow to declare the same order, and
 rejects missing, duplicate, non-publishable, or misordered packages.
 
-It then builds one `x86_64-unknown-linux-gnu` archive containing `colorful`,
-`colorful-lsp`, `README.md`, `LICENSE`, `NOTICE`, and `CHANGELOG.md`, writes a
-SHA-256 checksum, and creates the GitHub Release.
+Three native jobs build `colorful` and `colorful-lsp` on the reviewed host and
+target pairs:
+
+| Hosted runner | Rust target | Release use |
+| --- | --- | --- |
+| `ubuntu-24.04` | `x86_64-unknown-linux-gnu` | Linux x86-64 |
+| `macos-15` | `aarch64-apple-darwin` | Apple Silicon |
+| `windows-2025` | `x86_64-pc-windows-msvc` | Windows x86-64 |
+
+Each job packages both binaries with `README.md`, `LICENSE`, `NOTICE`, and
+`CHANGELOG.md`, writes a SHA-256 sidecar, and publishes GitHub/Sigstore
+provenance for the archive. The release job downloads those exact archives
+instead of rebuilding them for the GitHub Release.
+
+The release job runs the packaged editor smoke once. That smoke builds,
+clean-installs, and exercises one exact VSIX, then stages and compiles the Zed
+registry source. The workflow publishes the smoke witness's VSIX bytes to VS
+Code Marketplace and Open VSX with duplicate-version retries treated as a
+verification path. It attaches the VSIX and Zed source archive plus checksums to
+the GitHub Release and publishes provenance for both. It does not build a
+second marketplace artifact.
 
 The crates.io publish step is rerun-safe for already-published crate versions:
 it checks the crates.io registry index before each crate and continues when that
@@ -484,22 +518,72 @@ Dependent crates can only dry-run once their dependencies are already available
 on crates.io. The real release workflow handles ordered publication. crates.io
 versions are immutable; a bad published version is fixed by patching forward.
 
+## Editor publication prerequisites
+
+Publication and rollback owner: `@flyingrobots`.
+
+The tag workflow fails before any crate or editor package is published unless
+both editor identities authenticate:
+
+- `VSCE_PAT` is a repository secret with publish rights for the
+  `flyingrobots` VS Code publisher. Microsoft Entra authentication can replace
+  this secret only through a separately reviewed workflow change.
+- `OVSX_PAT` is a repository secret with publish rights for the
+  `flyingrobots` Open VSX namespace.
+
+Validate the identities with the exact lockfile-backed tools before tagging:
+
+```bash
+npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots
+npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
+```
+
+Zed publication is not token-driven from this repository. The owner submits a
+pull request to `zed-industries/extensions` that adds this repository as a
+submodule and selects `path = "editors/zed"`. The selected directory carries
+its own byte-identical `LICENSE`, manifest, lockfile, source, and README.
+
 ## Post-publication verification
 
 After the workflow succeeds, verify public availability:
 
 ```bash
 gh release view vX.Y.Z --json url,tagName,name,publishedAt,assets
+gh attestation verify colorful-language-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz \
+  --repo flyingrobots/colorful-language
+gh attestation verify colorful-language-X.Y.Z.vsix \
+  --repo flyingrobots/colorful-language
 cargo info colorful-core@X.Y.Z
 cargo info colorful-cli@X.Y.Z
 cargo install colorful-cli --version X.Y.Z --locked
 colorful --version
 colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt
+npm --prefix editors/vscode exec -- vsce show \
+  flyingrobots.colorful-language --json
+npm --prefix editors/vscode exec -- ovsx get \
+  flyingrobots.colorful-language --versionRange X.Y.Z --metadata
+gh api repos/zed-industries/extensions/contents/extensions/colorful-language
 ```
 
-Adjust smoke commands to the release surface. For editor releases, also verify
-the relevant extension package or source-install path. For docs-only changes,
-verify the deployed or published documentation surface.
+Download every release archive and its sidecar, recompute SHA-256, and run
+`colorful --version` plus `colorful-lsp --version` on the matching clean
+Linux, macOS, or Windows host. Download the release VSIX, verify its attestation,
+install it into an isolated VS Code profile, and rerun the packaged Plain Text,
+Markdown, diagnostics, semantic-token, incremental-edit, shutdown, and
+missing-server oracles. Zed is verified only after the external registry entry
+resolves and a clean Zed profile activates the synchronized extension/server
+pair.
+
+The packaged editor witness records an
+`installation-to-first-highlight` measurement from immediately before isolated
+VSIX installation through the first Plain Text diagnostic and semantic-token
+response. It records OS, architecture, CPU, logical CPU count, memory, Node,
+Rust, VS Code, extension, and server versions. This field is observational:
+network, host load, and editor startup make it unsuitable as a deterministic
+gate. A release witness records the measured value and environment, but the
+value is not a correctness threshold.
+
+For docs-only changes, verify the deployed or published documentation surface.
 
 Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
 
@@ -512,18 +596,29 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
 - GitHub Release URL;
 - crates.io evidence;
 - install / CLI / import smoke evidence;
+- native archive checksums and `gh attestation verify` results;
+- `vsce show`, `ovsx get`, and `zed-industries/extensions` evidence;
+- clean-machine editor activation and observational timing;
+- rollback rehearsal against the previous compatible set;
 - known omissions or follow-up issues.
 
 ## Failure handling
 
-- **Tag exists, no registry published:** do not move the tag. Fix the workflow or
-  credentials and rerun publication for the same tag.
-- **Some crates published, another failed:** do not move the tag. Fix the
+- **Tag exists, no registry published:** Do not move the tag. Fix the workflow
+  or credentials and rerun publication for the same tag.
+- **Some crates published, another failed:** Do not move the tag. Fix the
   failing path and rerun. Already-published crates should be verified, not
   republished with different contents.
-- **GitHub Release failed:** do not move the tag. Rerun release creation or fix
+- **Editor publication partially succeeded:** Do not move the tag or rebuild
+  the VSIX. Verify the registry that accepted the version, repair credentials
+  or permissions, and rerun the same tag so `--skip-duplicate` preserves the
+  already-published bytes.
+- **Zed submission failed review:** keep the GitHub Release and editor registry
+  records intact, correct the source extension on `main`, and patch forward.
+  Do not retarget the external submodule to unreviewed or moving source.
+- **GitHub Release failed:** Do not move the tag. Rerun release creation or fix
   the workflow for the same tag.
-- **Published artifact is bad:** do not move the tag. Cut a patch release from
+- **Published artifact is bad:** Do not move the tag. Cut a patch release from
   `main`; yank only when safe and appropriate.
 - **Wrong commit tagged locally:** if the tag has not left the machine, fix it
   locally.
@@ -533,6 +628,13 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
   permissions, and rerun from the same tag.
 - **Security issue discovered:** stop normal flow and switch to security release
   handling.
+
+Rollback means reinstalling the previous compatible, publicly verified server
+archive and editor package while a patch-forward release is prepared. Record
+the previous tag, archive and VSIX digests, registry versions, clean-profile
+activation result, and restored first-highlight behavior. Do not move the tag,
+replace registry bytes, overwrite an attestation, or point users at an
+unreleased branch.
 
 ## Release types
 

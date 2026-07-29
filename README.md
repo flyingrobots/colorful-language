@@ -107,8 +107,10 @@ the exact contract):
 > [!note]
 > The integrations exist, build in CI, and have isolated pre-publication
 > package smoke evidence; they are **not yet published** as editor marketplace
-> packages. Install from source today; marketplace/registry publishing is
-> tracked separately.
+> packages. The tag workflow is prepared to publish one smoke-tested VSIX to
+> both VS Code registries and package licensed Zed source, but no current
+> reference claims those destinations before public URLs and rollback evidence
+> exist. Install from source today.
 
 The real magic is the **Language Server** (`colorful-lsp`), which gives live
 coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
@@ -123,7 +125,8 @@ From this source checkout, install the synchronized server with
 adapter at it per the recipes above. Compatible public adapter/server artifacts
 do not exist yet. See
 [`docs/topics/editor-integrations/`](docs/topics/editor-integrations/) for the
-current integration boundary, evidence, and theme caveats.
+current integration boundary, timing witness, text-equivalent visual demo,
+evidence, and theme caveats.
 
 ---
 
@@ -274,11 +277,14 @@ cargo install colorful-cli
 cargo install colorful-lsp
 ```
 
-**Prebuilt binaries:** tagged releases currently include a Linux
+**Prebuilt binaries:** the latest public release includes a Linux
 `x86_64-unknown-linux-gnu` archive containing `colorful` and `colorful-lsp`.
 Download it from the
 [Releases](https://github.com/flyingrobots/colorful-language/releases) page.
-Use Cargo or build from source on macOS, Windows, and other Linux targets.
+The `main` tag workflow is prepared to add checksummed, provenance-attested
+Apple Silicon and Windows x86-64 archives on the next deliberate release; those
+are not install paths until public assets exist. Use Cargo or build from source
+on macOS, Windows, and other Linux targets today.
 
 **From git** (latest `main`):
 

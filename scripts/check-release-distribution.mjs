@@ -20,7 +20,7 @@ export const EXPECTED_PLATFORMS = Object.freeze([
     executable_suffix: "",
   }),
   Object.freeze({
-    runner: "macos-14",
+    runner: "macos-15",
     target: "aarch64-apple-darwin",
     executable_suffix: "",
   }),
@@ -88,8 +88,64 @@ function includesCommand(source, command) {
   });
 }
 
+function validateAdmissionJob(job) {
+  const context = ".github/workflows/release.yml:jobs.validate-release";
+  if (job?.["runs-on"] !== "ubuntu-24.04") {
+    throw new Error(`${context} must pin its admission runner`);
+  }
+  if (
+    job?.permissions?.contents !== "read" ||
+    Object.keys(job.permissions).length !== 1
+  ) {
+    throw new Error(`${context} must have read-only contents permission`);
+  }
+
+  const steps = Array.isArray(job?.steps) ? job.steps : [];
+  const checkout = steps.find((step) =>
+    String(step?.uses ?? "").startsWith("actions/checkout@"),
+  );
+  requirePinnedAction(checkout, "actions/checkout", context);
+  if (
+    checkout?.with?.["fetch-depth"] !== 0 ||
+    checkout?.with?.["persist-credentials"] !== false
+  ) {
+    throw new Error(`${context} must check out complete history read-only`);
+  }
+
+  const metadata = requiredStep(steps, "Verify release metadata", context);
+  const metadataSource = String(metadata.run ?? "");
+  for (const required of [
+    'version="${GITHUB_REF_NAME#v}"',
+    "workspace_version",
+    "CHANGELOG.md",
+    "docs/goalposts/${GITHUB_REF_NAME}/release.md",
+    "docs/goalposts/${GITHUB_REF_NAME}/verification.md",
+  ]) {
+    if (!metadataSource.includes(required)) {
+      throw new Error(`${context} metadata admission must include ${required}`);
+    }
+  }
+
+  const ancestry = requiredStep(steps, "Verify the tag is on main", context);
+  const ancestrySource = String(ancestry.run ?? "");
+  for (const required of [
+    "git fetch -q origin main",
+    'git rev-parse "${GITHUB_REF_NAME}^{commit}"',
+    "git merge-base --is-ancestor",
+    "origin/main",
+  ]) {
+    if (!ancestrySource.includes(required)) {
+      throw new Error(`${context} ancestry admission must include ${required}`);
+    }
+  }
+}
+
 function validateBinaryJob(job, platforms) {
   const context = ".github/workflows/release.yml:jobs.binary-artifacts";
+  const needs = Array.isArray(job?.needs) ? job.needs : [job?.needs];
+  if (!needs.includes("validate-release")) {
+    throw new Error(`${context} must wait for validate-release`);
+  }
   if (!isDeepStrictEqual(job?.strategy?.matrix?.include, platforms)) {
     throw new Error(`${context} matrix differs from the reviewed platform list`);
   }
@@ -102,8 +158,28 @@ function validateBinaryJob(job, platforms) {
   }
 
   const steps = Array.isArray(job?.steps) ? job.steps : [];
+  const buildStep = requiredStep(steps, "Build native binaries", context);
+  const buildSource = String(buildStep.run ?? "");
+  if (
+    buildStep.env?.TARGET !== "${{ matrix.target }}" ||
+    !buildSource.includes('--target "$TARGET"') ||
+    buildSource.includes("${{ matrix.")
+  ) {
+    throw new Error(`${context} build must isolate the reviewed target in env`);
+  }
+
   const packageStep = requiredStep(steps, "Package native binaries", context);
   const packageSource = String(packageStep.run ?? "");
+  if (
+    packageStep.env?.TARGET !== "${{ matrix.target }}" ||
+    packageStep.env?.EXECUTABLE_SUFFIX !==
+      "${{ matrix.executable_suffix }}" ||
+    packageSource.includes("${{ matrix.")
+  ) {
+    throw new Error(
+      `${context} package must isolate reviewed matrix values in env`,
+    );
+  }
   for (const required of [
     "colorful",
     "colorful-lsp",
@@ -134,9 +210,17 @@ function validateBinaryJob(job, platforms) {
 
 function validateReleaseJob(job) {
   const context = ".github/workflows/release.yml:jobs.release";
+  if (job?.["runs-on"] !== "ubuntu-24.04") {
+    throw new Error(`${context} must pin its publication runner`);
+  }
   const needs = Array.isArray(job?.needs) ? job.needs : [job?.needs];
-  if (!needs.includes("binary-artifacts")) {
-    throw new Error(`${context} must wait for binary-artifacts`);
+  if (
+    !needs.includes("validate-release") ||
+    !needs.includes("binary-artifacts")
+  ) {
+    throw new Error(
+      `${context} must wait for validate-release and binary-artifacts`,
+    );
   }
   if (
     job?.permissions?.contents !== "write" ||
@@ -165,26 +249,33 @@ function validateReleaseJob(job) {
     throw new Error(`${context} must merge the reviewed native archives`);
   }
 
-  const verify = requiredStep(
+  const publish = requiredStep(
     steps,
-    "Verify editor publisher credentials",
+    "Verify and publish editor extension",
     context,
   );
   if (
-    verify.env?.VSCE_PAT !== "${{ secrets.VSCE_PAT }}" ||
-    verify.env?.OVSX_PAT !== "${{ secrets.OVSX_PAT }}"
+    publish.env?.VSCE_PAT !== "${{ secrets.VSCE_PAT }}" ||
+    publish.env?.OVSX_PAT !== "${{ secrets.OVSX_PAT }}"
   ) {
     throw new Error(`${context} must bind both reviewed publisher secrets`);
   }
-  const verifySource = String(verify.run ?? "");
+  const publishSource = String(publish.run ?? "");
   for (const command of ["vsce verify-pat", "ovsx verify-pat"]) {
-    if (!verifySource.includes(command)) {
+    if (!publishSource.includes(command)) {
       throw new Error(`${context} must run ${command}`);
     }
   }
   const cratesIndex = stepIndex(steps, "Publish to crates.io");
-  const verifyIndex = stepIndex(steps, "Verify editor publisher credentials");
-  if (cratesIndex === -1 || verifyIndex === -1 || verifyIndex > cratesIndex) {
+  const publishIndex = stepIndex(
+    steps,
+    "Verify and publish editor extension",
+  );
+  if (
+    cratesIndex === -1 ||
+    publishIndex === -1 ||
+    publishIndex > cratesIndex
+  ) {
     throw new Error(`${context} must verify editor credentials before crates`);
   }
 
@@ -211,8 +302,6 @@ function validateReleaseJob(job) {
     throw new Error(`${context} must attest the VSIX and Zed source archive`);
   }
 
-  const publish = requiredStep(steps, "Publish editor extension", context);
-  const publishSource = String(publish.run ?? "");
   const vsixAssignment =
     'vsix="target/editor-smoke/colorful-language-${version}.vsix"';
   if (!publishSource.includes(vsixAssignment)) {
@@ -242,6 +331,8 @@ function validateReleaseJob(job) {
 function validateDocumentation(documentation) {
   const runbook = String(documentation.runbook ?? "");
   const topic = String(documentation.topic ?? "");
+  const normalizedRunbook = runbook.replace(/\s+/gu, " ");
+  const normalizedTopic = topic.replace(/\s+/gu, " ");
   const requiredRunbookText = [
     "Publication and rollback owner: `@flyingrobots`",
     "gh attestation verify",
@@ -252,13 +343,13 @@ function validateDocumentation(documentation) {
     "observational",
   ];
   for (const text of requiredRunbookText) {
-    if (!runbook.includes(text)) {
+    if (!normalizedRunbook.includes(text)) {
       throw new Error(`docs/RELEASING.md must include ${text}`);
     }
   }
   if (
-    !topic.includes("installation-to-first-highlight") ||
-    !topic.includes("not a correctness threshold")
+    !normalizedTopic.includes("installation-to-first-highlight") ||
+    !normalizedTopic.includes("not a correctness threshold")
   ) {
     throw new Error(
       "editor integration reference must bound observational startup timing",
@@ -310,6 +401,7 @@ export function validateReleaseDistribution(snapshot) {
     workflow.jobs,
     ".github/workflows/release.yml:jobs",
   );
+  validateAdmissionJob(jobs["validate-release"]);
   validateBinaryJob(jobs["binary-artifacts"], EXPECTED_PLATFORMS);
   validateReleaseJob(jobs.release);
 

@@ -12,36 +12,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Build and publish release
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+  validate-release:
+    name: Validate release admission
+    runs-on: ubuntu-24.04
     permissions:
-      contents: write # Create the GitHub release after all evidence passes.
+      contents: read # Inspect the tag and origin/main without publishing.
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: ".node-version"
-          package-manager-cache: false
-
-      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # master
-        with:
-          toolchain: "1.97.1"
-          components: rustfmt, clippy
-
-      - name: Install repository policy dependencies
-        run: npm ci
-
-      - name: Check release profile
-        run: bash scripts/release-profile-check.sh
-
-      - name: Check editor version compatibility
-        run: node scripts/check-editor-version-policy.mjs
 
       - name: Verify release metadata
         run: |
@@ -76,6 +56,142 @@ jobs:
             exit 1
           fi
 
+  binary-artifacts:
+    name: Native binaries (${{ matrix.target }})
+    needs: validate-release
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read # Read the immutable tagged source.
+      id-token: write # Request the short-lived Sigstore signing identity.
+      attestations: write # Publish provenance for the native archive.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            executable_suffix: ""
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            executable_suffix: ""
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            executable_suffix: ".exe"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # master
+        with:
+          toolchain: "1.97.1"
+          targets: ${{ matrix.target }}
+
+      - name: Build native binaries
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: >-
+          cargo build --release --locked
+          --target "$TARGET"
+          -p colorful-cli -p colorful-lsp
+
+      - name: Package native binaries
+        shell: bash
+        env:
+          EXECUTABLE_SUFFIX: ${{ matrix.executable_suffix }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          dist_name="colorful-language-${GITHUB_REF_NAME}-${TARGET}"
+          archive="${dist_name}.tar.gz"
+          mkdir -p "dist/${dist_name}"
+          cp \
+            "target/${TARGET}/release/colorful${EXECUTABLE_SUFFIX}" \
+            "dist/${dist_name}/colorful${EXECUTABLE_SUFFIX}"
+          cp \
+            "target/${TARGET}/release/colorful-lsp${EXECUTABLE_SUFFIX}" \
+            "dist/${dist_name}/colorful-lsp${EXECUTABLE_SUFFIX}"
+          cp README.md LICENSE NOTICE CHANGELOG.md "dist/${dist_name}/"
+          tar -C dist -czf "dist/${archive}" "${dist_name}"
+          if command -v sha256sum >/dev/null 2>&1; then
+            (
+              cd dist
+              sha256sum "${archive}" > "${archive}.sha256"
+            )
+          else
+            (
+              cd dist
+              shasum -a 256 "${archive}" > "${archive}.sha256"
+            )
+          fi
+
+      - name: Attest native archive
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: dist/*.tar.gz
+
+      - name: Upload native archive
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: release-binaries-${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Build and publish release
+    needs:
+      - validate-release
+      - binary-artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write # Create the GitHub release after all evidence passes.
+      id-token: write # Request the short-lived Sigstore signing identity.
+      attestations: write # Publish provenance for editor artifacts.
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download native archives
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-binaries-*
+          path: dist
+          merge-multiple: true
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: ".node-version"
+          package-manager-cache: false
+
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # master
+        with:
+          toolchain: "1.97.1"
+          components: rustfmt, clippy
+          targets: wasm32-wasip1
+
+      - name: Install repository policy dependencies
+        run: npm ci
+
+      - name: Install editor publication dependencies
+        run: npm --prefix editors/vscode ci
+
+      - name: Check release profile
+        run: bash scripts/release-profile-check.sh
+
+      - name: Check editor version compatibility
+        run: node scripts/check-editor-version-policy.mjs
+
+      - name: Check release distribution policy
+        run: node scripts/check-release-distribution.mjs
+
       # Re-run the Rust build/test gate as a final guard. The full CI gate
       # (IR witness, editor compilation, Markdown, workflow lint) is not repeated
       # here: a tag must be an ancestor of `main` (verified above), where that
@@ -85,6 +201,43 @@ jobs:
       - run: cargo test --all --locked
       - run: cargo build --release --locked
       - run: bash scripts/package-witness.sh
+
+      - name: Build and smoke editor packages
+        run: |
+          set -euo pipefail
+          npm --prefix editors/vscode run smoke:package
+          version="${GITHUB_REF_NAME#v}"
+          vsix="target/editor-smoke/colorful-language-${version}.vsix"
+          zed_archive="colorful-language-${GITHUB_REF_NAME}-zed-source.tar.gz"
+          test -f "$vsix"
+          test -d target/editor-smoke/zed-source
+          cp "$vsix" dist/
+          tar -C target/editor-smoke -czf "dist/${zed_archive}" zed-source
+          (
+            cd dist
+            sha256sum "$(basename "$vsix")" > "$(basename "$vsix").sha256"
+            sha256sum "$zed_archive" > "${zed_archive}.sha256"
+          )
+
+      - name: Attest editor artifacts
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: |
+            target/editor-smoke/*.vsix
+            dist/*zed-source.tar.gz
+
+      - name: Verify and publish editor extension
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          set -euo pipefail
+          npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots
+          npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
+          version="${GITHUB_REF_NAME#v}"
+          vsix="target/editor-smoke/colorful-language-${version}.vsix"
+          npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate --no-dependencies --no-yarn
+          npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate --no-dependencies
 
       # Publish in dependency order. `cargo publish` waits for each crate to land
       # in the index before returning, so dependents resolve. Cargo requires
@@ -123,16 +276,6 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Package binaries
-        run: |
-          set -euo pipefail
-          dist="colorful-language-${GITHUB_REF_NAME}-x86_64-unknown-linux-gnu"
-          mkdir -p "$dist"
-          cp target/release/colorful target/release/colorful-lsp "$dist"/
-          cp README.md LICENSE NOTICE CHANGELOG.md "$dist"/
-          tar -czf "$dist.tar.gz" "$dist"
-          sha256sum "$dist.tar.gz" > "$dist.tar.gz.sha256"
-
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -143,10 +286,10 @@ jobs:
             gh release create "$GITHUB_REF_NAME" \
               --title "colorful-language ${GITHUB_REF_NAME}" \
               --notes-file "$notes" \
-              ./*.tar.gz ./*.sha256
+              dist/*
           else
             gh release create "$GITHUB_REF_NAME" \
               --title "colorful-language ${GITHUB_REF_NAME}" \
               --generate-notes \
-              ./*.tar.gz ./*.sha256
+              dist/*
           fi

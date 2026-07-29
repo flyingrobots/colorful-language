@@ -62,6 +62,13 @@ function fixture() {
       release: {
         steps: [
           {
+            name: "Verify and publish editor extension",
+            env: {
+              VSCE_PAT: "${{ secrets.VSCE_PAT }}",
+              OVSX_PAT: "${{ secrets.OVSX_PAT }}",
+            },
+          },
+          {
             name: "Publish to crates.io",
             env: {
               CARGO_REGISTRY_TOKEN:
@@ -160,6 +167,22 @@ allow-git = []
           rule: "secrets-outside-env",
           path: ".github/workflows/release.yml:jobs.release.steps[Publish to crates.io].env.CARGO_REGISTRY_TOKEN",
           selector: "CARGO_REGISTRY_TOKEN",
+          owner: "@flyingrobots",
+          reason: "The release environment is not configured yet.",
+          remove_when: "A protected release environment is configured.",
+        },
+        {
+          rule: "secrets-outside-env",
+          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish editor extension].env.VSCE_PAT",
+          selector: "VSCE_PAT",
+          owner: "@flyingrobots",
+          reason: "The release environment is not configured yet.",
+          remove_when: "A protected release environment is configured.",
+        },
+        {
+          rule: "secrets-outside-env",
+          path: ".github/workflows/release.yml:jobs.release.steps[Verify and publish editor extension].env.OVSX_PAT",
+          selector: "OVSX_PAT",
           owner: "@flyingrobots",
           reason: "The release environment is not configured yet.",
           remove_when: "A protected release environment is configured.",
@@ -491,6 +514,27 @@ test("rejects a broadened workflow-security exception", () => {
   }, "E_WORKFLOW_SECURITY_EXCEPTION");
 });
 
+test("rejects a missing reviewed workflow-security exception", () => {
+  expectCode(({ workflowSecurityPolicy }) => {
+    workflowSecurityPolicy.exceptions.pop();
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects a publisher token moved outside its reviewed step", () => {
+  expectCode(({ workflowFiles }) => {
+    const release =
+      workflowFiles[".github/workflows/release.yml"];
+    const publish = release.jobs.release.steps.find(
+      (step) => step.name === "Verify and publish editor extension",
+    );
+    delete publish.env.VSCE_PAT;
+    release.jobs.release.steps.push({
+      name: "Unreviewed publication",
+      env: { VSCE_PAT: "${{ secrets.VSCE_PAT }}" },
+    });
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
 test("rejects a second use of an excepted workflow secret", () => {
   expectCode(({ workflowFiles }) => {
     workflowFiles[".github/workflows/other.yml"] = {
@@ -501,6 +545,24 @@ test("rejects a second use of an excepted workflow secret", () => {
               env: {
                 CARGO_REGISTRY_TOKEN:
                   "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+              },
+            },
+          ],
+        },
+      },
+    };
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects a second use of an excepted publisher secret", () => {
+  expectCode(({ workflowFiles }) => {
+    workflowFiles[".github/workflows/other.yml"] = {
+      jobs: {
+        other: {
+          steps: [
+            {
+              env: {
+                OVSX_PAT: "${{ secrets.OVSX_PAT }}",
               },
             },
           ],

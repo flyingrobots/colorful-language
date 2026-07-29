@@ -14,7 +14,8 @@ The current release path is:
 
 ```text
 release branch -> PR -> merge to main -> manual annotated tag -> tag workflow
--> crates.io publish -> GitHub Release -> public verification -> retrospective
+-> native/editor build and attestation -> crates.io + editor publication
+-> GitHub Release -> Zed registry PR -> public verification -> retrospective
 ```
 
 There is no autotag workflow yet. Manual tagging is the current supported path,
@@ -69,6 +70,12 @@ Release-prep validation is executable:
 bash scripts/release-prep.sh
 ```
 
+The prep gate runs the deterministic distribution policy and mutation suite.
+That policy pins the three native host/target pairs, requires checksums and
+GitHub/Sigstore provenance, requires one clean-install-tested VSIX for both
+editor registries, verifies publisher credentials before immutable
+publication, and keeps observational startup timing outside correctness gates.
+
 That gate validates the canonical
 `contracts/colorful/syntax-compatibility.v1.json` authority before packaging.
 For `colorful.syntax/v1`, description-only SDL edits preserve the current
@@ -86,15 +93,29 @@ bash scripts/release-preflight.sh vX.Y.Z
 
 The tag-triggered release workflow runs when a `v*` tag is pushed. It verifies
 the profile, verifies that release metadata matches the tag, verifies that the
-tag is on `main`, reruns the Rust and package guards, publishes the crates in
-dependency order, builds one
-`x86_64-unknown-linux-gnu` archive containing the `colorful` and `colorful-lsp`
-binaries, writes a checksum, and creates the GitHub Release.
+tag is on `main`, and reruns the Rust and package guards. Native matrix jobs
+build `colorful` and `colorful-lsp` for Linux x86-64, Apple Silicon, and
+Windows x86-64, then publish checksummed archives with GitHub/Sigstore
+provenance. The release job clean-installs one exact VSIX, publishes those bytes
+to VS Code Marketplace and Open VSX, packages the byte-validated Zed source
+tree, publishes crates in dependency order, and attaches every reviewed asset
+to the GitHub Release.
+
+Zed registry publication remains an owner-submitted pull request to
+`zed-industries/extensions`; the release workflow supplies the versioned,
+licensed source archive and provenance but cannot merge into the external
+registry. Current-reference marketplace URLs remain absent until the public
+entries resolve.
 
 The crates.io publish step skips crate versions that are already available in
 the crates.io registry index, so rerunning the workflow after a partial publish
 can continue without moving the tag. The release job timeout is sized for the
 aggregate index-readiness polling window across all eight crates.
+
+Editor publication is also rerun-safe: both publishers receive the exact
+smoke-tested VSIX with duplicate-version handling enabled. Credential checks run
+before crates or editor packages are published, so a missing publisher identity
+fails closed before the workflow creates a partial multi-registry release.
 
 PR CI and release preparation derive internal normal, build, and dev
 dependencies from `cargo metadata`, require the release profile and tag

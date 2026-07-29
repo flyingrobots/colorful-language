@@ -21,3 +21,27 @@ exceptions:
       the token is scoped to the one crates.io publication step.
     remove_when: >-
       Deployment ownership and a protected release environment are configured.
+  - rule: secrets-outside-env
+    path: >-
+      .github/workflows/release.yml:jobs.release.steps[Verify and publish editor
+      extension].env.VSCE_PAT
+    selector: VSCE_PAT
+    owner: "@flyingrobots"
+    reason: >-
+      The current tag release predates a repository-owned GitHub Environment;
+      the token is scoped to the one Marketplace verification and publication
+      step.
+    remove_when: >-
+      Deployment ownership and a protected release environment are configured.
+  - rule: secrets-outside-env
+    path: >-
+      .github/workflows/release.yml:jobs.release.steps[Verify and publish editor
+      extension].env.OVSX_PAT
+    selector: OVSX_PAT
+    owner: "@flyingrobots"
+    reason: >-
+      The current tag release predates a repository-owned GitHub Environment;
+      the token is scoped to the one Open VSX verification and publication
+      step.
+    remove_when: >-
+      Deployment ownership and a protected release environment are configured.
