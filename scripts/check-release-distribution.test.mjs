@@ -568,8 +568,8 @@ test("rejects native artifact paths that can omit release assets", () => {
 test("derives and attests Homebrew formulae from downloaded native assets", () => {
   for (const [mutation, expected] of [
     ["missing-step", /exactly one 'Generate Homebrew formula' step/u],
-    ["wrong-dist", /exact generator command/u],
-    ["rebuild", /must not rebuild native artifacts/u],
+    ["wrong-dist", /exact reviewed command sequence/u],
+    ["rebuild", /exact reviewed command sequence/u],
     ["before-download", /must preserve the reviewed release step order/u],
     [
       "unattested",
@@ -616,9 +616,9 @@ test("derives and attests Homebrew formulae from downloaded native assets", () =
 
 test("rejects Homebrew command and attestation prefix bypasses", () => {
   for (const [mutation, expected] of [
-    ["dist-prefix", /exact generator command/u],
-    ["output-suffix", /exact generator command/u],
-    ["duplicate-command", /exact generator command/u],
+    ["dist-prefix", /exact reviewed command sequence/u],
+    ["output-suffix", /exact reviewed command sequence/u],
+    ["duplicate-command", /exact reviewed command sequence/u],
     [
       "attestation-suffix",
       /must attest the formula, VSIX, and Zed source archive/u,
@@ -654,6 +654,30 @@ test("rejects Homebrew command and attestation prefix bypasses", () => {
       () => validateReleaseDistribution(snapshot),
       expected,
       `${mutation} must not satisfy the exact release policy`,
+    );
+  }
+});
+
+test("rejects non-Cargo replacement of Homebrew formula inputs", () => {
+  for (const [mutation, command] of [
+    [
+      "archive-replacement",
+      "printf tampered > " +
+        "dist/colorful-language-v0.4.0-x86_64-unknown-linux-gnu.tar.gz",
+    ],
+    [
+      "sidecar-replacement",
+      "printf tampered > " +
+        "dist/colorful-language-v0.4.0-x86_64-unknown-linux-gnu.tar.gz.sha256",
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    const formula = releaseStep(snapshot, "Generate Homebrew formula");
+    formula.run += `\n${command}`;
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /exact reviewed command sequence/u,
+      `${mutation} must not alter downloaded Homebrew inputs`,
     );
   }
 });

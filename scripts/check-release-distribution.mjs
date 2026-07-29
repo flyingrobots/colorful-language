@@ -94,6 +94,13 @@ const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Publish to crates.io",
   "Create GitHub Release",
 ]);
+const REVIEWED_HOMEBREW_COMMANDS = Object.freeze([
+  "set -euo pipefail",
+  'version="${GITHUB_REF_NAME#v}"',
+  "node scripts/generate-homebrew-formula.mjs " +
+    '--version "$version" --dist-dir dist > dist/colorful.rb',
+  "ruby -c dist/colorful.rb",
+]);
 const REQUIRED_ADMISSION_COMMANDS = Object.freeze([
   "bash scripts/release-profile-check.sh",
   "node scripts/check-editor-version-policy.mjs",
@@ -401,32 +408,14 @@ function validateReleaseJob(job) {
     "Generate Homebrew formula",
     context,
   );
-  const homebrewSource = String(homebrew.run ?? "");
-  const homebrewLines = shellCommandLines(homebrewSource);
-  for (const required of [
-    "set -euo pipefail",
-    'version="${GITHUB_REF_NAME#v}"',
-    "ruby -c dist/colorful.rb",
-  ]) {
-    if (homebrewLines.filter((line) => line === required).length !== 1) {
-      throw new Error(
-        `${context} Homebrew generation must include ${required}`,
-      );
-    }
-  }
-  const generatorCommand =
-    "node scripts/generate-homebrew-formula.mjs " +
-    '--version "$version" --dist-dir dist > dist/colorful.rb';
   if (
-    homebrewLines.filter((line) => line === generatorCommand).length !== 1
+    !isDeepStrictEqual(
+      shellCommandLines(homebrew.run ?? ""),
+      REVIEWED_HOMEBREW_COMMANDS,
+    )
   ) {
     throw new Error(
-      `${context} Homebrew generation must invoke the exact generator command once`,
-    );
-  }
-  if (/\bcargo\s+(?:build|install|package)\b/u.test(homebrewSource)) {
-    throw new Error(
-      `${context} Homebrew generation must not rebuild native artifacts`,
+      `${context} Homebrew generation must match the exact reviewed command sequence`,
     );
   }
 
