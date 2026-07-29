@@ -340,7 +340,10 @@ fn push_coordinate_mask(output: &mut String, source: &str, separates_prose: bool
 mod tests {
     use std::borrow::Cow;
 
-    use super::mask_non_prose;
+    use super::{
+        has_reference_definition_marker, hidden_reference_definition_ranges,
+        inline_link_destination_range, mask_non_prose,
+    };
 
     fn assert_masked(source: &str, needle: &str) {
         let start = source.find(needle).expect("fixture needle");
@@ -428,6 +431,51 @@ mod tests {
 
         assert_masked(source, "[ref]: https://example.invalid/first");
         assert_masked(source, "[ref]: https://really.example/duplicate");
+    }
+
+    #[test]
+    fn reference_definition_marker_handles_escapes_indentation_and_line_endings() {
+        assert!(has_reference_definition_marker(
+            r"[escaped\]label]: https://example.invalid"
+        ));
+        assert!(!has_reference_definition_marker(
+            "    [too-deep]: https://example.invalid"
+        ));
+        assert!(!has_reference_definition_marker("[unterminated"));
+
+        let source = "[ref]: https://example.invalid\r";
+        let mut rendered = [];
+        let ranges = hidden_reference_definition_ranges(source, &mut rendered);
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].bytes, 0..source.len());
+    }
+
+    #[test]
+    fn destination_scanner_handles_escaped_angle_multiple_and_unclosed_forms() {
+        let escaped = r"[label](https://example.invalid/a\(b\))";
+        assert_eq!(
+            inline_link_destination_range(escaped, 0..escaped.len()),
+            escaped.find('(').map(|start| start..escaped.len())
+        );
+
+        let angle = r#"[label](<https://example.invalid/a_(b)> "title (")"#;
+        assert_eq!(
+            inline_link_destination_range(angle, 0..angle.len()),
+            angle.find('(').map(|start| start..angle.len())
+        );
+
+        let multiple = "[a](one) [b](two)";
+        let second_start = multiple.rfind('(').expect("second destination");
+        assert_eq!(
+            inline_link_destination_range(multiple, 0..multiple.len()),
+            Some(second_start..multiple.len())
+        );
+
+        let unclosed = "[label](https://example.invalid";
+        assert_eq!(
+            inline_link_destination_range(unclosed, 0..unclosed.len()),
+            None
+        );
     }
 
     #[test]
