@@ -18,6 +18,18 @@ struct MarkdownRanges {
 /// the same byte length, line endings, and UTF-16 length before every retained
 /// prose byte, so findings and semantic roles can be projected directly onto
 /// the original source.
+///
+/// ```
+/// use colorful_parse::markdown::mask_non_prose;
+///
+/// let source = "Prose.\n\n```text\nThe cat connects.\n```\n";
+/// let masked = mask_non_prose(source);
+///
+/// assert!(masked.starts_with("Prose.\n\n"));
+/// assert!(masked["Prose.\n\n".len()..].chars().all(char::is_whitespace));
+/// assert_eq!(masked.len(), source.len());
+/// assert_eq!(masked.encode_utf16().count(), source.encode_utf16().count());
+/// ```
 #[must_use]
 pub fn mask_non_prose(source: &str) -> Cow<'_, str> {
     let mut ranges = parser_ranges(source);

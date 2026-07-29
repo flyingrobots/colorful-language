@@ -17,8 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   classification, and lint pass. Diagnostics and semantic roles therefore
   exclude reviewed non-prose regions without moving source positions; Plain
   Text, stdin, and public string colorization helpers keep the historical
-  whole-document behavior. Unit, cross-surface, real stdio, real CLI, and
-  packaged-editor fixtures pin the policy across incremental generations.
+  whole-document behavior. Canonical IR and `diagnose --json` also remain
+  format-neutral whole-source projections. Unit, cross-surface, real stdio,
+  real CLI, and packaged-editor fixtures pin the policy across incremental
+  generations.
 - **Packaged editor and LSP lifecycle evidence.** One checked-in JSON-RPC
   transcript now drives the real `colorful-lsp` binary through the complete
   open/change/tokens/diagnostics/close/shutdown lifecycle for Plain Text and

@@ -77,7 +77,11 @@ token into:
 
 Use `colorful ir` for the stable downstream consumer contract. Use
 `colorful diagnose --json` when checking whether a terminal, Zed, jedit, or
-another editor is rendering the classes Colorful actually produced.
+another editor is rendering the classes Colorful actually produced for
+format-neutral or Plain Text input. The canonical IR and diagnostic report
+remain whole-source projections: they do not infer Markdown regions from a
+filename. This keeps source identity and portable contract output independent
+of adapter-specific format selection.
 
 The committed smoke fixture
 [`crates/colorful-cli/fixtures/editor-smoke-prose.txt`](../../../crates/colorful-cli/fixtures/editor-smoke-prose.txt)

@@ -25,8 +25,9 @@ colorful diagnose [--json] [FILE]
   exact text passthrough.
 - `lint` writes compiler-style findings and exits nonzero when it finds any.
 - `ir` writes one canonical `colorful.syntax/v1` JSON document.
-- `diagnose --json` writes token axes, presentation projections, and lint
-  findings for troubleshooting CLI/editor disagreement.
+- `diagnose --json` writes whole-source token axes, presentation projections,
+  and lint findings for troubleshooting format-neutral CLI/editor disagreement.
+  Like canonical IR, it does not infer Markdown regions from a filename.
 - `--version` and `-V` write the package version.
 - `--help` and `-h` write command-specific help.
 

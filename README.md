@@ -73,7 +73,10 @@ It works on any valid UTF-8 text file and respects `NO_COLOR`. A file with
 invalid UTF-8 bytes is rejected with a clear error, not silently mangled —
 see [`docs/topics/coloring/`](docs/topics/coloring/) for the exact contract.
 Use `colorful diagnose --json` when comparing terminal, Zed, jedit, or another
-editor against the classes Colorful actually produced.
+editor against the classes Colorful actually produced for format-neutral or
+Plain Text input. The current diagnostic report and canonical IR deliberately
+remain whole-source projections; `.md`/`.markdown` region selection applies to
+file coloring, linting, and LSP analysis.
 
 For a committed smoke sample with denser prose and deterministic POS probes, run:
 
