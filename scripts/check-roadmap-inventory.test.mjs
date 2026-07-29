@@ -73,6 +73,35 @@ test("accepts the canonical roadmap with CRLF line endings", () => {
   );
 });
 
+test("reports identical failure addresses for LF and CRLF roadmaps", () => {
+  const mechanismRow =
+    "| Parser ports | Substitute deterministic adapters. |";
+  const duplicated = roadmap.replace(
+    mechanismRow,
+    `${mechanismRow}\n${mechanismRow}`,
+  );
+  const failureMessage = (source) => {
+    try {
+      validateRoadmapInventory({
+        roadmap: source,
+        issues,
+        roadmapPath: "fixture/roadmap.md",
+        issuePath: "fixture/issues.json",
+      });
+    } catch (error) {
+      assert.ok(error instanceof InventoryError);
+      assert.equal(error.category, "E_ROADMAP_DUPLICATE_MECHANISM");
+      return error.message;
+    }
+    assert.fail("expected duplicate-mechanism validation to fail");
+  };
+
+  assert.equal(
+    failureMessage(duplicated.replaceAll("\n", "\r\n")),
+    failureMessage(duplicated),
+  );
+});
+
 test("rejects an open slice missing from the primary inventory", () => {
   expectCategory("E_ROADMAP_MISSING_OPEN", (source) =>
     source.replace("  <!-- roadmap-primary: active #101 -->\n", ""),
