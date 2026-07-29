@@ -553,11 +553,11 @@ function decodeNumericCharacterReferences(source) {
   );
 }
 
-function removeBalancedStyleDelimiters(source) {
+function removeBalancedAsteriskStyleDelimiters(source) {
   let rendered = source;
   while (true) {
     const withoutOneLayer = rendered.replace(
-      /(?<!\\)(\*\*|__|~~|\*|_)(?=\S)([\s\S]*?\S)(?<!\\)\1/gu,
+      /(?<!\\)(\*\*|\*)(?=\S)([\s\S]*?\S)(?<!\\)\1/gu,
       "$2",
     );
     if (withoutOneLayer === rendered) {
@@ -574,7 +574,7 @@ function displaysRenderedMechanismHeader(mechanism, location) {
   const visibleSource = markdownLinkLabel(mechanism) ?? mechanism;
   return (
     decodeNumericCharacterReferences(
-      removeBalancedStyleDelimiters(visibleSource),
+      removeBalancedAsteriskStyleDelimiters(visibleSource),
     ) === "Mechanism"
   );
 }

@@ -648,6 +648,22 @@ test("rejects rendered-equivalent duplicate table headers", () => {
   }
 });
 
+test("preserves intraword underscores in unrelated table headers", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: `${roadmap}
+
+| Mech__anism__ | Current user job |
+| --- | --- |
+| Literal underscores | This is not an accountability authority. |
+`,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("does not invent a missing reference-link definition", () => {
   assert.doesNotThrow(() =>
     validateRoadmapInventory({
