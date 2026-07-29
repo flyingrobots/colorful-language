@@ -279,6 +279,17 @@ function canonicalMechanismIdentity(mechanism, location) {
   return canonical;
 }
 
+function displaysMechanismHeader(mechanism, location) {
+  try {
+    return canonicalMechanismIdentity(mechanism, location) === "Mechanism";
+  } catch (error) {
+    if (error instanceof InventoryError) {
+      return false;
+    }
+    throw error;
+  }
+}
+
 function validateArchitectureAccountability(roadmap, roadmapPath) {
   const mechanisms = new Map();
   let inAccountabilitySection = false;
@@ -397,6 +408,25 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
 
     const tableCells = markdownTableCells(line);
     const mechanism = tableCells?.[0];
+    if (
+      mechanism !== undefined &&
+      mechanism !== "Mechanism" &&
+      displaysMechanismHeader(mechanism, `${roadmapPath}:${index + 1}`)
+    ) {
+      const location = `${roadmapPath}:${index + 1}`;
+      if (foundAccountabilityTable) {
+        fail(
+          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+          location,
+          `canonical table already begins at ${accountabilityTableLocation}`,
+        );
+      }
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        location,
+        'canonical table header must use the plain-text cell "Mechanism"',
+      );
+    }
     if (accountabilityTableState === "searching") {
       if (mechanism === "Mechanism") {
         accountabilityTableState = "delimiter";

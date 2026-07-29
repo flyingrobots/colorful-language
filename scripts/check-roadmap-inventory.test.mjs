@@ -285,6 +285,18 @@ test("rejects a second architecture-accountability mechanism table", () => {
   );
 });
 
+test("rejects a styled duplicate accountability table header", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+| \`Mechanism\` | Current user job |
+| --- | --- |
+| Styled duplicate | Must not create another apparent authority. |
+`,
+  );
+});
+
 test("rejects a no-leading-pipe accountability table explicitly", () => {
   for (const header of [
     "Mechanism | Current user job",
