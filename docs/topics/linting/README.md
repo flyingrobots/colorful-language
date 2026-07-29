@@ -82,12 +82,25 @@ invalid UTF-8, malformed JSON, duplicate JSON source keys, invalid alert data,
 and source-identity mismatch are different `ValeErrorKind` values; none
 silently becomes an empty result or a fallback to the built-in rules.
 
+Set `VALE_BIN` to the absolute path of the selected executable before running
+this example. Resolving the path first is required because the child receives
+the isolated environment described above.
+
 ```rust
 use colorful_vale::{CancellationToken, ValeAnalyzer, ValeConfig};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source = "This is very clear.";
-    let config = ValeConfig::new("vale", ".vale.ini").with_extension(".md");
+    let executable = std::env::var_os("VALE_BIN")
+        .map(std::path::PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "VALE_BIN must name an absolute Vale executable",
+            )
+        })?;
+    let config = ValeConfig::new(executable, ".vale.ini").with_extension(".md");
     let adapter = ValeAnalyzer::discover(config)?;
     let cancellation = CancellationToken::new();
     let prepared = adapter.analyze(source, &cancellation)?;

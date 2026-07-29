@@ -251,11 +251,11 @@ Implemented and planned cases are listed below.
   and the checksum-verified official Vale 3.14.2 output retained at
   `crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json` and admitted by
   `vale_adapter::pinned_real_vale_v3_smoke_shape_remains_admitted`; the
-  documentation oracle is planned in
+  documentation oracle is
   `workspace_boundary::linting_reference_resolves_an_absolute_vale_executable`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13c** — *Requirement:* LINT-13. *Behavior:* timeout, cancellation,
   non-zero process failure, oversized output, invalid UTF-8, malformed JSON,
   an unexpected JSON source key, and invalid Vale alert fields fail explicitly
