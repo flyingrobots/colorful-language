@@ -88,8 +88,8 @@ Additive unknown Vale v3 alert and action fields are ignored, while every field
 Colorful consumes remains required and validated. Source-key failures use fixed
 messages and do not echo process-controlled key material. Invalid-alert
 messages likewise omit complete process-controlled fields and source slices.
-They retain field names, byte lengths, and numeric coordinates within a
-512-byte message ceiling.
+They retain a stable structural category and, when applicable, field names,
+byte lengths, and numeric coordinates within a 512-byte message ceiling.
 
 Set `VALE_BIN` to the absolute path of the selected executable before running
 this example. Resolving the path first is required because the child receives

@@ -477,9 +477,10 @@ Implemented and planned cases are listed below.
 - **LINT-13t** — *Requirement:* LINT-13. *Behavior:* malformed Vale alerts
   cannot make adapter errors reproduce complete process-controlled text or
   allocate diagnostics proportional to the configured output limit. Every
-  invalid-alert message preserves stable field and coordinate context within a
-  512-byte ceiling. *Oracle:* oversized `Check`, `Match`, unsupported
-  `Severity`, and mismatched source-slice sentinels each retain
+  invalid-alert message preserves stable structural context and, when
+  applicable, field, length, and coordinate detail within a 512-byte ceiling.
+  *Oracle:* oversized `Check`, `Match`, unsupported `Severity`, and mismatched
+  source-slice sentinels each retain
   `ValeErrorKind::InvalidAlert`; every message is at most 512 bytes and omits
   the complete sentinel. Existing duplicate-source and unexpected-source-key
   redaction remains exact. *Evidence type:* malformed-output boundary matrix
