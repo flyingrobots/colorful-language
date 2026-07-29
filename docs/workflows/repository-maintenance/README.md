@@ -212,7 +212,8 @@ move its one marker in the same change. When a pull request closes a slice,
 change that marker to `delivered` before merge.
 
 The same offline structure gate requires exactly one canonical Architecture
-Accountability heading and exactly one `Mechanism` table, then requires each
+Accountability H2 with no more than three leading spaces and exactly one
+`Mechanism` table, then requires each
 displayed mechanism identity to appear exactly once. A header-shaped line is
 not enough: the table requires its delimiter and at least one non-empty data
 row. The first cell in every canonical row is pipe-delimited on both sides, and

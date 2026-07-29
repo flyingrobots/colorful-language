@@ -111,13 +111,32 @@ test("rejects a duplicate architecture-accountability mechanism by line", () => 
 });
 
 test("rejects a missing canonical architecture-accountability section", () => {
-  for (const replacement of ["## Architecture Accountability", ""]) {
+  for (const replacement of [
+    "## Architecture Accountability",
+    "    ## Architecture accountability",
+    "\t## Architecture accountability",
+    "",
+  ]) {
     expectCategory(
       "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",
       (source) =>
         source.replace("## Architecture accountability", replacement),
     );
   }
+});
+
+test("ignores indented code that spells the accountability heading", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: `${roadmap}
+
+    ## Architecture accountability
+`,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
 });
 
 test("rejects a second architecture-accountability section", () => {

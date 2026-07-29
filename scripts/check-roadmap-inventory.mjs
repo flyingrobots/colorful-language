@@ -115,6 +115,10 @@ function isNoLeadingPipeMechanismHeader(line) {
   );
 }
 
+function isCanonicalAccountabilityHeading(line) {
+  return /^ {0,3}## Architecture accountability[ \t]*$/u.test(line);
+}
+
 function isRoadmapLevelTwoHeading(line) {
   const match = line.match(/^ {0,3}##(?:[ \t]+|$)/u);
   if (match === null) {
@@ -259,7 +263,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       continue;
     }
 
-    if (line.trim() === ACCOUNTABILITY_HEADING) {
+    if (isCanonicalAccountabilityHeading(line)) {
       const location = `${roadmapPath}:${index + 1}`;
       if (foundAccountabilitySection) {
         fail(
