@@ -419,6 +419,18 @@ test("rejects a styled duplicate accountability table header", () => {
   );
 });
 
+test("rejects unsupported Markdown in a duplicate table header", () => {
+  expectCategory(
+    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+| **Mechanism** | Current user job |
+| --- | --- |
+| Styled duplicate | Must not evade duplicate-table detection. |
+`,
+  );
+});
+
 test("rejects a no-leading-pipe accountability table explicitly", () => {
   for (const header of [
     "Mechanism | Current user job",

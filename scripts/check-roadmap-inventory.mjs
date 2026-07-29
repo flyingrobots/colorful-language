@@ -11,6 +11,8 @@ const ACCOUNTABILITY_HEADING = "## Architecture accountability";
 const MARKDOWN_DELIMITER_CELL = /^:?-{3,}:?$/u;
 const MARKDOWN_CHARACTER_REFERENCE =
   /^&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
+const UNSUPPORTED_STYLED_MECHANISM_HEADER =
+  /^(\*{1,2}|_{1,2}|~~)Mechanism\1$/u;
 const NONCANONICAL_MECHANISM_MARKUP = new Set([
   "*",
   "_",
@@ -490,22 +492,32 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
 
     const tableCells = markdownTableCells(line);
     const mechanism = tableCells?.[0];
+    const mechanismLocation = `${roadmapPath}:${index + 1}`;
+    if (
+      mechanism !== undefined &&
+      UNSUPPORTED_STYLED_MECHANISM_HEADER.test(mechanism)
+    ) {
+      fail(
+        "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+        mechanismLocation,
+        'accountability table header must use the plain-text cell "Mechanism"',
+      );
+    }
     if (
       mechanism !== undefined &&
       mechanism !== "Mechanism" &&
-      displaysMechanismHeader(mechanism, `${roadmapPath}:${index + 1}`)
+      displaysMechanismHeader(mechanism, mechanismLocation)
     ) {
-      const location = `${roadmapPath}:${index + 1}`;
       if (foundAccountabilityTable) {
         fail(
           "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
-          location,
+          mechanismLocation,
           `canonical table already begins at ${accountabilityTableLocation}`,
         );
       }
       fail(
         "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-        location,
+        mechanismLocation,
         'canonical table header must use the plain-text cell "Mechanism"',
       );
     }
