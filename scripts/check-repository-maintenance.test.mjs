@@ -23,6 +23,29 @@ const CODEQL_INIT =
   "github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
 const CODEQL_ANALYZE =
   "github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+const EDITOR_TOOL_LICENSES = [
+  "Artistic-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "CC-BY-3.0",
+  "CC0-1.0",
+  "Python-2.0",
+];
+const EDITOR_TOOL_LICENSE_EXCEPTIONS = [
+  "pkg:npm/@azu/style-format@1.0.1",
+  "pkg:npm/@vscode/vsce-sign@2.0.9",
+  "pkg:npm/@vscode/vsce-sign-alpine-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-alpine-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-darwin-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-darwin-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-arm@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-win32-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-win32-x64@2.0.6",
+  "pkg:npm/typed-rest-client@1.8.11",
+  "pkg:npm/xmlbuilder@11.0.1",
+];
 
 function requiredField(id) {
   return {
@@ -301,6 +324,18 @@ function addAdvisoryException(candidate) {
 
 test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
+});
+
+test("accepts the exact editor package-tool license policy", () => {
+  const candidate = fixture();
+  const step = actionStep(
+    candidate.securityWorkflow.jobs["dependency-review"],
+    DEPENDENCY_ACTION,
+  );
+  step.with["allow-licenses"] += `, ${EDITOR_TOOL_LICENSES.join(", ")}`;
+  step.with["allow-dependencies-licenses"] =
+    EDITOR_TOOL_LICENSE_EXCEPTIONS.join(", ");
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
 });
 
 test("rejects an incomplete bug form", () => {
