@@ -154,11 +154,50 @@ function canonicalMechanismIdentity(mechanism, location) {
 function validateArchitectureAccountability(roadmap, roadmapPath) {
   const mechanisms = new Map();
   let inAccountabilitySection = false;
-  let inAccountabilityTable = false;
+  let accountabilityTableState = "searching";
+  let fenceCharacter;
+  let fenceLength = 0;
+  let inHtmlComment = false;
   let foundAccountabilitySection = false;
   let foundAccountabilityTable = false;
 
   for (const [index, line] of roadmap.split("\n").entries()) {
+    if (fenceCharacter !== undefined) {
+      const closingFence = line.match(
+        /^ {0,3}(`{3,}|~{3,})[ \t]*$/u,
+      );
+      if (
+        closingFence !== null &&
+        closingFence[1][0] === fenceCharacter &&
+        closingFence[1].length >= fenceLength
+      ) {
+        fenceCharacter = undefined;
+        fenceLength = 0;
+      }
+      continue;
+    }
+    if (inHtmlComment) {
+      if (line.includes("-->")) {
+        inHtmlComment = false;
+      }
+      continue;
+    }
+
+    const openingFence = line.match(/^ {0,3}(`{3,}|~{3,}).*$/u);
+    if (openingFence !== null) {
+      fenceCharacter = openingFence[1][0];
+      fenceLength = openingFence[1].length;
+      continue;
+    }
+    const commentStart = line.indexOf("<!--");
+    if (
+      commentStart !== -1 &&
+      line.slice(0, commentStart).trim().length === 0
+    ) {
+      inHtmlComment = !line.slice(commentStart + 4).includes("-->");
+      continue;
+    }
+
     if (line.trim() === ACCOUNTABILITY_HEADING) {
       inAccountabilitySection = true;
       foundAccountabilitySection = true;
@@ -172,23 +211,30 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
 
     const mechanism = markdownTableMechanism(line);
-    if (!inAccountabilityTable) {
+    if (accountabilityTableState === "searching") {
       if (mechanism === "Mechanism") {
-        inAccountabilityTable = true;
-        foundAccountabilityTable = true;
+        accountabilityTableState = "delimiter";
       }
       continue;
     }
-    if (mechanism === undefined) {
-      inAccountabilityTable = false;
+    if (accountabilityTableState === "delimiter") {
+      accountabilityTableState =
+        mechanism !== undefined && MARKDOWN_DELIMITER_CELL.test(mechanism)
+          ? "rows"
+          : "searching";
       continue;
     }
-    if (MARKDOWN_DELIMITER_CELL.test(mechanism)) {
+    if (accountabilityTableState === "complete") {
+      continue;
+    }
+    if (mechanism === undefined) {
+      accountabilityTableState = "complete";
       continue;
     }
 
     const location = `${roadmapPath}:${index + 1}`;
     const identity = canonicalMechanismIdentity(mechanism, location);
+    foundAccountabilityTable = true;
     const previous = mechanisms.get(identity);
     if (previous !== undefined) {
       fail(

@@ -140,6 +140,31 @@ test("rejects a missing architecture-accountability table", () => {
   );
 });
 
+test("requires a delimiter and data row for the accountability table", () => {
+  for (const replacement of [
+    "| Mechanism | Example only |",
+    ["| Mechanism | Example only |", "| --- | --- |"].join("\n"),
+    [
+      "```markdown",
+      "| Mechanism | Example only |",
+      "| --- | --- |",
+      "| Parser ports | Not authoritative. |",
+      "```",
+    ].join("\n"),
+    [
+      "<!--",
+      "| Mechanism | Example only |",
+      "| --- | --- |",
+      "| Parser ports | Not authoritative. |",
+      "-->",
+    ].join("\n"),
+  ]) {
+    expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
+      source.replace(/\n\| Mechanism \|[\s\S]*$/u, `\n${replacement}\n`),
+    );
+  }
+});
+
 test("compares displayed mechanism identity across inline-code styling", () => {
   expectCategory("E_ROADMAP_DUPLICATE_MECHANISM", (source) =>
     source.replace(
