@@ -97,12 +97,9 @@ test("rejects a duplicate architecture-accountability mechanism by line", () => 
     assert.equal(result.error, undefined);
     assert.equal(result.status, 1);
     assert.equal(result.stdout, "");
-    assert.match(
+    assert.equal(
       result.stderr,
-      new RegExp(
-        `^E_ROADMAP_DUPLICATE_MECHANISM: ${roadmapPath}:26: .*${roadmapPath}:25`,
-        "u",
-      ),
+      `E_ROADMAP_DUPLICATE_MECHANISM: ${roadmapPath}:26: architecture-accountability mechanism "Parser ports" already appears at ${roadmapPath}:25\n`,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
