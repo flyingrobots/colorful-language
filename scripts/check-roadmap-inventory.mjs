@@ -184,6 +184,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let fenceLength = 0;
   let inHtmlComment = false;
   let foundAccountabilitySection = false;
+  let accountabilitySectionLocation;
   let foundAccountabilityTable = false;
 
   for (const [index, line] of roadmap.split("\n").entries()) {
@@ -234,8 +235,17 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
 
     if (line.trim() === ACCOUNTABILITY_HEADING) {
+      const location = `${roadmapPath}:${index + 1}`;
+      if (foundAccountabilitySection) {
+        fail(
+          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+          location,
+          `canonical heading already appears at ${accountabilitySectionLocation}`,
+        );
+      }
       inAccountabilitySection = true;
       foundAccountabilitySection = true;
+      accountabilitySectionLocation = location;
       continue;
     }
     if (inAccountabilitySection && /^##\s+/u.test(line.trimStart())) {

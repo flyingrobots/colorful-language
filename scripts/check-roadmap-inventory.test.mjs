@@ -116,6 +116,20 @@ test("rejects a missing canonical architecture-accountability section", () => {
   }
 });
 
+test("rejects a second architecture-accountability section", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+    (source) => `${source}
+
+## Architecture accountability
+
+| Mechanism | Current user job |
+| --- | --- |
+| Parser ports | Duplicated section. |
+`,
+  );
+});
+
 test("ignores table-like examples outside the accountability table", () => {
   for (const block of [
     ["```markdown", "| Example | Only |", "```"].join("\n"),
