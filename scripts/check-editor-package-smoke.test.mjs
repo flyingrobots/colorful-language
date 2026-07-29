@@ -167,6 +167,16 @@ test("the Zed host oracle remains planned until manual evidence is recorded", ()
   assert.match(edit8c[0], /\*Status:\* planned(?:[.;])/u);
 });
 
+test("the VS Code packaging warning precedes every package command", () => {
+  const readme = readFileSync("editors/vscode/README.md", "utf8");
+  const warning = readme.indexOf("> [!WARNING]");
+  const packageCommand = readme.indexOf("npm run package:vsix");
+  assert.ok(
+    warning >= 0 && packageCommand > warning,
+    "the package side-effect warning must precede the first package command",
+  );
+});
+
 test("the extension-host smoke rejects cross-drive install paths", () => {
   const source = readFileSync(
     "editors/vscode/smoke/suite/index.cjs",

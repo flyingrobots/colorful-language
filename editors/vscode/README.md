@@ -57,6 +57,10 @@ extension and opens an Extension Development Host with this source checkout
 loaded. Attach configurations only connect a debugger to an already running
 extension host; they do not launch this extension by themselves.
 
+> [!WARNING]
+> The full package smoke downloads and caches VS Code 1.91.0, builds release
+> binaries, and writes or replaces evidence under `target/editor-smoke/`.
+
 Build the bundled VSIX with the lockfile-pinned packaging tool:
 
 ```bash
