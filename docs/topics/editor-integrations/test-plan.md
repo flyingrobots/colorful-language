@@ -160,14 +160,45 @@ Verification for editor adapters and the `colorful-lsp` surface.
   TypeScript compile and source review. *Evidence:* `editors/vscode/package.json`;
   `editors/vscode/src/extension.ts`; `editors/vscode/README.md`;
   `npm --prefix editors/vscode run compile`. *Status:* implemented.
-- **EDIT-8a** — *Requirement:* EDIT-8. *Behavior:* clean installed VS Code/Open
-  VSX and Zed packages activate for Plain Text and Markdown, expose a
-  server-not-found failure, exchange a deterministic initialize/open/change/
-  tokens/diagnostics/close/shutdown transcript, and render a readable fallback
-  when the active theme has no Colorful-specific rules. *Oracle:* exact
-  transcript and error-category equality plus headless activation and reviewed
-  text-equivalent visual output. *Evidence type:* packaged clean-install smoke
-  tests and scripted JSON-RPC fixture. *Tracking:*
+- **EDIT-8a** — *Requirement:* EDIT-8. *Behavior:* one checked-in JSON-RPC
+  transcript drives the real `colorful-lsp` binary through initialize,
+  initialized, open, diagnostics, semantic tokens, one incremental change,
+  changed diagnostics and tokens, close, shutdown, and exit for both
+  `plaintext` and `markdown`. *Oracle:* exact response IDs, language IDs,
+  diagnostic versions and contents, semantic-token result IDs and non-empty
+  five-scalar records, empty close diagnostics, and zero process status.
+  *Evidence type:* process-level integration test backed by a JSON fixture.
+  *Tracking:*
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
+  *Status:* planned.
+- **EDIT-8b** — *Requirement:* EDIT-8. *Behavior:* one VSIX is built for both
+  VS Code Marketplace and Open VSX, installed with the pinned minimum supported
+  VS Code CLI into empty user-data and extensions directories, and exercised
+  from a separate Extension Host smoke harness. The installed adapter activates
+  for Plain Text and Markdown, starts the matching real `colorful-lsp`, exposes
+  diagnostics before and after an incremental edit, and carries exact fallback
+  TextMate scope mappings. A second isolated launch with a missing server path
+  must leave the stable startup-failure category in persisted editor logs.
+  *Oracle:* installed extension ID/version and packaged manifest equality,
+  activation state, diagnostic ranges and counts, fallback-scope equality,
+  missing-server log category, and zero Extension Host status. The Open VSX
+  witness must consume the same VSIX path and digest rather than rebuilding it.
+  *Evidence type:* VSIX inventory test and pinned headless VS Code clean-install
+  smoke test. *Tracking:*
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
+  *Status:* planned.
+- **EDIT-8c** — *Requirement:* EDIT-8. *Behavior:* the Zed registry-source
+  package is staged into an empty directory, preserves its manifest identity,
+  language IDs, source, lockfile, and accepted license, and compiles there to
+  `wasm32-wasip1`. The adapter exposes the stable missing-server guidance.
+  Because Zed provides only the interactive **Install Dev Extension** action,
+  actual clean-profile activation and fallback rendering follow an exact manual
+  oracle for Plain Text and Markdown. *Oracle:* exact staged inventory and
+  manifest fields, successful isolated Wasm build, source error-category
+  equality, and a reviewed text-equivalent manual result covering activation,
+  diagnostics, semantic tokens, incremental edits, shutdown, and readable
+  fallback roles. *Evidence type:* isolated registry-source package smoke test
+  plus documented manual host oracle. *Tracking:*
   [#136](https://github.com/flyingrobots/colorful-language/issues/136).
   *Status:* planned.
 - **EDIT-9a** — *Requirement:* EDIT-9. *Behavior:* the chosen synchronized or
@@ -229,7 +260,8 @@ Verification for editor adapters and the `colorful-lsp` surface.
 
 ## Open verification gaps
 
-- Packaged clean-install and transcript evidence remains open in EDIT-8a.
+- Packaged clean-install and transcript evidence remains open in EDIT-8a,
+  EDIT-8b, and EDIT-8c.
 - Signed publication, rollback, visual/theme evidence, and measured
   install-to-first-highlight time remain open in EDIT-10a and EDIT-10b.
 - A shipped theme remains a planned artifact. Theme fallback belongs in #136;
