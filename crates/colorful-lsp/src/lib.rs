@@ -587,6 +587,27 @@ mod tests {
         );
     }
 
+    #[test]
+    fn incompatible_analysis_coordinates_fail_closed_before_projection() {
+        let analysis = analyze_document_sources(
+            "é is",
+            "aa is",
+            &ProseParser::new(),
+            &ContextualOpenClassAnnotator::default(),
+            &colorful_lint::ProseLinter::new(),
+        )
+        .expect("coordinate incompatibility degrades to a stable analysis");
+
+        assert!(analysis.semantic_tokens().is_empty());
+        assert_eq!(analysis.diagnostics().len(), 1);
+        assert_eq!(
+            analysis.diagnostics()[0].code,
+            Some(NumberOrString::String(
+                "colorful/invalid-source-view".to_string()
+            ))
+        );
+    }
+
     struct OverlappingAnnotator;
 
     impl Annotator for OverlappingAnnotator {
