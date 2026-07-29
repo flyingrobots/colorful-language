@@ -1160,6 +1160,14 @@ test("rejects an unrecognized primary disposition", () => {
   );
 });
 
+test("rejects primary markers with trailing HTML-block content", () => {
+  expectCategory(
+    "E_ROADMAP_INVALID_MARKER",
+    (source) =>
+      `${source}\n<!-- roadmap-primary: active #101 --> trailing note\n`,
+  );
+});
+
 test("treats issues closed by the current pull request as delivered", () => {
   const transitioningRoadmap = roadmap.replace(
     "roadmap-primary: active #101",

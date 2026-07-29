@@ -11,6 +11,7 @@ import { createRoadmapInventoryRun } from "./roadmap-inventory-runner.mjs";
 
 const PRIMARY_MARKER =
   /^<!--\s*roadmap-primary:\s*([\s\S]*?)-->$/u;
+const PRIMARY_MARKER_CANDIDATE = /^<!--\s*roadmap-primary\b/u;
 const VALID_MARKER = /^(active|parked|delivered)((?:\s+#\d+)+)$/u;
 const ACCOUNTABILITY_HEADING = "## Architecture accountability";
 const ACCOUNTABILITY_HEADING_PATTERN = ACCOUNTABILITY_HEADING.replace(
@@ -717,7 +718,10 @@ export function parseRoadmapInventory(
   const stack = [tree];
   while (stack.length > 0) {
     const node = stack.pop();
-    if (node.type === "html" && PRIMARY_MARKER.test(node.value)) {
+    if (
+      node.type === "html" &&
+      PRIMARY_MARKER_CANDIDATE.test(node.value)
+    ) {
       markerNodes.push(node);
     }
     if (Array.isArray(node.children)) {
@@ -731,8 +735,15 @@ export function parseRoadmapInventory(
 
   for (const node of markerNodes) {
     const match = node.value.match(PRIMARY_MARKER);
-    const marker = match[1].trim();
     const location = `${roadmapPath}:${node.position.start.line}`;
+    if (match === null) {
+      fail(
+        "E_ROADMAP_INVALID_MARKER",
+        location,
+        "roadmap-primary comment must end at its HTML comment closer",
+      );
+    }
+    const marker = match[1].trim();
     const parsed = marker.match(VALID_MARKER);
     if (!parsed) {
       fail(

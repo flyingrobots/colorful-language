@@ -217,9 +217,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   parked, or delivered, while ordinary historical and epic links remain
   non-owning references and marker-shaped code examples remain
   non-authoritative. *Oracle:* a checked-in mocked issue snapshot passes; one
-  minimal mutation for a missing open slice, fenced-code-only marker, duplicate
-  primary home, closed active slice, open delivered slice, and unrecognized
-  marker fails with a stable path-addressed category. *Evidence type:*
+  minimal mutation for a missing open slice, fenced-code-only marker,
+  trailing-block-content marker, duplicate primary home, closed active slice,
+  open delivered slice, and unrecognized marker fails with a stable
+  path-addressed category. *Evidence type:*
   fixture-backed Node unit tests and an offline repository command. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs`, roadmap fixtures, and
   `scripts/check-roadmap-inventory.mjs`. *Status:* implemented.
