@@ -349,7 +349,11 @@ test("binds native dispatch and release side effects to the reviewed topology", 
 });
 
 test("requires signed checksummed native archives", () => {
-  for (const mutation of ["sha256sum", "Attest native archive", "*.tar.gz"]) {
+  for (const [mutation, expected] of [
+    ["sha256sum", /package step must include sha256sum/u],
+    ["Attest native archive", /must pin actions\/attest/u],
+    ["*.tar.gz", /must upload each archive and checksum/u],
+  ]) {
     const snapshot = validSnapshot();
     const job = snapshot.workflow.jobs["binary-artifacts"];
     if (mutation === "sha256sum") {
@@ -368,7 +372,11 @@ test("requires signed checksummed native archives", () => {
       );
       upload.with.path = "dist/*.sha256";
     }
-    assert.throws(() => validateReleaseDistribution(snapshot));
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${mutation} mutation must reach its specific invariant`,
+    );
   }
 });
 
@@ -412,7 +420,11 @@ test("requires publisher credential verification before crates", () => {
 });
 
 test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
-  for (const mutation of ["rebuild", "different-path", "no-skip"]) {
+  for (const [mutation, expected] of [
+    ["rebuild", /must package editors once/u],
+    ["different-path", /publish the exact VSIX rerun-safely with ovsx/u],
+    ["no-skip", /publish the exact VSIX rerun-safely with vsce/u],
+  ]) {
     const snapshot = validSnapshot();
     if (mutation === "rebuild") {
       releaseStep(snapshot, "Build and smoke editor packages").run +=
@@ -433,7 +445,11 @@ test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
       );
       publish.run = publish.run.replaceAll(" --skip-duplicate", "");
     }
-    assert.throws(() => validateReleaseDistribution(snapshot));
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${mutation} mutation must reach its specific invariant`,
+    );
   }
 });
 
