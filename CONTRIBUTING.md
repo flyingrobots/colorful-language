@@ -103,8 +103,9 @@ slice explicit and decide where its durable truth belongs.
 
 For every new slice:
 
-1. Open or select the GitHub issue that represents the slice. Milestones are
-   goalposts; issues are slices.
+1. Open or select the GitHub issue that represents the slice. GitHub milestones
+   are goalposts. Release trains use one versioned tracking issue; slice issues
+   keep their goalpost milestone.
 2. Identify the topic folder that owns the behavior. If the behavior spans more
    than one pull request and no topic exists, create one under
    `docs/topics/<topic>/`. If the lane is repository policy or recurring

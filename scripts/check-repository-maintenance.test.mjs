@@ -23,6 +23,10 @@ const CODEQL_INIT =
   "github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
 const CODEQL_ANALYZE =
   "github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+const DELIVERY_REFERENCE = [
+  "GitHub milestones are goalposts.",
+  "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
+].join("\n");
 const EDITOR_TOOL_LICENSES = [
   "Artistic-2.0",
   "BSD-2-Clause",
@@ -87,10 +91,14 @@ function fixture() {
   };
   return {
     repositoryProfile: {
-      version: 1,
+      version: 2,
       homepage:
         "https://github.com/flyingrobots/colorful-language#readme",
-      delivery_tracker: "github-issues-and-milestones",
+      delivery_tracker: {
+        issue_roles: ["release-trains", "slices"],
+        milestone_role: "goalposts",
+        release_issue_format: "[release] v{version}",
+      },
       discussions: {
         supported_intake: false,
         owner: null,
@@ -114,6 +122,19 @@ function fixture() {
         create_environment_when:
           "a real release is scheduled and all credentials can move atomically",
       },
+    },
+    releaseProfile: {
+      versioning: {
+        release_tracking_issue_format: "[release] v{version}",
+      },
+    },
+    deliveryReferences: {
+      agents: DELIVERY_REFERENCE,
+      contributing: DELIVERY_REFERENCE,
+      maintenance: DELIVERY_REFERENCE,
+      releasing: DELIVERY_REFERENCE,
+      releaseProcess: DELIVERY_REFERENCE,
+      roadmap: DELIVERY_REFERENCE,
     },
     bugForm: {
       name: "Bug report",
@@ -422,6 +443,59 @@ test("rejects a competing release-milestone delivery axis", () => {
       },
     };
   }, "E_DELIVERY_TRACKING");
+});
+
+test("rejects drift in either delivery-tracking axis", () => {
+  for (const mutate of [
+    ({ repositoryProfile }) => {
+      repositoryProfile.delivery_tracker.issue_roles.pop();
+    },
+    ({ repositoryProfile }) => {
+      repositoryProfile.delivery_tracker.milestone_role =
+        "release-trains";
+    },
+    ({ repositoryProfile }) => {
+      repositoryProfile.delivery_tracker.release_issue_format =
+        "v{version}";
+    },
+    ({ releaseProfile }) => {
+      releaseProfile.versioning.release_tracking_issue_format =
+        "release/v{version}";
+    },
+  ]) {
+    expectCode(mutate, "E_DELIVERY_TRACKING");
+  }
+});
+
+test("rejects a stale delivery-tracking reference", () => {
+  for (const key of [
+    "agents",
+    "contributing",
+    "maintenance",
+    "releasing",
+    "releaseProcess",
+    "roadmap",
+  ]) {
+    expectCode(({ deliveryReferences }) => {
+      deliveryReferences[key] = deliveryReferences[key].replace(
+        "Release trains use one versioned tracking issue;",
+        "Release trains use a GitHub milestone;",
+      );
+    }, "E_DELIVERY_TRACKING");
+  }
+});
+
+test("accepts reordered delivery-tracking profile fields", () => {
+  const candidate = fixture();
+  candidate.repositoryProfile.delivery_tracker = {
+    release_issue_format: "[release] v{version}",
+    milestone_role: "goalposts",
+    issue_roles:
+      candidate.repositoryProfile.delivery_tracker.issue_roles.reverse(),
+  };
+  assert.doesNotThrow(() =>
+    validateRepositoryMaintenance(candidate),
+  );
 });
 
 test("rejects deployment credentials without a named custodian", () => {

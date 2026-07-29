@@ -19,7 +19,7 @@ boring facts automation can check:
   same-pre-1.0-minor `colorful-lsp` compatibility;
 - tag format `v{version}`;
 - release branch format `release/v{version}`;
-- milestone format `v{version}`;
+- release-tracking issue format `[release] v{version}`;
 - the eight crates published to crates.io;
 - native Linux x86-64, Apple Silicon, and Windows x86-64 server/CLI
   distribution targets;
@@ -57,7 +57,8 @@ that passed release prep.
 ## Non-negotiables
 
 - No planned release without a release thesis.
-- No version targeting through labels; use GitHub milestones.
+- No version targeting by moving slices between goalpost milestones; use the
+  versioned release-tracking issue and packet.
 - No release-prep PR without scope reconciliation against the previous public
   tag.
 - No tag that does not point at the reviewed `main` commit.
@@ -95,15 +96,16 @@ planned -> active -> release-prep -> merged -> tagged -> published
 
 ### planned
 
-A planned release exists when the milestone exists, the release thesis exists,
-must-ship / may-slip / not-included scope is recorded, two to five goalposts are
-defined, and acceptance evidence is clear.
+A planned release exists when its versioned tracking issue and packet exist,
+the release thesis exists, must-ship / may-slip / not-included scope is
+recorded, two to five goalposts are defined, and acceptance evidence is clear.
 
 ### active
 
-A release is active when the milestone is the current version train, at least one
-scoped issue is in progress, and exactly one slice, tracking issue, or workstream
-is marked active unless the maintainer explicitly allows parallel release lanes.
+A release is active when its versioned tracking issue is the current train, at
+least one scoped issue is in progress, and exactly one slice, tracking issue,
+or workstream is marked active unless the maintainer explicitly allows parallel
+release lanes.
 
 ### release-prep
 
@@ -164,9 +166,9 @@ issues, and the next release recommendation are recorded.
 
 ### closed
 
-A release is closed when the milestone is closed, all scoped work is closed,
-moved, or explicitly cut, fallout issues are triaged, and the next release thesis
-or patch posture is clear.
+A release is closed when its versioned tracking issue is closed, all scoped
+work is closed, moved, or explicitly cut, fallout issues are triaged, and the
+next release thesis or patch posture is clear.
 
 ## Version selection
 
@@ -217,10 +219,28 @@ equivalent mapping indentation and field order do not change the result. Do not
 align version numbers by hand without changing the workspace release version
 through the release process.
 
-## Milestones and labels
+## Goalposts, release tracking, and labels
 
-Use GitHub milestones as release buckets: `v0.3.0`, `v0.3.1`, `v0.4.0`. Do not
-use version labels as release buckets.
+GitHub milestones are goalposts. Release trains use one versioned tracking
+issue; slice issues keep their goalpost milestone. The release issue title
+follows `[release] vX.Y.Z`, links the packet and scoped slices, and carries one
+roadmap disposition. Do not create version milestones or version labels.
+
+For v0.4.0, create the tracking issue on the cross-cutting Product Maturity
+goalpost after its packet exists:
+
+```bash
+gh issue create \
+  --repo flyingrobots/colorful-language \
+  --title "[release] v0.4.0" \
+  --milestone "Product Maturity — Evidence before expansion" \
+  --label documentation \
+  --body "Release packet: docs/goalposts/v0.4.0/release.md"
+```
+
+Then add the issue to `ROADMAP.md` with one active primary marker. Individual
+v0.4.0 slices stay on their existing goalpost milestones and are linked from
+the packet and tracking issue instead of being moved.
 
 Labels are query axes. Live issue axes should include exactly one label from
 each required family when that family exists in the repo:
@@ -235,8 +255,8 @@ unless the release owner records why they do not block the release.
 
 ## Release thesis and scope
 
-Every planned release needs a short thesis before implementation work starts
-against that milestone.
+Every planned release needs a short thesis in its versioned tracking issue and
+packet before release preparation starts.
 
 ```markdown
 ## Release thesis
@@ -677,7 +697,7 @@ unreleased branch.
 
 ## Release types
 
-- **Planned release:** milestone, thesis, scoped issues, goalposts, full
+- **Planned release:** versioned tracking issue, thesis, scoped issues, goalposts, full
   release-prep PR, full validation, publication evidence, retrospective.
 - **Patch release:** short thesis, changelog entry, version metadata, validation,
   publication evidence, lightweight retrospective or release tracking update.
@@ -768,11 +788,12 @@ target milestone when known, define done, and carry the repo's live issue axes.
 ## Adoption gaps
 
 The Continuum target shape includes an autotag workflow and richer issue /
-milestone gates. This repository does not have those yet. Until they land:
+goalpost gates. This repository does not have those yet. Until they land:
 
 - manual annotated tags remain the release trigger;
 - `scripts/release-preflight.sh` is the final manual guard;
-- release owners must verify milestone and issue hygiene manually;
+- release owners must verify the release-tracking issue, goalpost, and slice
+  hygiene manually;
 - release asset reruns remain conservative; if a GitHub Release exists but is
   missing assets, inspect the release before uploading replacements;
 - retrospectives and fallout issues are maintainer responsibilities.

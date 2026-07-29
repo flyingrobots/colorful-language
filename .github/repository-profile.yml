@@ -1,6 +1,11 @@
-version: 1
+version: 2
 homepage: https://github.com/flyingrobots/colorful-language#readme
-delivery_tracker: github-issues-and-milestones
+delivery_tracker:
+  issue_roles:
+    - release-trains
+    - slices
+  milestone_role: goalposts
+  release_issue_format: "[release] v{version}"
 discussions:
   supported_intake: false
   owner: null

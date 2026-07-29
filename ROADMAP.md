@@ -19,6 +19,8 @@ board is the
 [Colorful Language — Roadmap project](https://github.com/users/flyingrobots/projects/17).
 Cross-cutting maturity slices share one umbrella milestone, while M0–M4 remain
 the execution order within and between the phase goalposts.
+GitHub milestones are goalposts. Release trains use one versioned tracking
+issue; slice issues keep their goalpost milestone.
 
 Governing law of the deep end: *Colorful may describe anything, but it may
 compile only what the target can prove.*
@@ -187,10 +189,10 @@ observe public-contract regressions before they ship.
   active distribution lane publishes its existing evidence machinery
   [#257](https://github.com/flyingrobots/colorful-language/issues/257).
   <!-- roadmap-primary: parked #257 -->
-- **Active delivery-axis repair:** keep goalposts and versioned release trains
+- **Delivered delivery-axis repair:** keep goalposts and versioned release trains
   independently representable before formal v0.4.0 planning begins
   [#261](https://github.com/flyingrobots/colorful-language/issues/261).
-  <!-- roadmap-primary: active #261 -->
+  <!-- roadmap-primary: delivered #261 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog

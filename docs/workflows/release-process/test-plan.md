@@ -264,17 +264,28 @@ Verification for release preparation, tag automation, and release witnesses.
   milestone format. *Oracle:* one mutation per axis or reference fails with a
   stable `E_DELIVERY_TRACKING` category, while reordered profile fields remain
   valid. *Evidence type:* deterministic repository-maintenance policy test and
-  checked-in profile validation. *Tracking:*
+  checked-in profile validation. *Evidence:*
+  `.github/repository-profile.yml`; `.continuum/release.yml`;
+  `scripts/check-repository-maintenance.mjs`;
+  `scripts/check-repository-maintenance.test.mjs`
+  `rejects a competing release-milestone delivery axis`,
+  `rejects drift in either delivery-tracking axis`,
+  `rejects a stale delivery-tracking reference`, and
+  `accepts reordered delivery-tracking profile fields`;
+  `scripts/release-profile-check.sh`; `AGENTS.md`; `CONTRIBUTING.md`;
+  `docs/RELEASING.md`; and
+  `docs/workflows/release-process/README.md`. *Tracking:*
   [#261](https://github.com/flyingrobots/colorful-language/issues/261).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Open verification gaps
 
 - The tag workflow is only exercised on release tags.
 - The repo does not yet have an autotag workflow; manual annotated tag creation
   remains the current preflighted path.
-- Issue and milestone hygiene are still verified manually rather than by a
-  profile-aware release gate.
+- Release-tracking issue existence and goalpost/slice scope hygiene are still
+  verified manually; the ownership axes and their references are executable
+  profile policy.
 - GitHub Release asset recovery is still a manual inspection path when a release
   exists but assets are missing.
 - Native platform archives, editor-registry publication, and signed provenance
