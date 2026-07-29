@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -63,6 +72,12 @@ test("reviewed case registration rejects inventory drift deterministically", () 
     () => duplicate.registry.register(SYNTAX_ADMISSION_REVIEW_CASES[0]),
     /^Error: duplicate syntax-admission registration:/u,
   );
+
+  const mutableExpected = ["stable authority"];
+  const snapshotted = registry(mutableExpected);
+  mutableExpected.push("late mutation");
+  snapshotted.registry.register("stable authority");
+  assert.doesNotThrow(() => snapshotted.registry.assertComplete());
 });
 
 test("the burden ledger derives its reviewed count from the inventory", () => {
@@ -77,7 +92,63 @@ test("the burden ledger derives its reviewed count from the inventory", () => {
     readFileSync(path.join(ROOT, LEDGER_PATH), "utf8"),
   );
   assert.equal(
+    ledger.portableAdmission.reviewedGeneratorCaseAuthority,
+    "scripts/syntax-admission-review-cases.mjs",
+  );
+  assert.equal(
     ledger.portableAdmission.reviewedGeneratorCases,
     SYNTAX_ADMISSION_REVIEW_CASES.length,
+  );
+});
+
+test("an inventory mutation makes the checked-in ledger stale", (t) => {
+  const temporaryRoot = mkdtempSync(
+    path.join(tmpdir(), "colorful-reviewed-cases-"),
+  );
+  t.after(() => rmSync(temporaryRoot, { recursive: true, force: true }));
+
+  const packagePath = "consumers/independent-ir-report";
+  cpSync(
+    path.join(ROOT, packagePath),
+    path.join(temporaryRoot, packagePath),
+    {
+      recursive: true,
+      filter(source) {
+        return path.basename(source) !== "node_modules";
+      },
+    },
+  );
+  const generatedPath = "consumers/generated/syntax-admission-v1.mjs";
+  mkdirSync(path.dirname(path.join(temporaryRoot, generatedPath)), {
+    recursive: true,
+  });
+  cpSync(
+    path.join(ROOT, generatedPath),
+    path.join(temporaryRoot, generatedPath),
+  );
+
+  const authorityPath = "scripts/syntax-admission-review-cases.mjs";
+  mkdirSync(path.dirname(path.join(temporaryRoot, authorityPath)), {
+    recursive: true,
+  });
+  const authority = readFileSync(path.join(ROOT, authorityPath), "utf8");
+  const mutated = authority.replace(
+    "\n]);\n",
+    '\n  "synthetic reviewed mutation",\n]);\n',
+  );
+  assert.notEqual(mutated, authority);
+  writeFileSync(path.join(temporaryRoot, authorityPath), mutated);
+
+  const result = spawnSync(
+    process.execPath,
+    [path.join(temporaryRoot, packagePath, "src/measure.mjs"), "--check"],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.equal(
+    result.stderr,
+    "independent-ir-report: integration-effort ledger is stale; " +
+      "run npm run measure -- --write\n",
   );
 });

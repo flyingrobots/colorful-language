@@ -457,6 +457,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Derived portable-admission review burden.** The independent-consumer ledger
+  now derives its reviewed generator-case count from the same fail-closed
+  inventory that registers the generator suite, so missing, extra, or duplicate
+  cases cannot leave the published review-burden evidence stale.
 - **Resolved benchmark profiler identity.** The cross-stage release harness now
   derives its `stats_alloc` name and version from locked, offline Cargo metadata
   instead of a synchronized string. Pure mutation tests reject malformed,

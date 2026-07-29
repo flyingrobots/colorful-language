@@ -64,6 +64,10 @@ function evidenceFacts(ledger) {
       portable?.committedGeneratedNonblankLines,
       "committed generated lines",
     ),
+    reviewedGeneratorCases: natural(
+      portable?.reviewedGeneratorCases,
+      "reviewed generator cases",
+    ),
   };
 }
 
@@ -92,6 +96,7 @@ function expectedFragments(facts) {
         `| IR | ${facts.authored} | ${facts.failures} | ${facts.identities} |`,
         `${unique} unique nonblank lines`,
         `${committed} lines across the two`,
+        `${facts.reviewedGeneratorCases} reviewed generator cases`,
       ],
     ],
     [
@@ -100,6 +105,7 @@ function expectedFragments(facts) {
         `${facts.authored} authored nonblank IR adapter lines`,
         `${unique} unique nonblank lines`,
         `${committed} lines across two`,
+        `${facts.reviewedGeneratorCases} reviewed generator cases`,
       ],
     ],
     [

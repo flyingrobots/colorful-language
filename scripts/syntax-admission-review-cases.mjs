@@ -21,8 +21,9 @@ export function createReviewedCaseRegistry({
   if (typeof registerCase !== "function") {
     throw new TypeError("reviewed case registrar must be a function");
   }
+  const expectedNames = [...expectedCases];
   const expected = new Set();
-  for (const name of expectedCases) {
+  for (const name of expectedNames) {
     if (typeof name !== "string" || name.length === 0) {
       throw new TypeError("reviewed case names must be non-empty strings");
     }
@@ -45,7 +46,7 @@ export function createReviewedCaseRegistry({
       return registerCase(name, ...arguments_);
     },
     assertComplete() {
-      const missing = expectedCases.filter((name) => !registered.has(name));
+      const missing = expectedNames.filter((name) => !registered.has(name));
       if (missing.length > 0) {
         throw new Error(
           `missing syntax-admission registrations: ${missing.join(", ")}`,

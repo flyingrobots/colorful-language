@@ -261,7 +261,11 @@ workspace.
   stale-ledger refusal after an inventory mutation. *Evidence type:* Node unit
   and process-contract tests. *Tracking:*
   [#233](https://github.com/flyingrobots/colorful-language/issues/233).
-  *Evidence:* planned. *Status:* planned.
+  *Evidence:* `scripts/syntax-admission-review-cases.mjs`;
+  `scripts/syntax-admission-review-cases.test.mjs`;
+  `scripts/generate-syntax-admission.test.mjs`;
+  `scripts/check-portable-admission-docs.test.mjs`;
+  `scripts/check-independent-consumer.sh`. *Status:* implemented.
 
 ## Open verification gaps
 

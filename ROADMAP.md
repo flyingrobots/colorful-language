@@ -237,12 +237,12 @@ deterministically and use valid data without reverse-engineering Colorful.
   stable refusal categories, and separate generated-burden accounting
   [#222](https://github.com/flyingrobots/colorful-language/issues/222).
   <!-- roadmap-primary: delivered #222 -->
-- **Active admission-evidence hygiene:** derive the portable-admission reviewed
-  case count from executable evidence instead of repeating a synchronized
-  literal in the burden ledger
+- **Delivered admission-evidence hygiene:** derive the portable-admission
+  reviewed case count from executable evidence instead of repeating a
+  synchronized literal in the burden ledger
   [#233](https://github.com/flyingrobots/colorful-language/issues/233), now
   that the external-analyzer comparison has landed.
-  <!-- roadmap-primary: active #233 -->
+  <!-- roadmap-primary: delivered #233 -->
 
 **Exit signal:** invalid spans, graphs, identities, hashes, versions, vocabulary,
 and source relationships fail closed with stable categories; successful

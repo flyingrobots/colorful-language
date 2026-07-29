@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import test from "node:test";
+import nodeTest from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
@@ -16,11 +16,20 @@ import {
   renderSyntaxAdmission,
   syntaxAdmissionInputsFromCompatibility,
 } from "./generate-syntax-admission.mjs";
+import {
+  createReviewedCaseRegistry,
+  SYNTAX_ADMISSION_REVIEW_CASES,
+} from "./syntax-admission-review-cases.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const GRAFT_OUTPUT = "consumers/generated/syntax-admission-v1.mjs";
 const INDEPENDENT_OUTPUT =
   "consumers/independent-ir-report/generated/syntax-admission-v1.mjs";
+const reviewedCases = createReviewedCaseRegistry({
+  expectedCases: SYNTAX_ADMISSION_REVIEW_CASES,
+  registerCase: nodeTest,
+});
+const test = reviewedCases.register;
 
 function releaseDocument(release) {
   return JSON.parse(
@@ -558,3 +567,5 @@ test("consumers do not retain handwritten structural field or enum tables", () =
     );
   }
 });
+
+reviewedCases.assertComplete();
