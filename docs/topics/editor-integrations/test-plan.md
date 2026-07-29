@@ -185,6 +185,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `the synchronized policy derives the same pre-1.0 minor range`,
   `same-minor stable servers are compatible and breaking minors are not`,
   `rejects disagreement between both npm lockfile version fields`,
+  `derives a future synchronized minor without a policy-code edit`,
   `treats the workspace manifest as the synchronized version authority`, the
   per-source drift and prerelease mutation cases, and
   `the checked-in repository satisfies the policy`.

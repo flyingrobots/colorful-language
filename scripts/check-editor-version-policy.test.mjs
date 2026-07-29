@@ -89,6 +89,18 @@ test("accepts the complete synchronized manifest and gate inventory", () => {
   });
 });
 
+test("derives a future synchronized minor without a policy-code edit", () => {
+  const snapshot = validSnapshot();
+  for (const source of EXPECTED_VERSION_SOURCES) {
+    snapshot.versions[source.path] = "0.5.0";
+  }
+  assert.deepEqual(validateEditorVersionPolicy(snapshot), {
+    releaseVersion: "0.5.0",
+    compatibleLsp: ">=0.5.0 <0.6.0",
+    versionSourceCount: EXPECTED_VERSION_SOURCES.length,
+  });
+});
+
 test("treats the workspace manifest as the synchronized version authority", () => {
   const snapshot = validSnapshot();
   snapshot.versions["Cargo.toml"] = "0.4.1";
@@ -195,11 +207,13 @@ test("rejects missing policy wiring in every release gate", () => {
 });
 
 test("the checked-in repository satisfies the policy", () => {
+  const snapshot = loadRepositorySnapshot();
+  const releaseVersion = snapshot.versions["Cargo.toml"];
   assert.deepEqual(
-    validateEditorVersionPolicy(loadRepositorySnapshot()),
+    validateEditorVersionPolicy(snapshot),
     {
-      releaseVersion: RELEASE_VERSION,
-      compatibleLsp: ">=0.4.0 <0.5.0",
+      releaseVersion,
+      compatibleLsp: deriveCompatibleLspRange(releaseVersion),
       versionSourceCount: EXPECTED_VERSION_SOURCES.length,
     },
   );
