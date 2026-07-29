@@ -244,7 +244,7 @@ fn replay_transcript_session(fixture: &Value, session: &Value) {
                     .map(Vec::len)
                     .unwrap_or_default();
                 assert!(
-                    factor > 0 && length > 0 && length % factor == 0,
+                    factor > 0 && length > 0 && length.is_multiple_of(factor),
                     "{description}: array length {length} at {pointer} is not a positive multiple \
                      of {factor}: {message}"
                 );
