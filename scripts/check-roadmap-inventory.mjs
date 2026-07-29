@@ -281,10 +281,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       continue;
     }
     const commentStart = line.indexOf("<!--");
-    if (
-      commentStart !== -1 &&
-      line.slice(0, commentStart).trim().length === 0
-    ) {
+    if (commentStart !== -1) {
       if (accountabilityTableState === "rows") {
         accountabilityTableState = "complete";
       } else if (accountabilityTableState === "delimiter") {

@@ -183,6 +183,30 @@ test("ignores table-like examples outside the accountability table", () => {
   }
 });
 
+test("ignores multiline HTML comments that start after visible text", () => {
+  const commentedTable = [
+    "Visible introduction. <!--",
+    "| Mechanism | Example only |",
+    "| --- | --- |",
+    "| Parser ports | Hidden in the comment. |",
+    "-->",
+  ].join("\n");
+  expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
+    source.replace(/\n\| Mechanism \|[\s\S]*$/u, `\n${commentedTable}\n`),
+  );
+
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: `${roadmap}
+${commentedTable}
+`,
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("rejects a missing architecture-accountability table", () => {
   expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
     source.replace(/\n\| Mechanism \|[\s\S]*$/u, "\n"),
