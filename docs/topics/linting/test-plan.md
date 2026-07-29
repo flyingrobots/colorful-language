@@ -235,10 +235,13 @@ Implemented and planned cases are listed below.
 - **LINT-13b** — *Requirement:* LINT-13. *Behavior:* explicit configuration and
   capability discovery admit supported Vale v3 JSON/stdin behavior, isolate
   ambient global configuration, and reject a missing configuration,
-  unavailable executable, or incompatible major version before analysis.
-  *Oracle:* exact typed error categories and exact spawned argument/environment
-  witnesses from a deterministic mock process. *Evidence type:* process-level
-  adapter test. *Evidence:* `colorful-vale`
+  unavailable executable, or incompatible major version before analysis. The
+  current-reference example resolves an absolute caller-selected executable
+  before the child environment is cleared. *Oracle:* exact typed error
+  categories and spawned argument/environment witnesses from a deterministic
+  mock process; a documentation oracle rejects the non-resolvable bare
+  `ValeConfig::new("vale", ...)` example. *Evidence type:* process-level adapter
+  and documentation-structure tests. *Evidence:* `colorful-vale`
   `vale_adapter::{discovery_is_explicit_versioned_and_ambient_config_free,
   discovery_rejects_missing_config_executable_and_major,
   permission_denied_executable_is_unavailable,
@@ -247,9 +250,12 @@ Implemented and planned cases are listed below.
   `config::tests::relative_paths_are_resolved_before_the_process_changes_directory`,
   and the checksum-verified official Vale 3.14.2 output retained at
   `crates/colorful-vale/tests/fixtures/vale-3.14.2-smoke.json` and admitted by
-  `vale_adapter::pinned_real_vale_v3_smoke_shape_remains_admitted`. *Tracking:*
+  `vale_adapter::pinned_real_vale_v3_smoke_shape_remains_admitted`; the
+  documentation oracle is planned in
+  `workspace_boundary::linting_reference_resolves_an_absolute_vale_executable`.
+  *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* implemented.
+  *Status:* planned.
 - **LINT-13c** — *Requirement:* LINT-13. *Behavior:* timeout, cancellation,
   non-zero process failure, oversized output, invalid UTF-8, malformed JSON,
   an unexpected JSON source key, and invalid Vale alert fields fail explicitly
