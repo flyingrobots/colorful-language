@@ -125,7 +125,7 @@ test("retries bounded eventual publication without accepting another status", as
       sleep: async (milliseconds) => sleeps.push(milliseconds),
     });
     assert.equal(marketplaceAttempts, 2);
-    assert.deepEqual(sleeps, [10_000]);
+    assert.deepEqual(sleeps, [15_000]);
   });
 });
 

@@ -9,8 +9,8 @@ const PUBLISHER = "flyingrobots";
 const EXTENSION = "colorful-language";
 const MAX_METADATA_BYTES = 1024 * 1024;
 const MAX_VSIX_BYTES = 32 * 1024 * 1024;
-const DEFAULT_ATTEMPTS = 12;
-const RETRY_DELAY_MS = 10_000;
+const DEFAULT_ATTEMPTS = 60;
+const RETRY_DELAY_MS = 15_000;
 const VERSION = /^\d+\.\d+\.\d+$/u;
 
 export class EditorPublicationError extends Error {
