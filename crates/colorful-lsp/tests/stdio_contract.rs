@@ -151,11 +151,18 @@ impl Drop for LspProcess {
 
 fn substitute_placeholders(value: &Value, session: &Value) -> Value {
     match value {
-        Value::String(value) if value == "$URI" => session["uri"].clone(),
-        Value::String(value) if value == "$LANGUAGE_ID" => session["languageId"].clone(),
-        Value::String(value) if value == "$PACKAGE_VERSION" => {
-            Value::String(env!("CARGO_PKG_VERSION").to_string())
-        }
+        Value::String(value) if value.starts_with('$') => match value.as_str() {
+            "$URI" => session
+                .get("uri")
+                .cloned()
+                .expect("$URI requires session.uri"),
+            "$LANGUAGE_ID" => session
+                .get("languageId")
+                .cloned()
+                .expect("$LANGUAGE_ID requires session.languageId"),
+            "$PACKAGE_VERSION" => Value::String(env!("CARGO_PKG_VERSION").to_string()),
+            _ => panic!("unknown transcript placeholder {value}"),
+        },
         Value::Array(values) => Value::Array(
             values
                 .iter()
@@ -304,6 +311,27 @@ fn transcript_exit_code_requires_an_integral_value() {
         );
     }
     assert_eq!(transcript_exit_code(&json!({"exitCode": 0})), 0);
+}
+
+#[test]
+fn transcript_placeholders_fail_fast_and_recurse() {
+    for (value, session) in [
+        (json!("$URI"), json!({})),
+        (json!("$LANGUAGE_ID"), json!({})),
+        (json!("$URl"), json!({"uri": "file:///fixture.txt"})),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| substitute_placeholders(&value, &session)).is_err(),
+            "accepted unresolved transcript placeholder {value}"
+        );
+    }
+    assert_eq!(
+        substitute_placeholders(
+            &json!({"nested": ["$URI", "$LANGUAGE_ID", "literal"]}),
+            &json!({"uri": "file:///fixture.txt", "languageId": "plaintext"}),
+        ),
+        json!({"nested": ["file:///fixture.txt", "plaintext", "literal"]}),
+    );
 }
 
 #[test]
