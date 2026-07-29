@@ -24,6 +24,8 @@ colorful diagnose [--json] [FILE]
   stdin retain whole-document behavior. `--no-color` and `NO_COLOR` produce an
   exact text passthrough.
 - `lint` writes compiler-style findings and exits nonzero when it finds any.
+  `.md` and `.markdown` operands use the same reviewed prose regions as ANSI
+  coloring; non-Markdown files and stdin retain whole-document behavior.
 - `ir` writes one canonical `colorful.syntax/v1` JSON document.
 - `diagnose --json` writes whole-source token axes, presentation projections,
   and lint findings for troubleshooting format-neutral CLI/editor disagreement.

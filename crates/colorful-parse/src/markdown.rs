@@ -361,7 +361,7 @@ mod tests {
     }
 
     #[test]
-    fn fenced_code_is_whitespace_while_surrounding_prose_is_unchanged() {
+    fn fenced_code_is_masked_while_surrounding_prose_is_unchanged() {
         let source = concat!(
             "This is really prose.\n\n",
             "```rust\n",

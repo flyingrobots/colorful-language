@@ -20,3 +20,4 @@ pulldown-cmark = { workspace = true, optional = true }
 
 [dev-dependencies]
 colorful-lexicon = { workspace = true }
+toml = { workspace = true }

@@ -32,11 +32,11 @@ Requirements:
   `command_responsibilities_have_exactly_one_module_owner`. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
   *Status:* implemented.
-- **CLI-3a** — *Requirement:* CLI-3. *Behavior:* the existing real-binary,
-  golden, unit, and seeded property suites remain unchanged and pass after the
-  split. *Oracle:* exact output/status assertions and property oracles in the
-  existing suites. *Evidence type:* characterization and public-contract tests.
-  *Evidence:* `colorful-cli`'s 29 unit tests;
+- **CLI-3a** — *Requirement:* CLI-3. *Behavior:* observable command contracts
+  remain unchanged, and the current real-binary, golden, unit, and seeded
+  property suites pass after the split. *Oracle:* exact output/status assertions
+  and property oracles in the current suites. *Evidence type:* characterization
+  and public-contract tests. *Evidence:* `colorful-cli`'s 29 unit tests;
   `crates/colorful-cli/tests/binary_contract.rs`;
   `crates/colorful-cli/tests/lint_golden_fixtures.rs`;
   `crates/colorful-cli/tests/property_boundaries.rs`.

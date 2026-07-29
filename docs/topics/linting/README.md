@@ -210,8 +210,9 @@ Files whose final extension is `.md` or `.markdown` use the shared Markdown
 prose view: code, front matter, link destinations, and HTML blocks do not
 produce editorial findings, while link labels and ordinary prose do. Other
 paths and stdin retain whole-document Plain Text behavior. The adapter
-preserves source positions, so the displayed line and column still refer to the
-original file and match the LSP diagnostic for the same prose span.
+preserves source positions, so the displayed line and source span still refer
+to the original file. Numeric columns can differ after astral Unicode because
+the CLI counts Unicode scalars while LSP positions count UTF-16 code units.
 
 ## Editor output (`colorful-lsp`)
 
