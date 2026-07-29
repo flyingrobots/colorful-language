@@ -221,8 +221,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   non-authoritative. *Oracle:* a checked-in mocked issue snapshot passes; one
   minimal mutation for a missing open slice, fenced-code-only marker,
   trailing-block-content marker, duplicate primary home, closed active slice,
-  open delivered slice, and unrecognized marker fails with a stable
-  path-addressed category. *Evidence type:*
+  open delivered slice, unrecognized marker, and unreadable roadmap path fails
+  with a stable path-addressed category. *Evidence type:*
   fixture-backed Node unit tests and an offline repository command. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs`, roadmap fixtures, and
   `scripts/check-roadmap-inventory.mjs`. *Status:* implemented.
@@ -243,10 +243,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
 - **RM-9c — Honest malformed-fixture type.** *Requirement:* RM-9. *Behavior:*
   malformed issue-snapshot bytes used to prove JSON refusal must not carry a
   `.json` extension that invites general repository tooling to parse them as a
-  valid document. *Oracle:* the regression fixture retains its malformed bytes
-  and still produces `E_ROADMAP_INVALID_ISSUE_SNAPSHOT`, while its path uses an
-  explicit non-JSON fixture extension. *Evidence type:* deterministic Node test
-  and malformed text fixture. *Evidence:*
+  valid document. *Oracle:* unreadable snapshot paths and the regression
+  fixture's malformed bytes produce `E_ROADMAP_INVALID_ISSUE_SNAPSHOT`, while
+  the malformed fixture uses an explicit non-JSON extension. *Evidence type:*
+  deterministic Node tests and malformed text fixture. *Evidence:*
   `scripts/check-roadmap-inventory.test.mjs` and
   `scripts/fixtures/roadmap-inventory/invalid-issues.txt`. *Status:*
   implemented.

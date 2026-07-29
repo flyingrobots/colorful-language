@@ -1284,6 +1284,42 @@ test("rejects malformed repository coordinates before transport", () => {
   }
 });
 
+test("categorizes unreadable roadmap and issue-snapshot paths", () => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-inputs-"));
+  const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
+  const missingRoadmap = join(root, "missing-roadmap.md");
+  const missingIssues = join(root, "missing-issues.json");
+
+  try {
+    for (const { argv, category, location } of [
+      {
+        argv: ["--roadmap", missingRoadmap],
+        category: "E_ROADMAP_UNREADABLE_ROADMAP",
+        location: missingRoadmap,
+      },
+      {
+        argv: ["--roadmap", roadmapPath, "--issues", missingIssues],
+        category: "E_ROADMAP_INVALID_ISSUE_SNAPSHOT",
+        location: missingIssues,
+      },
+    ]) {
+      assert.throws(
+        () => run(argv),
+        (error) => {
+          assert.ok(error instanceof InventoryError);
+          assert.equal(error.category, category);
+          assert.match(error.message, /unable to read/u);
+          assert.ok(error.message.includes(location));
+          return true;
+        },
+        location,
+      );
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("rejects malformed issue JSON with a stable snapshot error", () => {
   const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
   const issuePath = fileURLToPath(

@@ -259,6 +259,8 @@ node scripts/check-roadmap-inventory.mjs \
 
 The runner rejects repeated flags and malformed `--repo OWNER/NAME`
 coordinates before any file or GitHub transport.
+Unreadable roadmap paths report `E_ROADMAP_UNREADABLE_ROADMAP`; unreadable or
+malformed issue snapshots report `E_ROADMAP_INVALID_ISSUE_SNAPSHOT`.
 
 On a branch whose pull request closes an issue, pass `--closing-pr NUMBER`.
 The checker reads GitHub's closing-issue references and evaluates the intended

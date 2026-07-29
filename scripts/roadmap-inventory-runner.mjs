@@ -136,6 +136,14 @@ export function createRoadmapInventoryRun({
     }
   };
 
+  const readSource = (path, category) => {
+    try {
+      return readFileSync(resolve(path), "utf8");
+    } catch (error) {
+      fail(category, path, `unable to read: ${error.message}`);
+    }
+  };
+
   const loadLiveIssues = (repo) => {
     const output = runGitHub(
       [
@@ -196,8 +204,10 @@ export function createRoadmapInventoryRun({
 
   return function run(argv = process.argv.slice(2)) {
     const options = parseArguments(argv);
-    const roadmapPath = resolve(options.roadmapPath);
-    const roadmap = readFileSync(roadmapPath, "utf8");
+    const roadmap = readSource(
+      options.roadmapPath,
+      "E_ROADMAP_UNREADABLE_ROADMAP",
+    );
 
     if (!options.live && !options.issuePath) {
       const inventory = parseRoadmapInventory(roadmap, {
@@ -212,7 +222,10 @@ export function createRoadmapInventoryRun({
     const issues = options.live
       ? loadLiveIssues(options.repo)
       : parseJson(
-          readFileSync(resolve(options.issuePath), "utf8"),
+          readSource(
+            options.issuePath,
+            "E_ROADMAP_INVALID_ISSUE_SNAPSHOT",
+          ),
           "E_ROADMAP_INVALID_ISSUE_SNAPSHOT",
           options.issuePath,
         );
