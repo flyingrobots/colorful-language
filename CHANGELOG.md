@@ -469,7 +469,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rejects duplicate options, malformed repository coordinates, unreadable
   roadmaps, and unreadable issue snapshots with stable error categories before
   transport or parsing. Comment-range policy honors Markdown escape parity, so
-  a literal `\<!--` cannot conceal a second architecture authority.
+  a literal `\<!--` cannot conceal a second architecture authority. Canonical
+  leading-pipe GFM tables now accept the format's optional trailing pipes.
 - **Derived portable-admission review burden.** The independent-consumer ledger
   now derives its reviewed generator-case count from the same fail-closed
   inventory that registers the generator suite, so missing, extra, or duplicate

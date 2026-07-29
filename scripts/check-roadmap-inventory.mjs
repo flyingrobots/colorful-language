@@ -191,7 +191,7 @@ function lineWithoutInlineComments(line, lineNumber_, commentRanges) {
 }
 
 function pipeCells(line) {
-  const match = line.match(/^ {0,3}\|([\s\S]*)\|[ \t]*$/u);
+  const match = line.match(/^ {0,3}\|([\s\S]*?)(?:\|[ \t]*)?$/u);
   if (match === null) {
     return undefined;
   }

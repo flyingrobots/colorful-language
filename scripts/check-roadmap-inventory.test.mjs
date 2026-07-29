@@ -79,6 +79,17 @@ test("accepts the canonical roadmap with CRLF line endings", () => {
   );
 });
 
+test("accepts canonical leading-pipe rows without trailing pipes", () => {
+  assert.doesNotThrow(() =>
+    validateRoadmapInventory({
+      roadmap: roadmap.replace(/ \|$/gmu, ""),
+      issues,
+      roadmapPath: "fixture/roadmap.md",
+      issuePath: "fixture/issues.json",
+    }),
+  );
+});
+
 test("reports identical failure addresses for LF and CRLF roadmaps", () => {
   const mechanismRow =
     "| Parser ports | Substitute deterministic adapters. |";

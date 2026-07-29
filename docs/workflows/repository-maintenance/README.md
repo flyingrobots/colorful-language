@@ -223,6 +223,7 @@ Colorful-specific policy below:
 
 - exactly one canonical `## Architecture accountability` H2 and one complete
   leading-pipe `Mechanism` table inside that section are authoritative;
+  trailing row pipes remain optional under GFM;
 - comment- or styling-altered display equivalents, no-leading-pipe rows,
   malformed literal delimiters, and apparent duplicate authorities fail closed;
 - indented/fenced code, raw HTML, and multiline comments remain
