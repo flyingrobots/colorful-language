@@ -663,10 +663,12 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       continue;
     }
     if (inHtmlComment) {
-      if (line.includes("-->")) {
-        inHtmlComment = false;
+      const commentEnd = line.indexOf("-->");
+      if (commentEnd === -1) {
+        continue;
       }
-      continue;
+      inHtmlComment = false;
+      line = line.slice(commentEnd + 3);
     }
     if (/^(?: {4}|\t)/u.test(line)) {
       if (accountabilityTableState === "rows") {

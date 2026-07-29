@@ -422,6 +422,19 @@ ${commentedTable}
   );
 });
 
+test("resumes table scanning after a multiline comment closer", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+<!-- explanatory note
+--> | Mechanism | Second authority |
+| --- | --- |
+| Parser ports | Visible after the comment closer. |
+`,
+  );
+});
+
 test("continues comment scanning after an unmatched backtick", () => {
   expectCategory(
     "E_ROADMAP_MISSING_ACCOUNTABILITY_SECTION",

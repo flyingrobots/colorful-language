@@ -252,9 +252,11 @@ The same offline structure gate applies these fail-closed rules:
   strings contain a backtick are treated as visible source, while tilde-fence
   info strings may contain backticks. A multiline comment is non-authoritative
   even when its opener follows visible text on the same line, but it cannot
-  begin on a visible table-shaped line. Closed inline HTML comment spans are
-  ignored while the surrounding visible row content remains authoritative;
-  comment-shaped text inside inline code remains literal.
+  begin on a visible table-shaped line. Visible source after a multiline
+  comment closer on the same line re-enters structural scanning. Closed inline
+  HTML comment spans are ignored while the surrounding visible row content
+  remains authoritative; comment-shaped text inside inline code remains
+  literal.
 - **Identity normalization:** Plain text, ASCII-punctuation escapes, and inline
   code are normalized to their NFC displayed identity, including
   table-delimiter escapes inside code spans. NUL input is replaced with U+FFFD
