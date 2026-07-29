@@ -430,6 +430,36 @@ test("requires deterministic publication verification in local and hosted gates"
   }
 });
 
+test("finds hosted gates through parsed workflow steps", () => {
+  const snapshot = validSnapshot();
+  snapshot.gates.ci = {
+    jobs: {
+      policy: {
+        steps: [
+          {
+            name: "Check release distribution policy",
+            run: `${CHECK_COMMAND} # required policy gate\n`,
+          },
+        ],
+      },
+    },
+  };
+  snapshot.gates.release = snapshot.workflow;
+  snapshot.publicationVerificationGates.ci = {
+    jobs: {
+      policy: {
+        steps: [
+          {
+            name: "Test editor publication verification",
+            run: `${PUBLICATION_SELF_TEST_COMMAND} # deterministic self-test\n`,
+          },
+        ],
+      },
+    },
+  };
+  assert.doesNotThrow(() => validateReleaseDistribution(snapshot));
+});
+
 test("requires exact lockfile-backed publisher tools", () => {
   const snapshot = validSnapshot();
   snapshot.publisherTools.ovsx = "^1.0.2";
