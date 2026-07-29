@@ -126,10 +126,14 @@ test("rejects a duplicate architecture-accountability mechanism by line", () => 
     mechanismRow,
     `${mechanismRow}\n${mechanismRow}`,
   );
+  const shiftedDuplicated = `Fixture shift control.\n\n${duplicated}`;
+  const firstMechanismLine =
+    shiftedDuplicated.split("\n").indexOf(mechanismRow) + 1;
+  const duplicateMechanismLine = firstMechanismLine + 1;
   const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-policy-"));
   const roadmapPath = join(root, "ROADMAP.md");
   try {
-    writeFileSync(roadmapPath, duplicated, "utf8");
+    writeFileSync(roadmapPath, shiftedDuplicated, "utf8");
     const result = spawnSync(
       process.execPath,
       [
@@ -147,7 +151,7 @@ test("rejects a duplicate architecture-accountability mechanism by line", () => 
     assert.equal(result.stdout, "");
     assert.equal(
       result.stderr,
-      `E_ROADMAP_DUPLICATE_MECHANISM: ${roadmapPath}:26: architecture-accountability mechanism "Parser ports" already appears at ${roadmapPath}:25\n`,
+      `E_ROADMAP_DUPLICATE_MECHANISM: ${roadmapPath}:${duplicateMechanismLine}: architecture-accountability mechanism "Parser ports" already appears at ${roadmapPath}:${firstMechanismLine}\n`,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -892,8 +896,10 @@ test("rejects a later table after an empty accountability table", () => {
         [headerAndDelimiter, "", headerAndDelimiter].join("\n"),
       ),
     {
-      messagePattern:
-        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture\/roadmap\.md:\d+: canonical table already begins at fixture\/roadmap\.md:23$/u,
+      messagePattern: new RegExp(
+        `^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture/roadmap\\.md:\\d+: canonical table already begins at fixture/roadmap\\.md:${canonicalTableLine}$`,
+        "u",
+      ),
     },
   );
 });
