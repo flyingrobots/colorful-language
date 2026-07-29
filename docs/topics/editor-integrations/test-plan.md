@@ -172,12 +172,43 @@ Verification for editor adapters and the `colorful-lsp` surface.
   *Status:* planned.
 - **EDIT-9a** — *Requirement:* EDIT-9. *Behavior:* the chosen synchronized or
   independent adapter version policy declares compatible `colorful-lsp`
-  versions and detects unintended manifest/release-profile drift. *Oracle:*
-  compatibility matrix and manifest versions equal the reviewed policy; a
-  deliberate mismatch makes the drift check fail. *Evidence type:*
-  deterministic manifest-policy test. *Tracking:*
+  versions and detects unintended manifest drift. The synchronized policy
+  requires the Cargo workspace, VS Code manifest and lockfile root, Zed
+  extension manifest, and standalone Zed crate and lockfile entry to carry one
+  stable release version. For `0.Y.Z`, the compatible server range is
+  `>=0.Y.0 <0.(Y+1).0`. *Oracle:* every version source equals the workspace
+  version; a deliberate source mismatch, prerelease, or next-minor server
+  version makes the deterministic policy check fail. *Evidence type:*
+  manifest-policy checker and mutation tests. *Tracking:*
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
-  *Status:* planned.
+  *Evidence:* `scripts/check-editor-version-policy.test.mjs`
+  `the synchronized policy derives the same pre-1.0 minor range`,
+  `same-minor stable servers are compatible and breaking minors are not`,
+  `source editor install guidance selects the synchronized checkout`,
+  `rejects disagreement between both npm lockfile version fields`,
+  `derives a future synchronized minor without a policy-code edit`,
+  `treats the workspace manifest as the synchronized version authority`, the
+  per-source drift and prerelease mutation cases, and
+  `the checked-in repository satisfies the policy`.
+  *Status:* implemented.
+- **EDIT-9b** — *Requirement:* EDIT-9. *Behavior:* the release profile lists
+  every synchronized editor version source, records the same-minor
+  `colorful-lsp` compatibility rule and unsupported-prerelease policy, and
+  wires the deterministic check into pull-request CI, release preparation, and
+  tag publication. *Oracle:* policy mutations reject a missing version source,
+  a different strategy or compatibility rule, and a missing gate command.
+  *Evidence type:* release-profile and workflow mutation tests. *Tracking:*
+  [#141](https://github.com/flyingrobots/colorful-language/issues/141).
+  *Evidence:* `.continuum/release.yml`;
+  `scripts/check-editor-version-policy.test.mjs`
+  `rejects compatibility and prerelease policy drift`,
+  `rejects missing, duplicated, unexpected, or reordered version sources`,
+  `accepts version-source mappings with reordered fields`,
+  `parses release policy independently of YAML layout`,
+  `rejects missing policy wiring in every release gate`, and
+  `requires policy dependencies before the checker in every release gate`;
+  `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
+  `scripts/release-prep.sh`. *Status:* implemented.
 - **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* signed VS Code/Open VSX and
   Zed releases plus compatible platform server binaries publish at real URLs,
   install on a clean machine, and roll back to the previous compatible set.
@@ -199,8 +230,6 @@ Verification for editor adapters and the `colorful-lsp` surface.
 ## Open verification gaps
 
 - Packaged clean-install and transcript evidence remains open in EDIT-8a.
-- Adapter/server compatibility policy and drift evidence remains open in
-  EDIT-9a.
 - Signed publication, rollback, visual/theme evidence, and measured
   install-to-first-highlight time remain open in EDIT-10a and EDIT-10b.
 - A shipped theme remains a planned artifact. Theme fallback belongs in #136;

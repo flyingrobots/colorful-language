@@ -5,6 +5,8 @@ use zed_extension_api::{
 };
 
 const SERVER_ID: &str = "colorful-lsp";
+const SOURCE_INSTALL_COMMAND: &str =
+    "cargo install --path /path/to/colorful-language/crates/colorful-lsp --locked";
 
 struct ColorfulExtension;
 
@@ -22,11 +24,12 @@ impl zed::Extension for ColorfulExtension {
             return Ok(command);
         }
 
-        // Resolve colorful-lsp from PATH; install it with `cargo install colorful-lsp`.
+        // Resolve colorful-lsp from PATH; source users install it from this checkout.
         let path = worktree.which(SERVER_ID).ok_or_else(|| {
             format!(
-                "{SERVER_ID} not found on PATH — install it with `cargo install {SERVER_ID}` \
-                 or set lsp.{SERVER_ID}.binary.path in Zed settings"
+                "{SERVER_ID} not found on PATH — install the matching server from the same \
+                 checkout with `{SOURCE_INSTALL_COMMAND}` or set lsp.{SERVER_ID}.binary.path \
+                 in Zed settings"
             )
         })?;
         Ok(Command {

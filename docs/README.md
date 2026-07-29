@@ -69,6 +69,9 @@ not pose as the current reference.
 - [ADR-0005](design/0005-optional-vale-analyzer.md) — a Vale v3 process
   boundary prepares an I/O-free analyzer snapshot without making an external
   engine part of Colorful's default path.
+- [ADR-0006](design/0006-editor-adapter-versioning.md) — editor adapters share
+  the workspace release version and accept only the same pre-1.0
+  `colorful-lsp` minor line.
 
 ## Audits
 

@@ -5,15 +5,19 @@ integration drives **one engine** — the `colorful-lsp` language server — so 
 analysis is identical everywhere; each editor just needs a thin adapter pointing
 its LSP client at the server for `plaintext`/`markdown` buffers.
 
-Install the server once:
+From the repository root, install the matching server from this checkout:
 
 ```bash
-cargo install colorful-lsp
+cargo install --path crates/colorful-lsp --locked
 ```
 
-(or grab a release binary from the
-[Releases](https://github.com/flyingrobots/colorful-language/releases) page and
-put it on your `PATH`).
+Compatible public server binaries are not yet published. Track
+[#154](https://github.com/flyingrobots/colorful-language/issues/154) for the
+first synchronized editor release.
+
+The VS Code and Zed adapters share the repository release version. Use a stable
+`colorful-lsp` from the same pre-1.0 minor line; for adapter `0.Y.Z`, the
+supported server range is `>=0.Y.0 <0.(Y+1).0`.
 
 | Editor | Integration |
 | --- | --- |

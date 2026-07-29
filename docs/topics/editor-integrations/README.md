@@ -32,6 +32,36 @@ The repository currently ships source integrations and recipes:
 The source integrations build in CI. They are not yet published to editor
 marketplaces or registries.
 
+From the repository root, install the matching server from the same checkout:
+
+```bash
+cargo install --path crates/colorful-lsp --locked
+```
+
+Do not substitute an unreleased registry version. Public registry installation
+guidance belongs with the publication evidence tracked by
+[#154](https://github.com/flyingrobots/colorful-language/issues/154).
+
+## Version compatibility
+
+The Rust workspace, VS Code extension, and Zed extension use one synchronized
+release version. For an adapter release `0.Y.Z`, the supported
+`colorful-lsp` range is the stable same-minor line:
+
+```text
+>=0.Y.0 <0.(Y+1).0
+```
+
+Patch-level server updates are therefore compatible with adapters from the same
+pre-1.0 minor release. A different minor is treated as potentially breaking.
+Prerelease adapters and servers are unsupported until the release policy
+defines their channel and ordering semantics.
+
+The repo-local release profile lists all seven version sources. Pull-request
+CI, release preparation, and tag publication run
+`scripts/check-editor-version-policy.mjs`, which fails when a manifest,
+lockfile, policy rule, or gate command drifts.
+
 A blocking 256-case property corpus checks the coordinate seam beneath every
 adapter. Each generated finding crosses astral code points, combining marks,
 zero-width characters, and mixed `LF`/`CRLF`/bare-`CR` input. The CLI's

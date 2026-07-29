@@ -87,7 +87,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — generate portable admission** | Consumers no longer hand-maintain structural wire validation after generation compatibility and module ownership became explicit. | #222 derives both JavaScript runtimes from generation SDLs, retains named semantic checks, and reports generated burden separately. |
 | **Delivered — test analyzer substitution** | An optional external-analyzer adapter proves that the pure port can provide useful substitution without making an external engine mandatory. | #157 keeps Vale v3 process failures outside the pure port, proves built-in/external CLI/LSP parity, and leaves both production binaries Vale-free. |
 | **Delivered — bound external-adapter failures** | A malformed optional-engine response cannot multiply or reproduce process-controlled content in an operator-visible error. | #235 caps and redacts every invalid-alert path before distribution work expands the reachable surface. |
-| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | Start M3 with #141's adapter/server compatibility policy, then execute #136's packaged smoke oracles before #154 publishes artifacts. |
+| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #141's adapter/server compatibility policy delivered, execute #136's packaged smoke oracles before #154 publishes artifacts. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
 
@@ -290,10 +290,10 @@ was installed, and reach the first useful editor result.
   ([#123](https://github.com/flyingrobots/colorful-language/issues/123),
   [#124](https://github.com/flyingrobots/colorful-language/issues/124),
   [#185](https://github.com/flyingrobots/colorful-language/issues/185)).
-- **Open compatibility policy:** define adapter/server version ownership and
-  drift checks
+- **Delivered compatibility policy:** synchronize adapter/server releases,
+  derive same-pre-1.0-minor compatibility, and reject manifest or gate drift
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
-  <!-- roadmap-primary: active #141 -->
+  <!-- roadmap-primary: delivered #141 -->
 - **Open package evidence:** add clean-install editor and scripted LSP
   transcript tests
   [#136](https://github.com/flyingrobots/colorful-language/issues/136), then
@@ -475,9 +475,9 @@ independent proof retains stable v1 under its reviewed cost/correctness rule
 ([#156](https://github.com/flyingrobots/colorful-language/issues/156)). The
 active maturity critical path has bounded and redacted optional Vale adapter
 errors ([#235](https://github.com/flyingrobots/colorful-language/issues/235))
-and now moves to the editor/server compatibility policy
-([#141](https://github.com/flyingrobots/colorful-language/issues/141)),
-packaged smoke evidence, and public distribution. Independent product
+and synchronized editor/server compatibility
+([#141](https://github.com/flyingrobots/colorful-language/issues/141)). It now
+moves to packaged smoke evidence and public distribution. Independent product
 validation follows real distribution. The CNL, Edict, provenance, Ouroboros,
 and semantic-closure phases remain in place behind the explicit deep-end
 evidence gate.

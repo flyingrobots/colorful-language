@@ -11,15 +11,20 @@ nouns, numbers, and quotes accentuated; unlisted content left clean.
 Use VS Code 1.91 or newer. The extension's supported
 `vscode-languageclient` release requires that editor floor.
 
-The extension drives the `colorful-lsp` binary; install it once:
+The extension version is synchronized with the Colorful workspace release. For
+extension `0.Y.Z`, use a stable `colorful-lsp` in
+`>=0.Y.0 <0.(Y+1).0`; prereleases and a different minor line are unsupported.
+
+This source extension drives the `colorful-lsp` binary. From the repository
+root, install the matching server from the same checkout:
 
 ```bash
-cargo install colorful-lsp
+cargo install --path crates/colorful-lsp --locked
 ```
 
-(or, when your platform is covered by a release archive, download a binary from
-the [Releases](https://github.com/flyingrobots/colorful-language/releases) page
-and put it on your `PATH`).
+Compatible public server binaries are not yet published. Track
+[#154](https://github.com/flyingrobots/colorful-language/issues/154) for the
+first synchronized editor release.
 
 ## Settings
 

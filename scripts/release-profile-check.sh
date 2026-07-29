@@ -41,8 +41,14 @@ require_profile_text "owner: flyingrobots"
 require_profile_text "tag_format: \"v{version}\""
 require_profile_text "release_branch_format: \"release/v{version}\""
 require_profile_text "milestone_format: \"v{version}\""
+require_profile_text "editor_adapters:"
+require_profile_text "strategy: synchronized"
+require_profile_text "server: colorful-lsp"
+require_profile_text "compatibility: same-pre-1.0-minor"
+require_profile_text "prerelease: unsupported"
 require_profile_text "field: workspace.package.version"
 require_profile_text "profile: bash scripts/release-profile-check.sh"
+require_profile_text "editor_compatibility: node scripts/check-editor-version-policy.mjs"
 require_profile_text "prep: bash scripts/release-prep.sh"
 require_profile_text "preflight: bash scripts/release-preflight.sh v{version}"
 require_profile_text "ci: ci.yml"
@@ -54,6 +60,11 @@ require_profile_text "verify: cargo info {crate}@{version}"
 for path in \
   Cargo.toml \
   Cargo.lock \
+  editors/vscode/package.json \
+  editors/vscode/package-lock.json \
+  editors/zed/extension.toml \
+  editors/zed/Cargo.toml \
+  editors/zed/Cargo.lock \
   CHANGELOG.md \
   README.md \
   ROADMAP.md \
@@ -128,6 +139,7 @@ done
 
 for script in \
   scripts/release-profile-check.sh \
+  scripts/check-editor-version-policy.mjs \
   scripts/release-prep.sh \
   scripts/release-preflight.sh
 do
