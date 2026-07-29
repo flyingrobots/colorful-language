@@ -158,6 +158,18 @@ test("rejects a missing architecture-accountability table", () => {
   );
 });
 
+test("rejects a second architecture-accountability mechanism table", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `${source}
+
+| Mechanism | Current user job |
+| --- | --- |
+| Parser ports | Duplicated table. |
+`,
+  );
+});
+
 test("requires a delimiter and data row for the accountability table", () => {
   for (const replacement of [
     "| Mechanism | Example only |",

@@ -190,6 +190,8 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let foundAccountabilitySection = false;
   let accountabilitySectionLocation;
   let foundAccountabilityTable = false;
+  let accountabilityTableLocation;
+  let candidateAccountabilityTableLocation;
 
   for (const [index, line] of roadmap.split("\n").entries()) {
     if (fenceCharacter !== undefined) {
@@ -263,25 +265,57 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     if (accountabilityTableState === "searching") {
       if (mechanism === "Mechanism") {
         accountabilityTableState = "delimiter";
+        candidateAccountabilityTableLocation = `${roadmapPath}:${index + 1}`;
       }
       continue;
     }
     if (accountabilityTableState === "delimiter") {
-      accountabilityTableState =
-        mechanism !== undefined && MARKDOWN_DELIMITER_CELL.test(mechanism)
-          ? "rows"
-          : "searching";
+      if (
+        mechanism !== undefined &&
+        MARKDOWN_DELIMITER_CELL.test(mechanism)
+      ) {
+        accountabilityTableState = "rows";
+        accountabilityTableLocation = candidateAccountabilityTableLocation;
+      } else {
+        accountabilityTableState = "searching";
+        candidateAccountabilityTableLocation = undefined;
+      }
       continue;
     }
     if (accountabilityTableState === "complete") {
+      if (mechanism === "Mechanism") {
+        const location = `${roadmapPath}:${index + 1}`;
+        fail(
+          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+          location,
+          `canonical table already begins at ${accountabilityTableLocation}`,
+        );
+      }
       continue;
     }
     if (mechanism === undefined) {
-      accountabilityTableState = "complete";
+      accountabilityTableState = foundAccountabilityTable
+        ? "complete"
+        : "searching";
+      if (!foundAccountabilityTable) {
+        accountabilityTableLocation = undefined;
+      }
       continue;
     }
 
     const location = `${roadmapPath}:${index + 1}`;
+    if (mechanism === "Mechanism") {
+      if (foundAccountabilityTable) {
+        fail(
+          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+          location,
+          `canonical table already begins at ${accountabilityTableLocation}`,
+        );
+      }
+      accountabilityTableState = "delimiter";
+      candidateAccountabilityTableLocation = location;
+      continue;
+    }
     const identity = canonicalMechanismIdentity(mechanism, location);
     foundAccountabilityTable = true;
     const previous = mechanisms.get(identity);

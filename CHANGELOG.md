@@ -513,9 +513,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fails closed without exactly one non-empty canonical accountability table,
   ignores fenced or commented table-shaped examples, compares canonical
   displayed mechanism identities across inline styling and Unicode
-  normalization, rejects malformed cells, and reports duplicate sections or
-  mechanisms with both source-line addresses. One architecture decision can
-  no longer drift through two apparent authorities.
+  normalization, rejects malformed cells, and reports duplicate sections,
+  tables, or mechanisms with both source-line addresses. One architecture
+  decision can no longer drift through two apparent authorities.
 - **Warning-free public lexicon documentation.** Public adapter rustdoc now
   describes stable concepts rather than linking private tables, and
   warning-denying `colorful-lexicon` documentation is a blocking CI and
