@@ -413,6 +413,21 @@ test("rejects a second architecture-accountability mechanism table", () => {
   );
 });
 
+test("rejects an accountability table before the canonical section", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",
+    (source) => `| Mechanism | Current user job |
+| --- | --- |
+| Earlier authority | Must not escape source-order detection. |
+
+${source}`,
+    {
+      messagePattern:
+        /^E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE: fixture\/roadmap\.md:\d+: canonical table already begins at fixture\/roadmap\.md:1$/u,
+    },
+  );
+});
+
 test("rejects a second accountability table after a later H2", () => {
   expectCategory(
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",

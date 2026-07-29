@@ -535,9 +535,6 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       candidateAccountabilityTableHasLeadingPipe = undefined;
       continue;
     }
-    if (!inAccountabilitySection && !foundAccountabilityTable) {
-      continue;
-    }
     if (
       accountabilityTableState === "rows" &&
       isNoLeadingPipeTableRow(line)
