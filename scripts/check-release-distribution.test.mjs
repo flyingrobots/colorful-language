@@ -191,6 +191,8 @@ function validSnapshot() {
         "observational",
         "## Post-publication verification",
         "node scripts/verify-editor-publication.mjs",
+        "shasum -a 256 -c ./*.sha256",
+        "for artifact in colorful-language-vX.Y.Z-*.tar.gz colorful-language-X.Y.Z.vsix",
       ].join("\n"),
       topic:
         "installation-to-first-highlight is observational and not a correctness threshold",
@@ -505,6 +507,21 @@ test("downloads every release asset before integrity verification", () => {
     () => validateReleaseDistribution(snapshot),
     /download every release asset before attestation/u,
   );
+});
+
+test("verifies checksums and provenance for the complete release matrix", () => {
+  for (const omitted of [
+    "shasum -a 256 -c ./*.sha256",
+    "colorful-language-vX.Y.Z-*.tar.gz",
+  ]) {
+    const snapshot = validSnapshot();
+    snapshot.documentation.runbook =
+      snapshot.documentation.runbook.replace(omitted, "");
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /verify checksums and provenance for every release artifact/u,
+    );
+  }
 });
 
 test("the checked-in repository satisfies the distribution policy", () => {
