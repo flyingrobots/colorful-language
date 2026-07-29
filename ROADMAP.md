@@ -187,6 +187,10 @@ observe public-contract regressions before they ship.
   active distribution lane publishes its existing evidence machinery
   [#257](https://github.com/flyingrobots/colorful-language/issues/257).
   <!-- roadmap-primary: parked #257 -->
+- **Active delivery-axis repair:** keep goalposts and versioned release trains
+  independently representable before formal v0.4.0 planning begins
+  [#261](https://github.com/flyingrobots/colorful-language/issues/261).
+  <!-- roadmap-primary: active #261 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog

@@ -36,6 +36,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-16** Homebrew formula generation must consume the reviewed native
   archives and checksums after they are built, without rebuilding or
   repackaging release binaries.
+- **REL-17** GitHub milestones must remain goalposts while each release train
+  uses one versioned tracking issue and packet, so a slice never loses its
+  product/architecture owner merely to join a release.
 
 ## Cases
 
@@ -254,6 +257,16 @@ Verification for release preparation, tag automation, and release witnesses.
   `.github/workflows/ci.yml`; `scripts/release-prep.sh`. *Status:* implemented
   for the GitHub Release formula; public tap publication remains planned under
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).
+- **REL-17a** — *Requirement:* REL-17. *Behavior:* repository and release
+  profiles name GitHub milestones as the goalpost axis and one versioned issue
+  as the release-train axis; contributor, agent, release, and workflow
+  references agree, and the release profile contains no competing version-
+  milestone format. *Oracle:* one mutation per axis or reference fails with a
+  stable `E_DELIVERY_TRACKING` category, while reordered profile fields remain
+  valid. *Evidence type:* deterministic repository-maintenance policy test and
+  checked-in profile validation. *Tracking:*
+  [#261](https://github.com/flyingrobots/colorful-language/issues/261).
+  *Status:* planned.
 
 ## Open verification gaps
 
