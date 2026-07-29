@@ -525,9 +525,19 @@ fn kill_process(pid: u32) {
 fn worker_cleanup_waits_for_delayed_pid_artifact() {
     let fixture = success_fixture();
     let worker_pid = fixture.worker_pid.clone();
+    let mut delayed_worker = Command::new("/bin/sleep")
+        .arg("0.05")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("start delayed worker");
+    let delayed_pid = delayed_worker.id();
     let writer = thread::spawn(move || {
         thread::sleep(Duration::from_millis(20));
-        fs::write(worker_pid, u32::MAX.to_string()).expect("record delayed worker PID");
+        fs::write(worker_pid, delayed_pid.to_string()).expect("record delayed worker PID");
+        delayed_worker
+            .wait()
+            .expect("delayed worker must be reaped");
     });
 
     let result = std::panic::catch_unwind(|| assert_worker_terminated(&fixture));

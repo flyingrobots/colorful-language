@@ -445,11 +445,11 @@ Implemented and planned cases are listed below.
   *Oracle:* a source-policy regression rejects `u32::MAX` and requires the
   delayed writer to publish the PID of an explicitly spawned sleep child before
   waiting for it. *Evidence type:* process-fixture safety regression. *Evidence:*
-  planned in `colorful-vale`
+  `colorful-vale`
   `workspace_boundary::delayed_pid_evidence_uses_a_reaped_child` and
   `vale_adapter::worker_cleanup_waits_for_delayed_pid_artifact`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
