@@ -243,7 +243,8 @@ mechanism-cell Markdown are rejected as noncanonical. A repeated heading,
 table, or mechanism fails with both source locations, while distinct moonshot
 mechanisms remain independent entries. Leaving the canonical section does not
 end the structural scan: a later H2 cannot hide a second accountability
-authority.
+authority, and a closing-hash display equivalent is rejected in either source
+order.
 
 Run the deterministic structure and fixture gates without network access:
 

@@ -186,6 +186,23 @@ test("rejects closing hashes on a duplicate accountability heading", () => {
   );
 });
 
+test("rejects a closing-hash heading before the canonical authority", () => {
+  expectCategory(
+    "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+    (source) => `${source.replace(
+      "## Architecture accountability",
+      "## Architecture accountability ##",
+    )}
+
+## Architecture accountability
+
+| Mechanism | Current user job |
+| --- | --- |
+| Canonical authority | Must detect the earlier rendered equivalent. |
+`,
+  );
+});
+
 test("ignores table-like examples outside the accountability table", () => {
   for (const block of [
     ["```markdown", "| Example | Only |", "```"].join("\n"),
