@@ -6,8 +6,9 @@ import {
   TransportKind,
 } from "vscode-languageclient/node";
 
-let client: LanguageClient | undefined;
+import { startupFailureCategory } from "./startup-failure";
 
+let client: LanguageClient | undefined;
 export function activate(context: vscode.ExtensionContext): void {
   const output = vscode.window.createOutputChannel("Colorful Language", {
     log: true,
@@ -54,7 +55,8 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     (error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
-      output.appendLine(`Failed to start colorful-lsp: ${message}`);
+      const category = startupFailureCategory(error);
+      output.error(`[${category}] Failed to start colorful-lsp: ${message}`);
       void vscode.window.showErrorMessage(
         `Colorful Language could not start colorful-lsp: ${message}`,
       );

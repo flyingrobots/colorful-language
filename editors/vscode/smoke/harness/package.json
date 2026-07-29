@@ -1,0 +1,11 @@
+{
+  "name": "colorful-language-smoke-harness",
+  "displayName": "Colorful Language package smoke harness",
+  "description": "Private Extension Host harness for the installed Colorful VSIX.",
+  "version": "0.0.0",
+  "publisher": "flyingrobots",
+  "private": true,
+  "engines": {
+    "vscode": "^1.91.0"
+  }
+}

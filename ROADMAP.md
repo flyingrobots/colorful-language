@@ -172,6 +172,11 @@ observe public-contract regressions before they ship.
   a workspace gate
   [#230](https://github.com/flyingrobots/colorful-language/issues/230).
   <!-- roadmap-primary: parked #230 -->
+- **Open process-test determinism:** replace the Vale timeout fixture's
+  scheduler race with an explicit worker-ready seam while preserving the real
+  timeout and descendant-cleanup postconditions
+  [#240](https://github.com/flyingrobots/colorful-language/issues/240).
+  <!-- roadmap-primary: active #240 -->
 
 **Exit signal:** the documented local gate and the protected-branch gate name
 the same reproducible evidence; public binary transport and API examples are
@@ -294,13 +299,16 @@ was installed, and reach the first useful editor result.
   derive same-pre-1.0-minor compatibility, and reject manifest or gate drift
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
   <!-- roadmap-primary: delivered #141 -->
-- **Open package evidence:** add clean-install editor and scripted LSP
-  transcript tests
-  [#136](https://github.com/flyingrobots/colorful-language/issues/136), then
-  publish signed VS Code, Open VSX, Zed, and platform server artifacts with
-  rollback evidence
+- **Delivered package evidence:** one scripted LSP transcript now covers Plain
+  Text and Markdown; a bundled VSIX clean-installs in pinned VS Code; the same
+  bytes are the Open VSX input; and the isolated Zed registry source builds to
+  Wasm
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
+  <!-- roadmap-primary: delivered #136 -->
+- **Open publication:** publish signed VS Code, Open VSX, Zed, and platform
+  server artifacts with rollback evidence
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  <!-- roadmap-primary: active #136 #154 -->
+  <!-- roadmap-primary: active #154 -->
 - **Operator installation:** package the CLI, and decide the server boundary,
   for Homebrew
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).
@@ -315,6 +323,12 @@ was installed, and reach the first useful editor result.
   stable
   [#225](https://github.com/flyingrobots/colorful-language/issues/225).
   <!-- roadmap-primary: parked #225 -->
+- **Parked Markdown region awareness:** suppress prose analysis inside fenced
+  code and other reviewed non-prose regions only through a format adapter that
+  preserves source coordinates and core purity
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241), after
+  the publication path has real users.
+  <!-- roadmap-primary: parked #241 -->
 
 **Exit signal:** public URLs, signed or checksummed artifacts, version
 compatibility, clean-install smoke tests, rollback instructions, and measured

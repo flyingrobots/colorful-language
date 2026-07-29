@@ -328,6 +328,7 @@ jobs:
       - run: npm ci
       - run: node scripts/check-vscode-dependency-policy.test.mjs
       - run: node scripts/check-vscode-dependency-policy.mjs
+      - run: node --test scripts/check-editor-package-smoke.test.mjs
       - run: npm ci
         working-directory: editors/vscode
       - run: npm audit --audit-level=high
@@ -340,3 +341,5 @@ jobs:
           targets: wasm32-wasip1
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
       - run: cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1
+      - run: npm run smoke:package
+        working-directory: editors/vscode

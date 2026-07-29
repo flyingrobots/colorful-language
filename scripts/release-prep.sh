@@ -62,6 +62,7 @@ bash scripts/check-rust-dependency-policy.test.sh
 bash scripts/check-rust-dependency-policy.sh
 node scripts/check-vscode-dependency-policy.test.mjs
 node scripts/check-vscode-dependency-policy.mjs
+node --test scripts/check-editor-package-smoke.test.mjs
 npm --prefix editors/vscode ci
 npm --prefix editors/vscode audit --audit-level=high
 bash scripts/ir-witness.sh
@@ -72,6 +73,7 @@ bash scripts/version-compat-matrix.sh
 node consumers/graft-projection.test.mjs
 npm --prefix editors/vscode run compile
 cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip1 --locked
+npm --prefix editors/vscode run smoke:package
 markdownlint-cli2 "**/*.md"
 actionlint .github/workflows/*.yml
 git diff --check

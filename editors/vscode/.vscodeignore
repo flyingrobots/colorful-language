@@ -1,7 +1,10 @@
-.vscode/**
 .gitignore
+.vscode/**
+.vscode-test/**
+smoke/**
 src/**
-**/*.ts
-!dist/**
-tsconfig.json
+node_modules/**
 **/*.map
+package-lock.json
+tsconfig.json
+*.vsix

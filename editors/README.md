@@ -29,6 +29,20 @@ For Zed, install the source extension from [`zed/`](zed/), make sure the buffer
 language is **Plain Text** or **Markdown**, and enable Zed semantic tokens. The
 Zed README includes the exact settings and binary-path override.
 
+The repository package gate builds one bundled VSIX for the future VS Code and
+Open VSX channels, installs it in an isolated minimum-version VS Code profile,
+and stages the Zed registry-source package for an isolated Wasm build. Run it
+from the repository root:
+
+```bash
+npm --prefix editors/vscode run smoke:package
+```
+
+It writes the artifact identities, shared VSIX digest, Zed source digest, Wasm
+digest, and stable missing-server evidence to
+`target/editor-smoke/witness.json`. This is pre-publication evidence, not a
+marketplace or registry URL.
+
 > Highlighting uses **LSP semantic tokens**. The default skeleton highlighter
 > uses standard token types (`keyword`, `class`, `number`, `string`) for
 > structure and Colorful-owned open-class types (`noun`, `verb`, `adjective`,

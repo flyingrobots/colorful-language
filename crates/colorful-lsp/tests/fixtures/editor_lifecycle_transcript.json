@@ -1,0 +1,250 @@
+{
+  "schemaVersion": "colorful.lsp.transcript/v1",
+  "sessions": [
+    {
+      "languageId": "plaintext",
+      "uri": "file:///tmp/colorful-lsp-contract.txt"
+    },
+    {
+      "languageId": "markdown",
+      "uri": "file:///tmp/colorful-lsp-contract.md"
+    }
+  ],
+  "steps": [
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "processId": null,
+          "rootUri": null,
+          "capabilities": {}
+        }
+      }
+    },
+    {
+      "receive": {
+        "description": "initialize response",
+        "where": {
+          "id": 1
+        },
+        "equals": {
+          "/result/capabilities/textDocumentSync": 2,
+          "/result/serverInfo/name": "colorful-lsp",
+          "/result/serverInfo/version": "$PACKAGE_VERSION"
+        },
+        "arraysContain": {
+          "/result/capabilities/semanticTokensProvider/legend/tokenTypes": "noun"
+        }
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "method": "initialized",
+        "params": {}
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "method": "textDocument/didOpen",
+        "params": {
+          "textDocument": {
+            "uri": "$URI",
+            "languageId": "$LANGUAGE_ID",
+            "version": 1,
+            "text": "The cat is really clear."
+          }
+        }
+      }
+    },
+    {
+      "receive": {
+        "description": "version 1 diagnostics",
+        "where": {
+          "method": "textDocument/publishDiagnostics",
+          "params": {
+            "version": 1
+          }
+        },
+        "equals": {
+          "/params/uri": "$URI",
+          "/params/diagnostics": [
+            {
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 11
+                },
+                "end": {
+                  "line": 0,
+                  "character": 17
+                }
+              },
+              "severity": 3,
+              "code": "weak-word",
+              "source": "colorful",
+              "message": "weak word 'really'"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "textDocument/semanticTokens/full",
+        "params": {
+          "textDocument": {
+            "uri": "$URI"
+          }
+        }
+      }
+    },
+    {
+      "receive": {
+        "description": "version 1 semantic tokens",
+        "where": {
+          "id": 2
+        },
+        "equals": {
+          "/result/resultId": "1"
+        },
+        "nonEmptyArrays": [
+          "/result/data"
+        ],
+        "arrayLengthsMultipleOf": {
+          "/result/data": 5
+        }
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "method": "textDocument/didChange",
+        "params": {
+          "textDocument": {
+            "uri": "$URI",
+            "version": 2
+          },
+          "contentChanges": [
+            {
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 11
+                },
+                "end": {
+                  "line": 0,
+                  "character": 17
+                }
+              },
+              "text": "plain"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "receive": {
+        "description": "version 2 diagnostics",
+        "where": {
+          "method": "textDocument/publishDiagnostics",
+          "params": {
+            "version": 2
+          }
+        },
+        "equals": {
+          "/params/uri": "$URI",
+          "/params/diagnostics": []
+        }
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "textDocument/semanticTokens/full",
+        "params": {
+          "textDocument": {
+            "uri": "$URI"
+          }
+        }
+      }
+    },
+    {
+      "receive": {
+        "description": "version 2 semantic tokens",
+        "where": {
+          "id": 3
+        },
+        "equals": {
+          "/result/resultId": "2"
+        },
+        "nonEmptyArrays": [
+          "/result/data"
+        ],
+        "arrayLengthsMultipleOf": {
+          "/result/data": 5
+        }
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "method": "textDocument/didClose",
+        "params": {
+          "textDocument": {
+            "uri": "$URI"
+          }
+        }
+      }
+    },
+    {
+      "receive": {
+        "description": "close diagnostics",
+        "where": {
+          "method": "textDocument/publishDiagnostics",
+          "params": {
+            "uri": "$URI",
+            "diagnostics": []
+          }
+        },
+        "equals": {
+          "/params/diagnostics": []
+        },
+        "absent": [
+          "/params/version"
+        ]
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "method": "shutdown"
+      }
+    },
+    {
+      "receive": {
+        "description": "shutdown response",
+        "where": {
+          "id": 4
+        },
+        "equals": {
+          "/result": null
+        }
+      }
+    },
+    {
+      "send": {
+        "jsonrpc": "2.0",
+        "method": "exit"
+      }
+    }
+  ],
+  "exitCode": 0
+}

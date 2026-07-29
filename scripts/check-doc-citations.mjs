@@ -10,7 +10,7 @@
 // Self-test: node scripts/check-doc-citations.mjs --self-test
 
 import { readFileSync, readdirSync, existsSync, mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
-import { join, dirname, relative, resolve } from "node:path";
+import { join, dirname, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
@@ -23,6 +23,7 @@ const IGNORED_DIR_NAMES = new Set([
   ".obsidian",
   ".continuum",
   ".graft",
+  ".vscode-test",
 ]);
 
 // Top-level directories (or dotfiles) this repo actually cites paths under.
@@ -230,6 +231,7 @@ function runSelfTest() {
   try {
     mkdirSync(join(dir, "crates", "colorful-ir", "src", "generated"), { recursive: true });
     mkdirSync(join(dir, "crates", "colorful-ir", "ts"), { recursive: true });
+    mkdirSync(join(dir, ".vscode-test"), { recursive: true });
     writeFileSync(join(dir, "crates", "colorful-ir", "src", "lib.rs"), "// real file\n");
     writeFileSync(join(dir, "crates", "colorful-ir", "src", "generated", "syntax_v1.rs"), "// generated\n");
 
@@ -249,6 +251,17 @@ function runSelfTest() {
         "- **CASE-2** — *Evidence:* `crates/colorful-ir/src/does_not_exist_in_impl.rs`. *Status:* implemented.",
         "",
       ].join("\n"),
+    );
+
+    writeFileSync(
+      join(dir, ".vscode-test", "README.md"),
+      "# Downloaded fixture\n\nA broken citation: `crates/missing/src/lib.rs`.\n",
+    );
+
+    const discovered = findMarkdownFiles(dir).map((path) => relative(dir, path));
+    assert.ok(
+      !discovered.some((path) => path.split(sep)[0] === ".vscode-test"),
+      "downloaded VS Code test fixtures must not enter the repository documentation corpus",
     );
 
     const failures = checkFile(dir, docPath);

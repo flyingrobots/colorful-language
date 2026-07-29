@@ -23,6 +23,29 @@ const CODEQL_INIT =
   "github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
 const CODEQL_ANALYZE =
   "github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+const EDITOR_TOOL_LICENSES = [
+  "Artistic-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "CC-BY-3.0",
+  "CC0-1.0",
+  "Python-2.0",
+];
+const EDITOR_TOOL_LICENSE_EXCEPTIONS = [
+  "pkg:npm/@azu/style-format@1.0.1",
+  "pkg:npm/@vscode/vsce-sign@2.0.9",
+  "pkg:npm/@vscode/vsce-sign-alpine-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-alpine-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-darwin-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-darwin-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-arm@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-linux-x64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-win32-arm64@2.0.6",
+  "pkg:npm/@vscode/vsce-sign-win32-x64@2.0.6",
+  "pkg:npm/typed-rest-client@1.8.11",
+  "pkg:npm/xmlbuilder@11.0.1",
+];
 
 function requiredField(id) {
   return {
@@ -173,8 +196,21 @@ allow-git = []
                 "fail-on-scopes": "runtime, development, unknown",
                 "license-check": true,
                 "vulnerability-check": true,
-                "allow-licenses":
-                  "0BSD, Apache-2.0, Apache-2.0 WITH LLVM-exception, MIT, NCSA, Unicode-3.0, Unlicense, Zlib, BlueOak-1.0.0, ISC",
+                "allow-licenses": [
+                  "0BSD",
+                  "Apache-2.0",
+                  "Apache-2.0 WITH LLVM-exception",
+                  "MIT",
+                  "NCSA",
+                  "Unicode-3.0",
+                  "Unlicense",
+                  "Zlib",
+                  "BlueOak-1.0.0",
+                  "ISC",
+                  ...EDITOR_TOOL_LICENSES,
+                ].join(", "),
+                "allow-dependencies-licenses":
+                  EDITOR_TOOL_LICENSE_EXCEPTIONS.join(", "),
               },
             },
           ],
@@ -282,6 +318,13 @@ function actionStep(job, action) {
   return job.steps.find((step) => step.uses === action);
 }
 
+function dependencyReviewStep(candidate) {
+  return actionStep(
+    candidate.securityWorkflow.jobs["dependency-review"],
+    DEPENDENCY_ACTION,
+  );
+}
+
 function commandStep(job, command) {
   return job.steps.find((step) => step.run === command);
 }
@@ -301,6 +344,41 @@ function addAdvisoryException(candidate) {
 
 test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
+});
+
+test("accepts the exact editor package-tool license policy", () => {
+  const candidate = fixture();
+  const step = dependencyReviewStep(candidate);
+  assert.equal(
+    step.with["allow-dependencies-licenses"],
+    EDITOR_TOOL_LICENSE_EXCEPTIONS.join(", "),
+  );
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
+});
+
+test("rejects a missing editor package-tool license exception", () => {
+  expectCode((candidate) => {
+    const step = dependencyReviewStep(candidate);
+    step.with["allow-dependencies-licenses"] =
+      EDITOR_TOOL_LICENSE_EXCEPTIONS.slice(1).join(", ");
+  }, "E_DEPENDENCY_REVIEW");
+});
+
+test("rejects an unexpected editor package-tool license exception", () => {
+  expectCode((candidate) => {
+    const step = dependencyReviewStep(candidate);
+    step.with["allow-dependencies-licenses"] +=
+      ", pkg:npm/unreviewed-tool@1.0.0";
+  }, "E_DEPENDENCY_REVIEW");
+});
+
+test("rejects a version-broadened editor package-tool exception", () => {
+  expectCode((candidate) => {
+    const step = dependencyReviewStep(candidate);
+    step.with["allow-dependencies-licenses"] = step.with[
+      "allow-dependencies-licenses"
+    ].replace("@1.0.1", "");
+  }, "E_DEPENDENCY_REVIEW");
 });
 
 test("rejects an incomplete bug form", () => {
