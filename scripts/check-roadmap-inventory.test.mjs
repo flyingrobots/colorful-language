@@ -493,6 +493,30 @@ test("rejects a missing architecture-accountability table", () => {
   );
 });
 
+test("does not source canonical authority from a peer section", () => {
+  for (const peerHeading of [
+    "# Other section",
+    "## Other section",
+    ["Other section", "============="].join("\n"),
+    ["Other section", "-------------"].join("\n"),
+  ]) {
+    expectCategory(
+      "E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE",
+      (source) =>
+        source.replace(
+          /\n\| Mechanism \|[\s\S]*$/u,
+          `
+${peerHeading}
+
+| Mechanism | Current user job |
+| --- | --- |
+| Other authority | This table belongs to another section. |
+`,
+        ),
+    );
+  }
+});
+
 test("rejects a second architecture-accountability mechanism table", () => {
   expectCategory(
     "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_TABLE",

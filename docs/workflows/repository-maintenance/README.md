@@ -228,7 +228,8 @@ The same offline structure gate applies these fail-closed rules:
   every canonical header is the plain-text cell `Mechanism`; inline-code
   styling that displays the same label is refused. The `Mechanism` header cell
   and every delimiter cell must be valid in literal source; comments cannot
-  synthesize either.
+  synthesize either. Only a complete table inside the canonical section
+  satisfies the required authority.
 - **Row shape:** The first cell in every canonical row is pipe-delimited on
   both sides, and the row has no more than three leading spaces. Valid
   no-leading-pipe Markdown headers and continuing data rows are refused
@@ -255,10 +256,11 @@ The same offline structure gate applies these fail-closed rules:
 - **Duplication and scan scope:** Every displayed mechanism identity appears
   exactly once. A repeated heading, table, or mechanism fails with both source
   locations, while distinct moonshot mechanisms remain independent entries.
-  Leaving the canonical section does not end the structural scan: a later H2
-  cannot hide a second accountability authority, and a closing-hash display
-  equivalent is rejected in either source order. LF and CRLF roadmaps have the
-  same structural result and line addresses.
+  ATX H1/H2 and Setext H1/H2 peers end the canonical section, but leaving it
+  does not end the duplicate scan: another section cannot supply missing
+  canonical authority or hide a second apparent authority. A closing-hash
+  display equivalent is rejected in either source order. LF and CRLF roadmaps
+  have the same structural result and line addresses.
 
 Run the deterministic structure and fixture gates without network access:
 

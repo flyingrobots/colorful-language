@@ -199,12 +199,19 @@ function isAccountabilityHeadingWithClosingHashes(line) {
   return CLOSING_HASH_ACCOUNTABILITY_HEADING.test(line);
 }
 
-function isRoadmapLevelTwoHeading(line) {
-  const match = line.match(/^ {0,3}##(?:[ \t]+|$)/u);
+function isRoadmapPeerOrHigherAtxHeading(line) {
+  const match = line.match(/^ {0,3}#{1,2}(?:[ \t]+|$)/u);
   if (match === null) {
     return false;
   }
   return !line.slice(match[0].length).startsWith("#");
+}
+
+function isRoadmapSetextHeading(line, nextLine) {
+  return (
+    line.trim().length > 0 &&
+    /^ {0,3}(?:=+|-+)[ \t]*$/u.test(nextLine)
+  );
 }
 
 function isAsciiPunctuation(character) {
@@ -421,9 +428,15 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
   let candidateAccountabilityTableColumnCount;
   let candidateAccountabilityHeaderKind;
   let candidateAccountabilityTableHasLeadingPipe;
+  let candidateAccountabilityTableInCanonicalSection;
+  const roadmapLines = roadmap.split("\n");
 
-  for (const [index, rawLine] of roadmap.split("\n").entries()) {
+  for (const [index, rawLine] of roadmapLines.entries()) {
     let line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+    const nextRawLine = roadmapLines[index + 1] ?? "";
+    const nextLine = nextRawLine.endsWith("\r")
+      ? nextRawLine.slice(0, -1)
+      : nextRawLine;
     if (fenceCharacter !== undefined) {
       const closingFence = line.match(
         /^ {0,3}(`{3,}|~{3,})[ \t]*$/u,
@@ -453,6 +466,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
         candidateAccountabilityTableHasLeadingPipe = undefined;
+        candidateAccountabilityTableInCanonicalSection = undefined;
       }
       continue;
     }
@@ -470,6 +484,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
         candidateAccountabilityTableHasLeadingPipe = undefined;
+        candidateAccountabilityTableInCanonicalSection = undefined;
       }
       fenceCharacter = openingFence[1][0];
       fenceLength = openingFence[1].length;
@@ -523,6 +538,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
         candidateAccountabilityTableHasLeadingPipe = undefined;
+        candidateAccountabilityTableInCanonicalSection = undefined;
       }
       inHtmlComment = true;
       continue;
@@ -541,13 +557,18 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       displayEquivalentAccountabilitySectionLocation ??= location;
       continue;
     }
-    if (inAccountabilitySection && isRoadmapLevelTwoHeading(line)) {
+    if (
+      inAccountabilitySection &&
+      (isRoadmapPeerOrHigherAtxHeading(line) ||
+        isRoadmapSetextHeading(line, nextLine))
+    ) {
       inAccountabilitySection = false;
       accountabilityTableState = "searching";
       candidateAccountabilityTableLocation = undefined;
       candidateAccountabilityTableColumnCount = undefined;
       candidateAccountabilityHeaderKind = undefined;
       candidateAccountabilityTableHasLeadingPipe = undefined;
+      candidateAccountabilityTableInCanonicalSection = undefined;
       continue;
     }
     if (
@@ -590,6 +611,8 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableColumnCount = tableCells.length;
         candidateAccountabilityHeaderKind = headerKind;
         candidateAccountabilityTableHasLeadingPipe = tableHasLeadingPipe;
+        candidateAccountabilityTableInCanonicalSection =
+          inAccountabilitySection;
       }
       continue;
     }
@@ -631,6 +654,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableColumnCount = undefined;
         candidateAccountabilityHeaderKind = undefined;
         candidateAccountabilityTableHasLeadingPipe = undefined;
+        candidateAccountabilityTableInCanonicalSection = undefined;
       }
       continue;
     }
@@ -641,6 +665,8 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         candidateAccountabilityTableColumnCount = tableCells.length;
         candidateAccountabilityHeaderKind = headerKind;
         candidateAccountabilityTableHasLeadingPipe = tableHasLeadingPipe;
+        candidateAccountabilityTableInCanonicalSection =
+          inAccountabilitySection;
       }
       continue;
     }
@@ -652,6 +678,7 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       candidateAccountabilityTableColumnCount = undefined;
       candidateAccountabilityHeaderKind = undefined;
       candidateAccountabilityTableHasLeadingPipe = undefined;
+      candidateAccountabilityTableInCanonicalSection = undefined;
       continue;
     }
 
@@ -697,9 +724,10 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
       candidateAccountabilityTableColumnCount = tableCells.length;
       candidateAccountabilityHeaderKind = "canonical";
       candidateAccountabilityTableHasLeadingPipe = true;
+      candidateAccountabilityTableInCanonicalSection =
+        inAccountabilitySection;
       continue;
     }
-    const identity = canonicalMechanismIdentity(mechanism, location);
     if (
       accountabilityTableLocation !== undefined &&
       candidateAccountabilityTableLocation !== accountabilityTableLocation
@@ -710,6 +738,10 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
         `canonical table already begins at ${accountabilityTableLocation}`,
       );
     }
+    if (!candidateAccountabilityTableInCanonicalSection) {
+      continue;
+    }
+    const identity = canonicalMechanismIdentity(mechanism, location);
     foundAccountabilityTable = true;
     accountabilityTableLocation = candidateAccountabilityTableLocation;
     const previous = mechanisms.get(identity);

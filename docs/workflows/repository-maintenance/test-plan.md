@@ -267,13 +267,14 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   their stable `E_ROADMAP_*` categories, including both source addresses for a
   duplicate heading, table, or mechanism and identical LF/CRLF failure
   addresses, while indented, fenced, and commented examples immediately after
-  the real authority remain non-authoritative. A later H2 separates the
-  duplicate-section fixture from the canonical section, and a valid later
-  mechanism table remains detectable without turning an incomplete header or
-  unrelated table into authority; malformed nested-hash text cannot hide a
-  second table. The process-level duplicate leg exits nonzero with empty stdout
-  and exact stderr. *Evidence type:* deterministic fixture-backed Node tests
-  plus the existing offline repository command. *Evidence:*
+  the real authority remain non-authoritative. ATX H1/H2 and Setext H2 fixtures
+  prove a peer section cannot supply missing canonical authority. A later H2
+  separates the duplicate-section fixture from the canonical section, and a
+  valid later mechanism table remains detectable without turning an incomplete
+  header or unrelated table into authority; malformed nested-hash text cannot
+  hide a second table. The process-level duplicate leg exits nonzero with empty
+  stdout and exact stderr. *Evidence type:* deterministic fixture-backed Node
+  tests plus the existing offline repository command. *Evidence:*
   `scripts/check-roadmap-inventory.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, and
   `scripts/fixtures/roadmap-inventory/roadmap.md`. *Tracking:*
