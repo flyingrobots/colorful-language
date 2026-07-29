@@ -29,7 +29,17 @@ The repository currently ships source integrations and recipes:
 - Neovim, Helix, Emacs, Sublime Text, and Kate use the recipes in
   [`editors/README.md`](../../../editors/README.md).
 
-The source integrations build in CI. They are not yet published to editor
+The source integrations build in CI. The editor gate also builds one bundled
+VSIX, installs those exact bytes into an isolated VS Code 1.91.0 profile, and
+exercises Plain Text, Markdown, incremental diagnostics, theme-fallback
+metadata, and a persisted `colorful/server-not-found` failure category. The
+same VSIX digest is the future Open VSX input; CI does not manufacture a second
+artifact. Zed's registry-source inventory is staged with its lockfile and
+license, then compiled to Wasm from an isolated directory. Zed host activation
+uses the exact manual oracle in the [test plan](test-plan.md) because Zed does
+not expose a headless dev-extension install command.
+
+These artifacts are test witnesses only. They are not yet published to editor
 marketplaces or registries.
 
 From the repository root, install the matching server from the same checkout:
@@ -61,6 +71,12 @@ The repo-local release profile lists all seven version sources. Pull-request
 CI, release preparation, and tag publication run
 `scripts/check-editor-version-policy.mjs`, which fails when a manifest,
 lockfile, policy rule, or gate command drifts.
+
+`npm --prefix editors/vscode run smoke:package` builds the matching release
+server, packages and clean-installs the VSIX, exercises the installed extension,
+stages and builds the Zed source package, and writes a machine-readable witness
+to `target/editor-smoke/witness.json`. VS Code package tooling and the tested
+editor version are exact and lockfile-backed.
 
 A blocking 256-case property corpus checks the coordinate seam beneath every
 adapter. Each generated finding crosses astral code points, combining marks,

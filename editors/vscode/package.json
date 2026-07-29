@@ -7,7 +7,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/flyingrobots/colorful-language"
+    "url": "https://github.com/flyingrobots/colorful-language",
+    "directory": "editors/vscode"
   },
   "engines": {
     "vscode": "^1.91.0"
@@ -111,7 +112,10 @@
     ]
   },
   "scripts": {
-    "compile": "tsc -p ./",
+    "bundle": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --sourcemap --outfile=dist/extension.js",
+    "compile": "tsc -p ./ --noEmit && npm run bundle",
+    "package:vsix": "vsce package --no-yarn --no-dependencies",
+    "smoke:package": "node smoke/run-packaged-smoke.mjs",
     "watch": "tsc -watch -p ./",
     "vscode:prepublish": "npm run compile"
   },
@@ -121,6 +125,9 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/vscode": "^1.91.0",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "3.9.2",
+    "esbuild": "0.28.1",
     "typescript": "5.9.3"
   }
 }

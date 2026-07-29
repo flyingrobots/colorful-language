@@ -40,7 +40,9 @@ so regular themes have a fallback. If a theme still renders them too subtly, add
 theme-specific `editor.semanticTokenColorCustomizations`.
 
 When startup fails, check **Output → Colorful Language**. The channel reports
-the `colorful-lsp` command path and startup errors.
+the `colorful-lsp` command path and a stable failure category:
+`colorful/server-not-found` for a missing executable or
+`colorful/server-start-failed` for another startup failure.
 
 ## Build from source
 
@@ -55,11 +57,28 @@ extension and opens an Extension Development Host with this source checkout
 loaded. Attach configurations only connect a debugger to an already running
 extension host; they do not launch this extension by themselves.
 
-Package with `npx @vscode/vsce package`.
+Build the bundled VSIX with the lockfile-pinned packaging tool:
+
+```bash
+npm run package:vsix
+```
+
+Run the full package witness from the repository root:
+
+```bash
+npm --prefix editors/vscode run smoke:package
+```
+
+That command builds the matching release server, installs the VSIX into an
+isolated VS Code 1.91.0 profile, exercises Plain Text and Markdown plus a
+missing-server profile, stages the Zed source package, and writes
+`target/editor-smoke/witness.json`. It downloads and caches the tested VS Code
+build under `editors/vscode/.vscode-test/`.
 
 ## How it works
 
 The extension is a thin LSP client: it spawns `colorful-lsp` over stdio and
 registers it for `plaintext` and `markdown` documents. All the analysis lives in
 the server, so the same engine powers every editor — see the
-[editor recipes](../README.md) for Neovim, Helix, Zed, Emacs, and Sublime.
+[editor recipes](https://github.com/flyingrobots/colorful-language/blob/main/editors/README.md)
+for Neovim, Helix, Zed, Emacs, and Sublime.

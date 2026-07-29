@@ -23,6 +23,7 @@ const IGNORED_DIR_NAMES = new Set([
   ".obsidian",
   ".continuum",
   ".graft",
+  ".vscode-test",
 ]);
 
 function findMarkdownFiles(root) {
@@ -175,6 +176,7 @@ function runSelfTest() {
   const dir = mkdtempSync(join(tmpdir(), "colorful-link-check-"));
   try {
     mkdirSync(join(dir, "docs", "topics", "widgets"), { recursive: true });
+    mkdirSync(join(dir, ".vscode-test"), { recursive: true });
 
     writeFileSync(
       join(dir, "docs", "topics", "widgets", "README.md"),
@@ -205,6 +207,17 @@ function runSelfTest() {
         "[invalid format](main.rs#foo)",
         "",
       ].join("\n"),
+    );
+
+    writeFileSync(
+      join(dir, ".vscode-test", "README.md"),
+      "# Downloaded fixture\n\n[upstream-relative-link](missing.md)\n",
+    );
+
+    const discovered = findMarkdownFiles(dir).map((path) => relative(dir, path));
+    assert.ok(
+      !discovered.some((path) => path.startsWith(".vscode-test/")),
+      "downloaded VS Code test fixtures must not enter the repository documentation corpus",
     );
 
     const failures = checkFile(dir, join(dir, "docs", "README.md"));

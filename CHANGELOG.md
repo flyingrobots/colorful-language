@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Packaged editor and LSP lifecycle evidence.** One checked-in JSON-RPC
+  transcript now drives the real `colorful-lsp` binary through the complete
+  open/change/tokens/diagnostics/close/shutdown lifecycle for Plain Text and
+  Markdown. CI builds one bundled VSIX for VS Code and Open VSX, installs it in
+  an isolated pinned VS Code 1.91.0 profile, exercises activation and
+  incremental diagnostics, verifies theme-fallback scopes, and records a
+  stable missing-server category from persisted logs. The same gate stages the
+  exact Zed registry-source inventory with its lockfile and license, builds it
+  to Wasm in isolation, and documents the remaining clean-profile Zed host
+  oracle without claiming a nonexistent headless installation surface.
 - **Synchronized editor/server release compatibility.** The Cargo workspace,
   VS Code manifest and lockfile, Zed extension manifest, and standalone Zed
   crate and lockfile now share one release version. The release profile

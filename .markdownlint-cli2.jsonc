@@ -5,6 +5,7 @@
   "ignores": [
     "**/node_modules/**",
     "**/dist/**",
-    "**/target/**"
+    "**/target/**",
+    "**/.vscode-test/**"
   ]
 }

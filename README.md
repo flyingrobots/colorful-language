@@ -102,9 +102,10 @@ the exact contract):
 ## Editor Support (LSP)
 
 > [!note]
-> The integrations exist and build in CI; they are **not yet published** as
-> editor marketplace packages. Install from source today; marketplace/registry
-> publishing is tracked separately.
+> The integrations exist, build in CI, and have isolated pre-publication
+> package smoke evidence; they are **not yet published** as editor marketplace
+> packages. Install from source today; marketplace/registry publishing is
+> tracked separately.
 
 The real magic is the **Language Server** (`colorful-lsp`), which gives live
 coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
@@ -114,8 +115,10 @@ coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
 - **Neovim**, **Helix**, **Emacs**, **Sublime**, **Kate** — copy-paste config
   recipes in [`editors/README.md`](editors/README.md)
 
-Build the server with `cargo install colorful-lsp` (or from source) and point your
-editor at it per the recipes above. See
+From this source checkout, install the synchronized server with
+`cargo install --path crates/colorful-lsp --locked` and point the source editor
+adapter at it per the recipes above. Compatible public adapter/server artifacts
+do not exist yet. See
 [`docs/topics/editor-integrations/`](docs/topics/editor-integrations/) for the
 current integration boundary, evidence, and theme caveats.
 

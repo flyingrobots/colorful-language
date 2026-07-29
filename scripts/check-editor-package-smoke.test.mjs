@@ -11,9 +11,11 @@ const RELEASE_PACKAGE_SMOKE_COMMAND =
 const EXPECTED_TOOL_VERSIONS = {
   "@vscode/test-electron": "3.1.0",
   "@vscode/vsce": "3.9.2",
+  esbuild: "0.28.1",
 };
 const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/.vscodeignore",
+  "editors/vscode/LICENSE",
   "editors/vscode/smoke/harness/package.json",
   "editors/vscode/smoke/run-packaged-smoke.mjs",
   "editors/vscode/smoke/suite/index.cjs",
@@ -35,11 +37,19 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
   }
   assert.equal(
     packageJson.scripts?.["package:vsix"],
-    "vsce package --no-yarn",
+    "vsce package --no-yarn --no-dependencies",
   );
   assert.equal(
     packageJson.scripts?.["smoke:package"],
     "node smoke/run-packaged-smoke.mjs",
+  );
+  assert.equal(packageJson.repository?.directory, "editors/vscode");
+});
+
+test("the packaged VS Code license stays byte-identical to repository authority", () => {
+  assert.equal(
+    readFileSync("editors/vscode/LICENSE", "utf8"),
+    readFileSync("LICENSE", "utf8"),
   );
 });
 
@@ -47,6 +57,13 @@ test("the committed package harness has every portable evidence boundary", () =>
   for (const path of EXPECTED_HARNESS_PATHS) {
     assert.equal(existsSync(path), true, `missing package evidence: ${path}`);
   }
+});
+
+test("documentation lint excludes the downloaded VS Code test application", () => {
+  assert.match(
+    readFileSync(".markdownlint-cli2.jsonc", "utf8"),
+    /"\*\*\/\.vscode-test\/\*\*"/u,
+  );
 });
 
 test("CI runs the headless package smoke from the editor directory", () => {

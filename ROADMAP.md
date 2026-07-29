@@ -294,13 +294,16 @@ was installed, and reach the first useful editor result.
   derive same-pre-1.0-minor compatibility, and reject manifest or gate drift
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
   <!-- roadmap-primary: delivered #141 -->
-- **Open package evidence:** add clean-install editor and scripted LSP
-  transcript tests
-  [#136](https://github.com/flyingrobots/colorful-language/issues/136), then
-  publish signed VS Code, Open VSX, Zed, and platform server artifacts with
-  rollback evidence
+- **Delivered package evidence:** one scripted LSP transcript now covers Plain
+  Text and Markdown; a bundled VSIX clean-installs in pinned VS Code; the same
+  bytes are the Open VSX input; and the isolated Zed registry source builds to
+  Wasm
+  [#136](https://github.com/flyingrobots/colorful-language/issues/136).
+  <!-- roadmap-primary: delivered #136 -->
+- **Open publication:** publish signed VS Code, Open VSX, Zed, and platform
+  server artifacts with rollback evidence
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  <!-- roadmap-primary: active #136 #154 -->
+  <!-- roadmap-primary: active #154 -->
 - **Operator installation:** package the CLI, and decide the server boundary,
   for Homebrew
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).

@@ -36,6 +36,9 @@ If Zed cannot see your shell `PATH`, set the binary path explicitly in
 }
 ```
 
+If neither the configured path nor `PATH` resolves the server, Zed reports the
+stable failure category `[colorful/server-not-found]`.
+
 ## Install
 
 **As a dev extension (local):** in Zed, open the command palette →
@@ -44,6 +47,12 @@ compiles the extension to WebAssembly and loads it.
 
 **From the registry:** once published to the Zed extension registry, install it
 by name from **Extensions**.
+
+The repository's portable package smoke stages the exact Zed registry-source
+inventory, copies the repository license, and builds that isolated source to
+Wasm. Zed does not expose a headless dev-extension install command, so the
+[editor integration test plan](https://github.com/flyingrobots/colorful-language/blob/main/docs/topics/editor-integrations/test-plan.md)
+contains the clean-profile manual host oracle.
 
 ## Plain Text highlighting
 
@@ -140,4 +149,4 @@ A small Rust→WebAssembly extension (`zed_extension_api`) whose
 `language_server_command` returns the configured `colorful-lsp` binary, or falls
 back to resolving `colorful-lsp` from `PATH`. All analysis lives in the server,
 shared with every other editor — see the
-[editor recipes](../README.md).
+[editor recipes](https://github.com/flyingrobots/colorful-language/blob/main/editors/README.md).
