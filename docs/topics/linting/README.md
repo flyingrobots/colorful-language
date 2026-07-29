@@ -75,12 +75,16 @@ On Unix, each invocation owns a dedicated process group so timeout and
 cancellation terminate configured wrappers and their descendants before
 joining captured output. The same deadline and cancellation token remain active
 while stdin and captured output drain, including after a wrapper exits while a
-descendant still owns its pipes. Other targets retain direct-child termination.
+descendant still owns its pipes. Cancellation is rechecked immediately before
+completed output is accepted. Other targets retain direct-child termination.
 Missing configuration, an unavailable engine, unrecognized version output, an
 incompatible engine, timeout, cancellation, process failure, excessive output,
 invalid UTF-8, malformed JSON, duplicate JSON source keys, invalid alert data,
 and source-identity mismatch are different `ValeErrorKind` values; none
 silently becomes an empty result or a fallback to the built-in rules.
+Additive unknown Vale v3 alert and action fields are ignored, while every field
+Colorful consumes remains required and validated. Source-key failures use fixed
+messages and do not echo process-controlled key material.
 
 Set `VALE_BIN` to the absolute path of the selected executable before running
 this example. Resolving the path first is required because the child receives

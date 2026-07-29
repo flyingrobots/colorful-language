@@ -12,6 +12,13 @@ use crate::{CancellationToken, ValeError, ValeErrorKind};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(2);
 
+/// Minimal trusted search path for helpers invoked by the isolated Vale child.
+///
+/// Vale itself is selected by explicit path; this constant avoids inheriting
+/// caller-controlled executable lookup while retaining standard POSIX helpers.
+#[cfg(unix)]
+const ISOLATED_PATH: &str = "/usr/bin:/bin";
+
 #[cfg(test)]
 thread_local! {
     static BEFORE_COMPLETION_ACCEPTANCE: std::cell::RefCell<Option<Box<dyn FnOnce()>>> =
@@ -166,6 +173,13 @@ pub(crate) fn run_process(
         if completed.is_some() {
             run_before_completion_acceptance();
         }
+        if completed.is_some() && cancellation.is_cancelled() {
+            terminate(&mut child);
+            break Err(ValeError::new(
+                ValeErrorKind::Cancelled,
+                "Vale process was cancelled",
+            ));
+        }
         if let Some(status) = completed {
             break Ok(status);
         }
@@ -203,7 +217,7 @@ pub(crate) fn run_process(
 fn isolate_environment(command: &mut Command) {
     command.env_clear();
     #[cfg(unix)]
-    command.env("PATH", "/usr/bin:/bin");
+    command.env("PATH", ISOLATED_PATH);
     #[cfg(windows)]
     for name in ["SystemRoot", "WINDIR"] {
         if let Some(value) = std::env::var_os(name) {

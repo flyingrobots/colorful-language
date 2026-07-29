@@ -328,7 +328,7 @@ Implemented and planned cases are listed below.
   shape failures, empty fields, astral/combining endpoints, and every supported
   severity have stable results. *Evidence type:* JSON and coordinate contract
   matrix. *Evidence:* `colorful-vale`
-  `workspace_boundary::output_parser_has_one_typed_deserialization_owner` and
+  `output::tests::one_response_deserializes_and_indexes_once` and
   `vale_adapter::{malformed_outputs_fail_closed_by_category,
   required_alert_text_precedes_coordinate_validation,
   alerts_normalize_to_legal_ordered_colorful_findings,
@@ -352,24 +352,21 @@ Implemented and planned cases are listed below.
   descendant that inherited its pipes. *Oracle:* a wrapper exits after
   recording a finite-lived descendant that retains the capture pipes; analysis
   returns the exact timeout category and terminates the descendant rather than
-  waiting for pipe closure. A structural oracle requires the deadline check to
-  precede acceptance of completed I/O. *Evidence type:* process-lifecycle and
-  source-architecture regression tests. *Evidence:* `colorful-vale`
-  `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`;
-  control-flow is pinned by
-  `workspace_boundary::process_deadline_precedes_completed_io_acceptance`.
+  waiting for pipe closure. *Evidence type:* process-lifecycle regression test.
+  *Evidence:* `colorful-vale`
+  `vale_adapter::timeout_remains_active_while_descendants_hold_output_pipes`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
 - **LINT-13k** — *Requirement:* LINT-13. *Behavior:* one Vale response indexes
   document line boundaries once before normalizing any alerts; individual alert
-  lookups do not rescan the source prefix. *Oracle:* a structural test requires
-  one `LineIndex` construction in the response parser, passes that index into
-  alert normalization, and forbids the former source-rescanning helper.
-  *Evidence type:* source-architecture and line-boundary regression tests.
-  *Evidence:* `colorful-vale`
-  `workspace_boundary::output_parser_indexes_lines_once_per_response` and
-  `output::tests::line_index_preserves_crlf_and_terminal_empty_lines`.
+  lookups do not rescan the source prefix. *Oracle:* test-only runtime counters
+  observe one typed response deserialization and one `LineIndex` construction
+  while a two-alert response is normalized.
+  *Evidence type:* unit and line-boundary regression tests. *Evidence:*
+  `colorful-vale`
+  `output::tests::{one_response_deserializes_and_indexes_once,
+  line_index_preserves_crlf_and_terminal_empty_lines}`.
   *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
   *Status:* implemented.
@@ -404,11 +401,11 @@ Implemented and planned cases are listed below.
   nested future fields remains admissible; a missing required field remains
   `InvalidAlert`; and an 8 KiB unexpected key returns exact bounded
   `SourceMismatch` text. *Evidence type:* JSON compatibility and bounded-error
-  regression tests. *Evidence:* planned in `colorful-vale`
+  regression tests. *Evidence:* `colorful-vale`
   `vale_adapter::{additive_vale_v3_fields_are_ignored,
   unexpected_source_key_error_is_bounded_and_redacted}`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13o** — *Requirement:* LINT-13. *Behavior:* process-isolation evidence
   configures ambient variables on a dedicated test subprocess rather than
   mutating the concurrent test runner; the final completion boundary rechecks
@@ -418,13 +415,13 @@ Implemented and planned cases are listed below.
   mutation in the adapter integration test, a synchronized completion hook
   cancels after the initial poll but before acceptance, and a delayed PID writer
   is observed within a bounded deadline. *Evidence type:* subprocess-isolation,
-  deterministic race, and cleanup regression tests. *Evidence:* planned in
+  deterministic race, and cleanup regression tests. *Evidence:*
   `colorful-vale`
   `workspace_boundary::adapter_process_tests_do_not_mutate_global_environment`,
   `process::tests::cancellation_wins_at_the_completion_boundary`, and
   `vale_adapter::worker_cleanup_waits_for_delayed_pid_artifact`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-13p** — *Requirement:* LINT-13. *Behavior:* adapter architecture
   evidence observes deserialization and line-index construction at runtime
   rather than pinning source whitespace, the process deadline is owned by its
@@ -436,12 +433,12 @@ Implemented and planned cases are listed below.
   are absent; malformed manifest-value fixtures fail through explicit
   assertions rather than indexing panics; and the exact reference phrase is
   present. *Evidence type:* unit, mutation, and documentation-oracle tests.
-  *Evidence:* planned in `colorful-vale`
+  *Evidence:* `colorful-vale`
   `output::tests::one_response_deserializes_and_indexes_once` and
   `workspace_boundary::{workspace_dependency_entry_requires_a_workspace_flag,
   maintenance_reference_names_the_workspace_acceptance_floor}`. *Tracking:*
   [#157](https://github.com/flyingrobots/colorful-language/issues/157).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered

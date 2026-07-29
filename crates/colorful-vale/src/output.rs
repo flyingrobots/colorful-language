@@ -7,9 +7,14 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{ValeError, ValeErrorKind};
 
+#[cfg(test)]
+thread_local! {
+    static RESPONSE_DESERIALIZATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static LINE_INDEX_CONSTRUCTIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
 struct ValeAction {
     #[serde(rename = "Name")]
     name: String,
@@ -19,7 +24,6 @@ struct ValeAction {
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
 struct ValeAlert {
     #[serde(rename = "Action")]
     action: ValeAction,
@@ -51,6 +55,9 @@ impl<'de> Deserialize<'de> for ValeFiles {
     where
         D: Deserializer<'de>,
     {
+        #[cfg(test)]
+        RESPONSE_DESERIALIZATIONS.with(|count| count.set(count.get() + 1));
+
         struct ValeFilesVisitor;
 
         impl<'de> Visitor<'de> for ValeFilesVisitor {
@@ -89,6 +96,9 @@ struct LineIndex<'source> {
 
 impl<'source> LineIndex<'source> {
     fn new(source: &'source str) -> Self {
+        #[cfg(test)]
+        LINE_INDEX_CONSTRUCTIONS.with(|count| count.set(count.get() + 1));
+
         let mut bounds = Vec::new();
         let mut start = 0usize;
         for (index, byte) in source.bytes().enumerate() {
@@ -162,7 +172,7 @@ pub(crate) fn parse_findings(
         if actual_source != expected_source {
             return Err(ValeError::new(
                 ValeErrorKind::SourceMismatch,
-                format!("Vale returned source key {actual_source:?}; expected {expected_source:?}"),
+                "Vale returned an unexpected source key",
             ));
         }
     }
@@ -305,7 +315,7 @@ fn invalid_alert(message: impl Into<String>) -> ValeError {
 
 #[cfg(test)]
 mod tests {
-    use super::LineIndex;
+    use super::{parse_findings, LineIndex, LINE_INDEX_CONSTRUCTIONS, RESPONSE_DESERIALIZATIONS};
 
     #[test]
     fn line_index_preserves_crlf_and_terminal_empty_lines() {
@@ -317,5 +327,43 @@ mod tests {
         assert_eq!(index.bounds(2), Some((5, 8)));
         assert_eq!(index.bounds(3), Some((9, 9)));
         assert_eq!(index.bounds(4), None);
+    }
+
+    #[test]
+    fn one_response_deserializes_and_indexes_once() {
+        let json = r#"{
+  "stdin.txt": [
+    {
+      "Action": {"Name": "", "Params": null},
+      "Span": [1, 3],
+      "Check": "Style.One",
+      "Description": "",
+      "Link": "",
+      "Message": "First.",
+      "Severity": "warning",
+      "Match": "one",
+      "Line": 1
+    },
+    {
+      "Action": {"Name": "", "Params": null},
+      "Span": [5, 7],
+      "Check": "Style.Two",
+      "Description": "",
+      "Link": "",
+      "Message": "Second.",
+      "Severity": "suggestion",
+      "Match": "two",
+      "Line": 1
+    }
+  ]
+}"#;
+        RESPONSE_DESERIALIZATIONS.with(|count| count.set(0));
+        LINE_INDEX_CONSTRUCTIONS.with(|count| count.set(0));
+
+        let findings = parse_findings("one two", "stdin.txt", json).expect("parse two alerts");
+
+        assert_eq!(findings.len(), 2);
+        RESPONSE_DESERIALIZATIONS.with(|count| assert_eq!(count.get(), 1));
+        LINE_INDEX_CONSTRUCTIONS.with(|count| assert_eq!(count.get(), 1));
     }
 }

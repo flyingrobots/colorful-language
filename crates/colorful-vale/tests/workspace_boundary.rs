@@ -29,7 +29,10 @@ fn adapter_test_source(file: &str) -> String {
 }
 
 fn workspace_flag(dependencies: &toml::value::Table, dependency: &str) -> Option<bool> {
-    dependencies[dependency]["workspace"].as_bool()
+    dependencies
+        .get(dependency)
+        .and_then(|entry| entry.get("workspace"))
+        .and_then(toml::Value::as_bool)
 }
 
 fn production_dependencies(manifest: &toml::Value) -> BTreeSet<String> {
@@ -72,7 +75,11 @@ fn adapter_dependency_direction_preserves_pure_core_and_default_binaries() {
         "prototype maintenance cost changed: review the adapter decision"
     );
     assert_eq!(
-        adapter["package"]["publish"].as_bool(),
+        adapter
+            .get("package")
+            .and_then(toml::Value::as_table)
+            .and_then(|package| package.get("publish"))
+            .and_then(toml::Value::as_bool),
         Some(false),
         "the prototype must not silently become a release surface"
     );
@@ -130,62 +137,6 @@ colorful-vale = { path = "../colorful-vale" }
 }
 
 #[test]
-fn output_parser_has_one_typed_deserialization_owner() {
-    let source = adapter_source("output.rs");
-    assert!(!source.contains("serde_json::Value"));
-    assert!(!source.contains("serde_json::from_value"));
-    assert_eq!(
-        source.matches("serde_json::from_str").count(),
-        1,
-        "Vale output must be deserialized exactly once"
-    );
-}
-
-#[test]
-fn output_parser_indexes_lines_once_per_response() {
-    let source = adapter_source("output.rs");
-    assert_eq!(
-        source
-            .matches("let line_index = LineIndex::new(source);")
-            .count(),
-        1,
-        "the response parser must build exactly one document line index"
-    );
-    assert!(
-        source.contains("normalize_alert(&line_index, alert)"),
-        "every alert must reuse the response line index"
-    );
-    assert!(
-        !source.contains("fn line_bounds(source: &str"),
-        "alert normalization must not retain a source-rescanning helper"
-    );
-}
-
-#[test]
-fn process_deadline_precedes_completed_io_acceptance() {
-    let source = adapter_source("process.rs");
-    let loop_start = source
-        .find("let process_result = loop")
-        .expect("process lifecycle loop");
-    let loop_end = source[loop_start..]
-        .find("let input_result")
-        .map(|offset| loop_start + offset)
-        .expect("process lifecycle loop end");
-    let lifecycle = &source[loop_start..loop_end];
-    let deadline = lifecycle
-        .find("if started.elapsed() >= timeout")
-        .expect("deadline check");
-    let completed = lifecycle
-        .find("if let Some(status)")
-        .expect("completed I/O acceptance");
-
-    assert!(
-        deadline < completed,
-        "the global deadline must be checked before completed I/O is accepted"
-    );
-}
-
-#[test]
 fn linting_reference_resolves_an_absolute_vale_executable() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -228,8 +179,9 @@ colorful-cli = "0.4.0"
 "#,
     )
     .expect("parse scalar dependency fixture");
-    let dependencies = manifest["dev-dependencies"]
-        .as_table()
+    let dependencies = manifest
+        .get("dev-dependencies")
+        .and_then(toml::Value::as_table)
         .expect("fixture dependencies");
 
     let result = std::panic::catch_unwind(|| workspace_flag(dependencies, "colorful-cli"));
@@ -256,8 +208,11 @@ fn maintenance_reference_names_the_workspace_acceptance_floor() {
 #[test]
 fn workspace_dependency_entries_have_actual_consumers() {
     let workspace = manifest("Cargo.toml");
-    let workspace_dependencies = workspace["workspace"]["dependencies"]
-        .as_table()
+    let workspace_dependencies = workspace
+        .get("workspace")
+        .and_then(toml::Value::as_table)
+        .and_then(|workspace| workspace.get("dependencies"))
+        .and_then(toml::Value::as_table)
         .expect("workspace dependencies");
     assert!(!workspace_dependencies.contains_key("colorful-vale"));
     for dependency in ["colorful-cli", "colorful-lsp"] {
@@ -268,8 +223,9 @@ fn workspace_dependency_entries_have_actual_consumers() {
     }
 
     let adapter = manifest("crates/colorful-vale/Cargo.toml");
-    let development_dependencies = adapter["dev-dependencies"]
-        .as_table()
+    let development_dependencies = adapter
+        .get("dev-dependencies")
+        .and_then(toml::Value::as_table)
         .expect("adapter development dependencies");
     for dependency in ["colorful-cli", "colorful-lsp"] {
         assert_eq!(

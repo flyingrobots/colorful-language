@@ -1,12 +1,11 @@
 #![cfg(unix)]
 
-use std::ffi::OsString;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -24,9 +23,9 @@ use colorful_vale::{
 use tower_lsp::lsp_types::{DiagnosticSeverity, NumberOrString, Position};
 
 static FIXTURE_ID: AtomicU64 = AtomicU64::new(0);
-static ENVIRONMENT_LOCK: Mutex<()> = Mutex::new(());
 
 const SOURCE: &str = "😀 e\u{301}cho\r\nThis is very clear.\n";
+const ENVIRONMENT_CHILD: &str = "COLORFUL_VALE_ENVIRONMENT_CHILD";
 
 const SUCCESS_JSON: &str = r#"{
   "stdin.txt": [
@@ -66,40 +65,11 @@ struct FakeVale {
     worker_pid: PathBuf,
 }
 
-struct EnvironmentGuard {
-    saved: Vec<(&'static str, Option<OsString>)>,
-}
-
 struct DirectoryGuard(PathBuf);
-
-impl EnvironmentGuard {
-    fn set(entries: &[(&'static str, &'static str)]) -> Self {
-        let saved = entries
-            .iter()
-            .map(|(name, value)| {
-                let previous = std::env::var_os(name);
-                std::env::set_var(name, value);
-                (*name, previous)
-            })
-            .collect();
-        Self { saved }
-    }
-}
 
 impl Drop for DirectoryGuard {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.0);
-    }
-}
-
-impl Drop for EnvironmentGuard {
-    fn drop(&mut self) {
-        for (name, value) in self.saved.drain(..).rev() {
-            match value {
-                Some(value) => std::env::set_var(name, value),
-                None => std::env::remove_var(name),
-            }
-        }
     }
 }
 
@@ -227,15 +197,26 @@ fn error_kind(result: Result<ValeAnalyzer, colorful_vale::ValeError>) -> ValeErr
 
 #[test]
 fn discovery_is_explicit_versioned_and_ambient_config_free() {
-    let _environment_lock = ENVIRONMENT_LOCK.lock().expect("environment lock");
-    let _environment = EnvironmentGuard::set(&[
-        ("VALE_CONFIG_PATH", "/ambient/config"),
-        ("VALE_STYLES_PATH", "/ambient/styles"),
-        ("XDG_CONFIG_HOME", "/ambient/xdg"),
-        ("HTTP_PROXY", "http://ambient.invalid"),
-        ("HTTPS_PROXY", "https://ambient.invalid"),
-        ("NO_PROXY", "ambient.invalid"),
-    ]);
+    if std::env::var_os(ENVIRONMENT_CHILD).is_none() {
+        let status = Command::new(std::env::current_exe().expect("current test executable"))
+            .args([
+                "--exact",
+                "discovery_is_explicit_versioned_and_ambient_config_free",
+                "--nocapture",
+            ])
+            .env(ENVIRONMENT_CHILD, "1")
+            .env("VALE_CONFIG_PATH", "/ambient/config")
+            .env("VALE_STYLES_PATH", "/ambient/styles")
+            .env("XDG_CONFIG_HOME", "/ambient/xdg")
+            .env("HTTP_PROXY", "http://ambient.invalid")
+            .env("HTTPS_PROXY", "https://ambient.invalid")
+            .env("NO_PROXY", "ambient.invalid")
+            .status()
+            .expect("run isolated environment child");
+        assert!(status.success(), "isolated environment child failed");
+        return;
+    }
+
     let fixture = success_fixture();
 
     let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover Vale v3");
@@ -483,11 +464,31 @@ exit 0"#,
 }
 
 fn assert_worker_terminated(fixture: &FakeVale) {
-    let worker_pid: u32 = fs::read_to_string(&fixture.worker_pid)
-        .expect("wrapper must record worker PID")
-        .trim()
-        .parse()
-        .expect("worker PID must be numeric");
+    let recorded = Instant::now() + Duration::from_secs(2);
+    let worker_pid = loop {
+        match fs::read_to_string(&fixture.worker_pid) {
+            Ok(contents) => match contents.trim().parse::<u32>() {
+                Ok(pid) => break pid,
+                Err(_) if Instant::now() < recorded => {}
+                Err(_) => panic!("wrapper did not record a numeric worker PID"),
+            },
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::NotFound | std::io::ErrorKind::UnexpectedEof
+                ) && Instant::now() < recorded => {}
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::NotFound | std::io::ErrorKind::UnexpectedEof
+                ) =>
+            {
+                panic!("wrapper never recorded a worker PID")
+            }
+            Err(error) => panic!("could not read wrapper worker PID: {error}"),
+        }
+        thread::sleep(Duration::from_millis(2));
+    };
     let deadline = Instant::now() + Duration::from_secs(2);
     while process_exists(worker_pid) && Instant::now() < deadline {
         thread::sleep(Duration::from_millis(2));

@@ -208,7 +208,7 @@ The current workspace baseline was measured at source commit
 | `crates/colorful-vale/src/output.rs` | 193 / 237 | 81.43% | 68% | 44 |
 | `crates/colorful-vale/src/process.rs` | 151 / 182 | 82.97% | 80% | 31 |
 
-The 92% workspace percentage is deliberately below the earlier 92.16%
+The 92% workspace acceptance floor is deliberately below the earlier 92.16%
 observation and the fresh 94.03% measurement. The uncovered-line ceilings are
 the ratchet: adding an uncovered workspace or monitored transport line fails
 even while the percentage remains above its conservative floor. All authored
