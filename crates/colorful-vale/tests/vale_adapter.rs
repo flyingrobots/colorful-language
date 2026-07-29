@@ -577,6 +577,25 @@ fn malformed_outputs_fail_closed_by_category() {
 }
 
 #[test]
+fn duplicate_source_key_error_is_bounded_and_redacted() {
+    let source_key = "s".repeat(8192);
+    let fixture = FakeVale::new(
+        "3.14.2",
+        &format!(
+            "printf '%s' '{{\"{source_key}\":[],\"{source_key}\":[]}}'"
+        ),
+    );
+    let analyzer = ValeAnalyzer::discover(fixture.config()).expect("discover duplicate-key Vale");
+
+    let error = analyzer
+        .analyze(SOURCE, &CancellationToken::new())
+        .expect_err("reject duplicate source key");
+    assert_eq!(error.kind(), ValeErrorKind::MalformedOutput);
+    assert_eq!(error.message(), "Vale returned a duplicate source key");
+    assert!(!error.message().contains(&source_key));
+}
+
+#[test]
 fn required_alert_text_precedes_coordinate_validation() {
     let cases = [
         (
