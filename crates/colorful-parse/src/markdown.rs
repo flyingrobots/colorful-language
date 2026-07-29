@@ -121,9 +121,45 @@ fn inline_link_destination_range(source: &str, link: Range<usize>) -> Option<Ran
         let mut depth = 0usize;
         let mut end = None;
         let mut candidate = start;
+        let mut angle_destination = false;
+        let mut title_expected = false;
+        let mut title_quote = None;
         while candidate < link.end {
-            match bytes[candidate] {
-                b'\\' => candidate = candidate.saturating_add(2),
+            let byte = bytes[candidate];
+            if byte == b'\\' {
+                candidate = candidate.saturating_add(2);
+                continue;
+            }
+            if let Some(quote) = title_quote {
+                if byte == quote {
+                    title_quote = None;
+                }
+                candidate += 1;
+                continue;
+            }
+            if angle_destination {
+                angle_destination = byte != b'>';
+                candidate += 1;
+                continue;
+            }
+            if depth == 1 && byte.is_ascii_whitespace() {
+                title_expected = true;
+                candidate += 1;
+                continue;
+            }
+            if title_expected && matches!(byte, b'\'' | b'"') {
+                title_quote = Some(byte);
+                title_expected = false;
+                candidate += 1;
+                continue;
+            }
+            title_expected = false;
+
+            match byte {
+                b'<' if depth == 1 => {
+                    angle_destination = true;
+                    candidate += 1;
+                }
                 b'(' => {
                     depth += 1;
                     candidate += 1;
