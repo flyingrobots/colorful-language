@@ -79,7 +79,9 @@ async function fetchAvailable(
   },
 ) {
   let lastFailure = "no response";
+  let attemptsMade = 0;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    attemptsMade = attempt;
     try {
       const response = await fetchImpl(url, {
         headers: {
@@ -106,7 +108,9 @@ async function fetchAvailable(
   }
   reject(
     "E_EDITOR_PUBLICATION_FETCH",
-    `${context}: unavailable after ${attempts} attempts (${lastFailure})`,
+    `${context}: unavailable after ${attemptsMade} ${
+      attemptsMade === 1 ? "attempt" : "attempts"
+    } (${lastFailure})`,
   );
 }
 
