@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   CHECK_COMMAND,
   EXPECTED_EDITOR_POLICY,
+  EXPECTED_FORMULA_RUBY,
   EXPECTED_HOMEBREW_POLICY,
   EXPECTED_OWNER,
   EXPECTED_PLATFORMS,
@@ -131,6 +132,10 @@ function validSnapshot() {
             attestations: "write",
           },
           steps: [
+            {
+              name: "Set up formula syntax Ruby",
+              ...structuredClone(EXPECTED_FORMULA_RUBY),
+            },
             {
               name: "Download native archives",
               uses: `actions/download-artifact@${ACTION_SHA}`,
@@ -269,6 +274,50 @@ test("accepts the complete native and editor distribution contract", () => {
     homebrewPlatformCount: 2,
     editorRegistryCount: 3,
   });
+});
+
+test("pins the Homebrew syntax parser to the reviewed Ruby release", () => {
+  const setup = releaseStep(
+    loadRepositorySnapshot(),
+    "Set up formula syntax Ruby",
+  );
+
+  assert.deepEqual(
+    {
+      uses: setup?.uses,
+      version: setup?.with?.["ruby-version"],
+    },
+    {
+      uses:
+        "ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b",
+      version: "3.4.10",
+    },
+  );
+});
+
+test("rejects Homebrew syntax parser runtime drift", () => {
+  for (const mutate of [
+    (setup) => {
+      setup.uses = "ruby/setup-ruby@v1";
+    },
+    (setup) => {
+      setup.uses =
+        "ruby/setup-ruby@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    },
+    (setup) => {
+      setup.with["ruby-version"] = "3.3.10";
+    },
+    (setup) => {
+      setup.with["bundler-cache"] = true;
+    },
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(releaseStep(snapshot, "Set up formula syntax Ruby"));
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /must use the reviewed formula syntax Ruby setup/u,
+    );
+  }
 });
 
 test("isolates each editor registry credential to its publisher step", () => {
@@ -423,6 +472,7 @@ test("binds native dispatch and release side effects to the reviewed topology", 
 
   const reviewedOrder = [
     "Check release distribution policy",
+    "Set up formula syntax Ruby",
     "Download native archives",
     "Generate Homebrew formula",
     "Build and smoke editor packages",

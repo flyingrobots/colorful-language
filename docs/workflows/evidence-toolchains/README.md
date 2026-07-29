@@ -13,6 +13,7 @@ These checked-in versions are the reproducibility oracle:
 | Rust | 1.97.1 | `rust-toolchain.toml` |
 | Node | 22.23.1 | `.node-version` |
 | TypeScript | 5.9.3 | root and VS Code `package.json` / `package-lock.json` pairs |
+| Ruby | 3.4.10 | `.github/workflows/release.yml` |
 | cargo-mutants | 27.0.0 | `scripts/check-ir-validator-mutants.sh` |
 | proptest | 1.11.0 | root `Cargo.toml` / `Cargo.lock` pair |
 | libfuzzer-sys | 0.4.13 | `fuzz/Cargo.toml` / `fuzz/Cargo.lock` pair |
@@ -27,6 +28,12 @@ The blocking IR validator mutation gate installs the exact `cargo-mutants`
 release named above and rejects any other version before generating or running
 the reviewed corpus. Its scope and exclusions live in `.cargo/mutants.toml`;
 the IR topic owns the behavioral evidence.
+
+Ruby is a release-only evidence runtime. The tag workflow installs Ruby 3.4.10
+through the reviewed full-SHA `ruby/setup-ruby` action before syntax-checking
+the generated Homebrew formula. `scripts/check-release-distribution.mjs`
+rejects a different action commit, Ruby release, or setup input; normal
+repository JavaScript and Rust evidence does not depend on Ruby.
 
 ## Property and fuzz evidence
 

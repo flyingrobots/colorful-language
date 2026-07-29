@@ -81,6 +81,9 @@ publication, and keeps observational startup timing outside correctness gates.
 The tag workflow reruns its profile, editor compatibility, Rust, release-build,
 and package-witness guards in `validate-release`; native jobs cannot build,
 attest, or upload artifacts until that read-only admission job passes.
+The release job installs Ruby 3.4.10 through a reviewed full-SHA
+`ruby/setup-ruby` action before it parses the generated Homebrew formula, so
+formula syntax evidence does not depend on the runner's ambient Ruby.
 
 That gate validates the canonical
 `contracts/colorful/syntax-compatibility.v1.json` authority before packaging.
@@ -104,10 +107,10 @@ build `colorful` and `colorful-lsp` for Linux x86-64, Apple Silicon, and
 Windows x86-64, then publish checksummed archives with GitHub/Sigstore
 provenance. The release job verifies the downloaded Linux and Apple Silicon
 archive bytes against their sidecars, generates and syntax-checks the
-`colorful.rb` release formula, clean-installs one exact VSIX, publishes those
-bytes to VS Code Marketplace and Open VSX, packages the byte-validated Zed
-source tree, publishes crates in dependency order, and attaches every reviewed
-asset to the GitHub Release.
+`colorful.rb` release formula with the workflow-pinned Ruby 3.4.10 runtime,
+clean-installs one exact VSIX, publishes those bytes to VS Code Marketplace and
+Open VSX, packages the byte-validated Zed source tree, publishes crates in
+dependency order, and attaches every reviewed asset to the GitHub Release.
 
 The generated formula is an attested GitHub Release asset, not a public tap.
 The release profile records that boundary explicitly; public Homebrew

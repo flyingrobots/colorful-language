@@ -75,7 +75,15 @@ export const EXPECTED_PUBLISHER_TOOLS = Object.freeze({
   "@vscode/vsce": "3.9.2",
   ovsx: "1.0.2",
 });
+export const EXPECTED_FORMULA_RUBY = Object.freeze({
+  uses:
+    "ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b",
+  with: Object.freeze({
+    "ruby-version": "3.4.10",
+  }),
+});
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
+  "Set up formula syntax Ruby",
   "Download native archives",
   "Generate Homebrew formula",
   "Build and smoke editor packages",
@@ -362,6 +370,20 @@ function validateReleaseJob(job) {
   }
 
   const steps = Array.isArray(job?.steps) ? job.steps : [];
+  const formulaRuby = requiredStep(
+    steps,
+    "Set up formula syntax Ruby",
+    context,
+  );
+  if (!isDeepStrictEqual(formulaRuby, {
+    name: "Set up formula syntax Ruby",
+    ...EXPECTED_FORMULA_RUBY,
+  })) {
+    throw new Error(
+      `${context} must use the reviewed formula syntax Ruby setup`,
+    );
+  }
+
   const download = requiredStep(steps, "Download native archives", context);
   requirePinnedAction(download, "actions/download-artifact", context);
   if (

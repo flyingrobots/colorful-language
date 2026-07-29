@@ -238,16 +238,18 @@ Verification for release preparation, tag automation, and release witnesses.
   formula installs the CLI and LSP from those archives; public tap publication
   and clean-machine rollback proof remain separate authority. *Oracle:* workflow
   mutations reject generation before native download, missing or mismatched
-  checksum inputs, rebuilt binaries, unsupported platform claims, and a formula
-  omitted from release assets. *Evidence type:* deterministic generator and
-  release-policy mutation tests. *Tracking:*
+  checksum inputs, rebuilt binaries, unsupported platform claims, an unpinned
+  or drifted formula-syntax Ruby, and a formula omitted from release assets.
+  *Evidence type:* deterministic generator and release-policy mutation tests.
+  *Tracking:*
   [#251](https://github.com/flyingrobots/colorful-language/issues/251).
   *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
   `scripts/generate-homebrew-formula.mjs`;
   `scripts/generate-homebrew-formula.test.mjs`;
   `scripts/check-release-distribution.mjs`;
   `scripts/check-release-distribution.test.mjs`
-  `derives and attests Homebrew formulae from downloaded native assets`;
+  `derives and attests Homebrew formulae from downloaded native assets` and
+  `rejects Homebrew syntax parser runtime drift`;
   `.github/workflows/ci.yml`; `scripts/release-prep.sh`. *Status:* implemented
   for the GitHub Release formula; public tap publication remains planned under
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).

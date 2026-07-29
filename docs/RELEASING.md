@@ -340,6 +340,8 @@ That script runs:
 - synchronized editor/server compatibility and gate wiring;
 - signed native/editor distribution policy and mutation self-tests;
 - Homebrew formula generation, archive-integrity, and release-order self-tests;
+- exact Ruby 3.4.10 formula-syntax evidence through the full-SHA-pinned
+  `ruby/setup-ruby` action;
 - Rust format, clippy, and tests;
 - package witness;
 - release build;
@@ -497,10 +499,11 @@ After download, the release job runs
 `scripts/generate-homebrew-formula.mjs` against the Linux x86-64 and Apple
 Silicon archives. The generator requires canonical archive and sidecar names,
 streams both archives to verify their SHA-256 values, emits deterministic
-`colorful.rb` bytes, and checks Ruby syntax. The formula installs `colorful`
-and `colorful-lsp` together, tests `colorful --version`, and checks that the
-server is executable without inventing a `colorful-lsp --version` interface.
-The workflow attests the formula and attaches it to the GitHub Release.
+`colorful.rb` bytes, and checks syntax with workflow-pinned Ruby 3.4.10. The
+formula installs `colorful` and `colorful-lsp` together, tests
+`colorful --version`, and checks that the server is executable without
+inventing a `colorful-lsp --version` interface. The workflow attests the
+formula and attaches it to the GitHub Release.
 
 The generated formula is not a public tap. `.continuum/release.yml` records the
 current authority as a GitHub Release asset and leaves the tap unset. Issue #37
