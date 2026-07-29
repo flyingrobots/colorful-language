@@ -531,7 +531,7 @@ test("rejects a missing reviewed workflow-security exception", () => {
   }, "E_WORKFLOW_SECURITY_EXCEPTION");
 });
 
-test("rejects a publisher token moved outside its reviewed step", () => {
+test("rejects a publisher token missing from its reviewed step", () => {
   expectCode(({ workflowFiles }) => {
     const release =
       workflowFiles[".github/workflows/release.yml"];
@@ -539,6 +539,13 @@ test("rejects a publisher token moved outside its reviewed step", () => {
       (step) => step.name === "Verify and publish editor extension",
     );
     delete publish.env.VSCE_PAT;
+  }, "E_WORKFLOW_SECURITY_EXCEPTION");
+});
+
+test("rejects a publisher token used by an additional release step", () => {
+  expectCode(({ workflowFiles }) => {
+    const release =
+      workflowFiles[".github/workflows/release.yml"];
     release.jobs.release.steps.push({
       name: "Unreviewed publication",
       env: { VSCE_PAT: "${{ secrets.VSCE_PAT }}" },
