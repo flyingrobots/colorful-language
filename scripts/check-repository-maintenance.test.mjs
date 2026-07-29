@@ -561,6 +561,15 @@ test("accepts a future aligned release example without policy code edits", () =>
         '--title "[release] v0.5.0"',
       );
   }, "E_DELIVERY_TRACKING");
+
+  expectCode(({ deliveryReferences }) => {
+    deliveryReferences.releasing += [
+      "",
+      '--title "[release] v0.5.0"',
+      "--body-file docs/goalposts/v0.5.0/release.md",
+      "git switch -c release/v0.5.0",
+    ].join("\n");
+  }, "E_DELIVERY_TRACKING");
 });
 
 test("accepts reordered delivery-tracking profile fields", () => {

@@ -174,6 +174,17 @@ function containsKey(value, key) {
   );
 }
 
+function oneVersionMatch(reference, pattern) {
+  const matches = [
+    ...reference.matchAll(
+      new RegExp(pattern.source, `${pattern.flags}g`),
+    ),
+  ];
+  return matches.length === 1
+    ? matches[0].groups?.version
+    : undefined;
+}
+
 function normalizeReference(reference) {
   return typeof reference === "string"
     ? reference.replace(/`/gu, "").replace(/\s+/gu, " ")
@@ -258,7 +269,7 @@ function validateDeliveryTracking(
   );
   const releaseExampleVersions =
     RELEASE_TRACKING_REFERENCE_PATTERNS.map(
-      (pattern) => pattern.exec(releasingReference)?.groups?.version,
+      (pattern) => oneVersionMatch(releasingReference, pattern),
     );
   if (
     RELEASE_TRACKING_REFERENCE_CLAIMS.some(
