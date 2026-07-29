@@ -407,7 +407,7 @@ test("requires publisher credential verification before crates", () => {
   steps.splice(cratesIndex + 1, 0, publish);
   assert.throws(
     () => validateReleaseDistribution(snapshot),
-    /verify editor credentials before crates/u,
+    /must preserve the reviewed release step order/u,
   );
 });
 
@@ -453,7 +453,9 @@ test("requires published registry bytes to match the smoke-tested VSIX", () => {
     }
     assert.throws(
       () => validateReleaseDistribution(snapshot),
-      /verify published editor bytes/iu,
+      mutation === "missing"
+        ? /exactly one 'Verify published editor bytes' step/u
+        : /must preserve the reviewed release step order/u,
     );
   }
 });

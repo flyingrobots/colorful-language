@@ -343,18 +343,6 @@ function validateReleaseJob(job) {
       throw new Error(`${context} must run ${command}`);
     }
   }
-  const cratesIndex = stepIndex(steps, "Publish to crates.io");
-  const publishIndex = stepIndex(
-    steps,
-    "Verify and publish editor extension",
-  );
-  if (
-    cratesIndex === -1 ||
-    publishIndex === -1 ||
-    publishIndex > cratesIndex
-  ) {
-    throw new Error(`${context} must verify editor credentials before crates`);
-  }
 
   const packageStep = requiredStep(
     steps,
@@ -412,12 +400,6 @@ function validateReleaseJob(job) {
   ) {
     throw new Error(
       `${context} must verify published editor bytes against the smoke-tested VSIX`,
-    );
-  }
-  const verifyIndex = stepIndex(steps, "Verify published editor bytes");
-  if (verifyIndex <= publishIndex || verifyIndex >= cratesIndex) {
-    throw new Error(
-      `${context} must verify published editor bytes after editors and before crates`,
     );
   }
 
