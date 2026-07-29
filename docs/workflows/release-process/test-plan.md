@@ -287,8 +287,8 @@ Verification for release preparation, tag automation, and release witnesses.
 - The repo does not yet have an autotag workflow; manual annotated tag creation
   remains the current preflighted path.
 - Release-tracking issue existence and goalpost/slice scope hygiene are still
-  verified manually; the ownership axes and their references are executable
-  profile policy.
+  verified manually; the ownership axes and their references are enforced by
+  executable profile policy.
 - GitHub Release asset recovery is still a manual inspection path when a release
   exists but assets are missing.
 - Native platform archives, editor-registry publication, and signed provenance
