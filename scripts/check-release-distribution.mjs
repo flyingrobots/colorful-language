@@ -132,13 +132,9 @@ function workflowIncludesCommand(workflow, command) {
     return false;
   }
   return Object.values(jobs).some((job) =>
-    (Array.isArray(job?.steps) ? job.steps : []).some((step) =>
-      String(step?.run ?? "")
-        .split(/\r?\n/u)
-        .some(
-          (line) =>
-            line.trim().replace(/\s+#.*$/u, "") === command,
-        ),
+    stepsIncludeCommand(
+      Array.isArray(job?.steps) ? job.steps : [],
+      command,
     ),
   );
 }
