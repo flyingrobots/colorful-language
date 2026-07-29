@@ -452,6 +452,16 @@ test("rejects deployment environment and evidence drift", () => {
   }
 });
 
+test("accepts deployment inventories in any order", () => {
+  for (const field of ["credential_secrets", "evidence"]) {
+    const candidate = fixture();
+    candidate.repositoryProfile.deployment[field].reverse();
+    assert.doesNotThrow(() =>
+      validateRepositoryMaintenance(candidate),
+    );
+  }
+});
+
 test("rejects a stale public-posture reference", () => {
   expectCode((candidate) => {
     candidate.maintenanceReference = "";
