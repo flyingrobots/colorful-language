@@ -471,7 +471,6 @@ test("binds native dispatch and release side effects to the reviewed topology", 
   );
 
   const reviewedOrder = [
-    "Check release distribution policy",
     "Set up formula syntax Ruby",
     "Download native archives",
     "Generate Homebrew formula",
@@ -489,9 +488,19 @@ test("binds native dispatch and release side effects to the reviewed topology", 
     const earlierIndex = steps.findIndex(
       (step) => step.name === reviewedOrder[index],
     );
+    assert.notEqual(
+      earlierIndex,
+      -1,
+      `${reviewedOrder[index]} must exist in the release job`,
+    );
     const [earlier] = steps.splice(earlierIndex, 1);
     const laterIndex = steps.findIndex(
       (step) => step.name === reviewedOrder[index + 1],
+    );
+    assert.notEqual(
+      laterIndex,
+      -1,
+      `${reviewedOrder[index + 1]} must exist in the release job`,
     );
     steps.splice(laterIndex + 1, 0, earlier);
     assert.throws(
