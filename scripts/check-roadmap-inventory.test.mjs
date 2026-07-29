@@ -1007,17 +1007,13 @@ test("the workflow reference pins the canonical accountability heading", () => {
     ),
     "utf8",
   );
-  const canonicalHeadingPattern =
-    /canonical\s+`## Architecture accountability` H2/u;
-
-  assert.match(reference, canonicalHeadingPattern);
   assert.match(
-    reference.replace("canonical\n`", "canonical `"),
-    canonicalHeadingPattern,
+    reference,
+    /canonical\s+`## Architecture accountability`\s+H2/u,
   );
   assert.doesNotMatch(
     reference,
-    /canonical Architecture\nAccountability H2/u,
+    /canonical\s+`## Architecture Accountability`\s+H2/u,
   );
 });
 
