@@ -7,6 +7,8 @@ broader workflow; the prerequisite advisory remediation is tracked separately
 in [#197](https://github.com/flyingrobots/colorful-language/issues/197), and
 roadmap-to-issue reconciliation is tracked in
 [#187](https://github.com/flyingrobots/colorful-language/issues/187).
+Repository metadata, Discussion intake, and deployment ownership are tracked in
+[#153](https://github.com/flyingrobots/colorful-language/issues/153).
 
 ## Requirements
 
@@ -57,6 +59,11 @@ roadmap-to-issue reconciliation is tracked in
   persisted checkout credentials and overbroad permissions, run without
   write-capable repository permissions, and derive its identity, invocation,
   and narrow exception configuration from one reviewed policy.
+- **RM-13 — Public repository posture.** The maintained repository homepage,
+  supported intake surfaces, deployment owner, credential custody, rollback
+  responsibility, and environment-creation threshold must be explicit.
+  Discussions must not be promoted without an owner commitment, and an empty
+  deployment environment must not be created for appearance.
 
 ## Cases
 
@@ -329,6 +336,24 @@ roadmap-to-issue reconciliation is tracked in
   `.github/workflows/security.yml`, and `scripts/release-prep.sh`. *Tracking:*
   [#209](https://github.com/flyingrobots/colorful-language/issues/209).
   *Status:* implemented.
+- **RM-13a — Governed public metadata and deployment authority.**
+  *Requirement:* RM-13. *Behavior:* one versioned repository profile names the
+  maintained README as the homepage, keeps Issues and milestones as the
+  delivery authority, records that Discussions have no supported intake owner,
+  and assigns publication credentials, rollback, and release evidence to one
+  maintainer without claiming that an environment exists. *Oracle:* profile,
+  issue-routing, and documentation mutations reject a missing or alternate
+  homepage, promoted unowned Discussion category, absent owner, unreviewed
+  credential, empty-environment claim, or missing creation threshold; an
+  authenticated witness compares the configured homepage and environment
+  inventory with live GitHub state. *Evidence type:* deterministic
+  configuration mutation tests plus an explicit authenticated GitHub API
+  witness. *Evidence:* planned in `.github/repository-profile.yml`,
+  `scripts/check-repository-maintenance.mjs`,
+  `scripts/check-repository-maintenance.test.mjs`, and this workflow's current
+  reference. *Tracking:*
+  [#153](https://github.com/flyingrobots/colorful-language/issues/153).
+  *Status:* planned.
 
 ## Hosted evidence boundary
 
