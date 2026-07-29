@@ -6,25 +6,9 @@ import {
   TransportKind,
 } from "vscode-languageclient/node";
 
+import { startupFailureCategory } from "./startup-failure";
+
 let client: LanguageClient | undefined;
-
-const SERVER_NOT_FOUND_CATEGORY = "colorful/server-not-found";
-const SERVER_START_FAILED_CATEGORY = "colorful/server-start-failed";
-
-function startupFailureCategory(error: unknown): string {
-  const code =
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string"
-      ? error.code
-      : "";
-  const message = error instanceof Error ? error.message : String(error);
-  return code === "ENOENT" || /\b(?:ENOENT|not found)\b/iu.test(message)
-    ? SERVER_NOT_FOUND_CATEGORY
-    : SERVER_START_FAILED_CATEGORY;
-}
-
 export function activate(context: vscode.ExtensionContext): void {
   const output = vscode.window.createOutputChannel("Colorful Language", {
     log: true,

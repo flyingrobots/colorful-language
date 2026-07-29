@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
+import ts from "typescript";
 import { parse as parseYaml } from "yaml";
 
 import {
@@ -36,6 +37,21 @@ const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/smoke/suite/index.cjs",
   "scripts/stage-zed-extension.mjs",
 ];
+
+async function importTypeScriptModule(filename) {
+  const source = readFileSync(filename, "utf8");
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: filename,
+    reportDiagnostics: true,
+  });
+  assert.deepEqual(transpiled.diagnostics, []);
+  const encoded = Buffer.from(transpiled.outputText).toString("base64");
+  return import(`data:text/javascript;base64,${encoded}`);
+}
 
 test("package tooling and smoke commands are exact and lockfile-backed", () => {
   const packageJson = JSON.parse(
@@ -110,6 +126,24 @@ test("the package smoke never delegates argument parsing to a shell", () => {
     "utf8",
   );
   assert.doesNotMatch(source, /\bshell\s*:/u);
+});
+
+test("startup failures inspect causes before narrow message fallback", async () => {
+  const { startupFailureCategory } = await importTypeScriptModule(
+    "editors/vscode/src/startup-failure.ts",
+  );
+  assert.equal(
+    startupFailureCategory({ cause: { cause: { code: "ENOENT" } } }),
+    "colorful/server-not-found",
+  );
+  assert.equal(
+    startupFailureCategory(new Error("colorful-lsp executable not found")),
+    "colorful/server-not-found",
+  );
+  assert.equal(
+    startupFailureCategory(new Error("lexicon file not found")),
+    "colorful/server-start-failed",
+  );
 });
 
 test("the persisted-log scan skips transient profile entries", async () => {
