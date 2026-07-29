@@ -157,11 +157,11 @@ observe public-contract regressions before they ship.
   authorities are established
   [#227](https://github.com/flyingrobots/colorful-language/issues/227).
   <!-- roadmap-primary: parked #227 -->
-- **Active evidence hygiene:** derive the cross-stage allocation-profiler
+- **Delivered evidence hygiene:** derive the cross-stage allocation-profiler
   identity from the resolved dependency authority
   [#207](https://github.com/flyingrobots/colorful-language/issues/207) after
   the public-API and workflow-security gates.
-  <!-- roadmap-primary: active #207 -->
+  <!-- roadmap-primary: delivered #207 -->
 - **Parked coverage presentation:** render the existing coverage policy and
   report as one deterministic local and hosted delta summary
   [#210](https://github.com/flyingrobots/colorful-language/issues/210) without

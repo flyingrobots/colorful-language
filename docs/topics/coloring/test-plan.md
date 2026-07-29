@@ -338,7 +338,11 @@ Requirements:
   workspace operation. *Evidence type:* pure metadata mutation tests, packaged
   integration contract, and release benchmark metadata. *Tracking:*
   [#207](https://github.com/flyingrobots/colorful-language/issues/207).
-  *Evidence:* planned. *Status:* planned.
+  *Evidence:*
+  `dependency_tests::resolved_profiler_identity_follows_version_mutations`;
+  `dependency_tests::resolved_profiler_identity_fails_closed`;
+  `cross_stage_benchmark_report::cross_stage_benchmark_report_is_complete_and_advisory`.
+  *Status:* implemented.
 - **COL-18a** — *Requirement:* COL-18. *Behavior:* a bounded seeded corpus
   generates valid Unicode plus malformed public trees and IR mutations and
   exercises parser, annotator, projection, validation, and UTF-16 indexing.
