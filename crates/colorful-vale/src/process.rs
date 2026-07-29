@@ -52,6 +52,11 @@ pub(crate) struct ProcessOutput {
     pub(crate) stderr: Vec<u8>,
 }
 
+#[cfg(test)]
+fn spawn_with_executable_busy_retry<T>(mut spawn: impl FnMut() -> io::Result<T>) -> io::Result<T> {
+    spawn()
+}
+
 impl ProcessOutput {
     pub(crate) fn stdout_text(&self) -> Result<&str, ValeError> {
         std::str::from_utf8(&self.stdout).map_err(|error| {
@@ -289,11 +294,15 @@ fn read_capped(mut reader: impl Read, limit: usize) -> io::Result<CapturedStream
 
 #[cfg(all(test, unix))]
 mod tests {
+    use std::cell::Cell;
     use std::ffi::OsString;
     use std::path::Path;
     use std::time::Duration;
 
-    use super::{run_process, set_before_completion_acceptance, ProcessInput};
+    use super::{
+        run_process, set_before_completion_acceptance, spawn_with_executable_busy_retry,
+        ProcessInput,
+    };
     use crate::{CancellationToken, ValeErrorKind};
 
     #[test]
@@ -317,5 +326,39 @@ mod tests {
         };
 
         assert_eq!(error.kind(), ValeErrorKind::Cancelled);
+    }
+
+    #[test]
+    fn executable_busy_spawn_is_retried() {
+        let attempts = Cell::new(0);
+        let value = spawn_with_executable_busy_retry(|| {
+            let attempt = attempts.get();
+            attempts.set(attempt + 1);
+            if attempt < 2 {
+                Err(std::io::Error::from(rustix::io::Errno::TXTBSY))
+            } else {
+                Ok(7)
+            }
+        })
+        .expect("third spawn attempt must succeed");
+
+        assert_eq!(value, 7);
+        assert_eq!(attempts.get(), 3);
+    }
+
+    #[test]
+    fn non_busy_spawn_failure_is_not_retried() {
+        let attempts = Cell::new(0);
+        let error = spawn_with_executable_busy_retry::<()>(|| {
+            attempts.set(attempts.get() + 1);
+            Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "denied",
+            ))
+        })
+        .expect_err("non-busy failure must remain immediate");
+
+        assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
+        assert_eq!(attempts.get(), 1);
     }
 }
