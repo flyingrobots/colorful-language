@@ -208,14 +208,21 @@ test("rejects a second architecture-accountability mechanism table", () => {
 });
 
 test("rejects a no-leading-pipe accountability table explicitly", () => {
-  expectCategory(
-    "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
-    (source) => {
-      const heading = "## Architecture accountability";
-      const [before, section] = source.split(heading);
-      return `${before}${heading}${section.replace(/^\| /gmu, "")}`;
-    },
-  );
+  for (const header of [
+    "Mechanism | Current user job",
+    "Mechanism|Current user job",
+    "Mechanism  | Current user job",
+    "Mechanism\t| Current user job",
+  ]) {
+    expectCategory(
+      "E_ROADMAP_NONCANONICAL_ACCOUNTABILITY_TABLE",
+      (source) => `${source}
+${header}
+--- | ---
+Parser ports | Alternate apparent authority.
+`,
+    );
+  }
 });
 
 test("requires a delimiter and data row for the accountability table", () => {

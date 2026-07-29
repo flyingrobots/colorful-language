@@ -130,7 +130,7 @@ function isNoLeadingPipeMechanismHeader(line) {
   return (
     firstNonWhitespace !== -1 &&
     /^ {0,3}$/u.test(line.slice(0, firstNonWhitespace)) &&
-    line.slice(firstNonWhitespace).startsWith("Mechanism |")
+    /^Mechanism[ \t]*\|/u.test(line.slice(firstNonWhitespace))
   );
 }
 

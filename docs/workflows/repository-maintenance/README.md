@@ -220,19 +220,19 @@ every delimiter cell requires at least three hyphens with only optional edge
 colons, and at least one non-empty data row follows. The first cell in every
 canonical row is pipe-delimited on both sides, and the row has no more than
 three leading spaces. Valid no-leading-pipe Markdown is refused explicitly
-instead of being silently ignored. Only contiguous canonical rows are
-authoritative, so indented code, fenced examples, and HTML comments cannot
-stand in for the table. Plain text, ASCII-punctuation escapes, and inline code
-are normalized to their NFC displayed identity, including table-delimiter
-escapes inside code spans. Character-reference-shaped source outside inline
-code is rejected; the displayed character must be written directly so source
-and rendered identities cannot diverge. Skipped blocks also terminate the
-table even without a separating blank line. Empty cells, invalid escapes, and
-other mechanism-cell Markdown are rejected as noncanonical. A repeated
-heading, table, or mechanism fails with both source locations, while distinct
-moonshot mechanisms remain independent entries. Leaving the canonical section
-does not end the structural scan: a later H2 cannot hide a second
-accountability authority.
+instead of being silently ignored, whether the first delimiter is compact,
+space-padded, or tab-padded. Only contiguous canonical rows are authoritative,
+so indented code, fenced examples, and HTML comments cannot stand in for the
+table. Plain text, ASCII-punctuation escapes, and inline code are normalized to
+their NFC displayed identity, including table-delimiter escapes inside code
+spans. Character-reference-shaped source outside inline code is rejected; the
+displayed character must be written directly so source and rendered identities
+cannot diverge. Skipped blocks also terminate the table even without a
+separating blank line. Empty cells, invalid escapes, and other mechanism-cell
+Markdown are rejected as noncanonical. A repeated heading, table, or mechanism
+fails with both source locations, while distinct moonshot mechanisms remain
+independent entries. Leaving the canonical section does not end the structural
+scan: a later H2 cannot hide a second accountability authority.
 
 Run the deterministic structure and fixture gates without network access:
 
