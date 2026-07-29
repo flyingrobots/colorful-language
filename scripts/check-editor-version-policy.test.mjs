@@ -8,6 +8,7 @@ import {
   deriveCompatibleLspRange,
   isCompatibleLspVersion,
   loadRepositorySnapshot,
+  parseReleaseProfile,
   validateEditorVersionPolicy,
   validatedNpmLockVersion,
 } from "./check-editor-version-policy.mjs";
@@ -33,9 +34,9 @@ function validSnapshot() {
       EXPECTED_VERSION_SOURCES.map(({ path }) => [path, RELEASE_VERSION]),
     ),
     gateSources: {
-      ci: `- run: ${CHECK_COMMAND}\n`,
-      releasePrep: `${CHECK_COMMAND}\n`,
-      release: `- run: ${CHECK_COMMAND}\n`,
+      ci: `- run: npm ci\n- run: ${CHECK_COMMAND}\n`,
+      releasePrep: `npm ci\n${CHECK_COMMAND}\n`,
+      release: `- run: npm ci\n- run: ${CHECK_COMMAND}\n`,
     },
   };
 }
@@ -229,6 +230,46 @@ test("rejects missing, duplicated, unexpected, or reordered version sources", ()
   );
 });
 
+test("accepts version-source mappings with reordered fields", () => {
+  const snapshot = validSnapshot();
+  snapshot.policy.versionSources = snapshot.policy.versionSources.map(
+    ({ path, type, field, required }) => ({ required, field, type, path }),
+  );
+
+  assert.doesNotThrow(() => validateEditorVersionPolicy(snapshot));
+});
+
+test("parses release policy independently of YAML layout", () => {
+  const policy = parseReleaseProfile(`
+version_sources:
+    - required: true
+      field: workspace.package.version
+      type: cargo-workspace
+      path: Cargo.toml
+versioning:
+  editor_adapters:
+      prerelease: unsupported
+      compatibility: same-pre-1.0-minor
+      server: colorful-lsp
+      strategy: synchronized
+`);
+
+  assert.deepEqual(policy, {
+    strategy: "synchronized",
+    server: "colorful-lsp",
+    compatibility: "same-pre-1.0-minor",
+    prerelease: "unsupported",
+    versionSources: [
+      {
+        required: true,
+        field: "workspace.package.version",
+        type: "cargo-workspace",
+        path: "Cargo.toml",
+      },
+    ],
+  });
+});
+
 test("rejects missing policy wiring in every release gate", () => {
   for (const gate of ["ci", "releasePrep", "release"]) {
     const snapshot = validSnapshot();
@@ -236,6 +277,17 @@ test("rejects missing policy wiring in every release gate", () => {
     assert.throws(
       () => validateEditorVersionPolicy(snapshot),
       new RegExp(`${gate} must run ${CHECK_COMMAND}`, "u"),
+    );
+  }
+});
+
+test("requires policy dependencies before the checker in every release gate", () => {
+  for (const gate of ["ci", "releasePrep", "release"]) {
+    const snapshot = validSnapshot();
+    snapshot.gateSources[gate] = `${CHECK_COMMAND}\nnpm ci\n`;
+    assert.throws(
+      () => validateEditorVersionPolicy(snapshot),
+      new RegExp(`${gate} must run npm ci before ${CHECK_COMMAND}`, "u"),
     );
   }
 });

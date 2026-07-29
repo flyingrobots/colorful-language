@@ -117,7 +117,12 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-editor-version-policy.test.mjs`;
   `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
   `scripts/release-profile-check.sh`; `scripts/release-prep.sh`;
-  `docs/RELEASING.md`. *Status:* implemented.
+  `docs/RELEASING.md`. The executable cases
+  `accepts version-source mappings with reordered fields`,
+  `parses release policy independently of YAML layout`, and
+  `requires policy dependencies before the checker in every release gate`
+  prove serialization independence and clean-environment dependency ordering.
+  *Status:* implemented.
 
 ## Open verification gaps
 

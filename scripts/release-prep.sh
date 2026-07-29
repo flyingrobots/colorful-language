@@ -22,6 +22,7 @@ command -v zizmor >/dev/null 2>&1 || fail "zizmor is required"
 bash scripts/check-node-version.test.sh
 bash scripts/check-node-version.sh
 bash scripts/release-profile-check.sh
+npm ci
 node --test scripts/check-editor-version-policy.test.mjs
 node scripts/check-editor-version-policy.mjs
 node scripts/check-evidence-toolchains.mjs --self-test
@@ -46,7 +47,6 @@ bash scripts/check-ir-validator-mutants.sh
 bash scripts/package-witness.sh
 bash scripts/smoke-test-install-local.sh
 cargo build --release --locked
-npm ci
 node --test scripts/check-dependency-update-policy.test.mjs
 node scripts/check-dependency-update-policy.mjs
 node --test scripts/check-repository-maintenance.test.mjs

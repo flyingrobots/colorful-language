@@ -202,8 +202,11 @@ Verification for editor adapters and the `colorful-lsp` surface.
   *Evidence:* `.continuum/release.yml`;
   `scripts/check-editor-version-policy.test.mjs`
   `rejects compatibility and prerelease policy drift`,
-  `rejects missing, duplicated, unexpected, or reordered version sources`, and
-  `rejects missing policy wiring in every release gate`;
+  `rejects missing, duplicated, unexpected, or reordered version sources`,
+  `accepts version-source mappings with reordered fields`,
+  `parses release policy independently of YAML layout`,
+  `rejects missing policy wiring in every release gate`, and
+  `requires policy dependencies before the checker in every release gate`;
   `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
   `scripts/release-prep.sh`. *Status:* implemented.
 - **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* signed VS Code/Open VSX and

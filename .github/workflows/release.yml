@@ -34,6 +34,9 @@ jobs:
           toolchain: "1.97.1"
           components: rustfmt, clippy
 
+      - name: Install repository policy dependencies
+        run: npm ci
+
       - name: Check release profile
         run: bash scripts/release-profile-check.sh
 

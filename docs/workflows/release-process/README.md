@@ -56,8 +56,12 @@ VS Code, and Zed version sources. CI, release preparation, and tag publication
 enforce them with:
 
 ```bash
+npm ci
 node scripts/check-editor-version-policy.mjs
 ```
+
+The dependency install must precede the checker because the checker parses the
+release profile with the repository-pinned YAML implementation.
 
 Release-prep validation is executable:
 

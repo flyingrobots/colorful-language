@@ -189,12 +189,16 @@ requires a deliberate profile, channel, ordering, and rollback policy change.
 The release profile lists every synchronized source. Check them with:
 
 ```bash
+npm ci
 node scripts/check-editor-version-policy.mjs
 ```
 
 The checker also requires its command in pull-request CI, release preparation,
-and tag publication. Do not align version numbers by hand without changing the
-workspace release version through the release process.
+and tag publication, with root dependencies installed first. It parses the
+profile through the repository-pinned YAML implementation, so semantically
+equivalent mapping indentation and field order do not change the result. Do not
+align version numbers by hand without changing the workspace release version
+through the release process.
 
 ## Milestones and labels
 

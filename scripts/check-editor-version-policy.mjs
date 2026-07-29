@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { isDeepStrictEqual } from "node:util";
+
+import { parse as parseYaml } from "yaml";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const STABLE_SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
@@ -109,18 +112,28 @@ export function validatedNpmLockVersion(
 }
 
 function sameVersionSources(actual) {
-  return JSON.stringify(actual) === JSON.stringify(EXPECTED_VERSION_SOURCES);
+  return isDeepStrictEqual(actual, EXPECTED_VERSION_SOURCES);
+}
+
+function gateCommandIndex(source, command) {
+  return source.split(/\r?\n/u).findIndex((line) => {
+    const normalized = line.trim();
+    return (
+      normalized === command ||
+      normalized === `run: ${command}` ||
+      normalized === `- run: ${command}`
+    );
+  });
 }
 
 function gateRunsCommand(source) {
-  return source.split(/\r?\n/u).some((line) => {
-    const normalized = line.trim();
-    return (
-      normalized === CHECK_COMMAND ||
-      normalized === `run: ${CHECK_COMMAND}` ||
-      normalized === `- run: ${CHECK_COMMAND}`
-    );
-  });
+  return gateCommandIndex(source, CHECK_COMMAND) !== -1;
+}
+
+function gateInstallsPolicyDependenciesBeforeCheck(source) {
+  const installIndex = gateCommandIndex(source, "npm ci");
+  const checkIndex = gateCommandIndex(source, CHECK_COMMAND);
+  return installIndex !== -1 && installIndex < checkIndex;
 }
 
 export function validateEditorVersionPolicy(snapshot) {
@@ -172,6 +185,11 @@ export function validateEditorVersionPolicy(snapshot) {
   for (const gate of ["ci", "releasePrep", "release"]) {
     if (!gateRunsCommand(gateSources[gate] ?? "")) {
       throw new Error(`${gate} must run ${CHECK_COMMAND}`);
+    }
+    if (
+      !gateInstallsPolicyDependenciesBeforeCheck(gateSources[gate] ?? "")
+    ) {
+      throw new Error(`${gate} must run npm ci before ${CHECK_COMMAND}`);
     }
   }
 
@@ -231,69 +249,41 @@ function parseCargoLockVersion(source, packageName, path) {
   throw new Error(`${path} is missing package ${packageName}`);
 }
 
-function unquoteYamlScalar(value) {
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    return value.slice(1, -1);
-  }
-  if (value === "true") {
-    return true;
-  }
-  if (value === "false") {
-    return false;
-  }
-  return value;
+function isMapping(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseEditorPolicy(profile) {
-  const lines = profile.split(/\r?\n/u);
-  const start = lines.findIndex((line) => line === "  editor_adapters:");
-  if (start === -1) {
+export function parseReleaseProfile(profile) {
+  let document;
+  try {
+    document = parseYaml(profile);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`.continuum/release.yml is not valid YAML: ${detail}`, {
+      cause: error,
+    });
+  }
+  if (!isMapping(document)) {
+    throw new Error(".continuum/release.yml must contain a mapping");
+  }
+
+  const editorPolicy = document.versioning?.editor_adapters;
+  if (!isMapping(editorPolicy)) {
     throw new Error(
       ".continuum/release.yml is missing versioning.editor_adapters",
     );
   }
-  const result = {};
-  for (let index = start + 1; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (/^\S/u.test(line) || /^ {2}\S/u.test(line)) {
-      break;
-    }
-    const match = /^ {4}([a-z_]+):\s*(.+)$/u.exec(line);
-    if (match !== null) {
-      result[match[1]] = unquoteYamlScalar(match[2]);
-    }
-  }
-  return result;
-}
-
-function parseVersionSources(profile) {
-  const lines = profile.split(/\r?\n/u);
-  const start = lines.findIndex((line) => line === "version_sources:");
-  if (start === -1) {
+  if (!Array.isArray(document.version_sources)) {
     throw new Error(".continuum/release.yml is missing version_sources");
   }
-  const sources = [];
-  let current;
-  for (let index = start + 1; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (/^\S/u.test(line)) {
-      break;
-    }
-    const first = /^ {2}- path:\s*(.+)$/u.exec(line);
-    if (first !== null) {
-      current = { path: unquoteYamlScalar(first[1]) };
-      sources.push(current);
-      continue;
-    }
-    const field = /^ {4}([a-z_]+):\s*(.+)$/u.exec(line);
-    if (field !== null && current !== undefined) {
-      current[field[1]] = unquoteYamlScalar(field[2]);
-    }
-  }
-  return sources;
+
+  return {
+    strategy: editorPolicy.strategy,
+    server: editorPolicy.server,
+    compatibility: editorPolicy.compatibility,
+    prerelease: editorPolicy.prerelease,
+    versionSources: document.version_sources,
+  };
 }
 
 function read(path, root) {
@@ -302,7 +292,6 @@ function read(path, root) {
 
 export function loadRepositorySnapshot(root = ROOT) {
   const profile = read(".continuum/release.yml", root);
-  const editorPolicy = parseEditorPolicy(profile);
   const vscodePackage = JSON.parse(
     read("editors/vscode/package.json", root),
   );
@@ -313,13 +302,7 @@ export function loadRepositorySnapshot(root = ROOT) {
   const zedCargoLock = read("editors/zed/Cargo.lock", root);
 
   return {
-    policy: {
-      strategy: editorPolicy.strategy,
-      server: editorPolicy.server,
-      compatibility: editorPolicy.compatibility,
-      prerelease: editorPolicy.prerelease,
-      versionSources: parseVersionSources(profile),
-    },
+    policy: parseReleaseProfile(profile),
     versions: {
       "Cargo.toml": parseTomlSectionVersion(
         read("Cargo.toml", root),
