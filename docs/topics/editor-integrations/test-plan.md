@@ -184,6 +184,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
   *Evidence:* `scripts/check-editor-version-policy.test.mjs`
   `the synchronized policy derives the same pre-1.0 minor range`,
   `same-minor stable servers are compatible and breaking minors are not`,
+  `editor install guidance selects the synchronized server minor`,
   `rejects disagreement between both npm lockfile version fields`,
   `derives a future synchronized minor without a policy-code edit`,
   `treats the workspace manifest as the synchronized version authority`, the

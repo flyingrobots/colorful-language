@@ -18,7 +18,7 @@ extension `0.Y.Z`, use a stable `colorful-lsp` in
 The extension drives the `colorful-lsp` binary; install it once:
 
 ```bash
-cargo install colorful-lsp
+cargo install colorful-lsp --version '^0.4'
 ```
 
 (or, when your platform is covered by a release archive, download a binary from

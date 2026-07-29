@@ -5,6 +5,7 @@ use zed_extension_api::{
 };
 
 const SERVER_ID: &str = "colorful-lsp";
+const COMPATIBLE_SERVER_REQ: &str = "^0.4";
 
 struct ColorfulExtension;
 
@@ -22,11 +23,12 @@ impl zed::Extension for ColorfulExtension {
             return Ok(command);
         }
 
-        // Resolve colorful-lsp from PATH; install it with `cargo install colorful-lsp`.
+        // Resolve colorful-lsp from PATH using this adapter's compatible minor.
         let path = worktree.which(SERVER_ID).ok_or_else(|| {
             format!(
-                "{SERVER_ID} not found on PATH — install it with `cargo install {SERVER_ID}` \
-                 or set lsp.{SERVER_ID}.binary.path in Zed settings"
+                "{SERVER_ID} not found on PATH — install it with `cargo install {SERVER_ID} \
+                 --version '{COMPATIBLE_SERVER_REQ}'` or set \
+                 lsp.{SERVER_ID}.binary.path in Zed settings"
             )
         })?;
         Ok(Command {

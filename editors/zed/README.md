@@ -13,7 +13,7 @@ extension `0.Y.Z`, use a stable `colorful-lsp` in
 The extension starts the `colorful-lsp` language server. Install it once:
 
 ```bash
-cargo install colorful-lsp
+cargo install colorful-lsp --version '^0.4'
 ```
 
 If Zed cannot see your shell `PATH`, set the binary path explicitly in

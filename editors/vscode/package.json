@@ -47,7 +47,7 @@
         "colorful.serverPath": {
           "type": "string",
           "default": "colorful-lsp",
-          "description": "Path to the colorful-lsp binary. Install it with `cargo install colorful-lsp`; must be on PATH or an absolute path."
+          "description": "Path to the colorful-lsp binary. Install it with `cargo install colorful-lsp --version '^0.4'`; must be on PATH or an absolute path."
         }
       }
     },

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
@@ -12,6 +13,12 @@ import {
 } from "./check-editor-version-policy.mjs";
 
 const RELEASE_VERSION = "0.4.0";
+const EDITOR_INSTALL_GUIDANCE = [
+  "editors/README.md",
+  "editors/vscode/README.md",
+  "editors/vscode/package.json",
+  "editors/zed/README.md",
+];
 
 function validSnapshot() {
   return {
@@ -99,6 +106,33 @@ test("derives a future synchronized minor without a policy-code edit", () => {
     compatibleLsp: ">=0.5.0 <0.6.0",
     versionSourceCount: EXPECTED_VERSION_SOURCES.length,
   });
+});
+
+test("editor install guidance selects the synchronized server minor", () => {
+  const releaseVersion = loadRepositorySnapshot().versions["Cargo.toml"];
+  const [major, minor] = releaseVersion.split(".");
+  assert.equal(major, "0");
+  const command = `cargo install colorful-lsp --version '^0.${minor}'`;
+
+  for (const path of EDITOR_INSTALL_GUIDANCE) {
+    const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+    assert.ok(source.includes(command), `${path} must include ${command}`);
+  }
+
+  const zedSource = readFileSync(
+    new URL("../editors/zed/src/lib.rs", import.meta.url),
+    "utf8",
+  );
+  assert.ok(
+    zedSource.includes(
+      `const COMPATIBLE_SERVER_REQ: &str = "^0.${minor}";`,
+    ),
+    "the Zed missing-server error must use the synchronized server minor",
+  );
+  assert.ok(
+    zedSource.includes("--version '{COMPATIBLE_SERVER_REQ}'"),
+    "the Zed missing-server error must apply its compatible requirement",
+  );
 });
 
 test("treats the workspace manifest as the synchronized version authority", () => {

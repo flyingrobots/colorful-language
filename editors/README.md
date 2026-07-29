@@ -8,7 +8,7 @@ its LSP client at the server for `plaintext`/`markdown` buffers.
 Install the server once:
 
 ```bash
-cargo install colorful-lsp
+cargo install colorful-lsp --version '^0.4'
 ```
 
 (or grab a release binary from the
