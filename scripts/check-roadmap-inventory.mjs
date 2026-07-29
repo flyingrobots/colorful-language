@@ -20,6 +20,10 @@ const CLOSING_HASH_ACCOUNTABILITY_HEADING = new RegExp(
   `^ {0,3}${ACCOUNTABILITY_HEADING_PATTERN}[ \\t]+#+[ \\t]*$`,
   "u",
 );
+const GENERIC_HTML_OPEN_TAG =
+  /^<[A-Za-z][A-Za-z0-9-]*(?:[ \t]+[A-Za-z_:][A-Za-z0-9_.:-]*(?:[ \t]*=[ \t]*(?:[^\u0000-\u0020"'=<>`]+|"[^"]*"|'[^']*'))?)*[ \t]*\/?>[ \t]*$/u;
+const GENERIC_HTML_CLOSE_TAG =
+  /^<\/[A-Za-z][A-Za-z0-9-]*[ \t]*>[ \t]*$/u;
 const MARKDOWN_DELIMITER_CELL = /^:?-{3,}:?$/u;
 const MARKDOWN_CHARACTER_REFERENCE =
   /^&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
@@ -313,9 +317,8 @@ function rawHtmlBlockStart(line) {
     return { endsOnBlank: true };
   }
   if (
-    /^<\/?[A-Za-z][A-Za-z0-9-]*(?:[ \t]+(?:[^<>"']+|"[^"]*"|'[^']*'))*[ \t]*\/?>[ \t]*$/u.test(
-      content,
-    )
+    GENERIC_HTML_OPEN_TAG.test(content) ||
+    GENERIC_HTML_CLOSE_TAG.test(content)
   ) {
     return { endsOnBlank: true };
   }

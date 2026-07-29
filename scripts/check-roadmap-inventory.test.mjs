@@ -350,6 +350,10 @@ test("ignores accountability tables inside raw HTML blocks", () => {
     ["<!DECLARATION", ...table, ">"],
     ["<![CDATA[", ...table, "]]>"],
     ["<custom-element>", ...table, "</custom-element>"],
+    ["<custom-element disabled>", ...table, "</custom-element>"],
+    ["<custom-element data-kind=value>", ...table, "</custom-element>"],
+    ['<custom-element data-kind="two words">', ...table, "</custom-element>"],
+    ["<custom-element data-kind='two words'/>", ...table],
   ]) {
     expectCategory("E_ROADMAP_MISSING_ACCOUNTABILITY_TABLE", (source) =>
       source.replace(
@@ -358,6 +362,11 @@ test("ignores accountability tables inside raw HTML blocks", () => {
       ),
     );
   }
+});
+
+test("generic HTML tag matching has disjoint attribute separators", () => {
+  const checkerSource = readFileSync(script, "utf8");
+  assert.doesNotMatch(checkerSource, /\[\^<>"'\]\+/u);
 });
 
 test("rejects a table hidden by an invalid backtick-fence interpretation", () => {
