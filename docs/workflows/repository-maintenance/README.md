@@ -13,9 +13,60 @@ The issue chooser keeps actionable work in two forms:
 - feature proposals require a user problem, observable outcome, and alternatives
   considered.
 
-Support questions route to the Q&A Discussion category. Early, exploratory
-design routes to Ideas. Both issue forms remain directly selectable, so those
-links do not hide an actionable defect or concrete proposal.
+Issues and milestones are the delivery authority. Discussions are not a
+supported intake channel because no maintainer response commitment has been
+made. The repository may retain GitHub's default Discussion categories, but the
+issue chooser does not advertise Q&A or Ideas as supported routes. The
+maintenance gate rejects both Discussion claims and direct `/discussions`
+links in issue-form Markdown.
+
+## Public repository and deployment posture
+
+[`.github/repository-profile.yml`](../../../.github/repository-profile.yml)
+records the public and deployment authority. The repository homepage points to
+the maintained README at
+`https://github.com/flyingrobots/colorful-language#readme`.
+
+No GitHub deployment environment exists. `@flyingrobots` owns release
+execution, custody of `CARGO_REGISTRY_TOKEN`, `VSCE_PAT`, and `OVSX_PAT`, and
+rollback decisions. Create a protected `release` environment only when a real
+release is scheduled and all three credentials can move atomically; do not
+create an empty environment before that threshold.
+
+Credential and release-evidence inventories are unordered exact sets.
+Reordering is harmless; missing, unexpected, or duplicate entries fail the
+maintenance gate.
+
+Before publication, the owner must run:
+
+```bash
+bash scripts/release-prep.sh
+npm --prefix editors/vscode run smoke:package
+```
+
+After editor publication, verify the exact local package bytes:
+
+```bash
+node scripts/verify-editor-publication.mjs \
+  --vsix target/editor-smoke/colorful-language-X.Y.Z.vsix \
+  --version X.Y.Z
+```
+
+Rollback ownership includes stopping the tag workflow, removing or unpublishing
+the affected registry version where the registry permits it, marking the GitHub
+release affected, and following the tested recovery commands in
+[`docs/RELEASING.md`](../../RELEASING.md). A release witness records the actor,
+environment, exact artifact digests, public URLs, and recovery outcome.
+
+The authenticated metadata witness is deliberately separate from the offline
+maintenance gate:
+
+```bash
+gh api repos/flyingrobots/colorful-language \
+  --jq '{homepage,has_discussions,topics}'
+gh api repos/flyingrobots/colorful-language/environments \
+  --jq '[.environments[].name]'
+```
 
 ## Rust dependency policy
 
@@ -120,12 +171,13 @@ The workflow-security job grants only `contents: read` and disables checkout
 credential persistence. Its versioned policy fixes the analyzer identity,
 offline workflow-only invocation, finding thresholds, and exception metadata.
 Three exceptions allow `CARGO_REGISTRY_TOKEN`, `VSCE_PAT`, and `OVSX_PAT` only
-at their named crates.io or editor-publication steps while deployment ownership
-and a protected release environment remain unconfigured. Each record names its
+at their named crates.io or editor-publication steps while a protected release
+environment remains unconfigured. The repository profile assigns credential,
+release, and rollback ownership to `@flyingrobots`. Each exception names its
 owner, rationale, and removal trigger, and each selector may occur once across
 all workflows. Changing a secret location, broadening an exception path,
-weakening a threshold, or drifting the hosted installation from policy fails the
-deterministic maintenance suite.
+weakening a threshold, or drifting the hosted installation from policy fails
+the deterministic maintenance suite.
 
 ## Updates and ownership
 

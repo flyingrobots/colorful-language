@@ -7,8 +7,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use this form for a concrete proposal. Use the Ideas Discussion link on
-        the issue chooser when the design still needs open-ended exploration.
+        Use this form for a concrete proposal with an observable outcome.
+        Open-ended design discussion is not currently a staffed intake surface.
   - type: textarea
     id: problem
     attributes:

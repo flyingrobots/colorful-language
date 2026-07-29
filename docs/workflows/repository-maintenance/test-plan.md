@@ -7,6 +7,8 @@ broader workflow; the prerequisite advisory remediation is tracked separately
 in [#197](https://github.com/flyingrobots/colorful-language/issues/197), and
 roadmap-to-issue reconciliation is tracked in
 [#187](https://github.com/flyingrobots/colorful-language/issues/187).
+Repository metadata, Discussion intake, and deployment ownership are tracked in
+[#153](https://github.com/flyingrobots/colorful-language/issues/153).
 
 ## Requirements
 
@@ -19,8 +21,8 @@ roadmap-to-issue reconciliation is tracked in
   public crates.io registry unless a narrow exception names its owner and
   removal trigger.
 - **RM-3 — Actionable intake.** Bug and feature intake must collect enough
-  evidence for a maintainer to act. Support and exploratory design conversations
-  may route to Discussions without hiding an actionable defect or proposal.
+  evidence for a maintainer to act. Discussions must not be advertised as a
+  support or design route without an explicit response owner.
 - **RM-4 — Dependency change review.** Weekly dependency updates must remain
   grouped by rollback boundary, and every pull request must reject newly
   introduced dependencies with detected disallowed licenses or
@@ -57,6 +59,11 @@ roadmap-to-issue reconciliation is tracked in
   persisted checkout credentials and overbroad permissions, run without
   write-capable repository permissions, and derive its identity, invocation,
   and narrow exception configuration from one reviewed policy.
+- **RM-13 — Public repository posture.** The maintained repository homepage,
+  supported intake surfaces, deployment owner, credential custody, rollback
+  responsibility, and environment-creation threshold must be explicit.
+  Discussions must not be promoted without an owner commitment, and an empty
+  deployment environment must not be created for appearance.
 
 ## Cases
 
@@ -106,10 +113,11 @@ roadmap-to-issue reconciliation is tracked in
 - **RM-3a — Reproducible issue forms and routing.** *Requirement:* RM-3.
   *Behavior:* the bug form requires reproduction, observed and expected
   behavior, version, and environment; the feature form requires the problem,
-  proposed outcome, and alternatives; support and exploratory design contact
-  links target the repository's Q&A and Ideas Discussion categories.
-  *Oracle:* malformed, weakened, or misrouted fixtures fail with stable error
-  categories, while both actionable forms remain directly selectable.
+  proposed outcome, and alternatives; because Discussions have no supported
+  intake owner, the issue chooser exposes no support or design contact link.
+  *Oracle:* malformed or weakened forms and any promoted Discussion route fail
+  with stable error categories, while both actionable forms remain directly
+  selectable.
   *Evidence type:* YAML policy checker and deterministic mutation tests.
   *Evidence:* `.github/ISSUE_TEMPLATE/bug.yml`,
   `.github/ISSUE_TEMPLATE/feature.yml`,
@@ -328,6 +336,27 @@ roadmap-to-issue reconciliation is tracked in
   `scripts/fixtures/workflow-security/`,
   `.github/workflows/security.yml`, and `scripts/release-prep.sh`. *Tracking:*
   [#209](https://github.com/flyingrobots/colorful-language/issues/209).
+  *Status:* implemented.
+- **RM-13a — Governed public metadata and deployment authority.**
+  *Requirement:* RM-13. *Behavior:* one versioned repository profile names the
+  maintained README as the homepage, keeps Issues and milestones as the
+  delivery authority, records that Discussions have no supported intake owner,
+  and assigns publication credentials, rollback, and release evidence to one
+  maintainer without claiming that an environment exists. *Oracle:* profile,
+  issue-routing, and documentation mutations reject a missing or alternate
+  homepage, promoted unowned Discussion category, direct lowercase Discussion
+  URL, absent owner, unreviewed or duplicate credential, empty-environment
+  claim, or missing creation threshold; reordered credential and evidence
+  inventories remain valid, and an authenticated witness compares the
+  configured homepage and environment inventory with live GitHub state.
+  *Evidence type:* deterministic
+  configuration mutation tests plus an explicit authenticated API
+  witness. *Evidence:* `.github/repository-profile.yml`,
+  `scripts/check-repository-maintenance.mjs`,
+  `scripts/check-repository-maintenance.test.mjs`, and this workflow's current
+  reference; that witness uses the documented authenticated `gh api`
+  commands. *Tracking:*
+  [#153](https://github.com/flyingrobots/colorful-language/issues/153).
   *Status:* implemented.
 
 ## Hosted evidence boundary
