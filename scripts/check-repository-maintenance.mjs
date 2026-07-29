@@ -38,6 +38,7 @@ const RELEASE_TRACKING_REFERENCE_CLAIMS = [
   "complete and review the packet's release thesis",
   "bash scripts/release-prep.sh",
 ];
+const RELEASE_TRACKING_COMMAND_START_PATTERN = /\bgh issue create\b/u;
 const RELEASE_TRACKING_LABEL_PATTERN =
   /--label (?<label>[a-z0-9][a-z0-9:._-]*)/gu;
 const RELEASE_TRACKING_REFERENCE_PATTERNS = [
@@ -191,6 +192,35 @@ function oneVersionMatch(reference, pattern) {
     : undefined;
 }
 
+function allMatches(reference, pattern) {
+  const flags = pattern.flags.includes("g")
+    ? pattern.flags
+    : `${pattern.flags}g`;
+  return [...reference.matchAll(new RegExp(pattern.source, flags))];
+}
+
+function releaseTrackingCommand(reference) {
+  const starts = allMatches(
+    reference,
+    RELEASE_TRACKING_COMMAND_START_PATTERN,
+  );
+  const bodies = allMatches(
+    reference,
+    RELEASE_TRACKING_REFERENCE_PATTERNS[1],
+  );
+  if (
+    starts.length !== 1 ||
+    bodies.length !== 1 ||
+    starts[0].index >= bodies[0].index
+  ) {
+    return undefined;
+  }
+  return reference.slice(
+    starts[0].index,
+    bodies[0].index + bodies[0][0].length,
+  );
+}
+
 function normalizeReference(reference) {
   return typeof reference === "string"
     ? reference.replace(/`/gu, "").replace(/\s+/gu, " ")
@@ -277,13 +307,19 @@ function validateDeliveryTracking(
     RELEASE_TRACKING_REFERENCE_PATTERNS.map(
       (pattern) => oneVersionMatch(releasingReference, pattern),
     );
-  const releaseTrackingLabels = [
-    ...releasingReference.matchAll(RELEASE_TRACKING_LABEL_PATTERN),
-  ].map((match) => match.groups?.label);
+  const trackingCommand = releaseTrackingCommand(releasingReference);
+  const releaseTrackingLabels =
+    trackingCommand === undefined
+      ? []
+      : allMatches(
+          trackingCommand,
+          RELEASE_TRACKING_LABEL_PATTERN,
+        ).map((match) => match.groups?.label);
   if (
     RELEASE_TRACKING_REFERENCE_CLAIMS.some(
       (claim) => !releasingReference.includes(claim),
     ) ||
+    trackingCommand === undefined ||
     releaseExampleVersions.some((version) => version === undefined) ||
     new Set(releaseExampleVersions).size !== 1 ||
     !sameStringSet(releaseTrackingLabels, RELEASE_TRACKING_LABELS)

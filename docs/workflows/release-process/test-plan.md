@@ -287,11 +287,14 @@ Verification for release preparation, tag automation, and release witnesses.
   release version. *Oracle:* removing, duplicating, or substituting the
   reviewed area label fails at `docs/RELEASING.md` with the stable
   `E_DELIVERY_TRACKING` category, while one aligned future-version example
-  remains valid. *Evidence type:* deterministic repository-maintenance policy
-  mutations and checked-in release-runbook validation. *Tracking:*
+  remains valid and a label token outside the `gh issue create` command cannot
+  satisfy a missing command option. *Evidence type:* deterministic
+  repository-maintenance policy mutations and checked-in release-runbook
+  validation. *Tracking:*
   [#263](https://github.com/flyingrobots/colorful-language/issues/263).
   *Evidence:* `scripts/check-repository-maintenance.test.mjs`
   `rejects a noncompliant release-tracker label set` and
+  `does not accept release-tracker labels outside the command` plus
   `rejects an incomplete v0.4.0 tracking and prep sequence`;
   `scripts/check-repository-maintenance.mjs`; `docs/RELEASING.md`;
   `docs/workflows/release-process/README.md`; and
