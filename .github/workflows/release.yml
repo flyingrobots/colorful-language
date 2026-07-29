@@ -239,6 +239,15 @@ jobs:
           npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate --no-dependencies --no-yarn
           npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate --no-dependencies
 
+      - name: Verify published editor bytes
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          vsix="target/editor-smoke/colorful-language-${version}.vsix"
+          node scripts/verify-editor-publication.mjs \
+            --vsix "$vsix" \
+            --version "$version"
+
       # Publish in dependency order. `cargo publish` waits for each crate to land
       # in the index before returning, so dependents resolve. Cargo requires
       # versioned dev-dependencies to resolve from the registry too:

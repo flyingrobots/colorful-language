@@ -50,6 +50,8 @@ jobs:
         run: node --test scripts/check-release-distribution.test.mjs
       - name: Check release distribution policy
         run: node scripts/check-release-distribution.mjs
+      - name: Self-test editor publication verification
+        run: node --test scripts/verify-editor-publication.test.mjs
       - name: Self-test the evidence-toolchain checker
         run: node scripts/check-evidence-toolchains.mjs --self-test
       - name: Check evidence-toolchain policy

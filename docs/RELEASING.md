@@ -523,7 +523,9 @@ versions are immutable; a bad published version is fixed by patching forward.
 Publication and rollback owner: `@flyingrobots`.
 
 The tag workflow fails before any crate or editor package is published unless
-both editor identities authenticate:
+both editor identities authenticate. After publication or a duplicate-version
+skip, it downloads that exact version from both registries and requires each
+SHA-256 digest to equal the smoke-tested VSIX before crates are published:
 
 - `VSCE_PAT` is a repository secret with publish rights for the
   `flyingrobots` VS Code publisher. Microsoft Entra authentication can replace
@@ -536,6 +538,9 @@ Validate the identities with the exact lockfile-backed tools before tagging:
 ```bash
 npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots
 npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
+node scripts/verify-editor-publication.mjs \
+  --vsix target/editor-smoke/colorful-language-X.Y.Z.vsix \
+  --version X.Y.Z
 ```
 
 Zed publication is not token-driven from this repository. The owner submits a
@@ -610,9 +615,10 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
   failing path and rerun. Already-published crates should be verified, not
   republished with different contents.
 - **Editor publication partially succeeded:** Do not move the tag or rebuild
-  the VSIX. Verify the registry that accepted the version, repair credentials
-  or permissions, and rerun the same tag so `--skip-duplicate` preserves the
-  already-published bytes.
+  the VSIX. If public bytes differ from the smoke-tested digest, stop: immutable
+  version identity has been violated and requires a patch release plus incident
+  documentation. Otherwise repair credentials or permissions and rerun the
+  same tag so `--skip-duplicate` preserves the verified bytes.
 - **Zed submission failed review:** keep the GitHub Release and editor registry
   records intact, correct the source extension on `main`, and patch forward.
   Do not retarget the external submodule to unreviewed or moving source.

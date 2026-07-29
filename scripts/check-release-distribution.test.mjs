@@ -8,6 +8,7 @@ import {
   EXPECTED_PLATFORMS,
   EXPECTED_PROVENANCE,
   EXPECTED_PUBLISHER_TOOLS,
+  PUBLICATION_SELF_TEST_COMMAND,
   loadRepositorySnapshot,
   validateReleaseDistribution,
 } from "./check-release-distribution.mjs";
@@ -172,6 +173,10 @@ function validSnapshot() {
       ci: `- run: ${CHECK_COMMAND}\n`,
       releasePrep: `${CHECK_COMMAND}\n`,
       release: `- run: ${CHECK_COMMAND}\n`,
+    },
+    publicationVerificationGates: {
+      ci: `- run: ${PUBLICATION_SELF_TEST_COMMAND}\n`,
+      releasePrep: `${PUBLICATION_SELF_TEST_COMMAND}\n`,
     },
     documentation: {
       runbook: [
@@ -352,16 +357,35 @@ test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
 });
 
 test("requires published registry bytes to match the smoke-tested VSIX", () => {
-  const snapshot = validSnapshot();
-  const steps = snapshot.workflow.jobs.release.steps;
-  const verificationIndex = steps.findIndex(
-    (step) => step.name === "Verify published editor bytes",
-  );
-  steps.splice(verificationIndex, 1);
-  assert.throws(
-    () => validateReleaseDistribution(snapshot),
-    /verify published editor bytes/u,
-  );
+  for (const mutation of ["missing", "after-crates"]) {
+    const snapshot = validSnapshot();
+    const steps = snapshot.workflow.jobs.release.steps;
+    const verificationIndex = steps.findIndex(
+      (step) => step.name === "Verify published editor bytes",
+    );
+    const [verification] = steps.splice(verificationIndex, 1);
+    if (mutation === "after-crates") {
+      const cratesIndex = steps.findIndex(
+        (step) => step.name === "Publish to crates.io",
+      );
+      steps.splice(cratesIndex + 1, 0, verification);
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /verify published editor bytes/iu,
+    );
+  }
+});
+
+test("requires deterministic publication verification in local and hosted gates", () => {
+  for (const gate of ["ci", "releasePrep"]) {
+    const snapshot = validSnapshot();
+    snapshot.publicationVerificationGates[gate] = "";
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      new RegExp(`${gate} must run ${PUBLICATION_SELF_TEST_COMMAND}`, "u"),
+    );
+  }
 });
 
 test("requires exact lockfile-backed publisher tools", () => {

@@ -11,6 +11,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FULL_ACTION_SHA = /^[^@\s]+@[0-9a-f]{40}$/u;
 
 export const CHECK_COMMAND = "node scripts/check-release-distribution.mjs";
+export const PUBLICATION_SELF_TEST_COMMAND =
+  "node --test scripts/verify-editor-publication.test.mjs";
 export const EXPECTED_OWNER = "@flyingrobots";
 export const EXPECTED_PROVENANCE = "github-sigstore";
 export const EXPECTED_PLATFORMS = Object.freeze([
@@ -86,6 +88,22 @@ function includesCommand(source, command) {
       normalized === `- run: ${command}`
     );
   });
+}
+
+function validateGateCommands(gates, names, command) {
+  requiredRecord(gates, "release distribution gates");
+  const observed = Object.keys(gates).toSorted();
+  const expected = names.toSorted();
+  if (!isDeepStrictEqual(observed, expected)) {
+    throw new Error(
+      `release distribution gates for ${command} must be ${expected.join(", ")}`,
+    );
+  }
+  for (const name of expected) {
+    if (!includesCommand(gates[name], command)) {
+      throw new Error(`${name} must run ${command}`);
+    }
+  }
 }
 
 function validateAdmissionJob(job) {
@@ -322,6 +340,28 @@ function validateReleaseJob(job) {
     }
   }
 
+  const verify = requiredStep(
+    steps,
+    "Verify published editor bytes",
+    context,
+  );
+  const verifySource = String(verify.run ?? "");
+  if (
+    !verifySource.includes("node scripts/verify-editor-publication.mjs") ||
+    !verifySource.includes('--vsix "$vsix"') ||
+    !verifySource.includes('--version "$version"')
+  ) {
+    throw new Error(
+      `${context} must verify published editor bytes against the smoke-tested VSIX`,
+    );
+  }
+  const verifyIndex = stepIndex(steps, "Verify published editor bytes");
+  if (verifyIndex <= publishIndex || verifyIndex >= cratesIndex) {
+    throw new Error(
+      `${context} must verify published editor bytes after editors and before crates`,
+    );
+  }
+
   const release = requiredStep(steps, "Create GitHub Release", context);
   if (!String(release.run ?? "").includes("dist/*")) {
     throw new Error(`${context} must attach every reviewed distribution asset`);
@@ -405,11 +445,16 @@ export function validateReleaseDistribution(snapshot) {
   validateBinaryJob(jobs["binary-artifacts"], EXPECTED_PLATFORMS);
   validateReleaseJob(jobs.release);
 
-  for (const [name, source] of Object.entries(snapshot.gates ?? {})) {
-    if (!includesCommand(source, CHECK_COMMAND)) {
-      throw new Error(`${name} must run ${CHECK_COMMAND}`);
-    }
-  }
+  validateGateCommands(
+    snapshot.gates,
+    ["ci", "release", "releasePrep"],
+    CHECK_COMMAND,
+  );
+  validateGateCommands(
+    snapshot.publicationVerificationGates,
+    ["ci", "releasePrep"],
+    PUBLICATION_SELF_TEST_COMMAND,
+  );
   validateDocumentation(snapshot.documentation ?? {});
 
   return {
@@ -464,6 +509,10 @@ export function loadRepositorySnapshot(root = ROOT) {
       ci: read(".github/workflows/ci.yml"),
       releasePrep: read("scripts/release-prep.sh"),
       release: read(".github/workflows/release.yml"),
+    },
+    publicationVerificationGates: {
+      ci: read(".github/workflows/ci.yml"),
+      releasePrep: read("scripts/release-prep.sh"),
     },
     documentation: {
       runbook: read("docs/RELEASING.md"),
