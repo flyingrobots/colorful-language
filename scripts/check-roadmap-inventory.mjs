@@ -9,6 +9,8 @@ const PRIMARY_MARKER = /<!--\s*roadmap-primary:\s*([\s\S]*?)-->/gu;
 const VALID_MARKER = /^(active|parked|delivered)((?:\s+#\d+)+)$/u;
 const ACCOUNTABILITY_HEADING = "## Architecture accountability";
 const MARKDOWN_DELIMITER_CELL = /^:?-+:?$/u;
+const MARKDOWN_CHARACTER_REFERENCE =
+  /^&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
 const NONCANONICAL_MECHANISM_MARKUP = new Set([
   "*",
   "_",
@@ -181,6 +183,16 @@ function canonicalMechanismIdentity(mechanism, location) {
         .replaceAll("\\|", "|");
       index = contentEnd + delimiterLength - 1;
       continue;
+    }
+    if (
+      character === "&" &&
+      MARKDOWN_CHARACTER_REFERENCE.test(mechanism.slice(index))
+    ) {
+      fail(
+        "E_ROADMAP_NONCANONICAL_MECHANISM",
+        location,
+        "use the displayed character instead of a Markdown character reference",
+      );
     }
     if (NONCANONICAL_MECHANISM_MARKUP.has(character)) {
       fail(

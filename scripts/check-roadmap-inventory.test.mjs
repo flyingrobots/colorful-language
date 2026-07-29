@@ -281,6 +281,31 @@ test("rejects noncanonical mechanism-cell Markdown", () => {
   );
 });
 
+test("rejects character references in mechanism identities", () => {
+  for (const identity of [
+    "Parser &amp; compiler ports",
+    "Parser &#38; compiler ports",
+    "Parser &#x26; compiler ports",
+  ]) {
+    expectCategory("E_ROADMAP_NONCANONICAL_MECHANISM", (source) =>
+      source.replace("| Parser ports |", `| ${identity} |`),
+    );
+  }
+});
+
+test("allows literal ampersands and character-reference text inside code", () => {
+  for (const identity of ["Parser & compiler ports", "`Parser &amp; ports`"]) {
+    assert.doesNotThrow(() =>
+      validateRoadmapInventory({
+        roadmap: roadmap.replace("| Parser ports |", `| ${identity} |`),
+        issues,
+        roadmapPath: "fixture/roadmap.md",
+        issuePath: "fixture/issues.json",
+      }),
+    );
+  }
+});
+
 test("rejects an empty architecture-accountability mechanism", () => {
   expectCategory("E_ROADMAP_EMPTY_MECHANISM", (source) =>
     source.replace(
