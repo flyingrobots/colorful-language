@@ -193,7 +193,7 @@ by [`check-coverage-policy.mjs`](../../../scripts/check-coverage-policy.mjs)
 before the required job can pass.
 
 The current workspace baseline was measured at source commit
-`a4acd3a1171fe8b6f0662f5d2193da865d41a1f6` with the pinned command above:
+`b0cbc24acebf00896a4eb6927e8b74df06eccb94` with the pinned command above:
 
 | Surface | Measured lines | Measured coverage | Minimum | Maximum uncovered |
 | --- | ---: | ---: | ---: | ---: |

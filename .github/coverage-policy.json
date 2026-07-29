@@ -5,7 +5,7 @@
     "cargoLlvmCov": "0.8.7"
   },
   "measurement": {
-    "sourceCommit": "a4acd3a1171fe8b6f0662f5d2193da865d41a1f6",
+    "sourceCommit": "b0cbc24acebf00896a4eb6927e8b74df06eccb94",
     "command": "cargo llvm-cov --workspace --all-features --all-targets --locked"
   },
   "workspace": {
