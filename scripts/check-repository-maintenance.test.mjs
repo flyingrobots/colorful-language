@@ -505,6 +505,12 @@ test("rejects a stale delivery-tracking reference", () => {
         "Release trains use a GitHub milestone;",
       );
     }, "E_DELIVERY_TRACKING");
+    expectCode(({ deliveryReferences }) => {
+      deliveryReferences[key] = deliveryReferences[key].replace(
+        "GitHub milestones are goalposts.",
+        "GitHub milestones are release trains.",
+      );
+    }, "E_DELIVERY_TRACKING");
   }
 });
 
