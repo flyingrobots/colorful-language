@@ -91,7 +91,10 @@ function assertInstalledPackage(extension) {
   const extensionsDirectory = path.resolve(requiredEnv("COLORFUL_EXTENSIONS_DIR"));
   const relative = path.relative(extensionsDirectory, extension.extensionPath);
   assert.ok(
-    relative !== "" && relative !== ".." && !relative.startsWith(`..${path.sep}`),
+    !path.isAbsolute(relative) &&
+      relative !== "" &&
+      relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`),
     `extension was not loaded from the isolated install: ${extension.extensionPath}`,
   );
 }

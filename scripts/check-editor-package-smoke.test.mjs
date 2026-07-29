@@ -87,6 +87,14 @@ test("package evidence has independent validation boundaries", () => {
   );
 });
 
+test("the extension-host smoke rejects cross-drive install paths", () => {
+  const source = readFileSync(
+    "editors/vscode/smoke/suite/index.cjs",
+    "utf8",
+  );
+  assert.match(source, /!path\.isAbsolute\(relative\)/u);
+});
+
 test("documentation lint excludes the downloaded VS Code test application", () => {
   assert.match(
     readFileSync(".markdownlint-cli2.jsonc", "utf8"),
