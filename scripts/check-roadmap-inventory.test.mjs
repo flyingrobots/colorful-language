@@ -1242,6 +1242,48 @@ test("rejects a missing option value with a stable usage error", () => {
   );
 });
 
+test("rejects duplicate runner options with a stable usage error", () => {
+  for (const argv of [
+    ["--live", "--live"],
+    ["--roadmap", "first", "--roadmap", "second", "--closing-pr", "1"],
+    ["--issues", "first", "--issues", "second", "--live", "--repo", "owner/repo"],
+    ["--repo", "owner/first", "--repo", "owner/second", "--closing-pr", "1"],
+    ["--closing-pr", "1", "--closing-pr", "2"],
+  ]) {
+    assert.throws(
+      () => run(argv),
+      (error) => {
+        assert.ok(error instanceof InventoryError);
+        assert.equal(error.category, "E_ROADMAP_USAGE");
+        assert.match(error.message, /may be specified only once/u);
+        return true;
+      },
+      argv.join(" "),
+    );
+  }
+});
+
+test("rejects malformed repository coordinates before transport", () => {
+  for (const repo of [
+    "missing-slash",
+    "/repo",
+    "owner/",
+    "owner/repo/extra",
+    "owner with space/repo",
+  ]) {
+    assert.throws(
+      () => run(["--repo", repo, "--closing-pr", "1"]),
+      (error) => {
+        assert.ok(error instanceof InventoryError);
+        assert.equal(error.category, "E_ROADMAP_USAGE");
+        assert.match(error.message, /--repo requires OWNER\/NAME/u);
+        return true;
+      },
+      repo,
+    );
+  }
+});
+
 test("rejects malformed issue JSON with a stable snapshot error", () => {
   const roadmapPath = fileURLToPath(new URL("roadmap.md", fixtureRoot));
   const issuePath = fileURLToPath(

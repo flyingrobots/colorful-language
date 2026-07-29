@@ -232,8 +232,10 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   the fixture suite. *Oracle:* the command proves every current open non-epic
   slice has one primary active or parked disposition and no closed issue is
   presented as pending; reaching the 10,000-item listing ceiling fails closed
-  instead of admitting a potentially truncated response. *Evidence type:*
-  authenticated GitHub API witness kept outside the ordinary offline
+  instead of admitting a potentially truncated response; repeated runner
+  options and malformed `OWNER/NAME` repository coordinates fail with
+  `E_ROADMAP_USAGE` before transport. *Evidence type:* authenticated GitHub API
+  witness and deterministic argument tests kept outside the ordinary offline
   documentation gate. *Evidence:*
   `scripts/check-roadmap-inventory.mjs --live`,
   `.github/workflows/ci.yml`, and `.github/workflows/maintenance.yml`.

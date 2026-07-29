@@ -257,6 +257,9 @@ node scripts/check-roadmap-inventory.mjs \
   --repo flyingrobots/colorful-language
 ```
 
+The runner rejects repeated flags and malformed `--repo OWNER/NAME`
+coordinates before any file or GitHub transport.
+
 On a branch whose pull request closes an issue, pass `--closing-pr NUMBER`.
 The checker reads GitHub's closing-issue references and evaluates the intended
 post-merge state. The required documentation job does this automatically for

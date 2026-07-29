@@ -22,9 +22,18 @@ export function createRoadmapInventoryRun({
       repo: process.env.GITHUB_REPOSITORY,
       closingPr: undefined,
     };
+    const seenArguments = new Set();
 
     for (let index = 0; index < argv.length; index += 1) {
       const argument = argv[index];
+      if (seenArguments.has(argument)) {
+        fail(
+          "E_ROADMAP_USAGE",
+          "arguments",
+          `${argument} may be specified only once`,
+        );
+      }
+      seenArguments.add(argument);
       const optionValue = () => {
         const value = argv[index + 1];
         if (value === undefined || value.startsWith("--")) {
@@ -62,6 +71,15 @@ export function createRoadmapInventoryRun({
         "arguments",
         "--live and --issues are mutually exclusive",
       );
+    }
+    if (
+      (options.live || seenArguments.has("--repo")) &&
+      options.repo !== undefined &&
+      !/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\/[A-Za-z0-9._-]+$/u.test(
+        options.repo,
+      )
+    ) {
+      fail("E_ROADMAP_USAGE", "arguments", "--repo requires OWNER/NAME");
     }
     if (options.closingPr && !options.live) {
       fail(
