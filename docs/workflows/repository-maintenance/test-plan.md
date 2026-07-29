@@ -130,6 +130,18 @@ roadmap-to-issue reconciliation is tracked in
   `.github/workflows/security.yml`,
   `scripts/check-dependency-update-policy.test.mjs`, and
   `scripts/check-repository-maintenance.test.mjs`. *Status:* implemented.
+- **RM-4c — Editor package-tool license admission.** *Requirement:* RM-4.
+  *Behavior:* standard permissive SPDX licenses introduced by the lock-backed
+  editor packaging toolchain join the reviewed cross-ecosystem allowlist.
+  Scanner-only composite licenses and the restricted VSCE signing runtime use
+  exact-version npm package URLs, and no packaging-only dependency enters the
+  extension archive. *Oracle:* the maintenance checker rejects a missing,
+  unexpected, or version-broadened exception; the package smoke test proves the
+  exact VSIX inventory excludes development dependencies. *Evidence type:*
+  deterministic policy mutation tests and the packaged-extension witness.
+  *Planned evidence:* `.github/workflows/security.yml`,
+  `scripts/check-repository-maintenance.test.mjs`, and
+  `scripts/check-editor-package-smoke.mjs`. Tracking: #136. *Status:* planned.
 - **RM-4b — Required security contexts.** *Requirements:* RM-4, RM-5, RM-8.
   *Behavior:* the live and checked-in mainline rulesets require Rust dependency
   policy, dependency review, both CodeQL language jobs, and pinned workflow-
