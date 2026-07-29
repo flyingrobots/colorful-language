@@ -472,6 +472,28 @@ function validateArchitectureAccountability(roadmap, roadmapPath) {
     }
     line = commentScan.visible;
 
+    if (isCanonicalAccountabilityHeading(line)) {
+      const location = `${roadmapPath}:${index + 1}`;
+      if (
+        foundAccountabilitySection ||
+        displayEquivalentAccountabilitySectionLocation !== undefined
+      ) {
+        const previousLocation =
+          accountabilitySectionLocation ??
+          displayEquivalentAccountabilitySectionLocation;
+        const previousKind =
+          accountabilitySectionLocation === undefined
+            ? "display-equivalent heading"
+            : "canonical heading";
+        fail(
+          "E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION",
+          location,
+          `${previousKind} already appears at ${previousLocation}`,
+        );
+      }
+      displayEquivalentAccountabilitySectionLocation = location;
+      continue;
+    }
     if (inAccountabilitySection && isRoadmapLevelTwoHeading(line)) {
       inAccountabilitySection = false;
       accountabilityTableState = "searching";

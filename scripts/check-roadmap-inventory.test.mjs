@@ -149,6 +149,25 @@ test("rejects comment-altered accountability headings", () => {
   }
 });
 
+test("rejects comment-altered duplicate headings in either source order", () => {
+  const alteredHeading = "## Architecture<!--note--> accountability";
+  for (const mutation of [
+    (source) => `${source}
+
+${alteredHeading}
+`,
+    (source) => `${source.replace(
+      "## Architecture accountability",
+      alteredHeading,
+    )}
+
+## Architecture accountability
+`,
+  ]) {
+    expectCategory("E_ROADMAP_DUPLICATE_ACCOUNTABILITY_SECTION", mutation);
+  }
+});
+
 test("ignores indented code that spells the accountability heading", () => {
   assert.doesNotThrow(() =>
     validateRoadmapInventory({

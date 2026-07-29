@@ -221,12 +221,14 @@ every delimiter cell requires at least three hyphens with only optional edge
 colons, and at least one non-empty data row follows. LF and CRLF roadmaps have
 the same structural result and line addresses. Closed inline comments cannot
 join or decorate the canonical H2 because its literal source is validated
-before comment spans are removed. Once a header and delimiter establish a
-table location, a later non-empty table cannot replace it merely because the
-first table had no data row. The first cell in every
-canonical header is the plain-text cell `Mechanism`; inline-code styling that
-displays the same label is refused. The first cell in every canonical row is
-pipe-delimited on both sides, and the row has no more than three leading spaces.
+before comment spans are removed. A comment-altered display equivalent is
+tracked for duplicate detection but never accepted as canonical source. Once a
+header and delimiter establish a table location, a later non-empty table cannot
+replace it merely because the first table had no data row. The first cell in
+every canonical header is the plain-text cell `Mechanism`; inline-code styling
+that displays the same label is refused. The first cell in every canonical row
+is pipe-delimited on both sides, and the row has no more than three leading
+spaces.
 Valid no-leading-pipe Markdown headers and continuing data rows are refused
 explicitly instead of being silently ignored, whether a header delimiter is
 compact, space-padded, or tab-padded. Only contiguous canonical rows are
