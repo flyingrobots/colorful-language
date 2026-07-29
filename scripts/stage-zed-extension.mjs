@@ -11,6 +11,8 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { parse as parseToml } from "smol-toml";
+
 export const ZED_SERVER_NOT_FOUND_CATEGORY = "colorful/server-not-found";
 export const ZED_PACKAGE_FILES = [
   "Cargo.lock",
@@ -21,13 +23,9 @@ export const ZED_PACKAGE_FILES = [
   "src/lib.rs",
 ];
 
-function readTomlString(source, key) {
-  const escaped = key.replaceAll(".", "\\.");
-  const match = source.match(
-    new RegExp(`^${escaped}\\s*=\\s*"([^"]+)"\\s*$`, "mu"),
-  );
-  assert.ok(match, `missing TOML string ${key}`);
-  return match[1];
+function requiredTomlString(value, path) {
+  assert.equal(typeof value, "string", `missing TOML string ${path}`);
+  return value;
 }
 
 function inventory(directory, prefix = "") {
@@ -49,32 +47,41 @@ function inventory(directory, prefix = "") {
 export function validateZedSourcePackage(repositoryRoot, packageRoot) {
   assert.deepEqual(inventory(packageRoot), ZED_PACKAGE_FILES);
 
-  const manifest = readFileSync(
-    path.join(packageRoot, "extension.toml"),
-    "utf8",
+  const manifest = parseToml(
+    readFileSync(path.join(packageRoot, "extension.toml"), "utf8"),
   );
-  const cargo = readFileSync(path.join(packageRoot, "Cargo.toml"), "utf8");
-  const workspace = readFileSync(path.join(repositoryRoot, "Cargo.toml"), "utf8");
+  const cargo = parseToml(
+    readFileSync(path.join(packageRoot, "Cargo.toml"), "utf8"),
+  );
+  const workspace = parseToml(
+    readFileSync(path.join(repositoryRoot, "Cargo.toml"), "utf8"),
+  );
   const source = readFileSync(path.join(packageRoot, "src/lib.rs"), "utf8");
 
-  assert.equal(readTomlString(manifest, "id"), "colorful-language");
-  assert.equal(readTomlString(manifest, "name"), "Colorful Language");
-  assert.match(
-    manifest,
-    /^schema_version\s*=\s*1\s*$/mu,
-    "Zed package must use manifest schema 1",
+  assert.equal(requiredTomlString(manifest.id, "id"), "colorful-language");
+  assert.equal(requiredTomlString(manifest.name, "name"), "Colorful Language");
+  assert.equal(manifest.schema_version, 1, "Zed package must use manifest schema 1");
+  const server = manifest.language_servers?.["colorful-lsp"];
+  assert.deepEqual(
+    server?.languages?.toSorted(),
+    ["Markdown", "Plain Text"],
+    "Zed package must attach to Markdown and Plain Text exactly once",
   );
-  assert.match(
-    manifest,
-    /^languages\s*=\s*\["Markdown", "Plain Text"\]\s*$/mu,
-    "Zed package must attach to Markdown and Plain Text",
-  );
-  assert.match(manifest, /^Markdown\s*=\s*"markdown"\s*$/mu);
-  assert.match(manifest, /^"Plain Text"\s*=\s*"plaintext"\s*$/mu);
+  assert.equal(server?.language_ids?.Markdown, "markdown");
+  assert.equal(server?.language_ids?.["Plain Text"], "plaintext");
 
-  const extensionVersion = readTomlString(manifest, "version");
-  assert.equal(readTomlString(cargo, "version"), extensionVersion);
-  assert.equal(readTomlString(workspace, "version"), extensionVersion);
+  const extensionVersion = requiredTomlString(manifest.version, "version");
+  assert.equal(
+    requiredTomlString(cargo.package?.version, "package.version"),
+    extensionVersion,
+  );
+  assert.equal(
+    requiredTomlString(
+      workspace.workspace?.package?.version,
+      "workspace.package.version",
+    ),
+    extensionVersion,
+  );
   assert.equal(
     readFileSync(path.join(packageRoot, "LICENSE"), "utf8"),
     readFileSync(path.join(repositoryRoot, "LICENSE"), "utf8"),

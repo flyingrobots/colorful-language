@@ -1,8 +1,22 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import { parse as parseYaml } from "yaml";
+
+import {
+  stageZedExtension,
+  validateZedSourcePackage,
+} from "./stage-zed-extension.mjs";
 
 const VSCODE_DIRECTORY = "editors/vscode";
 const PACKAGE_SMOKE_COMMAND = "npm run smoke:package";
@@ -85,6 +99,43 @@ test("package evidence has independent validation boundaries", () => {
     stage >= 0 && build > stage && revalidate > build,
     "the staged Zed tree must be revalidated after its isolated build",
   );
+});
+
+test("Zed package validation is table-aware and formatting-independent", () => {
+  const scratch = mkdtempSync(path.join(tmpdir(), "colorful-zed-package-"));
+  const staged = path.join(scratch, "staged");
+  const authority = path.join(scratch, "authority");
+  mkdirSync(authority);
+  try {
+    stageZedExtension(process.cwd(), staged);
+    writeFileSync(
+      path.join(authority, "Cargo.toml"),
+      `[workspace.metadata.shadow]\nversion = "9.9.9"\n\n${readFileSync("Cargo.toml", "utf8")}`,
+    );
+    writeFileSync(
+      path.join(authority, "LICENSE"),
+      readFileSync("LICENSE"),
+    );
+    writeFileSync(
+      path.join(staged, "Cargo.toml"),
+      `[package.metadata.shadow]\nversion = "9.9.9"\n\n${readFileSync(
+        "editors/zed/Cargo.toml",
+        "utf8",
+      )}`,
+    );
+    const manifestPath = path.join(staged, "extension.toml");
+    writeFileSync(
+      manifestPath,
+      readFileSync(manifestPath, "utf8").replace(
+        'languages = ["Markdown", "Plain Text"]',
+        'languages = [ "Plain Text", "Markdown" ]',
+      ),
+    );
+
+    assert.doesNotThrow(() => validateZedSourcePackage(authority, staged));
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 test("the extension-host smoke rejects cross-drive install paths", () => {
