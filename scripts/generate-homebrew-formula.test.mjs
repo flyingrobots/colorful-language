@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -190,6 +190,22 @@ test("rejects missing native archives even when a sidecar exists", async () => {
       (error) =>
         error instanceof HomebrewFormulaError &&
         error.code === "missing-archive",
+    );
+  });
+});
+
+test("distinguishes unreadable sidecars from missing sidecars", async () => {
+  await withReleaseArchives(async (distDir) => {
+    const target = archiveTargets[0];
+    const archive = `colorful-language-v${version}-${target}.tar.gz`;
+    const sidecar = path.join(distDir, `${archive}.sha256`);
+    await rm(sidecar);
+    await mkdir(sidecar);
+    await assert.rejects(
+      generateHomebrewFormula({ distDir, version }),
+      (error) =>
+        error instanceof HomebrewFormulaError &&
+        error.code === "unreadable-sidecar",
     );
   });
 });

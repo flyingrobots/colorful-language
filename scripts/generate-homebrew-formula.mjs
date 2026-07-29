@@ -117,8 +117,11 @@ async function checksumFromDist(distDir, version, target) {
   try {
     source = await readFile(sidecar, "utf8");
   } catch (error) {
+    const code = error.code === "ENOENT"
+      ? "missing-sidecar"
+      : "unreadable-sidecar";
     throw new HomebrewFormulaError(
-      "missing-sidecar",
+      code,
       `${sidecar}: ${error.code ?? "read-failed"}`,
     );
   }
