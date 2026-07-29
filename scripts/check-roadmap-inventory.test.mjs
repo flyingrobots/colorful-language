@@ -1,5 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -11,6 +19,9 @@ import {
 } from "./check-roadmap-inventory.mjs";
 
 const fixtureRoot = new URL("./fixtures/roadmap-inventory/", import.meta.url);
+const script = fileURLToPath(
+  new URL("./check-roadmap-inventory.mjs", import.meta.url),
+);
 const roadmap = readFileSync(new URL("roadmap.md", fixtureRoot), "utf8");
 const issues = JSON.parse(
   readFileSync(new URL("issues.json", fixtureRoot), "utf8"),
@@ -58,6 +69,44 @@ test("rejects duplicate primary homes", () => {
     "E_ROADMAP_DUPLICATE_PRIMARY",
     (source) => `${source}\n<!-- roadmap-primary: active #101 -->\n`,
   );
+});
+
+test("rejects a duplicate architecture-accountability mechanism by line", () => {
+  const mechanismRow =
+    "| Parser ports | Substitute deterministic adapters. |";
+  const duplicated = roadmap.replace(
+    mechanismRow,
+    `${mechanismRow}\n${mechanismRow}`,
+  );
+  const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-policy-"));
+  const roadmapPath = join(root, "ROADMAP.md");
+  try {
+    writeFileSync(roadmapPath, duplicated, "utf8");
+    const result = spawnSync(
+      process.execPath,
+      [
+        script,
+        "--roadmap",
+        roadmapPath,
+        "--issues",
+        fileURLToPath(new URL("issues.json", fixtureRoot)),
+      ],
+      { encoding: "utf8", timeout: 5_000 },
+    );
+
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout, "");
+    assert.match(
+      result.stderr,
+      new RegExp(
+        `^E_ROADMAP_DUPLICATE_MECHANISM: ${roadmapPath}:26: .*${roadmapPath}:25`,
+        "u",
+      ),
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("rejects a closed slice presented as active", () => {
