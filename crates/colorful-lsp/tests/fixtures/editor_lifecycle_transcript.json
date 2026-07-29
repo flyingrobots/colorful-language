@@ -3,11 +3,13 @@
   "sessions": [
     {
       "languageId": "plaintext",
-      "uri": "file:///tmp/colorful-lsp-contract.txt"
+      "uri": "file:///tmp/colorful-lsp-contract.txt",
+      "text": "The cat is really clear."
     },
     {
       "languageId": "markdown",
-      "uri": "file:///tmp/colorful-lsp-contract.md"
+      "uri": "file:///tmp/colorful-lsp-contract.md",
+      "text": "The cat is really clear.\n\n```text\nThe cat is really clear.\n```\n"
     }
   ],
   "steps": [
@@ -55,7 +57,7 @@
             "uri": "$URI",
             "languageId": "$LANGUAGE_ID",
             "version": 1,
-            "text": "The cat is really clear."
+            "text": "$DOCUMENT_TEXT"
           }
         }
       }

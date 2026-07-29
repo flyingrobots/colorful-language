@@ -24,6 +24,30 @@ use tower_lsp::lsp_types::{
     SemanticTokenType,
 };
 
+/// The source format that determines which document regions contain prose.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DocumentFormat {
+    /// Analyze the complete document.
+    PlainText,
+    /// Analyze Markdown prose while excluding reviewed syntax regions.
+    Markdown,
+}
+
+impl DocumentFormat {
+    /// Map an LSP language identifier to the supported document format.
+    ///
+    /// Unknown identifiers deliberately retain the historical Plain Text
+    /// behavior rather than silently dropping analysis.
+    #[must_use]
+    pub fn from_language_id(language_id: &str) -> Self {
+        if language_id.eq_ignore_ascii_case("markdown") {
+            Self::Markdown
+        } else {
+            Self::PlainText
+        }
+    }
+}
+
 /// The semantic-token legend, in index order, derived from the
 /// `colorful.vocabulary/v1` manifest (the distinct LSP token types its roles
 /// project to). The default contextual path is a *skeleton* highlighter: it
@@ -231,6 +255,27 @@ where
     let findings = analyzer.analyze(text, classification.tree(), classification.tokens());
     let diagnostics = diagnostics_from(text, findings);
     Ok(DocumentAnalysis::new(semantic_tokens, diagnostics))
+}
+
+/// Analyze one document according to its source format.
+///
+/// # Errors
+///
+/// Returns a typed [`ClassificationError`] if the parser or annotator emits
+/// malformed public tree/token data.
+pub fn analyze_document_for_format<P, A, An>(
+    text: &str,
+    _format: DocumentFormat,
+    parser: &P,
+    annotator: &A,
+    analyzer: &An,
+) -> Result<DocumentAnalysis, ClassificationError>
+where
+    P: Parser,
+    A: Annotator,
+    An: Analyzer,
+{
+    analyze_document(text, parser, annotator, analyzer)
 }
 
 /// Compute the delta-encoded LSP semantic tokens for `text`.
@@ -442,6 +487,55 @@ mod tests {
         assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
         assert_eq!(annotator_calls.load(Ordering::SeqCst), 1);
         assert_eq!(analyzer_calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn markdown_analysis_excludes_fenced_code_from_both_lsp_surfaces() {
+        let source = concat!(
+            "The cat is really clear.\n\n",
+            "```text\n",
+            "The cat is really clear. 😀\n",
+            "```\n\n",
+            "The cat connects.\n",
+        );
+        let analysis = analyze_document_for_format(
+            source,
+            DocumentFormat::Markdown,
+            &ProseParser::new(),
+            &ContextualOpenClassAnnotator::default(),
+            &colorful_lint::ProseLinter::new(),
+        )
+        .expect("built-in Markdown analysis is valid");
+
+        assert_eq!(analysis.diagnostics().len(), 1, "{analysis:?}");
+        assert_eq!(
+            analysis.diagnostics()[0].range,
+            Range::new(Position::new(0, 11), Position::new(0, 17))
+        );
+
+        let mut line = 0u32;
+        let mut start = 0u32;
+        let decoded: Vec<_> = analysis
+            .semantic_tokens()
+            .iter()
+            .map(|token| {
+                if token.delta_line == 0 {
+                    start += token.delta_start;
+                } else {
+                    line += token.delta_line;
+                    start = token.delta_start;
+                }
+                (line, start, token.length, token.token_type)
+            })
+            .collect();
+        assert!(
+            decoded.iter().all(|(line, ..)| !(2..=4).contains(line)),
+            "fenced code emitted semantic tokens: {decoded:?}"
+        );
+        assert!(
+            decoded.iter().any(|token| *token == (6, 4, 3, 4)),
+            "the noun after the fence lost its source coordinate: {decoded:?}"
+        );
     }
 
     struct OverlappingAnnotator;

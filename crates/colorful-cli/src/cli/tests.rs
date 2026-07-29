@@ -11,6 +11,27 @@ fn passthrough_when_color_disabled() {
 }
 
 #[test]
+fn markdown_lint_matches_lsp_prose_regions_while_plain_text_stays_whole_document() {
+    let source = concat!(
+        "The cat is really clear.\n\n",
+        "```text\n",
+        "The cat is really clear.\n",
+        "```\n",
+    );
+    let mut markdown = Vec::new();
+    let mut plain_text = Vec::new();
+
+    assert!(lint_to_writer("fixture.md", source, &mut markdown).unwrap());
+    assert!(lint_to_writer("fixture.txt", source, &mut plain_text).unwrap());
+
+    let markdown = String::from_utf8(markdown).expect("UTF-8 lint output");
+    let plain_text = String::from_utf8(plain_text).expect("UTF-8 lint output");
+    assert_eq!(markdown.lines().count(), 1, "{markdown}");
+    assert_eq!(plain_text.lines().count(), 2, "{plain_text}");
+    assert!(markdown.starts_with("fixture.md:1:12: info [weak-word]"));
+}
+
+#[test]
 fn projection_for_none_role_is_none() {
     // sgr() and diagnose_json() both feed visual_role_for()/visual_role()'s
     // Option through projection_for(). Every real PosClass currently has a
