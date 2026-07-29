@@ -9,6 +9,11 @@ versioning:
   tag_format: "v{version}"
   release_branch_format: "release/v{version}"
   milestone_format: "v{version}"
+  editor_adapters:
+    strategy: synchronized
+    server: colorful-lsp
+    compatibility: same-pre-1.0-minor
+    prerelease: unsupported
 version_sources:
   - path: Cargo.toml
     type: cargo-workspace
@@ -17,6 +22,26 @@ version_sources:
   - path: Cargo.lock
     type: cargo-lock
     field: package.version
+    required: true
+  - path: editors/vscode/package.json
+    type: npm-package
+    field: version
+    required: true
+  - path: editors/vscode/package-lock.json
+    type: npm-lock
+    field: version-and-root.version
+    required: true
+  - path: editors/zed/extension.toml
+    type: zed-extension
+    field: version
+    required: true
+  - path: editors/zed/Cargo.toml
+    type: cargo-package
+    field: package.version
+    required: true
+  - path: editors/zed/Cargo.lock
+    type: cargo-lock-package
+    field: package[colorful-language-zed].version
     required: true
 docs:
   changelog: CHANGELOG.md
@@ -38,6 +63,7 @@ docs:
     - docs/DOCUMENTATION_STANDARDS.md
 validation:
   profile: bash scripts/release-profile-check.sh
+  editor_compatibility: node scripts/check-editor-version-policy.mjs
   prep: bash scripts/release-prep.sh
   preflight: bash scripts/release-preflight.sh v{version}
 workflows:

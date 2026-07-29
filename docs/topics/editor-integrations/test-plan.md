@@ -181,7 +181,14 @@ Verification for editor adapters and the `colorful-lsp` surface.
   version makes the deterministic policy check fail. *Evidence type:*
   manifest-policy checker and mutation tests. *Tracking:*
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
-  *Status:* planned.
+  *Evidence:* `scripts/check-editor-version-policy.test.mjs`
+  `the synchronized policy derives the same pre-1.0 minor range`,
+  `same-minor stable servers are compatible and breaking minors are not`,
+  `rejects disagreement between both npm lockfile version fields`,
+  `treats the workspace manifest as the synchronized version authority`, the
+  per-source drift and prerelease mutation cases, and
+  `the checked-in repository satisfies the policy`.
+  *Status:* implemented.
 - **EDIT-9b** — *Requirement:* EDIT-9. *Behavior:* the release profile lists
   every synchronized editor version source, records the same-minor
   `colorful-lsp` compatibility rule and unsupported-prerelease policy, and
@@ -190,7 +197,13 @@ Verification for editor adapters and the `colorful-lsp` surface.
   a different strategy or compatibility rule, and a missing gate command.
   *Evidence type:* release-profile and workflow mutation tests. *Tracking:*
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
-  *Status:* planned.
+  *Evidence:* `.continuum/release.yml`;
+  `scripts/check-editor-version-policy.test.mjs`
+  `rejects compatibility and prerelease policy drift`,
+  `rejects missing, duplicated, unexpected, or reordered version sources`, and
+  `rejects missing policy wiring in every release gate`;
+  `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
+  `scripts/release-prep.sh`. *Status:* implemented.
 - **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* signed VS Code/Open VSX and
   Zed releases plus compatible platform server binaries publish at real URLs,
   install on a clean machine, and roll back to the previous compatible set.
@@ -212,8 +225,6 @@ Verification for editor adapters and the `colorful-lsp` surface.
 ## Open verification gaps
 
 - Packaged clean-install and transcript evidence remains open in EDIT-8a.
-- Adapter/server compatibility policy and drift evidence remains open in
-  EDIT-9a and EDIT-9b.
 - Signed publication, rollback, visual/theme evidence, and measured
   install-to-first-highlight time remain open in EDIT-10a and EDIT-10b.
 - A shipped theme remains a planned artifact. Theme fallback belongs in #136;

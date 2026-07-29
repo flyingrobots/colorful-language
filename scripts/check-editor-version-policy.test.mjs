@@ -8,6 +8,7 @@ import {
   isCompatibleLspVersion,
   loadRepositorySnapshot,
   validateEditorVersionPolicy,
+  validatedNpmLockVersion,
 } from "./check-editor-version-policy.mjs";
 
 const RELEASE_VERSION = "0.4.0";
@@ -51,6 +52,35 @@ test("same-minor stable servers are compatible and breaking minors are not", () 
   assert.equal(isCompatibleLspVersion("0.4.0", "0.4.1-rc.1"), false);
 });
 
+test("rejects disagreement between both npm lockfile version fields", () => {
+  assert.equal(
+    validatedNpmLockVersion({
+      version: RELEASE_VERSION,
+      packages: { "": { version: RELEASE_VERSION } },
+    }),
+    RELEASE_VERSION,
+  );
+  assert.throws(
+    () =>
+      validatedNpmLockVersion({
+        version: "0.4.1",
+        packages: { "": { version: RELEASE_VERSION } },
+      }),
+    /package-lock\.json versions disagree/u,
+  );
+  assert.throws(
+    () =>
+      validatedNpmLockVersion({
+        packages: { "": { version: RELEASE_VERSION } },
+      }),
+    /package-lock\.json has no top-level version/u,
+  );
+  assert.throws(
+    () => validatedNpmLockVersion({ version: RELEASE_VERSION, packages: {} }),
+    /package-lock\.json has no root package version/u,
+  );
+});
+
 test("accepts the complete synchronized manifest and gate inventory", () => {
   assert.deepEqual(validateEditorVersionPolicy(validSnapshot()), {
     releaseVersion: RELEASE_VERSION,
@@ -59,7 +89,16 @@ test("accepts the complete synchronized manifest and gate inventory", () => {
   });
 });
 
-for (const source of EXPECTED_VERSION_SOURCES) {
+test("treats the workspace manifest as the synchronized version authority", () => {
+  const snapshot = validSnapshot();
+  snapshot.versions["Cargo.toml"] = "0.4.1";
+  assert.throws(
+    () => validateEditorVersionPolicy(snapshot),
+    /Cargo\.lock has 0\.4\.0; expected 0\.4\.1/u,
+  );
+});
+
+for (const source of EXPECTED_VERSION_SOURCES.slice(1)) {
   test(`rejects drift in ${source.path}`, () => {
     const snapshot = validSnapshot();
     snapshot.versions[source.path] = "0.4.1";

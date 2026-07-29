@@ -6,6 +6,10 @@ Markdown and Plain Text buffers.
 
 ## Requirements
 
+The extension version is synchronized with the Colorful workspace release. For
+extension `0.Y.Z`, use a stable `colorful-lsp` in
+`>=0.Y.0, <0.(Y+1).0`; prereleases and a different minor line are unsupported.
+
 The extension starts the `colorful-lsp` language server. Install it once:
 
 ```bash

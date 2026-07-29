@@ -112,7 +112,12 @@ Verification for release preparation, tag automation, and release witnesses.
   prerelease, and gate-wiring mutations each fail with a stable category.
   *Evidence type:* release-policy checker and mutation test. *Tracking:*
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
-  *Status:* planned.
+  *Evidence:* `.continuum/release.yml`;
+  `scripts/check-editor-version-policy.mjs`;
+  `scripts/check-editor-version-policy.test.mjs`;
+  `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
+  `scripts/release-profile-check.sh`; `scripts/release-prep.sh`;
+  `docs/RELEASING.md`. *Status:* implemented.
 
 ## Open verification gaps
 

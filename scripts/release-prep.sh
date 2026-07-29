@@ -22,6 +22,8 @@ command -v zizmor >/dev/null 2>&1 || fail "zizmor is required"
 bash scripts/check-node-version.test.sh
 bash scripts/check-node-version.sh
 bash scripts/release-profile-check.sh
+node --test scripts/check-editor-version-policy.test.mjs
+node scripts/check-editor-version-policy.mjs
 node scripts/check-evidence-toolchains.mjs --self-test
 node scripts/check-evidence-toolchains.mjs
 node --test scripts/check-property-fuzz-policy.test.mjs

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Synchronized editor/server release compatibility.** The Cargo workspace,
+  VS Code manifest and lockfile, Zed extension manifest, and standalone Zed
+  crate and lockfile now share one release version. The release profile
+  declares every source plus a stable same-pre-1.0-minor `colorful-lsp`
+  compatibility rule, and a deterministic 17-case policy suite rejects source
+  drift, prereleases, potentially breaking next-minor servers, incomplete
+  profile inventory, or missing CI/release wiring. Pull-request CI, release
+  preparation, and tag publication run the same checker.
 - **Optional Vale v3 analyzer comparison.** A non-publishable
   `colorful-vale` outer crate now discovers an explicitly configured Vale v3
   executable, isolates ambient global configuration, bounds and cancels the

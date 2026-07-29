@@ -15,6 +15,8 @@ Repo-local release mechanics are declared in
 boring facts automation can check:
 
 - fixed SemVer versioning from `Cargo.toml`'s `workspace.package.version`;
+- synchronized VS Code and Zed adapter versions with stable
+  same-pre-1.0-minor `colorful-lsp` compatibility;
 - tag format `v{version}`;
 - release branch format `release/v{version}`;
 - milestone format `v{version}`;
@@ -22,6 +24,7 @@ boring facts automation can check:
 - release signposts such as `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
   `docs/topics/`, `docs/workflows/`, and maintainer docs;
 - validation entrypoints in `scripts/release-profile-check.sh`,
+  `scripts/check-editor-version-policy.mjs`,
   `scripts/release-prep.sh`, and `scripts/release-preflight.sh`;
 - current publication by pushing a `v*` tag, which triggers
   [`.github/workflows/release.yml`](../.github/workflows/release.yml).
@@ -165,6 +168,34 @@ changes bump the minor version.
   without stable guarantees. Prerelease artifacts must not be treated as the
   stable release.
 
+## Editor adapter versioning
+
+The Cargo workspace, VS Code extension manifest and lockfile, Zed extension
+manifest, and standalone Zed crate and lockfile share the release version. A
+release-preparation version update changes them as one reviewed set.
+
+For an adapter version `0.Y.Z`, compatible `colorful-lsp` versions are stable
+releases in:
+
+```text
+>=0.Y.0, <0.(Y+1).0
+```
+
+This admits server patch releases from the same minor line. A server minor bump
+is potentially breaking under the pre-1.0 policy and requires a synchronized
+adapter release. Prerelease adapters and servers are unsupported; adding them
+requires a deliberate profile, channel, ordering, and rollback policy change.
+
+The release profile lists every synchronized source. Check them with:
+
+```bash
+node scripts/check-editor-version-policy.mjs
+```
+
+The checker also requires its command in pull-request CI, release preparation,
+and tag publication. Do not align version numbers by hand without changing the
+workspace release version through the release process.
+
 ## Milestones and labels
 
 Use GitHub milestones as release buckets: `v0.3.0`, `v0.3.1`, `v0.4.0`. Do not
@@ -285,6 +316,7 @@ bash scripts/release-prep.sh
 That script runs:
 
 - release profile check, including `Cargo.lock` workspace crate versions;
+- synchronized editor/server compatibility and gate wiring;
 - Rust format, clippy, and tests;
 - package witness;
 - release build;
