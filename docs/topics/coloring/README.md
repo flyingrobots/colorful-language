@@ -220,6 +220,14 @@ cargo run --locked --release -p colorful-cli \
   --example cross_stage_benchmark > /tmp/colorful-cross-stage.json
 ```
 
+Report regeneration is intentionally a repository-workspace operation: the
+harness needs the clean Git source identity and linked Graft authority. It
+derives the allocation-counter label from the single `stats_alloc` package
+reported by `cargo metadata --locked --offline`, so a dependency update cannot
+silently retain an old profiler version. The packaged report-contract test does
+not rerun timings; it resolves the same identity from the package witness's
+generated lockfile and rejects a stale committed label.
+
 macOS and Linux supply automatic date, processor, architecture, operating
 system, and memory probes. On another host, set
 `COLORFUL_BENCHMARK_GENERATED_AT` (`YYYY-MM-DDTHH:MM:SSZ`),

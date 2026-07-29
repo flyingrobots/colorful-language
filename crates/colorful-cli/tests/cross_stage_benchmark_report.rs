@@ -5,8 +5,14 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use serde_json::Value;
+
+#[path = "../examples/cross_stage_benchmark/dependency.rs"]
+mod cross_stage_dependency;
+
+use cross_stage_dependency::resolved_package_identity;
 
 const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
 const GRAFT_REPORT_SCHEMA: &str = "colorful.performance.graft-projection/v1";
@@ -62,6 +68,38 @@ fn report() -> Value {
         .unwrap_or_else(|error| panic!("read benchmark report {}: {error}", path.display()));
     serde_json::from_slice(&bytes)
         .unwrap_or_else(|error| panic!("parse benchmark report {}: {error}", path.display()))
+}
+
+fn lockfile_workspace_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .find(|ancestor| {
+            ancestor.join("Cargo.toml").is_file() && ancestor.join("Cargo.lock").is_file()
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "no Cargo.toml/Cargo.lock authority above {}",
+                env!("CARGO_MANIFEST_DIR")
+            )
+        })
+        .to_owned()
+}
+
+fn resolved_allocation_counter() -> String {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let output = Command::new(&cargo)
+        .args(["metadata", "--locked", "--offline", "--format-version", "1"])
+        .current_dir(lockfile_workspace_root())
+        .output()
+        .unwrap_or_else(|error| panic!("run locked Cargo metadata with {cargo}: {error}"));
+    assert!(
+        output.status.success(),
+        "locked Cargo metadata failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let source = String::from_utf8(output.stdout)
+        .unwrap_or_else(|error| panic!("Cargo metadata emitted non-UTF-8 output: {error}"));
+    resolved_package_identity(&source, "stats_alloc").unwrap_or_else(|error| panic!("{error}"))
 }
 
 fn object_string<'a>(value: &'a Value, key: &str) -> &'a str {
@@ -281,9 +319,14 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
             .get("workspace")
             .and_then(toml::Value::as_bool)
             == Some(true)
-            || stats_alloc.get("version").and_then(toml::Value::as_str) == Some("0.1.10")
-            || stats_alloc.as_str() == Some("0.1.10"),
-        "the allocation probe must use stats_alloc 0.1.10 from either the workspace or normalized package manifest"
+            || stats_alloc
+                .get("version")
+                .and_then(toml::Value::as_str)
+                .is_some_and(|version| !version.is_empty())
+            || stats_alloc
+                .as_str()
+                .is_some_and(|version| !version.is_empty()),
+        "the allocation probe must declare stats_alloc through the workspace or normalized package manifest"
     );
     assert!(
         manifest["dev-dependencies"].get("dhat").is_none(),
@@ -298,7 +341,7 @@ fn cross_stage_benchmark_report_is_complete_and_advisory() {
     assert_eq!(metadata["profile"], "release");
     assert_eq!(metadata["timingSamplesPerStage"].as_u64(), Some(9));
     assert_eq!(metadata["allocationSamplesPerStage"].as_u64(), Some(1));
-    assert_eq!(metadata["allocationCounter"], "stats_alloc 0.1.10");
+    assert_eq!(metadata["allocationCounter"], resolved_allocation_counter());
     assert_eq!(metadata["throughputBasis"], "source-utf8-bytes");
     assert!(
         metadata["totalMemoryBytes"]

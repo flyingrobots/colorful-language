@@ -20,16 +20,88 @@ use std::time::Instant;
 
 use serde_json::{json, Value};
 
+#[path = "cross_stage_benchmark/dependency.rs"]
+mod cross_stage_dependency;
 mod cross_stage_support;
 
+use cross_stage_dependency::resolved_package_identity;
 use cross_stage_support::{Corpus, PreparedStageInput, Stage, CORPORA, STAGES};
 
 const REPORT_SCHEMA: &str = "colorful.performance.cross-stage/v1";
 const ALLOCATION_REPORT_SCHEMA: &str = "colorful.performance.allocations/v1";
 const GRAFT_REPORT_SCHEMA: &str = "colorful.performance.graft-projection/v1";
 const TIMING_SAMPLES: usize = 9;
-const ALLOCATION_COUNTER: &str = "stats_alloc 0.1.10";
 const THROUGHPUT_BASIS: &str = "source-utf8-bytes";
+
+#[cfg(test)]
+mod dependency_tests {
+    use serde_json::json;
+
+    use super::resolved_package_identity;
+
+    fn metadata(packages: &[(&str, serde_json::Value)]) -> String {
+        json!({
+            "packages": packages
+                .iter()
+                .map(|(name, version)| json!({
+                    "name": name,
+                    "version": version,
+                }))
+                .collect::<Vec<_>>()
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn resolved_profiler_identity_follows_version_mutations() {
+        let source = metadata(&[("stats_alloc", json!("9.9.9"))]);
+        assert_eq!(
+            resolved_package_identity(&source, "stats_alloc"),
+            Ok("stats_alloc 9.9.9".to_owned())
+        );
+    }
+
+    #[test]
+    fn resolved_profiler_identity_fails_closed() {
+        for (name, source, expected) in [
+            ("malformed", "{", "Cargo metadata must be valid JSON"),
+            (
+                "missing",
+                r#"{"packages":[]}"#,
+                "Cargo metadata must resolve exactly one stats_alloc package; found 0",
+            ),
+            (
+                "missing-packages",
+                r#"{}"#,
+                "Cargo metadata packages must be an array",
+            ),
+            (
+                "duplicated",
+                &metadata(&[
+                    ("stats_alloc", json!("0.1.10")),
+                    ("stats_alloc", json!("0.2.0")),
+                ]),
+                "Cargo metadata must resolve exactly one stats_alloc package; found 2",
+            ),
+            (
+                "empty-version",
+                &metadata(&[("stats_alloc", json!(""))]),
+                "resolved stats_alloc version must be a non-empty string",
+            ),
+            (
+                "typed-version",
+                &metadata(&[("stats_alloc", json!(1))]),
+                "resolved stats_alloc version must be a non-empty string",
+            ),
+        ] {
+            assert_eq!(
+                resolved_package_identity(source, "stats_alloc"),
+                Err(expected.to_owned()),
+                "{name} metadata must fail with its stable category"
+            );
+        }
+    }
+}
 
 struct StageMeasurement {
     stage: &'static str,
@@ -119,6 +191,15 @@ fn allocation_measurements() -> BTreeMap<(String, String), (u64, u64)> {
         );
     }
     measurements
+}
+
+fn allocation_counter() -> String {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let metadata = command_output(
+        &cargo,
+        &["metadata", "--locked", "--offline", "--format-version", "1"],
+    );
+    resolved_package_identity(&metadata, "stats_alloc").unwrap_or_else(|error| panic!("{error}"))
 }
 
 fn node_program() -> String {
@@ -320,6 +401,7 @@ fn main() {
         "cross_stage_benchmark requires a clean worktree so sourceCommit is trustworthy"
     );
 
+    let allocation_counter = allocation_counter();
     let node = node_program();
     let mut measurements = Vec::new();
 
@@ -432,7 +514,7 @@ fn main() {
             "profile": "release",
             "timingSamplesPerStage": TIMING_SAMPLES,
             "allocationSamplesPerStage": 1,
-            "allocationCounter": ALLOCATION_COUNTER,
+            "allocationCounter": allocation_counter,
             "throughputBasis": THROUGHPUT_BASIS,
             "totalMemoryBytes": total_memory_bytes(),
             "sourceCommit": command_output("git", &["rev-parse", "HEAD"])

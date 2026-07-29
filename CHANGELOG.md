@@ -457,6 +457,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Resolved benchmark profiler identity.** The cross-stage release harness now
+  derives its `stats_alloc` name and version from locked, offline Cargo metadata
+  instead of a synchronized string. Pure mutation tests reject malformed,
+  missing, duplicated, empty, and changed identities; the packaged
+  report-contract test resolves the package witness's generated lockfile and
+  rejects stale baseline metadata without rerunning wall-clock measurements.
 - **Breaking diagnostic-rule API queued for v0.4.0.** `Rule` can now carry a
   validated owned external diagnostic code via `Rule::external`, and
   `Rule::code` returns a borrow tied to `&self`. Consequently `Rule` is no
