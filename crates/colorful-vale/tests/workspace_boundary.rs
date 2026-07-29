@@ -173,6 +173,26 @@ fn process_deadline_precedes_completed_io_acceptance() {
 }
 
 #[test]
+fn linting_reference_resolves_an_absolute_vale_executable() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("workspace root");
+    let reference = fs::read_to_string(root.join("docs/topics/linting/README.md"))
+        .expect("read linting reference");
+
+    assert!(
+        !reference.contains("ValeConfig::new(\"vale\","),
+        "the isolated child cannot portably resolve a bare executable"
+    );
+    assert!(
+        reference.contains(".filter(|path| path.is_absolute())")
+            && reference.contains("VALE_BIN must name an absolute Vale executable"),
+        "the example must validate its caller-selected executable before discovery"
+    );
+}
+
+#[test]
 fn workspace_dependency_entries_have_actual_consumers() {
     let workspace = manifest("Cargo.toml");
     let workspace_dependencies = workspace["workspace"]["dependencies"]
