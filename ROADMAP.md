@@ -172,6 +172,11 @@ observe public-contract regressions before they ship.
   a workspace gate
   [#230](https://github.com/flyingrobots/colorful-language/issues/230).
   <!-- roadmap-primary: parked #230 -->
+- **Open process-test determinism:** replace the Vale timeout fixture's
+  scheduler race with an explicit worker-ready seam while preserving the real
+  timeout and descendant-cleanup postconditions
+  [#240](https://github.com/flyingrobots/colorful-language/issues/240).
+  <!-- roadmap-primary: active #240 -->
 
 **Exit signal:** the documented local gate and the protected-branch gate name
 the same reproducible evidence; public binary transport and API examples are
@@ -318,6 +323,12 @@ was installed, and reach the first useful editor result.
   stable
   [#225](https://github.com/flyingrobots/colorful-language/issues/225).
   <!-- roadmap-primary: parked #225 -->
+- **Parked Markdown region awareness:** suppress prose analysis inside fenced
+  code and other reviewed non-prose regions only through a format adapter that
+  preserves source coordinates and core purity
+  [#241](https://github.com/flyingrobots/colorful-language/issues/241), after
+  the publication path has real users.
+  <!-- roadmap-primary: parked #241 -->
 
 **Exit signal:** public URLs, signed or checksummed artifacts, version
 compatibility, clean-install smoke tests, rollback instructions, and measured
