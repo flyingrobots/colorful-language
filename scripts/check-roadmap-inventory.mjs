@@ -498,12 +498,12 @@ function displaysMechanismHeader(mechanism, location) {
   }
 }
 
-function markdownLinkLabel(source) {
-  if (!source.startsWith("[")) {
+function markdownInlineLinkAt(source, labelStart) {
+  if (source[labelStart] !== "[") {
     return undefined;
   }
   let labelEnd = -1;
-  for (let index = 1; index < source.length; index += 1) {
+  for (let index = labelStart + 1; index < source.length; index += 1) {
     if (source[index] === "\\") {
       index += 1;
     } else if (source[index] === "]") {
@@ -526,15 +526,40 @@ function markdownLinkLabel(source) {
       } else if (source[index] === ")") {
         depth -= 1;
         if (depth === 0) {
-          return index === source.length - 1
-            ? source.slice(1, labelEnd)
-            : undefined;
+          return {
+            label: source.slice(labelStart + 1, labelEnd),
+            end: index + 1,
+          };
         }
       }
     }
     return undefined;
   }
   return undefined;
+}
+
+function renderInlineLinkLabels(source) {
+  let visible = "";
+  for (let index = 0; index < source.length; ) {
+    if (source[index] === "\\") {
+      visible += source[index];
+      index += 1;
+      if (index < source.length) {
+        visible += source[index];
+        index += 1;
+      }
+      continue;
+    }
+    const link = markdownInlineLinkAt(source, index);
+    if (link !== undefined) {
+      visible += link.label;
+      index = link.end;
+      continue;
+    }
+    visible += source[index];
+    index += 1;
+  }
+  return visible;
 }
 
 function decodeNumericCharacterReferences(source) {
@@ -574,7 +599,7 @@ function displaysRenderedMechanismHeader(mechanism, location) {
   if (displaysMechanismHeader(mechanism, location)) {
     return true;
   }
-  const visibleSource = markdownLinkLabel(mechanism) ?? mechanism;
+  const visibleSource = renderInlineLinkLabels(mechanism);
   return (
     decodeNumericCharacterReferences(
       removeBalancedAsteriskStyleDelimiters(visibleSource),

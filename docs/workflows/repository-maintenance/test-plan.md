@@ -246,7 +246,7 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   fixture mutations cover exact duplicate rows, missing/recased or
   code-indented headings, comment-altered and closing-hash variants in both
   source orders, duplicate headings, comment-altered header and delimiter
-  source, plain, inline-code-styled, inline-linked,
+  source, plain, inline-code-styled, whole-cell and partial inline-linked,
   numeric-character-reference, fully styled, and partially
   asterisk-emphasized duplicate table headers plus unresolved-reference and
   intraword-underscore negative controls, incomplete plain and styled header

@@ -658,6 +658,7 @@ test("rejects a styled duplicate accountability table header", () => {
 test("rejects rendered-equivalent duplicate table headers", () => {
   for (const header of [
     "[Mechanism](#other)",
+    "[Mech](#other)anism",
     "Mech&#97;nism",
     "Mech&#x61;nism",
     "**Mech**anism",

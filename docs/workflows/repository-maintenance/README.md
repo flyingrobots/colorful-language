@@ -226,10 +226,10 @@ The same offline structure gate applies these fail-closed rules:
   and delimiter establish a table location, a later non-empty table cannot
   replace it merely because the first table had no data row. The first cell in
   every canonical header is the plain-text cell `Mechanism`. Inline code,
-  whole-span styling, partial asterisk emphasis, inline links, numeric
-  character references, or comments that display the same label are refused.
-  Unresolved reference-link source remains literal rather than gaining an
-  invented definition. The
+  whole-span styling, partial asterisk emphasis, whole-cell or partial inline
+  links, numeric character references, or comments that display the same label
+  are refused. Unresolved reference-link source remains literal rather than
+  gaining an invented definition. The
   `Mechanism` header cell and every delimiter cell must be valid in literal
   source; comments cannot synthesize either. Only ASCII space and tab
   characters count as table-cell padding; Unicode whitespace cannot disguise a
