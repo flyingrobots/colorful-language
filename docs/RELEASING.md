@@ -340,8 +340,8 @@ That script runs:
 - synchronized editor/server compatibility and gate wiring;
 - signed native/editor distribution policy and mutation self-tests;
 - Homebrew formula generation, archive-integrity, and release-order self-tests;
-- exact Ruby 3.4.10 formula-syntax evidence through the full-SHA-pinned
-  `ruby/setup-ruby` action;
+- policy enforcement that the tag workflow performs formula-syntax evidence
+  with Ruby 3.4.10 through the full-SHA-pinned `ruby/setup-ruby` action;
 - Rust format, clippy, and tests;
 - package witness;
 - release build;
