@@ -61,6 +61,7 @@ function validSnapshot() {
           ],
         },
         "binary-artifacts": {
+          "runs-on": "${{ matrix.runner }}",
           needs: "validate-release",
           permissions: {
             contents: "read",
@@ -287,6 +288,43 @@ test("requires matrix values to enter shell through step-scoped env", () => {
     () => validateReleaseDistribution(packageInjection),
     /package must isolate reviewed matrix values in env/u,
   );
+});
+
+test("binds native dispatch and release side effects to the reviewed topology", () => {
+  const wrongRunner = validSnapshot();
+  wrongRunner.workflow.jobs["binary-artifacts"]["runs-on"] = "ubuntu-24.04";
+  assert.throws(
+    () => validateReleaseDistribution(wrongRunner),
+    /native job must dispatch through matrix\.runner/u,
+  );
+
+  const reviewedOrder = [
+    "Check release distribution policy",
+    "Download native archives",
+    "Build and smoke editor packages",
+    "Attest editor artifacts",
+    "Verify and publish editor extension",
+    "Verify published editor bytes",
+    "Publish to crates.io",
+    "Create GitHub Release",
+  ];
+  for (let index = 0; index < reviewedOrder.length - 1; index += 1) {
+    const snapshot = validSnapshot();
+    const steps = snapshot.workflow.jobs.release.steps;
+    const earlierIndex = steps.findIndex(
+      (step) => step.name === reviewedOrder[index],
+    );
+    const [earlier] = steps.splice(earlierIndex, 1);
+    const laterIndex = steps.findIndex(
+      (step) => step.name === reviewedOrder[index + 1],
+    );
+    steps.splice(laterIndex + 1, 0, earlier);
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /reviewed release step order/u,
+      `${reviewedOrder[index]} may not follow ${reviewedOrder[index + 1]}`,
+    );
+  }
 });
 
 test("requires signed checksummed native archives", () => {
