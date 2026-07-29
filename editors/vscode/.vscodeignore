@@ -4,6 +4,7 @@
 smoke/**
 src/**
 node_modules/**
+**/*.map
 package-lock.json
 tsconfig.json
 *.vsix

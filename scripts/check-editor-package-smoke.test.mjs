@@ -53,10 +53,12 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
     packageJson.scripts?.["package:vsix"],
     "vsce package --no-yarn --no-dependencies",
   );
-  assert.match(
-    readFileSync("editors/vscode/.vscodeignore", "utf8"),
-    /^node_modules\/\*\*$/mu,
+  const packageIgnore = readFileSync(
+    "editors/vscode/.vscodeignore",
+    "utf8",
   );
+  assert.match(packageIgnore, /^node_modules\/\*\*$/mu);
+  assert.match(packageIgnore, /^\*\*\/\*\.map$/mu);
   assert.equal(
     packageJson.scripts?.["smoke:package"],
     "node smoke/run-packaged-smoke.mjs",
