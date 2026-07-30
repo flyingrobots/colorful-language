@@ -147,12 +147,15 @@ Verification for editor adapters and the `colorful-lsp` surface.
   stays on the host major`, `rejects drift from the reviewed declaration
   release`, `rejects a locked Node declaration major outside the host
   line`, `rejects a runtime policy that drifts from the extension floor`,
+  `rejects an evidence URL that drifts from the Electron pin`,
   `rejects Dependabot policy without the Node declaration freeze`, `rejects a
   partial scalar Dependabot update-types impostor`,
   `categorizes malformed Dependabot policy containers`, `rejects weakened
-  TypeScript declaration checking`, and `rejects current editor documentation
-  that drifts from host policy`, plus `rejects a documented Node declaration
-  major outside the host line`;
+  TypeScript declaration checking`, `rejects disabled TypeScript strict mode`,
+  `rejects a lockfile root that stops repeating the declaration pin`, and
+  `rejects current editor documentation that drifts from host policy`, plus
+  `rejects a documented Node declaration major outside the host line` and
+  `accepts runtime documentation facts wrapped across lines`;
   `scripts/check-dependency-update-policy.mjs`;
   `scripts/check-dependency-update-policy.test.mjs` tests `rejects automatic VS
   Code Node declaration updates`, `rejects a partial VS Code Node declaration

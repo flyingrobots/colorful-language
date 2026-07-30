@@ -245,6 +245,12 @@ test("rejects drift from the reviewed declaration release", () => {
   expectCode(input, "E_VSCODE_NODE_TYPES");
 });
 
+test("rejects a lockfile root that stops repeating the declaration pin", () => {
+  const input = fixture();
+  input.lockfile.packages[""].devDependencies["@types/node"] = "20.20.0";
+  expectCode(input, "E_VSCODE_NODE_TYPES");
+});
+
 test("rejects a locked Node declaration major outside the host line", () => {
   const input = fixture();
   input.lockfile.packages["node_modules/@types/node"].version = "21.7.3";
@@ -254,6 +260,13 @@ test("rejects a locked Node declaration major outside the host line", () => {
 test("rejects a runtime policy that drifts from the extension floor", () => {
   const input = fixture();
   input.runtimePolicy.minimumVscodeVersion = "1.92.0";
+  expectCode(input, "E_VSCODE_HOST_POLICY");
+});
+
+test("rejects an evidence URL that drifts from the Electron pin", () => {
+  const input = fixture();
+  input.runtimePolicy.evidenceUrl =
+    "https://releases.electronjs.org/release/v30.0.0";
   expectCode(input, "E_VSCODE_HOST_POLICY");
 });
 
@@ -279,6 +292,12 @@ test("categorizes malformed Dependabot policy containers", () => {
 test("rejects weakened TypeScript declaration checking", () => {
   const input = fixture();
   input.tsconfig.compilerOptions.skipLibCheck = true;
+  expectCode(input, "E_VSCODE_TYPESCRIPT_POLICY");
+});
+
+test("rejects disabled TypeScript strict mode", () => {
+  const input = fixture();
+  input.tsconfig.compilerOptions.strict = false;
   expectCode(input, "E_VSCODE_TYPESCRIPT_POLICY");
 });
 
