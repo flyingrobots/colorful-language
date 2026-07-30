@@ -131,7 +131,7 @@ function validateActionPins(workflows) {
               `${file}:${line}: third-party actions must use a full commit SHA`,
             );
           }
-          identity = action.groups.repository;
+          identity = action.groups.repository.toLowerCase();
           pin = action.groups.ref;
         }
         const trailingSource = workflow.slice(
