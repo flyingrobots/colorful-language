@@ -82,12 +82,12 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   non-comment HTML exclusions plus Markdown backslash parity.
 - **RM-16 — Satisfiable pull-request closure.** Human-authored slice pull
   requests must retain exactly one unique issue-closing reference. A pull
-  request authored by the GitHub Dependabot app may instead carry no closing
-  reference only when every changed path belongs to one configured
-  dependency-update source and its reviewed manifest, lockfile, or workflow
-  companions. Author identity and changed paths must come from GitHub
-  metadata, not branch names, titles, or body text. Every admitted pull request
-  must continue to reject closing keywords in commit messages.
+  request authored by the GitHub Dependabot app may carry zero or one closing
+  reference, with zero admitted only when every changed path belongs to one
+  configured dependency-update source and its reviewed manifest, lockfile, or
+  workflow companions. Author identity and changed paths must come from GitHub
+  metadata, not branch names, titles, or body text. Every admitted pull
+  request must continue to reject closing keywords in commit messages.
 
 ## Cases
 
@@ -165,19 +165,28 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
 - **RM-16a — Narrow Dependabot closure admission.** *Requirements:* RM-4,
   RM-16. *Behavior:* human and ordinary automation pull requests require one
   unique body-level closing reference, while a pull request whose GitHub author
-  is the Dependabot app may use zero only when all changed paths match one
-  configured update source's reviewed dependency-file boundary. Multiple
-  closing references, closing keywords in commits, spoofed author/branch/title
-  metadata, mixed update-source paths, and unrelated product or documentation
-  paths fail closed. The exception changes only issue-closure admission; every
-  other review, CI, security, coverage, and merge rule remains independent.
+  is the Dependabot app may use zero or one; zero is admitted only when all
+  changed paths match one configured update source's reviewed dependency-file
+  boundary. Multiple closing references, closing keywords in commits, spoofed
+  author/branch/title metadata, malformed or incomplete file inventories,
+  mixed update-source paths, and unrelated product or documentation paths fail
+  closed. The exception changes only issue-closure admission; every other
+  review, CI, security, coverage, and merge rule remains independent.
   *Oracle:* deterministic checker self-tests exercise the human, bot-identity,
   source-family, mixed-path, and commit-message matrices; a read-only live run
   accepts a current dependency-only Dependabot pull request after it contains
   the policy. *Evidence type:* shell policy self-test plus authenticated GitHub
-  metadata witness. *Tracking:*
+  metadata witness. *Evidence:* `scripts/check-closure-contract.sh`;
+  `scripts/check-closure-contract.test.sh` (19 human, bot, family,
+  completeness, mixed-path, and commit-message cases);
+  `scripts/check-repository-maintenance.test.mjs`
+  `rejects missing hosted closure-contract fixtures` and
+  `rejects missing release-preparation closure-contract fixtures`;
+  `.github/workflows/ci.yml`; and `scripts/release-prep.sh`. Live read-only
+  checks accept dependency-only PRs #195, #220, #236, and #253 under their
+  respective path families. *Tracking:*
   [#265](https://github.com/flyingrobots/colorful-language/issues/265).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-4c — Editor package-tool license admission.** *Requirement:* RM-4.
   *Behavior:* standard permissive SPDX licenses introduced by the lock-backed
   editor packaging toolchain join the reviewed cross-ecosystem allowlist.

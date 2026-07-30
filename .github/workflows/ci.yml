@@ -314,6 +314,8 @@ jobs:
           persist-credentials: false
       - name: Self-test the checker
         run: bash scripts/check-closure-contract.sh --self-test
+      - name: Test human and Dependabot closure admission
+        run: bash scripts/check-closure-contract.test.sh
       - name: Enforce PR closure contract
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

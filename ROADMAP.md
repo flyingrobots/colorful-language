@@ -89,7 +89,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — generate portable admission** | Consumers no longer hand-maintain structural wire validation after generation compatibility and module ownership became explicit. | #222 derives both JavaScript runtimes from generation SDLs, retains named semantic checks, and reports generated burden separately. |
 | **Delivered — test analyzer substitution** | An optional external-analyzer adapter proves that the pure port can provide useful substitution without making an external engine mandatory. | #157 keeps Vale v3 process failures outside the pure port, proves built-in/external CLI/LSP parity, and leaves both production binaries Vale-free. |
 | **Delivered — bound external-adapter failures** | A malformed optional-engine response cannot multiply or reproduce process-controlled content in an operator-visible error. | #235 caps and redacts every invalid-alert path before distribution work expands the reachable surface. |
-| **Repair — restore dependency-update admission** | Weekly dependency updates can reach the normal review and security gates without weakening slice closure. | #265 admits only GitHub-authenticated, dependency-only Dependabot changes without a closing issue before the v0.4.0 packet snapshots the shipping graph. |
+| **Delivered — restore dependency-update admission** | Weekly dependency updates can reach the normal review and security gates without weakening slice closure. | #265 admits only GitHub-authenticated, dependency-only Dependabot changes without a closing issue before the v0.4.0 packet snapshots the shipping graph. |
 | **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #245 implements the repository machinery, #251 derives the Homebrew formula from its native artifacts, and #154 retains public publication proof. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -199,12 +199,12 @@ observe public-contract regressions before they ship.
   duplicate, or substituted area labels before formal v0.4.0 planning begins
   [#263](https://github.com/flyingrobots/colorful-language/issues/263).
   <!-- roadmap-primary: delivered #263 -->
-- **Active dependency-update admission repair:** preserve one issue closure for
-  human slices while allowing only GitHub-authenticated, dependency-only
+- **Delivered dependency-update admission repair:** preserve one issue closure
+  for human slices while allowing only GitHub-authenticated, dependency-only
   Dependabot pull requests to reach the remaining merge gates
   [#265](https://github.com/flyingrobots/colorful-language/issues/265), before
   the v0.4.0 packet snapshots the dependency graph.
-  <!-- roadmap-primary: active #265 -->
+  <!-- roadmap-primary: delivered #265 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog

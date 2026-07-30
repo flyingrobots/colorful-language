@@ -56,6 +56,8 @@ node --test scripts/check-dependency-update-policy.test.mjs
 node scripts/check-dependency-update-policy.mjs
 node --test scripts/check-repository-maintenance.test.mjs
 node scripts/check-repository-maintenance.mjs
+bash scripts/check-closure-contract.sh --self-test
+bash scripts/check-closure-contract.test.sh
 node --test scripts/check-workflow-security.test.mjs
 node scripts/check-workflow-security.mjs
 node --test scripts/check-coverage-policy.test.mjs

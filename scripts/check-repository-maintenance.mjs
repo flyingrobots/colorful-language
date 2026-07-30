@@ -129,6 +129,10 @@ const RUST_POLICY_COMMANDS = [
   "bash scripts/check-rust-dependency-policy.test.sh",
   "bash scripts/check-rust-dependency-policy.sh",
 ];
+const CLOSURE_POLICY_COMMANDS = [
+  "bash scripts/check-closure-contract.sh --self-test",
+  "bash scripts/check-closure-contract.test.sh",
+];
 
 export class RepositoryMaintenanceError extends Error {
   constructor(code, message) {
@@ -1106,6 +1110,25 @@ function validateCommandWiring(ciWorkflow, releasePrep) {
     ) {
       reject(
         "E_RELEASE_PREP",
+        "scripts/release-prep.sh",
+        `must run ${JSON.stringify(command)}`,
+      );
+    }
+  }
+  const closureJob = ciWorkflow?.jobs?.["closure-contract"];
+  for (const command of CLOSURE_POLICY_COMMANDS) {
+    requireBlockingRun(
+      closureJob,
+      command,
+      ".github/workflows/ci.yml:jobs.closure-contract.steps",
+      "E_CLOSURE_WIRING",
+    );
+    if (
+      typeof releasePrep !== "string" ||
+      !releasePrep.split(/\r?\n/u).includes(command)
+    ) {
+      reject(
+        "E_CLOSURE_WIRING",
         "scripts/release-prep.sh",
         `must run ${JSON.stringify(command)}`,
       );

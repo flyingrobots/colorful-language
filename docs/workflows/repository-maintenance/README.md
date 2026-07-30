@@ -189,6 +189,25 @@ weekly groups preserve separate rollback boundaries for GitHub Actions, the
 root, Zed, and fuzz Cargo workspaces, root Node evidence tooling, and the VS
 Code adapter.
 
+The pull-request closure gate keeps human and ordinary automation work tied to
+exactly one slice issue. GitHub-authenticated `app/dependabot` pull requests may
+instead carry zero or one closing reference only when their complete changed-
+file inventory fits one reviewed update family:
+
+- checked-in workflow files under `.github/workflows/`;
+- the root `Cargo.toml` and `Cargo.lock`;
+- the Zed adapter's `Cargo.toml` and `Cargo.lock`;
+- the fuzz workspace's manifest and lockfile, with the root workspace manifest
+  as its reviewed companion;
+- the root `package.json` and `package-lock.json`; or
+- the VS Code adapter's `package.json` and `package-lock.json`.
+
+The gate fails closed when GitHub returns an incomplete file list, when paths
+cross families, or when an unrelated path appears. Titles, branches, and body
+text cannot grant the exception. Closing keywords remain forbidden in every
+commit, and Dependabot changes still require all normal review, dependency,
+security, coverage, documentation, and merge checks.
+
 `CODEOWNERS` assigns the repository to `@flyingrobots`. This is ownership
 metadata, not a second-human gate: the checked-in and live mainline ruleset
 requires zero approvals and does not require code-owner review. Enable either

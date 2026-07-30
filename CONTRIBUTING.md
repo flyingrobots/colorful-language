@@ -327,6 +327,13 @@ omitted attribute without that reviewed record fails CI.
   `main` — potentially before the PR that reviewed it is even finished being
   written. Tying closure to the PR body means the issue closes exactly once,
   exactly when the reviewed slice merges.
+- Dependabot update pull requests are the narrow exception to the body-level
+  closing reference. GitHub must report `app/dependabot` as the author, the
+  complete changed-file inventory must fit one reviewed dependency-update
+  family, and the body may contain zero or one unique closing reference.
+  Human-authored and all other automation pull requests still require exactly
+  one. Every commit remains forbidden from carrying a closing keyword, and
+  every other review, CI, security, and merge rule still applies.
 - A breaking change carries a `BREAKING CHANGE:` footer and should be called out
   for a version bump.
 - Keep history append-only: no force-pushes, rebases, squashes, or amends on
