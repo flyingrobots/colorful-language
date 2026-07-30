@@ -444,6 +444,15 @@ test("rejects a missing comment behind a quoted YAML key", () => {
   }, "E_ACTION_RELEASE_COMMENT");
 });
 
+test("rejects empty action path segments", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      `steps:\n  - uses: actions/checkout//setup@${ACTION_SHA} # v5\n`,
+    );
+  }, "E_ACTION_PIN");
+});
+
 test("rejects a mutable Docker action tag", () => {
   expectCode(({ workflows }) => {
     workflows.set(
