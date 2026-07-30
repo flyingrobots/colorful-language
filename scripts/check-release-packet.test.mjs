@@ -400,6 +400,46 @@ fi
   }, "E_RELEASE_PACKET_GATE");
 });
 
+test("requires fail-closed workflow gate steps", () => {
+  for (const gate of [
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+  ]) {
+    for (const mutate of [
+      (source) => source.replace("    steps:", "    if: false\n    steps:"),
+      (source) =>
+        source.replace(
+          "    steps:",
+          "    continue-on-error: true\n    steps:",
+        ),
+      (source) =>
+        source.replace(
+          "      - name: Self-test packet policy",
+          "      - name: Self-test packet policy\n        if: false",
+        ),
+      (source) =>
+        source.replace(
+          "      - name: Self-test packet policy",
+          "      - name: Self-test packet policy\n        continue-on-error: true",
+        ),
+      (source) =>
+        source.replace(
+          "      - name: Check packet",
+          "      - name: Check packet\n        if: false",
+        ),
+      (source) =>
+        source.replace(
+          "      - name: Check packet",
+          "      - name: Check packet\n        continue-on-error: true",
+        ),
+    ]) {
+      expectCode((snapshot) => {
+        snapshot.gateSources[gate] = mutate(snapshot.gateSources[gate]);
+      }, "E_RELEASE_PACKET_GATE");
+    }
+  }
+});
+
 test("reports a stable category when the target packet is missing", (t) => {
   const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
   t.after(() => rmSync(root, { recursive: true }));
