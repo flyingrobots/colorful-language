@@ -165,11 +165,7 @@ checker edit.
 Run the pin and semantic policy together before accepting an action update:
 
 ```bash
-node --test scripts/check-dependency-update-policy.test.mjs
-node scripts/check-dependency-update-policy.mjs
-node --test scripts/check-coverage-policy.test.mjs
-node --test scripts/check-repository-maintenance.test.mjs
-actionlint .github/workflows/*.yml
+bash scripts/release-prep.sh
 ```
 
 The root `cargo` group matches patch updates only. Unmatched root Cargo minor
