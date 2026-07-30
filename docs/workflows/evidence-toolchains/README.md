@@ -167,11 +167,15 @@ allow rule.
 
 A root Cargo update must also refresh `fuzz/Cargo.lock` when a changed
 root-owned package is reachable through the fuzz package's path dependencies.
-Resolve that package to the exact version selected in `Cargo.lock`, then run:
+Resolve that package to the exact version selected in `Cargo.lock`. The
+assignments below are the current runnable `tower-lsp` example; replace both
+values with the package and version under review:
 
 ```bash
+changed_package=tower-lsp
+root_lock_version=0.20.0
 cargo update --manifest-path fuzz/Cargo.toml \
-  -p <changed-package> --precise <root-lock-version>
+  -p "$changed_package" --precise "$root_lock_version"
 cargo check --manifest-path fuzz/Cargo.toml --locked --bins
 ```
 
