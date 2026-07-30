@@ -210,6 +210,22 @@ test("rejects a root-owned dependency in the standalone fuzz manifest", () => {
   }, "E_FUZZ_DEPENDENCY_AUTHORITY");
 });
 
+test("rejects a renamed root-owned dependency in the fuzz manifest", () => {
+  expectCode(({ cargoManifests, dependabot }) => {
+    cargoManifests.get("fuzz/Cargo.toml").dependencies["lsp-alias"] = {
+      package: "tower-lsp",
+      version: "0.20",
+    };
+    dependabot.updates
+      .find(
+        (update) =>
+          update["package-ecosystem"] === "cargo" &&
+          update.directory === "/fuzz",
+      )
+      .allow.push({ "dependency-name": "lsp-alias" });
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
 test("rejects a root-owned standalone fuzz dev dependency", () => {
   expectCode(({ cargoManifests }) => {
     cargoManifests.get("fuzz/Cargo.toml")["dev-dependencies"] = {
