@@ -564,6 +564,11 @@ test("rejects a noncompliant release-tracker label set", () => {
         "--label slice",
         "--label slice --label slice",
       ),
+    (reference) =>
+      reference.replace(
+        "--label area:core",
+        '--label area:core --label "area:lsp"',
+      ),
   ]) {
     expectCode(({ deliveryReferences }) => {
       deliveryReferences.releasing = mutate(
