@@ -123,7 +123,7 @@ function validateActionPins(workflows) {
           pin = value.slice(value.indexOf("@sha256:") + 1);
         } else {
           const action = value.match(
-            /^(?<repository>[^/@\s]+\/[^/@\s]+)(?:\/[^@\s]+)*@(?<ref>[^\s]+)$/u,
+            /^(?<repository>[^/@\s]+\/[^/@\s]+)(?:\/[^/@\s]+)*@(?<ref>[^\s]+)$/u,
           );
           if (action === null || !FULL_SHA.test(action.groups.ref)) {
             reject(
