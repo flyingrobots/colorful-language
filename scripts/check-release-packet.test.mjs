@@ -328,6 +328,15 @@ test("rejects invented public evidence in the pre-publication phase", () => {
   }, "E_RELEASE_PACKET_EVIDENCE");
 });
 
+test("rejects linked public evidence in the pre-publication phase", () => {
+  expectCode((snapshot) => {
+    snapshot.verification = snapshot.verification.replace(
+      "- Tag and registries: not available.",
+      "- Tag and registries: not available. [release run](https://github.com/flyingrobots/colorful-language/actions/runs/1)",
+    );
+  }, "E_RELEASE_PACKET_EVIDENCE");
+});
+
 test("requires the self-test before the live check in every release gate", () => {
   for (const gate of Object.keys(validSnapshot().gateSources)) {
     expectCode((snapshot) => {
