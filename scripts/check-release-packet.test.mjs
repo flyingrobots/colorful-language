@@ -102,12 +102,27 @@ Release phase: pre-publication.
 - Release retrospective: not available.
 `,
     gateSources: {
-      ".github/workflows/ci.yml":
-        `${SELF_TEST_COMMAND}\n${CHECK_COMMAND}\n`,
-      ".github/workflows/release.yml":
-        `${SELF_TEST_COMMAND}\n${CHECK_COMMAND}\n`,
-      "scripts/release-prep.sh":
-        `${SELF_TEST_COMMAND}\n${CHECK_COMMAND}\n`,
+      ".github/workflows/ci.yml": `jobs:
+  docs:
+    steps:
+      - name: Self-test packet policy
+        run: ${SELF_TEST_COMMAND}
+      - name: Check packet
+        run: ${CHECK_COMMAND}
+`,
+      ".github/workflows/release.yml": `jobs:
+  validate-release:
+    steps:
+      - name: Self-test packet policy
+        run: ${SELF_TEST_COMMAND}
+      - name: Check packet
+        run: ${CHECK_COMMAND}
+`,
+      "scripts/release-prep.sh": `#!/usr/bin/env bash
+set -euo pipefail
+${SELF_TEST_COMMAND}
+${CHECK_COMMAND}
+`,
     },
   };
 }
@@ -347,6 +362,33 @@ test("requires the self-test before the live check in every release gate", () =>
         `# ${SELF_TEST_COMMAND}\n# ${CHECK_COMMAND}\n`;
     }, "E_RELEASE_PACKET_GATE");
   }
+});
+
+test("does not accept dormant release gate commands", () => {
+  for (const gate of [
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.gateSources[gate] = `env:
+  DORMANT_COMMANDS: |
+    ${SELF_TEST_COMMAND}
+    ${CHECK_COMMAND}
+jobs:
+  inert:
+    steps:
+      - run: "true"
+`;
+    }, "E_RELEASE_PACKET_GATE");
+  }
+  expectCode((snapshot) => {
+    snapshot.gateSources["scripts/release-prep.sh"] = `#!/usr/bin/env bash
+if false; then
+  ${SELF_TEST_COMMAND}
+  ${CHECK_COMMAND}
+fi
+`;
+  }, "E_RELEASE_PACKET_GATE");
 });
 
 test("reports a stable category when the target packet is missing", (t) => {
