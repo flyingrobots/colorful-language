@@ -22,6 +22,11 @@ import {
 
 const RELEASE_PATH = "docs/goalposts/v0.4.0/release.md";
 const VERIFICATION_PATH = "docs/goalposts/v0.4.0/verification.md";
+const TARGET_COMMIT = "0123456789abcdef0123456789abcdef01234567";
+const PUBLISH_WORKFLOW =
+  "https://github.com/flyingrobots/colorful-language/actions/runs/123456";
+const GITHUB_RELEASE =
+  "https://github.com/flyingrobots/colorful-language/releases/tag/v0.4.0";
 const PREVIOUS_VERIFICATION = `# v0.3.0 verification
 
 ## Retrospective
@@ -154,15 +159,18 @@ ${CHECK_COMMAND}
 
 function expectCode(mutate, code) {
   const snapshot = validSnapshot();
+  expectSnapshotCode(snapshot, mutate, code);
+}
+
+function expectSnapshotCode(snapshot, mutate, code) {
   mutate(snapshot);
   assert.throws(
     () => validateReleasePacket(snapshot),
-    (error) =>
-      error instanceof ReleasePacketPolicyError && error.code === code,
+    (error) => error instanceof ReleasePacketPolicyError && error.code === code,
   );
 }
 
-function blankLevelTwoSection(source, heading) {
+function replaceLevelTwoSection(source, heading, body) {
   const marker = `## ${heading}\n`;
   const headingStart = source.indexOf(marker);
   assert.notEqual(
@@ -173,7 +181,74 @@ function blankLevelTwoSection(source, heading) {
   const bodyStart = headingStart + marker.length;
   const nextHeading = source.indexOf("\n## ", bodyStart);
   const bodyEnd = nextHeading === -1 ? source.length : nextHeading;
-  return `${source.slice(0, bodyStart)}\n${source.slice(bodyEnd)}`;
+  return `${source.slice(0, bodyStart)}\n${body.trim()}\n${source.slice(bodyEnd)}`;
+}
+
+function sectionBody(source, heading) {
+  const marker = `## ${heading}\n`;
+  const headingStart = source.indexOf(marker);
+  assert.notEqual(
+    headingStart,
+    -1,
+    `fixture is missing level-two heading ${heading}`,
+  );
+  const bodyStart = headingStart + marker.length;
+  const nextHeading = source.indexOf("\n## ", bodyStart);
+  const bodyEnd = nextHeading === -1 ? source.length : nextHeading;
+  return source.slice(bodyStart, bodyEnd).trim();
+}
+
+function blankLevelTwoSection(source, heading) {
+  return replaceLevelTwoSection(source, heading, "");
+}
+
+function snapshotForPhase(phase) {
+  const snapshot = validSnapshot();
+  if (phase === "pre-publication") {
+    return snapshot;
+  }
+  snapshot.verification = snapshot.verification
+    .replace("Release phase: pre-publication.", `Release phase: ${phase}.`)
+    .replace(
+      "Annotated v0.4.0 tag: not available.",
+      "Annotated v0.4.0 tag: available.",
+    );
+  snapshot.verification = replaceLevelTwoSection(
+    snapshot.verification,
+    "Publication evidence",
+    `Evidence state: completed.
+
+- Tag target commit: ${TARGET_COMMIT}.
+- Publish workflow: ${PUBLISH_WORKFLOW}.
+- GitHub Release: ${GITHUB_RELEASE}.`,
+  );
+  if (phase === "published") {
+    return snapshot;
+  }
+  snapshot.verification = replaceLevelTwoSection(
+    snapshot.verification,
+    "Public verification",
+    `Evidence state: completed.
+
+- Verification result: passed on 2026-07-30.
+- Rollback result: passed on 2026-07-30.`,
+  );
+  if (phase === "verified") {
+    return snapshot;
+  }
+  snapshot.verification = replaceLevelTwoSection(
+    snapshot.verification,
+    "Retrospective",
+    `Evidence state: completed.
+
+Retrospective status: completed.
+
+- Planned versus actual: reviewed scope recorded.
+- Fallout: none.
+- Repeatable wins: deterministic packet evidence.
+- Next recommendation: begin held-out validation.`,
+  );
+  return snapshot;
 }
 
 function writeRepositorySnapshot(root, snapshot = validSnapshot()) {
@@ -207,6 +282,166 @@ test("accepts a complete pre-publication release packet", () => {
     scopedIssueCount: 3,
     phase: "pre-publication",
   });
+});
+
+test("accepts one canonical witness for every release phase", () => {
+  for (const phase of [
+    "pre-publication",
+    "published",
+    "verified",
+    "retrospected",
+  ]) {
+    assert.deepEqual(validateReleasePacket(snapshotForPhase(phase)), {
+      version: "0.4.0",
+      previousTag: "v0.3.0",
+      goalpostCount: 2,
+      scopedIssueCount: 3,
+      phase,
+    });
+  }
+});
+
+test("rejects a phase declaration without its required evidence", () => {
+  for (const phase of ["published", "verified", "retrospected"]) {
+    expectCode((snapshot) => {
+      snapshot.verification = snapshot.verification.replace(
+        "Release phase: pre-publication.",
+        `Release phase: ${phase}.`,
+      );
+    }, "E_RELEASE_PACKET_EVIDENCE");
+  }
+});
+
+test("requires complete immutable publication evidence", () => {
+  const mutations = [
+    (source) =>
+      source.replace(
+        "Annotated v0.4.0 tag: available.",
+        "Annotated v0.4.0 tag: unavailable.",
+      ),
+    (source) => source.replace(`- Tag target commit: ${TARGET_COMMIT}.\n`, ""),
+    (source) =>
+      source.replace(
+        `- Publish workflow: ${PUBLISH_WORKFLOW}.`,
+        "- Publish workflow: pending.",
+      ),
+    (source) =>
+      source.replace(
+        `- GitHub Release: ${GITHUB_RELEASE}.`,
+        "- GitHub Release: not available.",
+      ),
+    (source) =>
+      source.replace(
+        "## Publication evidence\n\nEvidence state: completed.",
+        "## Publication evidence\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "## Publication evidence\n\nEvidence state: completed.",
+        "## Publication evidence\n\nEvidence state: completed.\n\nEvidence state: completed.",
+      ),
+  ];
+  for (const mutate of mutations) {
+    expectSnapshotCode(
+      snapshotForPhase("published"),
+      (snapshot) => {
+        snapshot.verification = mutate(snapshot.verification);
+      },
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
+});
+
+test("rejects verification or retrospective evidence before its phase", () => {
+  expectSnapshotCode(
+    snapshotForPhase("published"),
+    (snapshot) => {
+      const verified = snapshotForPhase("verified");
+      snapshot.verification = replaceLevelTwoSection(
+        snapshot.verification,
+        "Public verification",
+        sectionBody(verified.verification, "Public verification"),
+      );
+    },
+    "E_RELEASE_PACKET_EVIDENCE",
+  );
+  expectSnapshotCode(
+    snapshotForPhase("verified"),
+    (snapshot) => {
+      const retrospected = snapshotForPhase("retrospected");
+      snapshot.verification = replaceLevelTwoSection(
+        snapshot.verification,
+        "Retrospective",
+        sectionBody(retrospected.verification, "Retrospective"),
+      );
+    },
+    "E_RELEASE_PACKET_EVIDENCE",
+  );
+});
+
+test("requires publication and dated public-verification evidence", () => {
+  const mutations = [
+    (source) =>
+      source.replace(
+        "## Publication evidence\n\nEvidence state: completed.",
+        "## Publication evidence\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "## Public verification\n\nEvidence state: completed.",
+        "## Public verification\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace("- Verification result: passed on 2026-07-30.\n", ""),
+    (source) => source.replace("- Rollback result: passed on 2026-07-30.", ""),
+  ];
+  for (const mutate of mutations) {
+    expectSnapshotCode(
+      snapshotForPhase("verified"),
+      (snapshot) => {
+        snapshot.verification = mutate(snapshot.verification);
+      },
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
+});
+
+test("requires every completed retrospective field", () => {
+  const mutations = [
+    (source) =>
+      source.replace(
+        "## Public verification\n\nEvidence state: completed.",
+        "## Public verification\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "## Retrospective\n\nEvidence state: completed.",
+        "## Retrospective\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "Retrospective status: completed.",
+        "Retrospective status: pending.",
+      ),
+    ...[
+      "Planned versus actual",
+      "Fallout",
+      "Repeatable wins",
+      "Next recommendation",
+    ].map(
+      (label) => (source) =>
+        source.replace(new RegExp(`^- ${label}:.*\\n?`, "mu"), ""),
+    ),
+  ];
+  for (const mutate of mutations) {
+    expectSnapshotCode(
+      snapshotForPhase("retrospected"),
+      (snapshot) => {
+        snapshot.verification = mutate(snapshot.verification);
+      },
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
 });
 
 test("parses release packet pipe tables structurally", () => {
@@ -243,10 +478,7 @@ test("rejects packet and witness identity drift", () => {
       snapshot.release = snapshot.release.replace("v0.3.0", "v0.2.1");
     },
     (snapshot) => {
-      snapshot.verification = snapshot.verification.replace(
-        "v0.4.0",
-        "v0.4.1",
-      );
+      snapshot.verification = snapshot.verification.replace("v0.4.0", "v0.4.1");
     },
   ]) {
     expectCode(mutate, "E_RELEASE_PACKET_IDENTITY");
@@ -282,10 +514,7 @@ test("rejects every missing or empty release section", () => {
       snapshot.release = snapshot.release.replace(`## ${heading}`, "");
     }, "E_RELEASE_PACKET_SECTION");
     expectCode((snapshot) => {
-      snapshot.release = blankLevelTwoSection(
-        snapshot.release,
-        heading,
-      );
+      snapshot.release = blankLevelTwoSection(snapshot.release, heading);
     }, "E_RELEASE_PACKET_SECTION");
   }
 });
@@ -637,10 +866,7 @@ test("requires fail-closed workflow gate steps", () => {
     for (const mutate of [
       (source) => source.replace("    steps:", "    if: false\n    steps:"),
       (source) =>
-        source.replace(
-          "    steps:",
-          "    continue-on-error: true\n    steps:",
-        ),
+        source.replace("    steps:", "    continue-on-error: true\n    steps:"),
       (source) =>
         source.replace(
           "      - name: Self-test packet policy",
@@ -675,7 +901,7 @@ test("reports a stable category when the target packet is missing", (t) => {
   mkdirSync(join(root, "docs/goalposts/v0.3.0"), { recursive: true });
   writeFileSync(
     join(root, "Cargo.toml"),
-    "[workspace.package]\nversion = \"0.4.0\"\n",
+    '[workspace.package]\nversion = "0.4.0"\n',
   );
   writeFileSync(join(root, "docs/goalposts/v0.3.0/release.md"), "released\n");
   writeFileSync(
@@ -793,9 +1019,6 @@ test("documentation spine links the planned packet and witness", () => {
     .find((entry) => entry.startsWith("**Planned v0.4.0:**"));
   assert.ok(plannedEntry, "docs/README.md must list planned v0.4.0");
   assert.match(plannedEntry, /\(goalposts\/v0\.4\.0\/release\.md\)/u);
-  assert.match(
-    plannedEntry,
-    /\(goalposts\/v0\.4\.0\/verification\.md\)/u,
-  );
+  assert.match(plannedEntry, /\(goalposts\/v0\.4\.0\/verification\.md\)/u);
   assert.match(plannedEntry, /\bnot yet tagged or published\b/u);
 });
