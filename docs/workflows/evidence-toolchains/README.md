@@ -160,8 +160,9 @@ currently that is only `libfuzzer-sys`. Product and adapter versions remain in
 the root Cargo workspace. Path dependencies let fuzz targets exercise those
 crates without granting the standalone update source authority to rewrite
 `Cargo.toml`. The policy checker parses both manifests and rejects a fuzz
-dependency that duplicates a root workspace dependency, a missing allowlist,
-or any broader/substituted allow rule.
+dependency that duplicates a root workspace dependency, including one hidden
+behind Cargo's renamed-dependency syntax, a missing allowlist, or any
+broader/substituted allow rule.
 
 For an action update, inspect the upstream release and source commit, retain the
 full 40-character commit SHA in every `uses:` reference, and keep its release

@@ -223,6 +223,27 @@ function validateManualDependencies(update, expectedRules, description) {
   }
 }
 
+function dependencyPackageIdentity(name, declaration, location) {
+  if (
+    declaration !== null &&
+    typeof declaration === "object" &&
+    !Array.isArray(declaration) &&
+    declaration.package !== undefined
+  ) {
+    if (
+      typeof declaration.package !== "string" ||
+      declaration.package.length === 0
+    ) {
+      reject(
+        "E_FUZZ_DEPENDENCY_AUTHORITY",
+        `${location}.package must name a Cargo package`,
+      );
+    }
+    return declaration.package;
+  }
+  return name;
+}
+
 function directExternalDependencies(manifest, path) {
   if (
     manifest === null ||
@@ -234,7 +255,7 @@ function directExternalDependencies(manifest, path) {
       `${path} must be a Cargo manifest`,
     );
   }
-  const external = new Set();
+  const external = [];
   const collect = (table, location) => {
     if (table === undefined) {
       return;
@@ -252,7 +273,14 @@ function directExternalDependencies(manifest, path) {
         Array.isArray(declaration) ||
         typeof declaration.path !== "string"
       ) {
-        external.add(name);
+        external.push({
+          dependencyName: name,
+          packageName: dependencyPackageIdentity(
+            name,
+            declaration,
+            `${location}.${name}`,
+          ),
+        });
       }
     }
   };
@@ -287,7 +315,14 @@ function directExternalDependencies(manifest, path) {
     }
     collectOwner(target, `${path}#target.${selector}`);
   }
-  return [...external].toSorted();
+  return external.toSorted((left, right) => {
+    const dependencyOrder = left.dependencyName.localeCompare(
+      right.dependencyName,
+    );
+    return dependencyOrder === 0
+      ? left.packageName.localeCompare(right.packageName)
+      : dependencyOrder;
+  });
 }
 
 function validateFuzzDependencyAuthority(update, cargoManifests) {
@@ -309,13 +344,35 @@ function validateFuzzDependencyAuthority(update, cargoManifests) {
       "Cargo.toml must declare workspace dependencies",
     );
   }
-  const allowed = directExternalDependencies(
+  const externalDependencies = directExternalDependencies(
     cargoManifests.get("fuzz/Cargo.toml"),
     "fuzz/Cargo.toml",
   );
-  const overlap = allowed.filter((name) =>
-    Object.hasOwn(rootDependencies, name),
+  const allowed = [
+    ...new Set(
+      externalDependencies.map((dependency) => dependency.dependencyName),
+    ),
+  ].toSorted();
+  const rootPackages = new Set(
+    Object.entries(rootDependencies).map(([name, declaration]) =>
+      dependencyPackageIdentity(
+        name,
+        declaration,
+        `Cargo.toml#workspace.dependencies.${name}`,
+      ),
+    ),
   );
+  const overlap = [
+    ...new Set(
+      externalDependencies
+        .filter((dependency) => rootPackages.has(dependency.packageName))
+        .map((dependency) =>
+          dependency.dependencyName === dependency.packageName
+            ? dependency.packageName
+            : `${dependency.dependencyName} (${dependency.packageName})`,
+        ),
+    ),
+  ].toSorted();
   if (overlap.length > 0) {
     reject(
       "E_FUZZ_DEPENDENCY_AUTHORITY",

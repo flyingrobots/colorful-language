@@ -566,7 +566,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   allows only direct standalone fuzz-runtime dependencies and cannot propose
   root-owned product or adapter versions. The dependency-policy gate derives
   that boundary from every root and fuzz Cargo dependency table, rejects
-  missing, broadened, or substituted allow rules and duplicated dependency
+  missing, broadened, or substituted allow rules, resolves renamed Cargo
+  declarations to their package identities before detecting duplicated
   authority, and keeps the documented fuzz-only rollback boundary honest.
 - **Satisfiable Dependabot closure admission.** Human and ordinary automation
   pull requests still require exactly one body-level issue-closing reference,
