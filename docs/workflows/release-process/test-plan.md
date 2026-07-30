@@ -39,6 +39,11 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-17** GitHub milestones must remain goalposts while each release train
   uses one versioned tracking issue and packet, so a slice never loses its
   product/architecture owner merely to join a release.
+- **REL-18** A release packet must define its thesis, version decision, complete
+  scope buckets, bounded goalposts, acceptance evidence, non-claims, risks, and
+  rollback posture before its versioned release tracker can be created; its
+  verification witness must distinguish pre-publication proof from public
+  release evidence that does not yet exist.
 
 ## Cases
 
@@ -302,6 +307,129 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-repository-maintenance.mjs`; `docs/RELEASING.md`;
   `docs/workflows/release-process/README.md`; and
   `docs/workflows/repository-maintenance/README.md`. *Status:* implemented.
+- **REL-18a — Complete pre-publication release packet.** *Requirement:* REL-18.
+  *Behavior:* the v0.4.0 packet and verification scaffold identify the release
+  version and previous public tag; define one release thesis and SemVer
+  justification; contain non-empty must-ship, may-slip, and not-included scope
+  buckets; declare two to five uniquely labeled goalposts whose same-label
+  acceptance items carry observable command or non-issue URL evidence; name
+  non-claims, risks, and rollback posture; link every scoped slice through
+  inline or reference-style Markdown; and mark tag, registry, attestation,
+  public-install, Zed-submission, Homebrew, and retrospective evidence as not
+  yet available before publication. The version decision begins with exact
+  target and previous-tag tokens. The exact-pinned GFM grammar parses tables as
+  rows and cells. The witness status names the exact target, previous public
+  tag, and unavailable target tag; completed evidence includes inline and
+  reference-style link destinations; a target behind the latest reachable
+  public tag is invalid; and the policy self-test and live check remain ordered,
+  unconditional, fail-closed executable steps in every gate. *Oracle:* deleting
+  or emptying each required section, changing status or decision identity,
+  claiming the target tag, duplicating or exceeding the goalpost bound,
+  replacing mapped acceptance oracles with prose, inventing public evidence in
+  prose or a link, omitting an inline or reference-style scoped-slice link,
+  selecting a stale target, reversing or moving commands into dormant workflow
+  data or unreachable shell, or making a workflow gate conditional or
+  failure-tolerant fails with a stable path-addressed category; the documented
+  `not available`, `unavailable`, and `pending` states remain valid. *Evidence
+  type:* deterministic release-packet policy and mutation tests. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs` cases `accepts a complete
+  pre-publication release packet`, `rejects a release packet without a
+  thesis`, `parses release packet pipe tables structurally`, `rejects packet
+  and witness identity drift`, `requires exact version decision tokens`,
+  `rejects every missing or empty release section`, `rejects an empty scope
+  bucket`, `requires exact scope buckets and slice inventory`, `enforces the
+  two-to-five goalpost bound`, `requires observable acceptance evidence for
+  every goalpost`, `requires unique goalpost labels`, `rejects a scoped issue
+  omitted from the slice inventory`, `resolves reference-style issue links in
+  the scope inventory`, `rejects every missing or empty verification section`,
+  `requires exactly one release phase`,
+  `rejects contradictory pre-publication status identity`, `rejects invented
+  public evidence in the pre-publication phase`, `rejects linked public evidence
+  in the pre-publication phase`, `rejects reference-linked public evidence in
+  the pre-publication phase`, `accepts the documented unavailable
+  pre-publication state`, `requires the self-test before the live check in every
+  release gate`, `does not accept dormant release gate commands`, `does not
+  accept release gates after shell termination`, `requires fail-closed workflow
+  gate steps`, `reports a stable category when the target packet is missing`,
+  `derives the previous release from public tags, not packet directories`,
+  `rejects a target behind the latest public release`, `ignores release tags
+  that are not reachable from HEAD`, and `the checked-in v0.4.0 release packet
+  satisfies the policy`;
+  `docs/goalposts/v0.4.0/release.md`;
+  `docs/goalposts/v0.4.0/verification.md`; `.github/workflows/ci.yml`;
+  `.github/workflows/release.yml`; and `scripts/release-prep.sh`. *Status:*
+  implemented.
+- **REL-18b — Release-packet publication dependency.** *Requirement:* REL-18.
+  *Behavior:* the tag workflow runs the packet self-test and live check in its
+  fail-closed `validate-release` job, and every other tag-workflow job depends
+  on that admission job transitively. *Oracle:* moving the packet commands to
+  an independent job, removing them from `validate-release`, or detaching any
+  downstream job fails with `E_RELEASE_PACKET_GATE`. *Evidence type:*
+  deterministic release-workflow mutation test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `requires packet admission in every tag-workflow dependency path`. *Status:*
+  implemented.
+- **REL-18c — Planned packet discoverability.** *Requirement:* REL-18.
+  *Behavior:* the documentation spine links the planned release packet and its
+  verification witness without presenting the target as tagged or published.
+  *Oracle:* removing either v0.4.0 link or its explicit pre-publication wording
+  fails a deterministic documentation-index assertion. *Evidence type:*
+  release-packet policy test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `documentation spine links the planned packet and witness`;
+  `docs/README.md`. *Status:* implemented.
+- **REL-18d — Structured pre-publication evidence state.** *Requirement:*
+  REL-18. *Behavior:* publication, public-verification, and retrospective
+  sections each declare one explicit unavailable or pending evidence state and
+  cannot combine that state with ordinary completion prose, commit identifiers,
+  public URLs, or success markers. *Oracle:* removing the structured state or
+  adding a created-tag claim beside a pending registry claim fails with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* deterministic witness mutation
+  test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `requires structured unavailable evidence states before publication`;
+  `docs/goalposts/v0.4.0/verification.md`. *Status:* implemented.
+- **REL-18e — Unguarded local packet commands.** *Requirement:* REL-18.
+  *Behavior:* local release preparation admits packet commands only at the
+  executable shell top level; operator-guarded brace and subshell groups do not
+  satisfy the gate. *Oracle:* wrapping the ordered commands in `false && { ... }`
+  or `false && ( ... )` fails with `E_RELEASE_PACKET_GATE`. *Evidence type:*
+  deterministic shell-structure mutation test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `does not accept packet commands inside guarded compound lists`. *Status:*
+  implemented.
+- **REL-18f — Completed predecessor retrospective.** *Requirement:* REL-18.
+  *Behavior:* the latest reachable public predecessor is eligible for a new
+  release train only when its verification witness contains one explicit
+  completed retrospective. *Oracle:* a missing or pending predecessor
+  retrospective fails packet loading with `E_RELEASE_PACKET_EVIDENCE`.
+  *Evidence type:* temporary-repository release-history mutation test.
+  *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `requires a completed predecessor retrospective`;
+  `docs/goalposts/v0.3.0/verification.md`. *Status:* implemented.
+- **REL-18g — Shell comment isolation.** *Requirement:* REL-18. *Behavior:*
+  release-preparation comments cannot create quote or here-document state that
+  hides later executable packet commands, while comment markers inside quoted
+  shell words remain data. *Oracle:* ordered top-level packet commands following
+  apostrophe, backtick, and here-document-shaped comments are admitted; the same
+  tokens inside live quoted or here-document content remain non-executable.
+  *Evidence type:* deterministic shell-scanner regression test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `shell comments cannot hide later packet commands`. *Status:* implemented.
 
 ## Open verification gaps
 

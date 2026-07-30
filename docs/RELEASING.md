@@ -29,6 +29,7 @@ boring facts automation can check:
 - release signposts such as `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
   `docs/topics/`, `docs/workflows/`, and maintainer docs;
 - validation entrypoints in `scripts/release-profile-check.sh`,
+  `scripts/check-release-packet.mjs`,
   `scripts/check-editor-version-policy.mjs`,
   `scripts/release-prep.sh`, and `scripts/release-preflight.sh`;
 - current publication by pushing a `v*` tag, which triggers
@@ -39,6 +40,26 @@ The profile is enforced by CI and by the release workflow through:
 ```bash
 bash scripts/release-profile-check.sh
 ```
+
+Each planned release packet is admitted before release work can become a
+versioned tracking issue. The policy derives the target from the workspace
+version and the previous public release from fetched repository tags reachable
+from the current history with corresponding goalpost packets, then checks
+packet identity, required sections, scope buckets, bounded goalposts, slice
+inventory, staged evidence, and release-gate wiring. The version decision begins
+with the exact target and previous-tag tokens. Goalpost labels are unique and
+each has a same-label acceptance item carrying an inline command or non-issue
+URL; inline and reference-style slice links share one exhaustive inventory.
+The parser reads GFM tables structurally:
+
+```bash
+node --test scripts/check-release-packet.test.mjs
+node scripts/check-release-packet.mjs
+```
+
+The self-test must run first. Missing required files and invalid packet
+invariants fail with stable `E_RELEASE_PACKET_*` categories; unexpected
+programmer errors remain visible.
 
 ## Current release shape
 
@@ -301,6 +322,9 @@ Record three scope buckets:
 Each planned release should have two to five goalposts. Each goalpost must have
 observable acceptance evidence: command output, test result, workflow run,
 screenshot, registry lookup, release URL, smoke test, closed issue, or merged PR.
+In the packet, give every goalpost a unique leading bold label and repeat that
+label on its acceptance-evidence item. Include an inline command or a non-issue
+URL so the policy can distinguish an observable oracle from unsupported prose.
 
 ## Scope reconciliation
 
@@ -383,6 +407,7 @@ bash scripts/release-prep.sh
 That script runs:
 
 - release profile check, including `Cargo.lock` workspace crate versions;
+- deterministic release-packet policy self-tests and live packet admission;
 - synchronized editor/server compatibility and gate wiring;
 - signed native/editor distribution policy and mutation self-tests;
 - Homebrew formula generation, archive-integrity, and release-order self-tests;
@@ -400,6 +425,14 @@ That script runs:
 - workflow lint with `actionlint`;
 - pinned, offline workflow-security analysis with `zizmor`;
 - whitespace / conflict marker check.
+
+Packet admission derives the previous release from reachable public tags and
+rejects a workspace target older than any such tag. Its pre-publication witness
+must name the exact target, predecessor, and unavailable target tag; public
+evidence stays explicitly unavailable or pending and cannot be hidden in a
+Markdown link destination. The policy counts its self-test and live check only
+when they are ordered, unconditional, fail-closed workflow steps or reachable
+top-level release-prep commands.
 
 The tag-triggered `Release` workflow repeats the release profile check, verifies
 release metadata matches the tag, verifies the tag is on `main`, and reruns the

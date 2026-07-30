@@ -24,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Check for trailing whitespace / conflict markers
         run: git diff --check "$(git hash-object -t tree /dev/null)" HEAD
@@ -38,6 +39,10 @@ jobs:
         run: npm ci
       - name: Check release profile
         run: bash scripts/release-profile-check.sh
+      - name: Self-test release packet policy
+        run: node --test scripts/check-release-packet.test.mjs
+      - name: Check release packet
+        run: node scripts/check-release-packet.mjs
       - name: Self-test the Node-version checker
         run: bash scripts/check-node-version.test.sh
       - name: Check the exact Node evidence version

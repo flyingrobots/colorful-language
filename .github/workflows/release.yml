@@ -73,6 +73,12 @@ jobs:
       - name: Check release profile
         run: bash scripts/release-profile-check.sh
 
+      - name: Self-test release packet policy
+        run: node --test scripts/check-release-packet.test.mjs
+
+      - name: Check release packet
+        run: node scripts/check-release-packet.mjs
+
       - name: Check editor version compatibility
         run: node scripts/check-editor-version-policy.mjs
 

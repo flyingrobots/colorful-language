@@ -48,6 +48,26 @@ Each release also has a packet under `docs/goalposts/vX.Y.Z/`:
 - `verification.md` records commands, results, tag SHAs, publish status, and
   release URLs.
 
+The workspace version selects the packet, and fetched release tags reachable
+from the current history select the previous public release. The predecessor
+must have a non-empty retrospective with one explicit completed status before a
+new train is admitted. CI, release preparation, and tag admission fail closed
+unless both versions have corresponding packets, the planned packet contains a
+concrete thesis and an exact target/previous-tag decision, every scope bucket is
+non-empty, and two to five uniquely labeled goalposts are defined. Each
+goalpost must have a same-label acceptance item with an inline command or
+non-issue URL as its observable oracle. Inline and reference-style issue links
+share one exhaustive slice inventory; non-claims and rollback posture are also
+required. A workspace version behind the latest reachable public tag is
+rejected instead of being treated as a new release.
+Before publication, the verification witness must name the exact target,
+previous tag, and unavailable target tag; leave registry, public-install, and
+retrospective sections with exactly one explicit unavailable or pending
+`Evidence state:`; and contain no completed claim hidden in ordinary prose,
+commit identifiers, or inline or reference-style link destinations.
+The packet parser registers the exact-pinned GFM table grammar, so tables are
+validated as rows and cells rather than accidental paragraph text.
+
 ## Automation
 
 The release profile is checked by CI and by the tag-triggered release workflow:
@@ -55,6 +75,25 @@ The release profile is checked by CI and by the tag-triggered release workflow:
 ```bash
 bash scripts/release-profile-check.sh
 ```
+
+The packet policy has a deterministic mutation suite and a live repository
+check. Run the self-test first so a broken policy implementation cannot admit
+its own packet:
+
+```bash
+node --test scripts/check-release-packet.test.mjs
+node scripts/check-release-packet.mjs
+```
+
+The same checker parses workflow jobs and shell command structure. The self-test
+and live check must remain an ordered, unconditional, fail-closed executable
+sequence in one CI job, the tag workflow's `validate-release` job, and the top
+level of `scripts/release-prep.sh`. Every other tag-workflow job must depend on
+`validate-release` transitively, so publication cannot run beside rather than
+behind packet admission. Comments, workflow data, conditional or
+failure-tolerant steps, unreachable branches, and commands after shell
+termination do not satisfy the gate. Local commands inside operator-guarded
+brace or subshell groups are not treated as top-level preparation evidence.
 
 Editor adapters follow the same fixed release version as the Cargo workspace.
 For a pre-1.0 `0.Y.Z` release, each adapter accepts stable `colorful-lsp`
