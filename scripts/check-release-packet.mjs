@@ -138,7 +138,7 @@ function previousPublicRelease(root, targetVersion, publicTags) {
   return previous;
 }
 
-function parseDocument(source, path) {
+export function parseDocument(source, path) {
   try {
     return fromMarkdown(source);
   } catch (error) {

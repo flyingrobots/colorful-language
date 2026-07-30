@@ -15,6 +15,7 @@ import {
   ReleasePacketPolicyError,
   SELF_TEST_COMMAND,
   loadRepositorySnapshot,
+  parseDocument,
   validateReleasePacket,
 } from "./check-release-packet.mjs";
 
@@ -183,6 +184,19 @@ test("accepts a complete pre-publication release packet", () => {
     scopedIssueCount: 3,
     phase: "pre-publication",
   });
+});
+
+test("parses release packet pipe tables structurally", () => {
+  const document = parseDocument(
+    "| Disposition | Slices |\n| --- | --- |\n| Included | #154 |\n",
+    "table-fixture.md",
+  );
+  assert.equal(document.children[0]?.type, "table");
+  assert.equal(document.children[0]?.children[1]?.type, "tableRow");
+  assert.equal(
+    document.children[0]?.children[1]?.children[0]?.type,
+    "tableCell",
+  );
 });
 
 test("rejects a release packet without a thesis", () => {
