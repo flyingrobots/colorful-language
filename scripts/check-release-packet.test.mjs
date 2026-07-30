@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
@@ -130,6 +131,13 @@ function writeRepositorySnapshot(root, snapshot = validSnapshot()) {
     mkdirSync(join(destination, ".."), { recursive: true });
     writeFileSync(destination, source);
   }
+}
+
+function git(root, ...arguments_) {
+  execFileSync("git", arguments_, {
+    cwd: root,
+    stdio: "ignore",
+  });
 }
 
 test("accepts a complete pre-publication release packet", () => {
@@ -331,6 +339,26 @@ test("derives the previous release from public tags, not packet directories", (t
     }).previousTag,
     "v0.3.0",
   );
+});
+
+test("ignores release tags that are not reachable from HEAD", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+  git(root, "init", "-b", "main");
+  git(root, "config", "user.email", "release-packet@example.invalid");
+  git(root, "config", "user.name", "Release Packet Test");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "fixture");
+  git(root, "tag", "--no-sign", "v0.3.0");
+  git(root, "switch", "-c", "abandoned-release");
+  writeFileSync(join(root, "abandoned.txt"), "not merged\n");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "abandoned");
+  git(root, "tag", "--no-sign", "v0.3.1");
+  git(root, "switch", "main");
+
+  assert.equal(loadRepositorySnapshot(root).previousTag, "v0.3.0");
 });
 
 test("the checked-in v0.4.0 release packet satisfies the policy", () => {
