@@ -324,15 +324,16 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-release-packet.test.mjs` cases `accepts a complete
   pre-publication release packet`, `rejects a release packet without a
   thesis`, `rejects packet and witness identity drift`, `rejects every missing
-  or empty release section`, `rejects an empty scope bucket`, `enforces the
-  two-to-five goalpost bound`, `rejects a scoped issue omitted from the slice
-  inventory`, `rejects every missing verification section`, `requires exactly
-  one release phase`, `rejects invented public evidence in the pre-publication
-  phase`, `requires the self-test before the live check in every release gate`,
-  `reports a stable category when the target packet is missing`, `derives the
-  previous release from public tags, not packet directories`, `ignores release
-  tags that are not reachable from HEAD`, and `the checked-in v0.4.0 release
-  packet satisfies the policy`;
+  or empty release section`, `rejects an empty scope bucket`, `requires exact
+  scope buckets and slice inventory`, `enforces the two-to-five goalpost
+  bound`, `rejects a scoped issue omitted from the slice inventory`, `rejects
+  every missing verification section`, `requires exactly one release phase`,
+  `rejects invented public evidence in the pre-publication phase`, `requires
+  the self-test before the live check in every release gate`, `reports a stable
+  category when the target packet is missing`, `derives the previous release
+  from public tags, not packet directories`, `ignores release tags that are not
+  reachable from HEAD`, and `the checked-in v0.4.0 release packet satisfies the
+  policy`;
   `docs/goalposts/v0.4.0/release.md`;
   `docs/goalposts/v0.4.0/verification.md`; `.github/workflows/ci.yml`;
   `.github/workflows/release.yml`; and `scripts/release-prep.sh`. *Status:*

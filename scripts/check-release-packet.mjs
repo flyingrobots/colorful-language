@@ -20,6 +20,11 @@ const RELEASE_PHASES = Object.freeze([
   "verified",
   "retrospected",
 ]);
+const SCOPE_BUCKETS = Object.freeze([
+  "Must ship",
+  "May slip",
+  "Not included",
+]);
 const COMPLETED_EVIDENCE =
   /\b(?:available|complete|completed|pass|passed|published|successful|successfully|verified)\b|✅|https?:\/\//iu;
 
@@ -320,14 +325,18 @@ function validatePacketDocument(snapshot) {
   }
 
   const scopeBuckets = subsectionMap(scope, snapshot.releasePath);
-  const scopedNodes = [
-    ...requireScopeBucket(scopeBuckets, "Must ship", snapshot.releasePath)
-      .nodes,
-    ...requireScopeBucket(scopeBuckets, "May slip", snapshot.releasePath)
-      .nodes,
-    ...requireScopeBucket(scopeBuckets, "Not included", snapshot.releasePath)
-      .nodes,
-  ];
+  const scopedNodes = SCOPE_BUCKETS.flatMap(
+    (name) => requireScopeBucket(scopeBuckets, name, snapshot.releasePath).nodes,
+  );
+  for (const name of scopeBuckets.keys()) {
+    if (!SCOPE_BUCKETS.includes(name)) {
+      reject(
+        "E_RELEASE_PACKET_SCOPE",
+        snapshot.releasePath,
+        `scope contains undeclared bucket '${name}'`,
+      );
+    }
+  }
   const goalpostItems = listItems(goalposts.nodes);
   if (goalpostItems.length < 2 || goalpostItems.length > 5) {
     reject(
@@ -355,6 +364,15 @@ function validatePacketDocument(snapshot) {
         "E_RELEASE_PACKET_SCOPE",
         snapshot.releasePath,
         `issue #${issue} appears in scope or goalposts but not in 'Scoped slices'`,
+      );
+    }
+  }
+  for (const issue of scopedIssueNumbers) {
+    if (!referencedIssueNumbers.has(issue)) {
+      reject(
+        "E_RELEASE_PACKET_SCOPE",
+        snapshot.releasePath,
+        `issue #${issue} appears in 'Scoped slices' but not in scope or goalposts`,
       );
     }
   }
