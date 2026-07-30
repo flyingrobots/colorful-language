@@ -568,6 +568,23 @@ ${CHECK_COMMAND}
   }, "E_RELEASE_PACKET_GATE");
 });
 
+test("does not accept packet commands inside guarded compound lists", () => {
+  for (const [opening, closing] of [
+    ["false && {", "}"],
+    ["false && (", ")"],
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.gateSources["scripts/release-prep.sh"] = `#!/usr/bin/env bash
+set -euo pipefail
+${opening}
+  ${SELF_TEST_COMMAND}
+  ${CHECK_COMMAND}
+${closing}
+`;
+    }, "E_RELEASE_PACKET_GATE");
+  }
+});
+
 test("requires fail-closed workflow gate steps", () => {
   for (const gate of [
     ".github/workflows/ci.yml",
