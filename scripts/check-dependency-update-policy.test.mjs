@@ -176,6 +176,15 @@ test("rejects a substituted fuzz dependency allowlist", () => {
   }, "E_DEPENDABOT_ALLOW");
 });
 
+test("rejects an allowlist on the root Cargo update source", () => {
+  expectCode(({ dependabot }) => {
+    dependabot.updates.find(
+      (update) =>
+        update["package-ecosystem"] === "cargo" && update.directory === "/",
+    ).allow = [{ "dependency-name": "tower-lsp" }];
+  }, "E_DEPENDABOT_ALLOW");
+});
+
 test("rejects a fuzz manifest without a direct runtime dependency", () => {
   expectCode(({ cargoManifests }) => {
     delete cargoManifests.get("fuzz/Cargo.toml").dependencies[
