@@ -78,7 +78,12 @@ Release 0.4.0 after v0.3.0 because pre-1.0 public APIs changed.
 
 ## Status
 
+- Target version: 0.4.0
+- Previous public tag: v0.3.0
+
 Release phase: pre-publication.
+
+- Annotated v0.4.0 tag: not available.
 
 ## Pre-publication evidence
 
@@ -276,6 +281,30 @@ test("requires exactly one release phase", () => {
       "Release phase: pre-publication.\n\nRelease phase: published.",
     );
   }, "E_RELEASE_PACKET_EVIDENCE");
+});
+
+test("rejects contradictory pre-publication status identity", () => {
+  for (const [before, after, code] of [
+    [
+      "Target version: 0.4.0",
+      "Target version: 0.4.1",
+      "E_RELEASE_PACKET_IDENTITY",
+    ],
+    [
+      "Previous public tag: v0.3.0",
+      "Previous public tag: v0.2.1",
+      "E_RELEASE_PACKET_IDENTITY",
+    ],
+    [
+      "Annotated v0.4.0 tag: not available.",
+      "Annotated v0.4.0 tag: available.",
+      "E_RELEASE_PACKET_EVIDENCE",
+    ],
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.verification = snapshot.verification.replace(before, after);
+    }, code);
+  }
 });
 
 test("rejects invented public evidence in the pre-publication phase", () => {
