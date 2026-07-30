@@ -171,7 +171,7 @@ function expectSnapshotCode(snapshot, mutate, code) {
   );
 }
 
-function replaceLevelTwoSection(source, heading, body) {
+function sectionBounds(source, heading) {
   const marker = `## ${heading}\n`;
   const headingStart = source.indexOf(marker);
   assert.notEqual(
@@ -182,20 +182,16 @@ function replaceLevelTwoSection(source, heading, body) {
   const bodyStart = headingStart + marker.length;
   const nextHeading = source.indexOf("\n## ", bodyStart);
   const bodyEnd = nextHeading === -1 ? source.length : nextHeading;
+  return { bodyStart, bodyEnd };
+}
+
+function replaceLevelTwoSection(source, heading, body) {
+  const { bodyStart, bodyEnd } = sectionBounds(source, heading);
   return `${source.slice(0, bodyStart)}\n${body.trim()}\n${source.slice(bodyEnd)}`;
 }
 
 function sectionBody(source, heading) {
-  const marker = `## ${heading}\n`;
-  const headingStart = source.indexOf(marker);
-  assert.notEqual(
-    headingStart,
-    -1,
-    `fixture is missing level-two heading ${heading}`,
-  );
-  const bodyStart = headingStart + marker.length;
-  const nextHeading = source.indexOf("\n## ", bodyStart);
-  const bodyEnd = nextHeading === -1 ? source.length : nextHeading;
+  const { bodyStart, bodyEnd } = sectionBounds(source, heading);
   return source.slice(bodyStart, bodyEnd).trim();
 }
 
@@ -346,6 +342,11 @@ test("rejects a phase declaration without its required evidence", () => {
         "Release phase: pre-publication.",
         `Release phase: ${phase}.`,
       );
+      snapshot.verification = snapshot.verification.replace(
+        "Annotated v0.4.0 tag: not available.",
+        "Annotated v0.4.0 tag: available.",
+      );
+      snapshot.targetCommit = TARGET_COMMIT;
     }, "E_RELEASE_PACKET_EVIDENCE");
   }
 });
@@ -813,6 +814,7 @@ test("rejects public evidence hidden in literal Markdown blocks", () => {
   for (const hiddenEvidence of [
     "```text\nTag published successfully at https://example.invalid/release\n```",
     "<div>Tag published successfully at https://example.invalid/release</div>",
+    "### Tag published successfully at https://example.invalid/release",
   ]) {
     expectCode((snapshot) => {
       snapshot.verification = snapshot.verification.replace(
@@ -1073,16 +1075,26 @@ test("keeps historical v0.1.0 through v0.3.0 witnesses readable", () => {
       new URL(`../docs/goalposts/v${version}/verification.md`, import.meta.url),
       "utf8",
     );
-    const document = parseDocument(
-      source,
-      `docs/goalposts/v${version}/verification.md`,
-    );
-    assert.equal(document.children[0]?.type, "heading");
-    assert.equal(document.children[0]?.depth, 1);
+  const document = parseDocument(
+    source,
+    `docs/goalposts/v${version}/verification.md`,
+  );
+  assert.match(
+    source,
+    /##\s+Discovery/u,
+    `v${version} missing Discovery section`,
+  );
+  assert.match(
+    source,
+    /##\s+Tag and publish/u,
+    `v${version} missing tag-and-publish section`,
+  );
     assert.match(
       source,
       new RegExp(`^# colorful-language v${version.replaceAll(".", "\\.")}`),
     );
+    assert.equal(document.children[0]?.type, "heading");
+    assert.equal(document.children[0]?.depth, 1);
   }
 });
 
@@ -1166,7 +1178,7 @@ test("binds published commit evidence to the annotated target tag", (t) => {
   git(root, "commit", "-m", "record publication");
 
   assert.throws(
-    () => loadRepositorySnapshot(root),
+    () => validateReleasePacket(loadRepositorySnapshot(root)),
     (error) =>
       error instanceof ReleasePacketPolicyError &&
       error.code === "E_RELEASE_PACKET_EVIDENCE",

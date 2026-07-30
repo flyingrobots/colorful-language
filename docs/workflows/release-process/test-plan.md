@@ -482,13 +482,12 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-19d — Retrospective and historical compatibility gate.** *Requirement:*
   REL-19. *Behavior:* the retrospected phase retains both earlier completed
   gates and records one completed retrospective with plan-versus-actual,
-  fallout, repeatable-wins, and next-recommendation entries; the predecessor
-  reader continues to accept the dated v0.3.0 historical witness without
-  applying the current-train shape retroactively. *Oracle:* skipping verified,
-  omitting each retrospective entry, or changing the predecessor's completed
-  retrospective status fails with `E_RELEASE_PACKET_EVIDENCE`; the checked-in
-  predecessor remains admitted. *Evidence type:* deterministic current-phase
-  and historical-witness mutations. *Tracking:*
+  fallout, repeatable-wins, and next-recommendation entries; the checked-in
+  historical witnesses remain readable after historical transitions without the
+  current-train proof shape being applied retroactively. *Oracle:* skipping
+  verified, omitting each retrospective entry, or changing the predecessor's
+  completed retrospective status fails with `E_RELEASE_PACKET_EVIDENCE`; each
+  historical witness stays parseable, preserves the original `#` title, and keeps a `## Status` section. *Evidence type:* deterministic current-phase and historical-witness shape mutations. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
   *Evidence:* `scripts/check-release-packet.test.mjs`
   `requires every completed retrospective field`,

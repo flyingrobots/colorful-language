@@ -102,7 +102,7 @@ function repositoryTags(root) {
   }
 }
 
-function targetTagCommit(root, version, publicTags) {
+function targetTagCommit(root, version, publicTags, verificationPath) {
   const targetTag = `v${version}`;
   if (!publicTags.includes(targetTag)) {
     return undefined;
@@ -121,16 +121,12 @@ function targetTagCommit(root, version, publicTags) {
   } catch (error) {
     reject(
       "E_RELEASE_PACKET_IO",
-      targetTag,
+      verificationPath,
       `cannot inspect target tag object: ${error.code ?? error.message}`,
     );
   }
   if (tagType !== "tag") {
-    reject(
-      "E_RELEASE_PACKET_EVIDENCE",
-      targetTag,
-      "published target tag must be annotated",
-    );
+    return undefined;
   }
   try {
     return execFileSync(
@@ -145,7 +141,7 @@ function targetTagCommit(root, version, publicTags) {
   } catch (error) {
     reject(
       "E_RELEASE_PACKET_IO",
-      targetTag,
+      verificationPath,
       `cannot resolve annotated target tag commit: ${error.code ?? error.message}`,
     );
   }
@@ -273,7 +269,7 @@ function baselineReleasePhase(root, verificationPath) {
     reject(
       "E_RELEASE_PACKET_EVIDENCE",
       verificationPath,
-      "branch-base witness must name exactly one admitted release phase",
+      `branch-base witness at ${baseline} must name exactly one admitted release phase`,
     );
   }
   return phases[0][1].toLowerCase();
@@ -555,8 +551,14 @@ function requirePublicationEvidence(
       /\bTag target commit:\s*([0-9a-f]{40})(?![0-9a-f])/giu,
     ),
   ];
+  if (typeof targetCommit !== "string") {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `annotated tag v${version} must resolve before section '${sectionName}' can be completed`,
+    );
+  }
   if (
-    typeof targetCommit !== "string" ||
     targetCommitMatches.length !== 1 ||
     targetCommitMatches[0][1].toLowerCase() !== targetCommit.toLowerCase()
   ) {
@@ -760,7 +762,11 @@ function definitionDestinations(document) {
 function sectionEvidenceText(section, definitions) {
   const fragments = [];
   walk(section.nodes, (node) => {
-    if (["code", "html", "paragraph", "tableCell"].includes(node.type)) {
+    if (
+      ["code", "heading", "html", "paragraph", "tableCell"].includes(
+        node.type,
+      )
+    ) {
       fragments.push(toString(node));
     }
     if (
@@ -1110,6 +1116,13 @@ function validateVerificationDocument(snapshot) {
   }
   const phase = phaseMatches[0][1].toLowerCase();
   const phaseIndex = RELEASE_PHASES.indexOf(phase);
+  if (phaseIndex === 0 && snapshot.targetCommit !== undefined) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      snapshot.verificationPath,
+      `release phase ${phase} cannot be pre-publication while ${expectedTargetTag} already resolves to ${snapshot.targetCommit}`,
+    );
+  }
   if (snapshot.previousPhase !== undefined) {
     const previousPhaseIndex = RELEASE_PHASES.indexOf(
       snapshot.previousPhase,
