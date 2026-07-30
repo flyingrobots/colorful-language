@@ -38,11 +38,14 @@ const RELEASE_TRACKING_REFERENCE_CLAIMS = [
   "complete and review the packet's release thesis",
   "bash scripts/release-prep.sh",
 ];
-const RELEASE_TRACKING_COMMAND_START_PATTERN = /\bgh issue create\b/u;
-const RELEASE_TRACKING_LABEL_OPTION_PATTERN =
-  /--label(?=$|[\s=])|(?:^|\s)-l(?=$|[\s=])/gu;
-const RELEASE_TRACKING_LABEL_PATTERN =
-  /--label (?<label>[a-z0-9][a-z0-9:._-]*)(?=$|\s)/gu;
+const RELEASE_TRACKING_COMMAND_BLOCK_PATTERN =
+  /```bash\r?\n(?<command>gh issue create[^\r\n]*(?:\r?\n(?!```)[^\r\n]*)*)\r?\n```/gu;
+const RELEASE_TRACKING_LABEL_LINE_PATTERN =
+  /^  --label (?<label>[a-z0-9][a-z0-9:._-]*) \\$/u;
+const RELEASE_TRACKING_TITLE_LINE_PATTERN =
+  /^  --title "\[release\] v(?<version>\d+\.\d+\.\d+)" \\$/u;
+const RELEASE_TRACKING_BODY_LINE_PATTERN =
+  /^  --body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md$/u;
 const RELEASE_TRACKING_REFERENCE_PATTERNS = [
   /--title "\[release\] v(?<version>\d+\.\d+\.\d+)"/u,
   /--body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md/u,
@@ -202,25 +205,39 @@ function allMatches(reference, pattern) {
 }
 
 function releaseTrackingCommand(reference) {
-  const starts = allMatches(
+  const blocks = allMatches(
     reference,
-    RELEASE_TRACKING_COMMAND_START_PATTERN,
+    RELEASE_TRACKING_COMMAND_BLOCK_PATTERN,
   );
-  const bodies = allMatches(
-    reference,
-    RELEASE_TRACKING_REFERENCE_PATTERNS[1],
-  );
+  if (blocks.length !== 1) {
+    return undefined;
+  }
+  const command = blocks[0].groups?.command;
+  const lines = command?.split(/\r?\n/u);
   if (
-    starts.length !== 1 ||
-    bodies.length !== 1 ||
-    starts[0].index >= bodies[0].index
+    lines?.length !== 8 ||
+    lines[0] !== "gh issue create \\" ||
+    lines[1] !==
+      "  --repo flyingrobots/colorful-language \\" ||
+    lines[3] !==
+      '  --milestone "Product Maturity — Evidence before expansion" \\'
   ) {
     return undefined;
   }
-  return reference.slice(
-    starts[0].index,
-    bodies[0].index + bodies[0][0].length,
+  const title = RELEASE_TRACKING_TITLE_LINE_PATTERN.exec(lines[2]);
+  const labels = lines.slice(4, 7).map(
+    (line) =>
+      RELEASE_TRACKING_LABEL_LINE_PATTERN.exec(line)?.groups?.label,
   );
+  const body = RELEASE_TRACKING_BODY_LINE_PATTERN.exec(lines[7]);
+  if (
+    title?.groups?.version === undefined ||
+    body?.groups?.version !== title.groups.version ||
+    !sameStringSet(labels, RELEASE_TRACKING_LABELS)
+  ) {
+    return undefined;
+  }
+  return normalizeReference(command);
 }
 
 function normalizeReference(reference) {
@@ -309,31 +326,16 @@ function validateDeliveryTracking(
     RELEASE_TRACKING_REFERENCE_PATTERNS.map(
       (pattern) => oneVersionMatch(releasingReference, pattern),
     );
-  const trackingCommand = releaseTrackingCommand(releasingReference);
-  const releaseTrackingLabelOptions =
-    trackingCommand === undefined
-      ? []
-      : allMatches(
-          trackingCommand,
-          RELEASE_TRACKING_LABEL_OPTION_PATTERN,
-        );
-  const releaseTrackingLabels =
-    trackingCommand === undefined
-      ? []
-      : allMatches(
-          trackingCommand,
-          RELEASE_TRACKING_LABEL_PATTERN,
-        ).map((match) => match.groups?.label);
+  const trackingCommand = releaseTrackingCommand(
+    deliveryReferences.releasing,
+  );
   if (
     RELEASE_TRACKING_REFERENCE_CLAIMS.some(
       (claim) => !releasingReference.includes(claim),
     ) ||
     trackingCommand === undefined ||
     releaseExampleVersions.some((version) => version === undefined) ||
-    new Set(releaseExampleVersions).size !== 1 ||
-    releaseTrackingLabelOptions.length !==
-      releaseTrackingLabels.length ||
-    !sameStringSet(releaseTrackingLabels, RELEASE_TRACKING_LABELS)
+    new Set(releaseExampleVersions).size !== 1
   ) {
     reject(
       "E_DELIVERY_TRACKING",
