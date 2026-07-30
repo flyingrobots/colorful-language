@@ -487,7 +487,12 @@ Verification for release preparation, tag automation, and release witnesses.
   current-train proof shape being applied retroactively. *Oracle:* skipping
   verified, omitting each retrospective entry, or changing the predecessor's
   completed retrospective status fails with `E_RELEASE_PACKET_EVIDENCE`; each
-  historical witness stays parseable, preserves the original `#` title, and keeps a `## Status` section. *Evidence type:* deterministic current-phase and historical-witness shape mutations. *Tracking:*
+  historical witness stays parseable, preserves the original `#` title, and keeps a `## Status` section. *Evidence type:* `node --test scripts/check-release-packet.test.mjs`; evidence includes
+  `keeps historical v0.1.0 through v0.3.0 witnesses readable` and
+  `requires completed predecessor retrospective` fixtures in
+  `docs/goalposts/v0.1.0/verification.md`,
+  `docs/goalposts/v0.2.0/verification.md`, and
+  `docs/goalposts/v0.3.0/verification.md`; historical contract retains the original `#` title and `## Status` section. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
   *Evidence:* `scripts/check-release-packet.test.mjs`
   `requires every completed retrospective field`,
