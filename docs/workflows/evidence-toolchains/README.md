@@ -144,6 +144,7 @@ Dependabot opens six independent weekly groups from
 | `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
 | `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
+| `fuzz-cargo` | Standalone fuzz Cargo workspace and lockfile | Fuzz-only revert |
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
 | `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
 
