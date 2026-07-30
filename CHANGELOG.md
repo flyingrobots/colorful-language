@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Monotonic release-witness evidence gates.** The active release packet now
+  advances through explicit pre-publication, published, verified, and
+  retrospected states. Publication requires an available annotated target tag,
+  the full commit behind that tag, an immutable publish-workflow run, and the
+  exact GitHub Release URL; public verification requires dated passed
+  verification and rollback or patch-forward results; retrospective closure
+  requires completed plan-versus-actual, fallout, repeatable-wins, and
+  next-recommendation entries. Deterministic mutations reject skipped phases,
+  later-phase claims, stale unavailable placeholders, malformed identities,
+  and incomplete evidence with `E_RELEASE_PACKET_EVIDENCE`, while historical
+  v0.1.0 through v0.3.0 witnesses retain their original readable shapes.
 - **Fail-closed v0.4.0 release packet admission.** A version-derived packet and
   staged verification witness now define the release thesis, SemVer decision,
   must-ship, may-slip, and excluded scope, bounded goalposts, slice inventory,

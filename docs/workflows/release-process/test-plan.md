@@ -442,8 +442,10 @@ Verification for release preparation, tag automation, and release witnesses.
   with `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* deterministic witness
   phase-matrix test. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `accepts one canonical witness for every release phase` and
+  `rejects a phase declaration without its required evidence`. *Status:*
+  implemented.
 - **REL-19b — Published evidence gate.** *Requirement:* REL-19. *Behavior:* the
   published phase requires an available annotated target tag, one completed
   publication state, the exact target commit, an immutable tag-workflow run
@@ -453,8 +455,12 @@ Verification for release preparation, tag automation, and release witnesses.
   `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal publication-evidence
   mutations. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `requires complete immutable publication evidence`,
+  `accepts autolink publication identities without double counting`,
+  `binds published commit evidence to the annotated target tag`, and
+  `rejects verification or retrospective evidence before its phase`. *Status:*
+  implemented.
 - **REL-19c — Public-verification evidence gate.** *Requirement:* REL-19.
   *Behavior:* the verified phase retains completed publication evidence and
   adds one completed public-verification state, a dated passed result, and a
@@ -464,8 +470,11 @@ Verification for release preparation, tag automation, and release witnesses.
   `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal public-verification
   mutations. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `requires publication and dated public-verification evidence`,
+  `accepts a dated patch-forward result instead of rollback`, and
+  `rejects verification or retrospective evidence before its phase`. *Status:*
+  implemented.
 - **REL-19d — Retrospective and historical compatibility gate.** *Requirement:*
   REL-19. *Behavior:* the retrospected phase retains both earlier completed
   gates and records one completed retrospective with plan-versus-actual,
@@ -477,8 +486,12 @@ Verification for release preparation, tag automation, and release witnesses.
   predecessor remains admitted. *Evidence type:* deterministic current-phase
   and historical-witness mutations. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `requires every completed retrospective field`,
+  `allows completed retrospective fallout to name an unavailable surface`,
+  `requires a completed predecessor retrospective`, and
+  `keeps historical v0.1.0 through v0.3.0 witnesses readable`. *Status:*
+  implemented.
 
 ## Open verification gaps
 

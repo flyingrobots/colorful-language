@@ -191,6 +191,62 @@ A release is closed when its versioned tracking issue is closed, all scoped
 work is closed, moved, or explicitly cut, fallout issues are triaged, and the
 next release thesis or patch posture is clear.
 
+## Witness phase transitions
+
+The active `docs/goalposts/vX.Y.Z/verification.md` witness declares exactly one
+phase under `## Status`:
+
+```text
+Release phase: pre-publication | published | verified | retrospected
+```
+
+The annotated target tag is unavailable or pending only during
+`pre-publication`; every later phase requires it to be available. The three
+staged evidence sections each declare exactly one structured state:
+
+| Phase | `Publication evidence` | `Public verification` | `Retrospective` |
+| --- | --- | --- | --- |
+| `pre-publication` | unavailable | unavailable | unavailable |
+| `published` | completed | unavailable | unavailable |
+| `verified` | completed | completed | unavailable |
+| `retrospected` | completed | completed | completed |
+
+Write unavailable gates as `Evidence state: unavailable.` or, before
+publication, the equivalent `pending` or `not available` state. Do not add
+completed claims, commit identifiers, or public links to an unavailable
+section.
+
+When publication completes, change its state to `Evidence state: completed.`
+and record the commit resolved from the annotated target tag:
+
+```text
+Tag target commit: <full 40-character commit SHA>.
+Publish workflow: https://github.com/flyingrobots/colorful-language/actions/runs/<run-id>.
+GitHub Release: https://github.com/flyingrobots/colorful-language/releases/tag/vX.Y.Z.
+```
+
+When public verification completes, retain the publication evidence, change
+the public-verification state to completed, and record exactly one dated passed
+verification result plus exactly one dated passed rollback or patch-forward
+result:
+
+```text
+Verification result: passed on YYYY-MM-DD.
+Rollback result: passed on YYYY-MM-DD.
+```
+
+When the retrospective completes, retain both earlier gates, change the
+retrospective state to completed, declare `Retrospective status: completed.`,
+and add non-empty list entries labeled `Planned versus actual`, `Fallout`,
+`Repeatable wins`, and `Next recommendation`.
+
+Run the packet self-test and live check after every transition. Invalid
+ordering, skipped evidence, later-phase claims, stale unavailable placeholders,
+or incomplete identities fail with `E_RELEASE_PACKET_EVIDENCE`. This active
+state machine does not rewrite historical packets: v0.1.0 through v0.3.0 remain
+readable in their original shapes, and only the immediate predecessor's
+completed retrospective is required when admitting a new train.
+
 ## Version selection
 
 Colorful uses SemVer. Because the project is still pre-1.0, breaking public API
@@ -432,7 +488,9 @@ must name the exact target, predecessor, and unavailable target tag; public
 evidence stays explicitly unavailable or pending and cannot be hidden in a
 Markdown link destination. The policy counts its self-test and live check only
 when they are ordered, unconditional, fail-closed workflow steps or reachable
-top-level release-prep commands.
+top-level release-prep commands. After publication, the same admission policy
+requires the ordered completed evidence described in
+[Witness phase transitions](#witness-phase-transitions).
 
 The tag-triggered `Release` workflow repeats the release profile check, verifies
 release metadata matches the tag, verifies the tag is on `main`, and reruns the

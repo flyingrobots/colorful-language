@@ -166,7 +166,8 @@ function expectSnapshotCode(snapshot, mutate, code) {
   mutate(snapshot);
   assert.throws(
     () => validateReleasePacket(snapshot),
-    (error) => error instanceof ReleasePacketPolicyError && error.code === code,
+    (error) =>
+      error instanceof ReleasePacketPolicyError && error.code === code,
   );
 }
 
@@ -207,6 +208,7 @@ function snapshotForPhase(phase) {
   if (phase === "pre-publication") {
     return snapshot;
   }
+  snapshot.targetCommit = TARGET_COMMIT;
   snapshot.verification = snapshot.verification
     .replace("Release phase: pre-publication.", `Release phase: ${phase}.`)
     .replace(
@@ -274,6 +276,14 @@ function git(root, ...arguments_) {
   });
 }
 
+function gitOutput(root, ...arguments_) {
+  return execFileSync("git", arguments_, {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
+}
+
 test("accepts a complete pre-publication release packet", () => {
   assert.deepEqual(validateReleasePacket(validSnapshot()), {
     version: "0.4.0",
@@ -301,6 +311,14 @@ test("accepts one canonical witness for every release phase", () => {
   }
 });
 
+test("accepts autolink publication identities without double counting", () => {
+  const snapshot = snapshotForPhase("published");
+  snapshot.verification = snapshot.verification
+    .replace(PUBLISH_WORKFLOW, `<${PUBLISH_WORKFLOW}>`)
+    .replace(GITHUB_RELEASE, `<${GITHUB_RELEASE}>`);
+  assert.equal(validateReleasePacket(snapshot).phase, "published");
+});
+
 test("rejects a phase declaration without its required evidence", () => {
   for (const phase of ["published", "verified", "retrospected"]) {
     expectCode((snapshot) => {
@@ -321,15 +339,23 @@ test("requires complete immutable publication evidence", () => {
       ),
     (source) => source.replace(`- Tag target commit: ${TARGET_COMMIT}.\n`, ""),
     (source) =>
+      source.replace(TARGET_COMMIT, TARGET_COMMIT.slice(0, 39)),
+    (source) =>
+      source.replace(TARGET_COMMIT, "f".repeat(TARGET_COMMIT.length)),
+    (source) =>
       source.replace(
         `- Publish workflow: ${PUBLISH_WORKFLOW}.`,
         "- Publish workflow: pending.",
       ),
     (source) =>
+      source.replace(PUBLISH_WORKFLOW, `${PUBLISH_WORKFLOW}.invalid`),
+    (source) =>
       source.replace(
         `- GitHub Release: ${GITHUB_RELEASE}.`,
         "- GitHub Release: not available.",
       ),
+    (source) =>
+      source.replace(GITHUB_RELEASE, GITHUB_RELEASE.replace("0.4.0", "0.4.1")),
     (source) =>
       source.replace(
         "## Publication evidence\n\nEvidence state: completed.",
@@ -390,10 +416,16 @@ test("requires publication and dated public-verification evidence", () => {
       source.replace(
         "## Public verification\n\nEvidence state: completed.",
         "## Public verification\n\nEvidence state: unavailable.",
-      ),
+    ),
     (source) =>
       source.replace("- Verification result: passed on 2026-07-30.\n", ""),
     (source) => source.replace("- Rollback result: passed on 2026-07-30.", ""),
+    (source) => source.replace("2026-07-30", "2026-02-31"),
+    (source) =>
+      source.replace(
+        "Rollback result: passed on 2026-07-30.",
+        "Rollback result: failed on 2026-07-30.",
+      ),
   ];
   for (const mutate of mutations) {
     expectSnapshotCode(
@@ -404,6 +436,15 @@ test("requires publication and dated public-verification evidence", () => {
       "E_RELEASE_PACKET_EVIDENCE",
     );
   }
+});
+
+test("accepts a dated patch-forward result instead of rollback", () => {
+  const snapshot = snapshotForPhase("verified");
+  snapshot.verification = snapshot.verification.replace(
+    "Rollback result: passed on 2026-07-30.",
+    "Patch-forward result: passed on 2026-07-30.",
+  );
+  assert.equal(validateReleasePacket(snapshot).phase, "verified");
 });
 
 test("requires every completed retrospective field", () => {
@@ -422,6 +463,11 @@ test("requires every completed retrospective field", () => {
       source.replace(
         "Retrospective status: completed.",
         "Retrospective status: pending.",
+      ),
+    (source) =>
+      source.replace(
+        "- Next recommendation: begin held-out validation.",
+        "- Next recommendation: begin held-out validation.\n- Deferred registry: not available.",
       ),
     ...[
       "Planned versus actual",
@@ -442,6 +488,15 @@ test("requires every completed retrospective field", () => {
       "E_RELEASE_PACKET_EVIDENCE",
     );
   }
+});
+
+test("allows completed retrospective fallout to name an unavailable surface", () => {
+  const snapshot = snapshotForPhase("retrospected");
+  snapshot.verification = snapshot.verification.replace(
+    "- Fallout: none.",
+    "- Fallout: the may-slip Homebrew channel remained unavailable.",
+  );
+  assert.equal(validateReleasePacket(snapshot).phase, "retrospected");
 });
 
 test("parses release packet pipe tables structurally", () => {
@@ -478,7 +533,10 @@ test("rejects packet and witness identity drift", () => {
       snapshot.release = snapshot.release.replace("v0.3.0", "v0.2.1");
     },
     (snapshot) => {
-      snapshot.verification = snapshot.verification.replace("v0.4.0", "v0.4.1");
+      snapshot.verification = snapshot.verification.replace(
+        "v0.4.0",
+        "v0.4.1",
+      );
     },
   ]) {
     expectCode(mutate, "E_RELEASE_PACKET_IDENTITY");
@@ -514,7 +572,10 @@ test("rejects every missing or empty release section", () => {
       snapshot.release = snapshot.release.replace(`## ${heading}`, "");
     }, "E_RELEASE_PACKET_SECTION");
     expectCode((snapshot) => {
-      snapshot.release = blankLevelTwoSection(snapshot.release, heading);
+      snapshot.release = blankLevelTwoSection(
+        snapshot.release,
+        heading,
+      );
     }, "E_RELEASE_PACKET_SECTION");
   }
 });
@@ -866,7 +927,10 @@ test("requires fail-closed workflow gate steps", () => {
     for (const mutate of [
       (source) => source.replace("    steps:", "    if: false\n    steps:"),
       (source) =>
-        source.replace("    steps:", "    continue-on-error: true\n    steps:"),
+        source.replace(
+          "    steps:",
+          "    continue-on-error: true\n    steps:",
+        ),
       (source) =>
         source.replace(
           "      - name: Self-test packet policy",
@@ -901,7 +965,7 @@ test("reports a stable category when the target packet is missing", (t) => {
   mkdirSync(join(root, "docs/goalposts/v0.3.0"), { recursive: true });
   writeFileSync(
     join(root, "Cargo.toml"),
-    '[workspace.package]\nversion = "0.4.0"\n',
+    "[workspace.package]\nversion = \"0.4.0\"\n",
   );
   writeFileSync(join(root, "docs/goalposts/v0.3.0/release.md"), "released\n");
   writeFileSync(
@@ -969,6 +1033,25 @@ test("requires a completed predecessor retrospective", (t) => {
   }
 });
 
+test("keeps historical v0.1.0 through v0.3.0 witnesses readable", () => {
+  for (const version of ["0.1.0", "0.2.0", "0.2.1", "0.3.0"]) {
+    const source = readFileSync(
+      new URL(`../docs/goalposts/v${version}/verification.md`, import.meta.url),
+      "utf8",
+    );
+    const document = parseDocument(
+      source,
+      `docs/goalposts/v${version}/verification.md`,
+    );
+    assert.equal(document.children[0]?.type, "heading");
+    assert.equal(document.children[0]?.depth, 1);
+    assert.match(
+      source,
+      new RegExp(`^# colorful-language v${version.replaceAll(".", "\\.")}`),
+    );
+  }
+});
+
 test("rejects a target behind the latest public release", (t) => {
   const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
   t.after(() => rmSync(root, { recursive: true }));
@@ -982,6 +1065,68 @@ test("rejects a target behind the latest public release", (t) => {
     (error) =>
       error instanceof ReleasePacketPolicyError &&
       error.code === "E_RELEASE_PACKET_IDENTITY",
+  );
+});
+
+test("binds published commit evidence to the annotated target tag", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+  git(root, "init", "-b", "main");
+  git(root, "config", "user.email", "release-packet@example.invalid");
+  git(root, "config", "user.name", "Release Packet Test");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "previous release");
+  git(root, "tag", "--no-sign", "v0.3.0");
+  writeFileSync(join(root, "release-target.txt"), "release target\n");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "release target");
+  const targetCommit = gitOutput(root, "rev-parse", "HEAD");
+  git(root, "tag", "--no-sign", "v0.4.0");
+
+  const published = snapshotForPhase("published");
+  published.verification = published.verification.replace(
+    TARGET_COMMIT,
+    targetCommit,
+  );
+  writeFileSync(
+    join(root, published.verificationPath),
+    published.verification,
+  );
+  git(root, "add", ".");
+  git(root, "commit", "-m", "record publication");
+
+  assert.throws(
+    () => loadRepositorySnapshot(root),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_EVIDENCE",
+  );
+  git(root, "tag", "--delete", "v0.4.0");
+  git(
+    root,
+    "tag",
+    "--no-sign",
+    "-a",
+    "v0.4.0",
+    targetCommit,
+    "-m",
+    "release: v0.4.0",
+  );
+  assert.equal(loadRepositorySnapshot(root).targetCommit, targetCommit);
+  assert.equal(
+    validateReleasePacket(loadRepositorySnapshot(root)).phase,
+    "published",
+  );
+  writeFileSync(
+    join(root, published.verificationPath),
+    published.verification.replace(targetCommit, "f".repeat(40)),
+  );
+  assert.throws(
+    () => validateReleasePacket(loadRepositorySnapshot(root)),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_EVIDENCE",
   );
 });
 
@@ -1019,6 +1164,9 @@ test("documentation spine links the planned packet and witness", () => {
     .find((entry) => entry.startsWith("**Planned v0.4.0:**"));
   assert.ok(plannedEntry, "docs/README.md must list planned v0.4.0");
   assert.match(plannedEntry, /\(goalposts\/v0\.4\.0\/release\.md\)/u);
-  assert.match(plannedEntry, /\(goalposts\/v0\.4\.0\/verification\.md\)/u);
+  assert.match(
+    plannedEntry,
+    /\(goalposts\/v0\.4\.0\/verification\.md\)/u,
+  );
   assert.match(plannedEntry, /\bnot yet tagged or published\b/u);
 });

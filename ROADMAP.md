@@ -237,11 +237,11 @@ observe public-contract regressions before they ship.
   slice issues retain their architectural goalposts
   [#283](https://github.com/flyingrobots/colorful-language/issues/283).
   <!-- roadmap-primary: active #283 -->
-- **Active release-witness transitions:** extend the pre-publication admission
+- **Delivered release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
-  <!-- roadmap-primary: active #281 -->
+  <!-- roadmap-primary: delivered #281 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog
