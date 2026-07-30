@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { toString } from "mdast-util-to-string";
 import { parse as parseToml } from "smol-toml";
+import { parse as parseYaml } from "yaml";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const STABLE_VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
@@ -540,18 +541,128 @@ function validateVerificationDocument(snapshot) {
   return { phase };
 }
 
-function commandLineIndex(source, command) {
-  return source.split(/\r?\n/u).findIndex((line) => {
+function updateMultilineQuote(line, initialQuote) {
+  let quote = initialQuote;
+  let escaped = false;
+  for (const character of line) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (character === "\\" && quote !== "'") {
+      escaped = true;
+      continue;
+    }
+    if (quote === null && ["'", '"', "`"].includes(character)) {
+      quote = character;
+    } else if (character === quote) {
+      quote = null;
+    }
+  }
+  return quote;
+}
+
+function topLevelShellCommands(source) {
+  const commands = [];
+  let depth = 0;
+  let hereDocument;
+  let quote = null;
+  for (const line of source.split(/\r?\n/u)) {
     const trimmed = line.trim();
-    return trimmed === command || trimmed === `run: ${command}`;
+    if (hereDocument !== undefined) {
+      if (trimmed === hereDocument) {
+        hereDocument = undefined;
+      }
+      continue;
+    }
+    const startedInsideQuote = quote !== null;
+    quote = updateMultilineQuote(line, quote);
+    if (startedInsideQuote || quote !== null) {
+      continue;
+    }
+    const hereDocumentMatch =
+      /<<-?\s*['"]?(?<delimiter>[A-Za-z_][A-Za-z0-9_]*)['"]?/u.exec(line);
+    if (hereDocumentMatch !== null) {
+      hereDocument = hereDocumentMatch.groups.delimiter;
+    }
+    if (/^(?:done|esac|fi)\b/u.test(trimmed) || trimmed === "}") {
+      depth = Math.max(0, depth - 1);
+      continue;
+    }
+    if (
+      depth === 0 &&
+      (trimmed === SELF_TEST_COMMAND || trimmed === CHECK_COMMAND)
+    ) {
+      commands.push(trimmed);
+    }
+    if (
+      /^(?:case|for|if|select|until|while)\b/u.test(trimmed) ||
+      /^(?:function\s+)?[A-Za-z_][A-Za-z0-9_]*(?:\s*\(\s*\))?\s*\{/u.test(
+        trimmed,
+      ) ||
+      trimmed === "(" ||
+      trimmed === "{"
+    ) {
+      depth += 1;
+    }
+  }
+  return commands;
+}
+
+function commandsRunInOrder(commands) {
+  const selfTestIndex = commands.indexOf(SELF_TEST_COMMAND);
+  const checkIndex = commands.indexOf(CHECK_COMMAND);
+  return (
+    selfTestIndex !== -1 &&
+    checkIndex !== -1 &&
+    selfTestIndex < checkIndex
+  );
+}
+
+function workflowRunsCommandsInOrder(source, gate) {
+  let workflow;
+  try {
+    workflow = parseYaml(source);
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_GATE",
+      gate,
+      `cannot parse workflow YAML: ${error.message}`,
+    );
+  }
+  if (
+    workflow === null ||
+    typeof workflow !== "object" ||
+    workflow.jobs === null ||
+    typeof workflow.jobs !== "object"
+  ) {
+    return false;
+  }
+  return Object.values(workflow.jobs).some((job) => {
+    if (
+      job === null ||
+      typeof job !== "object" ||
+      !Array.isArray(job.steps)
+    ) {
+      return false;
+    }
+    const commands = job.steps.flatMap((step) =>
+      step !== null &&
+      typeof step === "object" &&
+      typeof step.run === "string"
+        ? topLevelShellCommands(step.run)
+        : [],
+    );
+    return commandsRunInOrder(commands);
   });
 }
 
 function validateGateWiring(snapshot) {
   for (const [gate, source] of Object.entries(snapshot.gateSources)) {
-    const selfTestIndex = commandLineIndex(source, SELF_TEST_COMMAND);
-    const checkIndex = commandLineIndex(source, CHECK_COMMAND);
-    if (selfTestIndex === -1 || checkIndex === -1 || selfTestIndex > checkIndex) {
+    const commandsAreExecutable = gate.endsWith(".yml")
+      ? workflowRunsCommandsInOrder(source, gate)
+      : commandsRunInOrder(topLevelShellCommands(source));
+    if (!commandsAreExecutable) {
       reject(
         "E_RELEASE_PACKET_GATE",
         gate,
