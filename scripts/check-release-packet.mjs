@@ -422,8 +422,55 @@ function validateVerificationDocument(snapshot) {
     "Retrospective",
     snapshot.verificationPath,
   );
+  const statusText = sectionText(status);
+  const targetMatches = [
+    ...statusText.matchAll(
+      /Target version:\s*(\d+\.\d+\.\d+)(?![\d.])/giu,
+    ),
+  ];
+  if (
+    targetMatches.length !== 1 ||
+    targetMatches[0][1] !== snapshot.version
+  ) {
+    reject(
+      "E_RELEASE_PACKET_IDENTITY",
+      snapshot.verificationPath,
+      `section 'Status' must name target version ${snapshot.version} exactly once`,
+    );
+  }
+  const previousTagMatches = [
+    ...statusText.matchAll(
+      /Previous public tag:\s*(v\d+\.\d+\.\d+)(?![\d.])/giu,
+    ),
+  ];
+  if (
+    previousTagMatches.length !== 1 ||
+    previousTagMatches[0][1] !== snapshot.previousTag
+  ) {
+    reject(
+      "E_RELEASE_PACKET_IDENTITY",
+      snapshot.verificationPath,
+      `section 'Status' must name previous public tag ${snapshot.previousTag} exactly once`,
+    );
+  }
+  const targetTagMatches = [
+    ...statusText.matchAll(
+      /Annotated\s+(v\d+\.\d+\.\d+)\s+tag:\s*(not available|unavailable|pending|available)\b/giu,
+    ),
+  ];
+  const expectedTargetTag = `v${snapshot.version}`;
+  if (
+    targetTagMatches.length !== 1 ||
+    targetTagMatches[0][1] !== expectedTargetTag
+  ) {
+    reject(
+      "E_RELEASE_PACKET_IDENTITY",
+      snapshot.verificationPath,
+      `section 'Status' must name annotated target tag ${expectedTargetTag} exactly once`,
+    );
+  }
   const phaseMatches = [
-    ...sectionText(status).matchAll(
+    ...statusText.matchAll(
       /Release phase:\s*(pre-publication|published|verified|retrospected)\b/giu,
     ),
   ];
@@ -436,6 +483,14 @@ function validateVerificationDocument(snapshot) {
   }
   const phase = phaseMatches[0][1].toLowerCase();
   if (phase === "pre-publication") {
+    const targetTagState = targetTagMatches[0][2].toLowerCase();
+    if (!["not available", "unavailable", "pending"].includes(targetTagState)) {
+      reject(
+        "E_RELEASE_PACKET_EVIDENCE",
+        snapshot.verificationPath,
+        `section 'Status' must keep annotated target tag ${expectedTargetTag} unavailable or pending before publication`,
+      );
+    }
     for (const [name, section] of [
       ["Publication evidence", publication],
       ["Public verification", publicVerification],
