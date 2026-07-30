@@ -436,7 +436,7 @@ test("requires publication and dated public-verification evidence", () => {
       source.replace(
         "## Public verification\n\nEvidence state: completed.",
         "## Public verification\n\nEvidence state: unavailable.",
-    ),
+      ),
     (source) =>
       source.replace("- Verification result: passed on 2026-07-30.\n", ""),
     (source) => source.replace("- Rollback result: passed on 2026-07-30.", ""),
