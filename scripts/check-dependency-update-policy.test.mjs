@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { parse as parseToml } from "smol-toml";
 import { parse as parseYaml } from "yaml";
 
 import {
   DependencyUpdatePolicyError,
+  repositoryCandidate,
   validateDependencyUpdatePolicy,
 } from "./check-dependency-update-policy.mjs";
 
@@ -48,6 +50,8 @@ updates:
     directory: /fuzz
     schedule:
       interval: weekly
+    allow:
+      - dependency-name: libfuzzer-sys
     groups:
       fuzz-cargo:
         patterns:
@@ -74,6 +78,23 @@ updates:
         patterns:
           - "*"
 `),
+    cargoManifests: new Map([
+      [
+        "Cargo.toml",
+        parseToml(`
+[workspace.dependencies]
+tower-lsp = "0.20"
+`),
+      ],
+      [
+        "fuzz/Cargo.toml",
+        parseToml(`
+[dependencies]
+colorful-lsp = { path = "../crates/colorful-lsp" }
+libfuzzer-sys = "=0.4.13"
+`),
+      ],
+    ]),
     workflows: new Map([
       [
         ".github/workflows/ci.yml",
@@ -94,29 +115,6 @@ function expectCode(mutate, code) {
     (error) =>
       error instanceof DependencyUpdatePolicyError && error.code === code,
   );
-}
-
-function repositoryCandidate() {
-  const workflowDirectory = new URL(
-    "../.github/workflows/",
-    import.meta.url,
-  );
-  return {
-    dependabot: parseYaml(
-      readFileSync(
-        new URL("../.github/dependabot.yml", import.meta.url),
-        "utf8",
-      ),
-    ),
-    workflows: new Map(
-      readdirSync(workflowDirectory)
-        .filter((entry) => entry.endsWith(".yml"))
-        .map((entry) => [
-          `.github/workflows/${entry}`,
-          readFileSync(new URL(entry, workflowDirectory), "utf8"),
-        ]),
-    ),
-  };
 }
 
 test("accepts the reviewed update-source and action-pin policy", () => {
@@ -144,6 +142,127 @@ test("accepts reviewed manual dependency rules in any order", () => {
 test("accepts a reviewed standalone fuzz Cargo update source", () => {
   const candidate = fixture();
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
+});
+
+test("rejects a fuzz source without its direct-runtime allowlist", () => {
+  expectCode(({ dependabot }) => {
+    delete dependabot.updates.find(
+      (update) =>
+        update["package-ecosystem"] === "cargo" &&
+        update.directory === "/fuzz",
+    ).allow;
+  }, "E_DEPENDABOT_ALLOW");
+});
+
+test("rejects a broadened fuzz dependency allowlist", () => {
+  expectCode(({ dependabot }) => {
+    dependabot.updates
+      .find(
+        (update) =>
+          update["package-ecosystem"] === "cargo" &&
+          update.directory === "/fuzz",
+      )
+      .allow.push({ "dependency-name": "*" });
+  }, "E_DEPENDABOT_ALLOW");
+});
+
+test("rejects a substituted fuzz dependency allowlist", () => {
+  expectCode(({ dependabot }) => {
+    dependabot.updates.find(
+      (update) =>
+        update["package-ecosystem"] === "cargo" &&
+        update.directory === "/fuzz",
+    ).allow[0]["dependency-name"] = "tower-lsp";
+  }, "E_DEPENDABOT_ALLOW");
+});
+
+test("rejects an allowlist on the root Cargo update source", () => {
+  expectCode(({ dependabot }) => {
+    dependabot.updates.find(
+      (update) =>
+        update["package-ecosystem"] === "cargo" && update.directory === "/",
+    ).allow = [{ "dependency-name": "tower-lsp" }];
+  }, "E_DEPENDABOT_ALLOW");
+});
+
+test("rejects a fuzz manifest without a direct runtime dependency", () => {
+  expectCode(({ cargoManifests }) => {
+    delete cargoManifests.get("fuzz/Cargo.toml").dependencies[
+      "libfuzzer-sys"
+    ];
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
+test("rejects a root-owned dependency in the standalone fuzz manifest", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("fuzz/Cargo.toml").dependencies["tower-lsp"] = "0.20";
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
+test("rejects a root-member dependency in the fuzz manifest", () => {
+  expectCode(({ cargoManifests, dependabot }) => {
+    cargoManifests.set(
+      "crates/member/Cargo.toml",
+      parseToml(`
+[dependencies]
+member-only = "1"
+`),
+    );
+    cargoManifests.get("fuzz/Cargo.toml").dependencies["member-only"] = "1";
+    dependabot.updates
+      .find(
+        (update) =>
+          update["package-ecosystem"] === "cargo" &&
+          update.directory === "/fuzz",
+      )
+      .allow.push({ "dependency-name": "member-only" });
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
+test("rejects a renamed root-owned dependency in the fuzz manifest", () => {
+  expectCode(({ cargoManifests, dependabot }) => {
+    cargoManifests.get("fuzz/Cargo.toml").dependencies["lsp-alias"] = {
+      package: "tower-lsp",
+      version: "0.20",
+    };
+    dependabot.updates
+      .find(
+        (update) =>
+          update["package-ecosystem"] === "cargo" &&
+          update.directory === "/fuzz",
+      )
+      .allow.push({ "dependency-name": "lsp-alias" });
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
+test("rejects a root-owned standalone fuzz dev dependency", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("fuzz/Cargo.toml")["dev-dependencies"] = {
+      "tower-lsp": "0.20",
+    };
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
+test("rejects a root-owned fuzz workspace dependency", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("fuzz/Cargo.toml").workspace = {
+      dependencies: {
+        "tower-lsp": "0.20",
+      },
+    };
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
+test("rejects a root-owned target-specific fuzz dependency", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("fuzz/Cargo.toml").target = {
+      'cfg(target_family = "unix")': {
+        dependencies: {
+          "tower-lsp": "0.20",
+        },
+      },
+    };
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
 });
 
 test("rejects a floating third-party action reference", () => {

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-import { readdirSync, readFileSync } from "node:fs";
+import { globSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+import { parse as parseToml } from "smol-toml";
 import {
   isScalar,
   parse as parseYaml,
@@ -222,7 +223,203 @@ function validateManualDependencies(update, expectedRules, description) {
   }
 }
 
-function validateDependabot(dependabot) {
+function dependencyPackageIdentity(name, declaration, location) {
+  if (
+    declaration !== null &&
+    typeof declaration === "object" &&
+    !Array.isArray(declaration) &&
+    declaration.package !== undefined
+  ) {
+    if (
+      typeof declaration.package !== "string" ||
+      declaration.package.length === 0
+    ) {
+      reject(
+        "E_FUZZ_DEPENDENCY_AUTHORITY",
+        `${location}.package must name a Cargo package`,
+      );
+    }
+    return declaration.package;
+  }
+  return name;
+}
+
+function directExternalDependencies(manifest, path) {
+  if (
+    manifest === null ||
+    typeof manifest !== "object" ||
+    Array.isArray(manifest)
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `${path} must be a Cargo manifest`,
+    );
+  }
+  const external = [];
+  const collect = (table, location) => {
+    if (table === undefined) {
+      return;
+    }
+    if (table === null || typeof table !== "object" || Array.isArray(table)) {
+      reject(
+        "E_FUZZ_DEPENDENCY_AUTHORITY",
+        `${location} must be a dependency table`,
+      );
+    }
+    for (const [name, declaration] of Object.entries(table)) {
+      if (
+        declaration === null ||
+        typeof declaration !== "object" ||
+        Array.isArray(declaration) ||
+        typeof declaration.path !== "string"
+      ) {
+        external.push({
+          dependencyName: name,
+          packageName: dependencyPackageIdentity(
+            name,
+            declaration,
+            `${location}.${name}`,
+          ),
+        });
+      }
+    }
+  };
+  const collectOwner = (owner, location) => {
+    for (const kind of [
+      "dependencies",
+      "dev-dependencies",
+      "build-dependencies",
+    ]) {
+      collect(owner?.[kind], `${location}#${kind}`);
+    }
+  };
+
+  collectOwner(manifest, path);
+  if (
+    manifest.workspace !== undefined &&
+    (manifest.workspace === null ||
+      typeof manifest.workspace !== "object" ||
+      Array.isArray(manifest.workspace))
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `${path}#workspace must be a table`,
+    );
+  }
+  collect(
+    manifest.workspace?.dependencies,
+    `${path}#workspace.dependencies`,
+  );
+  if (
+    manifest.target !== undefined &&
+    (manifest.target === null ||
+      typeof manifest.target !== "object" ||
+      Array.isArray(manifest.target))
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `${path}#target must be a table`,
+    );
+  }
+  for (const [selector, target] of Object.entries(manifest.target ?? {})) {
+    if (target === null || typeof target !== "object" || Array.isArray(target)) {
+      reject(
+        "E_FUZZ_DEPENDENCY_AUTHORITY",
+        `${path}#target.${selector} must be a table`,
+      );
+    }
+    collectOwner(target, `${path}#target.${selector}`);
+  }
+  return external;
+}
+
+function validateFuzzDependencyAuthority(update, cargoManifests) {
+  if (!(cargoManifests instanceof Map)) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "dependency policy requires root and fuzz Cargo manifests",
+    );
+  }
+  const rootDependencies = cargoManifests.get("Cargo.toml")?.workspace
+    ?.dependencies;
+  if (
+    rootDependencies === null ||
+    typeof rootDependencies !== "object" ||
+    Array.isArray(rootDependencies)
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "Cargo.toml must declare workspace dependencies",
+    );
+  }
+  const externalDependencies = directExternalDependencies(
+    cargoManifests.get("fuzz/Cargo.toml"),
+    "fuzz/Cargo.toml",
+  );
+  const allowed = [
+    ...new Set(
+      externalDependencies.map((dependency) => dependency.dependencyName),
+    ),
+  ].toSorted();
+  const rootPackages = new Set(
+    [...cargoManifests.entries()]
+      .filter(([path]) => path !== "fuzz/Cargo.toml")
+      .flatMap(([path, manifest]) =>
+        directExternalDependencies(manifest, path).map(
+          (dependency) => dependency.packageName,
+        ),
+      ),
+  );
+  const overlap = [
+    ...new Set(
+      externalDependencies
+        .filter((dependency) => rootPackages.has(dependency.packageName))
+        .map((dependency) =>
+          dependency.dependencyName === dependency.packageName
+            ? dependency.packageName
+            : `${dependency.dependencyName} (${dependency.packageName})`,
+        ),
+    ),
+  ].toSorted();
+  if (overlap.length > 0) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `fuzz/Cargo.toml duplicates root-owned dependencies: ${overlap.join(", ")}`,
+    );
+  }
+  if (allowed.length === 0) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "fuzz/Cargo.toml must retain a direct fuzz-runtime dependency",
+    );
+  }
+
+  const observed =
+    Array.isArray(update.allow) &&
+    update.allow.every(
+      (rule) =>
+        rule !== null &&
+        typeof rule === "object" &&
+        !Array.isArray(rule) &&
+        Object.keys(rule).length === 1 &&
+        typeof rule["dependency-name"] === "string",
+    )
+      ? update.allow
+          .map((rule) => rule["dependency-name"])
+          .toSorted()
+      : null;
+  if (
+    observed === null ||
+    JSON.stringify(observed) !== JSON.stringify(allowed)
+  ) {
+    reject(
+      "E_DEPENDABOT_ALLOW",
+      `cargo at /fuzz must allow exactly: ${allowed.join(", ")}`,
+    );
+  }
+}
+
+function validateDependabot(dependabot, cargoManifests) {
   if (dependabot?.version !== 2) {
     reject(
       "E_DEPENDABOT_VERSION",
@@ -258,6 +455,14 @@ function validateDependabot(dependabot) {
       expected.manualRules,
       `${ecosystem} at ${directory}`,
     );
+    if (key === "cargo\u0000/fuzz") {
+      validateFuzzDependencyAuthority(update, cargoManifests);
+    } else if (update.allow !== undefined) {
+      reject(
+        "E_DEPENDABOT_ALLOW",
+        `${ecosystem} at ${directory}: unexpected dependency allowlist`,
+      );
+    }
   }
 
   if (
@@ -271,7 +476,11 @@ function validateDependabot(dependabot) {
   }
 }
 
-export function validateDependencyUpdatePolicy({ dependabot, workflows }) {
+export function validateDependencyUpdatePolicy({
+  cargoManifests,
+  dependabot,
+  workflows,
+}) {
   if (!(workflows instanceof Map) || workflows.size === 0) {
     reject(
       "E_ACTION_PIN",
@@ -279,15 +488,78 @@ export function validateDependencyUpdatePolicy({ dependabot, workflows }) {
     );
   }
   validateActionPins(workflows);
-  validateDependabot(dependabot);
+  validateDependabot(dependabot, cargoManifests);
 }
 
-function repositoryCandidate() {
+function workspaceMemberManifestPaths(rootManifest, repositoryRoot) {
+  const members = rootManifest?.workspace?.members;
+  if (
+    !Array.isArray(members) ||
+    members.some((member) => typeof member !== "string" || member.length === 0)
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "Cargo.toml must declare string workspace member patterns",
+    );
+  }
+  const excluded = rootManifest.workspace.exclude ?? [];
+  if (
+    !Array.isArray(excluded) ||
+    excluded.some(
+      (member) => typeof member !== "string" || member.length === 0,
+    )
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "Cargo.toml workspace exclusions must be string patterns",
+    );
+  }
+  const expand = (patterns) =>
+    patterns.flatMap((pattern) =>
+      globSync(`${pattern.replace(/\/$/u, "")}/Cargo.toml`, {
+        cwd: repositoryRoot,
+      }),
+    );
+  const excludedPaths = new Set(expand(excluded));
+  return [
+    ...new Set(expand(members).filter((path) => !excludedPaths.has(path))),
+  ].toSorted();
+}
+
+export function repositoryCandidate() {
   const workflowDirectory = new URL(
     "../.github/workflows/",
     import.meta.url,
   );
+  const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
+  const rootManifest = parseToml(
+    readFileSync(new URL("../Cargo.toml", import.meta.url), "utf8"),
+  );
+  const memberManifestPaths = workspaceMemberManifestPaths(
+    rootManifest,
+    repositoryRoot,
+  );
   return {
+    cargoManifests: new Map(
+      [
+        ["Cargo.toml", rootManifest],
+        [
+          "fuzz/Cargo.toml",
+          parseToml(
+            readFileSync(
+              new URL("../fuzz/Cargo.toml", import.meta.url),
+              "utf8",
+            ),
+          ),
+        ],
+        ...memberManifestPaths.map((path) => [
+          path,
+          parseToml(
+            readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
+          ),
+        ]),
+      ],
+    ),
     dependabot: parseYaml(
       readFileSync(
         new URL("../.github/dependabot.yml", import.meta.url),

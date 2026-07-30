@@ -33,8 +33,9 @@ bounded property/fuzz evidence tracked by
   compatibility semantics, update cadence, and the response to an advisory
   compatibility failure.
 - **ETC-8** Weekly dependency automation must group GitHub Actions, the root
-  Cargo workspace, the standalone Zed Cargo workspace, root Node, and VS Code
-  updates by review and rollback boundary without creating competing cadences.
+  Cargo workspace, the standalone Zed Cargo workspace, the standalone fuzz
+  runtime, root Node, and VS Code updates by review and rollback boundary
+  without creating competing cadences or manifest authorities.
 - **ETC-9** Deterministic policy evidence must reject floating action
   references, mutable Docker action tags, missing action-release comments, and
   dependency-update ecosystem, directory, cadence, grouping, or manual
@@ -99,14 +100,52 @@ bounded property/fuzz evidence tracked by
 - **ETC-6a** — *Requirement:* ETC-8. *Behavior:* one Dependabot configuration
   schedules weekly grouped updates for GitHub Actions, the root Cargo
   workspace, the standalone Zed Cargo workspace, root Node evidence
-  dependencies, and the VS Code adapter's separate Node graph. Each source has
-  one named group and one cadence. *Oracle:* structural inspection finds
-  exactly the expected ecosystem/directory pairs, including both Cargo
-  workspaces, weekly schedules, and risk-separated group names with no
-  duplicate pair or extra update source. *Evidence type:* repository
-  configuration and deterministic policy test. *Evidence:*
+  dependencies, the standalone fuzz runtime, and the VS Code adapter's
+  separate Node graph. Each source has one named group and one cadence.
+  *Oracle:* structural inspection finds exactly the expected
+  ecosystem/directory pairs, including all three Cargo workspaces, weekly
+  schedules, and risk-separated group names with no duplicate pair or extra
+  update source. *Evidence type:* repository configuration and deterministic
+  policy test. *Evidence:*
   `.github/dependabot.yml` and
   `scripts/check-dependency-update-policy.test.mjs`. *Status:* implemented.
+- **ETC-6b** — *Requirement:* ETC-8. *Behavior:* the standalone `/fuzz` update
+  source may update only the direct fuzz runtime; product and adapter
+  dependencies remain owned by the root Cargo source, so a fuzz update cannot
+  edit the root workspace manifest or race a root Cargo pull request. *Oracle:*
+  the policy checker derives the standalone manifest's direct external
+  dependency inventory, requires one exact `allow` rule for `libfuzzer-sys`,
+  rejects missing, broadened, or additional allow rules, and rejects a fuzz
+  dependency owned by either the root workspace manifest or one of its
+  expanded member manifests. *Evidence type:* manifests, Dependabot
+  configuration, and deterministic policy mutations. *Tracking:*
+  [#269](https://github.com/flyingrobots/colorful-language/issues/269).
+  *Evidence:* `.github/dependabot.yml`; `Cargo.toml`; `fuzz/Cargo.toml`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `rejects a fuzz
+  source without its direct-runtime allowlist`, `rejects a broadened fuzz
+  dependency allowlist`, `rejects a substituted fuzz dependency allowlist`,
+  `rejects an allowlist on the root Cargo update source`, `rejects a fuzz
+  manifest without a direct runtime dependency`, `rejects a root-owned
+  dependency in the standalone fuzz manifest`, `rejects a root-member
+  dependency in the fuzz manifest`, `rejects a renamed root-owned dependency
+  in the fuzz manifest`, `rejects a root-owned standalone fuzz dev dependency`,
+  `rejects a root-owned fuzz workspace dependency`, and `rejects a root-owned
+  target-specific fuzz dependency`. *Status:* implemented.
+- **ETC-6c** — *Requirement:* ETC-8. *Behavior:* a root Cargo dependency
+  update may carry `fuzz/Cargo.lock` as a dependent evidence refresh without
+  granting the standalone fuzz source authority over root Cargo paths.
+  *Oracle:* Dependabot path classification accepts root `Cargo.toml` or
+  `Cargo.lock` changes with a fuzz-lock companion, accepts fuzz-only manifest
+  and lock changes separately, and rejects any pull request that mixes the
+  root and fuzz manifests. *Evidence type:* deterministic pull-request
+  metadata fixtures. *Tracking:*
+  [#269](https://github.com/flyingrobots/colorful-language/issues/269).
+  *Evidence:* `scripts/check-closure-contract.sh` and
+  `scripts/check-closure-contract.test.sh` cases `root Cargo update family with
+  fuzz-lock companion`, `fuzz Cargo update family`, `root Cargo update family
+  with only fuzz-lock companion`, and `mixed root and fuzz Cargo manifests`.
+  *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite

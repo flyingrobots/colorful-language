@@ -147,17 +147,39 @@ run_case \
   "" \
   "Cargo.toml|Cargo.lock"
 run_case \
+  "root Cargo update family with fuzz-lock companion" \
+  pass \
+  "app/dependabot" \
+  "" \
+  "Cargo.toml|Cargo.lock|fuzz/Cargo.lock"
+run_case \
   "Zed Cargo update family" \
   pass \
   "app/dependabot" \
   "" \
   "editors/zed/Cargo.toml|editors/zed/Cargo.lock"
 run_case \
-  "fuzz Cargo update family with workspace companion" \
+  "fuzz Cargo update family" \
+  pass \
+  "app/dependabot" \
+  "" \
+  "fuzz/Cargo.toml|fuzz/Cargo.lock"
+run_case \
+  "root Cargo update family with only fuzz-lock companion" \
   pass \
   "app/dependabot" \
   "" \
   "Cargo.toml|fuzz/Cargo.lock"
+run_case \
+  "mixed root and fuzz Cargo manifests" \
+  fail \
+  "app/dependabot" \
+  "" \
+  "Cargo.toml|fuzz/Cargo.toml|fuzz/Cargo.lock" \
+  "" \
+  "" \
+  "E_CLOSURE_DEPENDABOT_PATH" \
+  "build(deps): bump mixed Cargo authorities"
 run_case \
   "root Node update family" \
   pass \

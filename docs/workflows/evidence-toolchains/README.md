@@ -142,9 +142,9 @@ Dependabot opens six independent weekly groups from
 | Group | Dependency boundary | Rollback boundary |
 | --- | --- | --- |
 | `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
-| `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
+| `cargo` | The root Cargo workspace and lockfile, plus a dependent fuzz-lock refresh when resolution changes | Root graph and companion fuzz-lock revert |
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
-| `fuzz-cargo` | Standalone fuzz Cargo workspace and lockfile | Fuzz-only revert |
+| `fuzz-cargo` | Direct standalone fuzz-runtime dependencies and fuzz lockfile | Fuzz-runtime-only revert |
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
 | `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
 
@@ -153,6 +153,38 @@ differ. Issue
 [#152](https://github.com/flyingrobots/colorful-language/issues/152) may extend
 repository maintenance around this configuration, but this workflow remains the
 single owner of update sources, grouping, and cadence.
+
+The `/fuzz` source has one exact `allow` boundary derived from direct external
+dependencies across every package, workspace, and target-specific Cargo
+dependency table in `fuzz/Cargo.toml`; currently that is only
+`libfuzzer-sys`. Product and adapter versions remain in the root Cargo
+workspace. Path dependencies let fuzz targets exercise those crates without
+granting the standalone update source authority to rewrite `Cargo.toml`. The
+policy checker parses the root workspace manifest, every expanded root member
+manifest, and the standalone fuzz manifest. It rejects a fuzz dependency that
+duplicates a root-owned dependency, including one hidden behind Cargo's
+renamed-dependency syntax, a missing allowlist, or any broader or substituted
+allow rule.
+
+A root Cargo update must also refresh `fuzz/Cargo.lock` when a changed
+root-owned package is reachable through the fuzz package's path dependencies.
+Resolve that package to the exact version selected in `Cargo.lock`. The
+assignments below are the current runnable `tower-lsp` example; replace both
+values with the package and version under review:
+
+```bash
+changed_package=tower-lsp
+root_lock_version=0.20.0
+cargo update --manifest-path fuzz/Cargo.toml \
+  -p "$changed_package" --precise "$root_lock_version"
+cargo check --manifest-path fuzz/Cargo.toml --locked --bins
+```
+
+Commit the resulting `fuzz/Cargo.lock` change on the root update pull request.
+The issue-closure gate admits that lockfile only as a companion to at least one
+root `Cargo.toml` or `Cargo.lock` path. A fuzz-runtime pull request remains
+limited to `fuzz/Cargo.toml` and `fuzz/Cargo.lock`; mixing the root and fuzz
+manifests is rejected.
 
 For an action update, inspect the upstream release and source commit, retain the
 full 40-character commit SHA in every `uses:` reference, and keep its release
@@ -186,7 +218,8 @@ The mutation suite rejects a floating action ref, a missing action-version
 comment, any missing, duplicate, or unexpected update source, a non-weekly
 cadence, group-name or wildcard-pattern drift, and any attempt to automate one
 side of the shared TypeScript pin. It also rejects a missing, scalar, or
-partial `@types/node` exclusion. The live check parses the YAML node
+partial `@types/node` exclusion and any fuzz allowlist or manifest change that
+would overlap the root Cargo authority. The live check parses the YAML node
 graph, so legal key quoting or whitespace cannot hide a `uses` entry, and scans
 every workflow file, including workflows added later. It also rejects a Docker
 action unless an immutable SHA-256 image digest replaces a mutable tag.

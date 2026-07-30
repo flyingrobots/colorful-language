@@ -120,7 +120,6 @@ dependencies = [
  "colorful-parse",
  "colorful-projection",
  "libfuzzer-sys",
- "tower-lsp",
 ]
 
 [[package]]
