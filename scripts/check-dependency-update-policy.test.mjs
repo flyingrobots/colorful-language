@@ -342,3 +342,24 @@ test("the checked-in update and workflow policy passes", () => {
     validateDependencyUpdatePolicy(repositoryCandidate()),
   );
 });
+
+test("the current dependency update table documents every group", () => {
+  const documentation = readFileSync(
+    "docs/workflows/evidence-toolchains/README.md",
+    "utf8",
+  );
+  for (const group of [
+    "github-actions",
+    "cargo",
+    "zed-cargo",
+    "fuzz-cargo",
+    "root-node",
+    "vscode",
+  ]) {
+    assert.match(
+      documentation,
+      new RegExp(`^\\| \`${group}\` \\|`, "mu"),
+      `dependency update table must document ${group}`,
+    );
+  }
+});
