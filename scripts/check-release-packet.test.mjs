@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -669,4 +670,21 @@ test("ignores release tags that are not reachable from HEAD", (t) => {
 
 test("the checked-in v0.4.0 release packet satisfies the policy", () => {
   assert.doesNotThrow(() => validateReleasePacket(loadRepositorySnapshot()));
+});
+
+test("documentation spine links the planned packet and witness", () => {
+  const documentationIndex = readFileSync(
+    new URL("../docs/README.md", import.meta.url),
+    "utf8",
+  );
+  const plannedEntry = documentationIndex
+    .split("\n- ")
+    .find((entry) => entry.startsWith("**Planned v0.4.0:**"));
+  assert.ok(plannedEntry, "docs/README.md must list planned v0.4.0");
+  assert.match(plannedEntry, /\(goalposts\/v0\.4\.0\/release\.md\)/u);
+  assert.match(
+    plannedEntry,
+    /\(goalposts\/v0\.4\.0\/verification\.md\)/u,
+  );
+  assert.match(plannedEntry, /\bnot yet tagged or published\b/u);
 });
