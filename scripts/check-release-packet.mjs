@@ -258,7 +258,20 @@ function walk(nodes, visitor) {
   }
 }
 
-function sectionEvidenceText(section) {
+function definitionDestinations(document) {
+  const destinations = new Map();
+  walk(document.children, (node) => {
+    if (node.type !== "definition") {
+      return;
+    }
+    const urls = destinations.get(node.identifier) ?? [];
+    urls.push(node.url);
+    destinations.set(node.identifier, urls);
+  });
+  return destinations;
+}
+
+function sectionEvidenceText(section, definitions) {
   const destinations = [];
   walk(section.nodes, (node) => {
     if (
@@ -266,6 +279,11 @@ function sectionEvidenceText(section) {
       typeof node.url === "string"
     ) {
       destinations.push(node.url);
+    } else if (
+      ["imageReference", "linkReference"].includes(node.type) &&
+      typeof node.identifier === "string"
+    ) {
+      destinations.push(...(definitions.get(node.identifier) ?? []));
     }
   });
   return [sectionText(section), ...destinations].join("\n");
@@ -424,6 +442,7 @@ function validateVerificationDocument(snapshot) {
       `title must be '${expectedTitle}'`,
     );
   }
+  const definitions = definitionDestinations(document);
   const sections = sectionMap(document, snapshot.verificationPath);
   const status = requireSection(
     sections,
@@ -524,7 +543,7 @@ function validateVerificationDocument(snapshot) {
       ["Public verification", publicVerification],
       ["Retrospective", retrospective],
     ]) {
-      const text = sectionEvidenceText(section).toLowerCase();
+      const text = sectionEvidenceText(section, definitions).toLowerCase();
       if (!UNAVAILABLE_EVIDENCE.test(text)) {
         reject(
           "E_RELEASE_PACKET_EVIDENCE",
