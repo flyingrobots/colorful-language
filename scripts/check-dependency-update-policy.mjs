@@ -111,6 +111,7 @@ function validateActionPins(workflows) {
         const line =
           workflow.slice(0, pair.value.range[0]).split(/\r?\n/u).length;
         let identity;
+        let pin;
         if (value.startsWith("docker://")) {
           if (!DOCKER_SHA256.test(value)) {
             reject(
@@ -119,15 +120,19 @@ function validateActionPins(workflows) {
             );
           }
           identity = value.slice(0, value.indexOf("@sha256:"));
+          pin = value.slice(value.indexOf("@sha256:") + 1);
         } else {
-          const action = value.match(/^([^@\s]+)@([^\s]+)$/u);
-          if (action === null || !FULL_SHA.test(action[2])) {
+          const action = value.match(
+            /^(?<repository>[^/@\s]+\/[^/@\s]+)(?:\/[^@\s]+)*@(?<ref>[^\s]+)$/u,
+          );
+          if (action === null || !FULL_SHA.test(action.groups.ref)) {
             reject(
               "E_ACTION_PIN",
               `${file}:${line}: third-party actions must use a full commit SHA`,
             );
           }
-          identity = action[1];
+          identity = action.groups.repository;
+          pin = action.groups.ref;
         }
         const trailingSource = workflow.slice(
           pair.value.range[1],
@@ -145,7 +150,7 @@ function validateActionPins(workflows) {
         const reviewed = reviewedPins.get(identity);
         if (
           reviewed !== undefined &&
-          (reviewed.value !== value ||
+          (reviewed.pin !== pin ||
             reviewed.releaseComment !== releaseComment)
         ) {
           reject(
@@ -156,6 +161,7 @@ function validateActionPins(workflows) {
         reviewedPins.set(identity, {
           file,
           line,
+          pin,
           releaseComment,
           value,
         });

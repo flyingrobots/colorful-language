@@ -189,7 +189,8 @@ bounded property/fuzz evidence tracked by
   `scripts/check-dependency-update-policy.mjs`;
   `scripts/check-dependency-update-policy.test.mjs` tests `accepts a
   coordinated action pin refresh`, `rejects an inconsistent action pin
-  refresh`, and `rejects inconsistent action release comments`;
+  refresh`, `rejects inconsistent action release comments`, and `rejects a
+  partial update across sibling repository actions`;
   `actionlint .github/workflows/*.yml`; and `scripts/release-prep.sh`.
   *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
