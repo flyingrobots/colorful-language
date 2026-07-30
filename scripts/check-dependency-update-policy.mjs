@@ -41,7 +41,7 @@ const EXPECTED_SOURCES = new Map([
       manualRules: [
         {
           dependencyName: "@types/node",
-          updateTypes: ["version-update:semver-major"],
+          updateTypes: [],
         },
         { dependencyName: "typescript", updateTypes: [] },
       ],

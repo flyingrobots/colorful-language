@@ -128,11 +128,12 @@ Verification for editor adapters and the `colorful-lsp` surface.
   [#185](https://github.com/flyingrobots/colorful-language/issues/185).
   *Status:* implemented.
 - **EDIT-16a** — *Requirement:* EDIT-16. *Behavior:* one reviewed runtime policy
-  binds the extension's minimum VS Code release and host Node line to the
-  `@types/node` manifest range, locked major, exact package-smoke download, and
-  Dependabot update policy. Supported Node 20 declaration updates remain
-  admissible, while a Node 21-or-newer proposal equivalent to Dependabot PR
-  #195 fails with a stable policy category before it can enter the shipping
+  binds the extension's minimum VS Code release and host Node version to the
+  exact TypeScript-compatible `@types/node` manifest and lockfile release,
+  package-smoke download, isolated minimum-host API compile, and Dependabot
+  update policy. Declaration updates remain frozen until a reviewed editor-host
+  policy change, while the Node 26 proposal in Dependabot PR #195 or extension
+  use of an API newer than Node 20.9.0 fails before it can enter the shipping
   graph. TypeScript keeps `strict: true` and `skipLibCheck: false`. *Oracle:*
   deterministic mutations of each policy input reject drift, the supported
   fixture passes, TypeScript compiles, and the isolated VS Code 1.91.0 package
@@ -142,20 +143,23 @@ Verification for editor adapters and the `colorful-lsp` surface.
   *Evidence:* `editors/vscode/runtime-policy.json`;
   `scripts/check-vscode-dependency-policy.mjs`;
   `scripts/check-vscode-dependency-policy.test.mjs` tests `rejects Node 26
-  declarations for the VS Code 1.91 host`, `rejects a locked Node declaration
-  major outside the host line`, `rejects a runtime policy that drifts from the
-  extension floor`, `rejects Dependabot policy without the Node declaration
-  major guard`, `rejects a scalar Dependabot update-types impostor`,
+  declarations for the VS Code 1.91 host`, `rejects a caret range even when it
+  stays on the host major`, `rejects drift from the reviewed declaration
+  release`, `rejects a locked Node declaration major outside the host
+  line`, `rejects a runtime policy that drifts from the extension floor`,
+  `rejects Dependabot policy without the Node declaration freeze`, `rejects a
+  partial scalar Dependabot update-types impostor`,
   `categorizes malformed Dependabot policy containers`, `rejects weakened
   TypeScript declaration checking`, and `rejects current editor documentation
   that drifts from host policy`, plus `rejects a documented Node declaration
   major outside the host line`;
   `scripts/check-dependency-update-policy.mjs`;
   `scripts/check-dependency-update-policy.test.mjs` tests `rejects automatic VS
-  Code Node declaration major updates`, `rejects an overbroad VS Code Node
-  declaration exclusion`, and `rejects a scalar VS Code Node update-type
+  Code Node declaration updates`, `rejects a partial VS Code Node declaration
+  exclusion`, and `rejects a scalar VS Code Node update-type
   policy`;
-  `scripts/check-editor-package-smoke.test.mjs`; and
+  `scripts/check-editor-package-smoke.test.mjs` tests `minimum-host API compile
+  rejects newer Node built-ins`; and
   `editors/vscode/smoke/run-packaged-smoke.mjs`. *Status:* implemented.
 - **EDIT-14a** — *Requirement:* EDIT-14. *Behavior:* a generated valid-Unicode
   prefix and selected source span are emitted once as a CLI finding and once as

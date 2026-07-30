@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 const scriptPath = fileURLToPath(import.meta.url);
 const MINIMUM_CLIENT_VERSION = "10.1.0";
 const LAST_VULNERABLE_BRACE_EXPANSION = "5.0.7";
-const NODE_MAJOR_UPDATE = "version-update:semver-major";
 
 export class VscodeDependencyPolicyError extends Error {
   constructor(code, message) {
@@ -66,6 +65,7 @@ export function validateVscodeHostPolicy(editorPackage, runtimePolicy) {
   const minimumVscodeVersion = runtimePolicy?.minimumVscodeVersion;
   const electronVersion = runtimePolicy?.electronVersion;
   const nodeVersion = runtimePolicy?.nodeVersion;
+  const nodeTypesVersion = runtimePolicy?.nodeTypesVersion;
   const evidenceUrl = runtimePolicy?.evidenceUrl;
   const minimumVscode = parseVersion(
     minimumVscodeVersion,
@@ -81,6 +81,11 @@ export function validateVscodeHostPolicy(editorPackage, runtimePolicy) {
     nodeVersion,
     "E_VSCODE_HOST_POLICY",
     "editors/vscode/runtime-policy.json#nodeVersion",
+  );
+  const nodeTypes = parseVersion(
+    nodeTypesVersion,
+    "E_VSCODE_HOST_POLICY",
+    "editors/vscode/runtime-policy.json#nodeTypesVersion",
   );
   const extensionFloor = declaredFloor(
     editorPackage.engines?.vscode,
@@ -106,14 +111,14 @@ export function validateVscodeHostPolicy(editorPackage, runtimePolicy) {
     electronVersion: electron.join("."),
     evidenceUrl,
     minimumVscodeVersion: minimumVscode.join("."),
-    nodeMajor: node[0],
+    nodeTypesVersion: nodeTypes.join("."),
     nodeVersion: node.join("."),
   };
 }
 
 function validateNodeDeclarations(editorPackage, lockfile, lockRoot, host) {
   const declaredNodeTypes = editorPackage.devDependencies?.["@types/node"];
-  const expectedNodeTypes = `^${String(host.nodeMajor)}`;
+  const expectedNodeTypes = host.nodeTypesVersion;
   if (declaredNodeTypes !== expectedNodeTypes) {
     fail(
       "E_VSCODE_NODE_TYPES",
@@ -137,10 +142,19 @@ function validateNodeDeclarations(editorPackage, lockfile, lockRoot, host) {
     "E_VSCODE_NODE_TYPES",
     'editors/vscode/package-lock.json#packages["node_modules/@types/node"].version',
   );
-  if (lockedNodeVersion[0] !== host.nodeMajor) {
+  if (
+    compareVersions(
+      lockedNodeVersion,
+      parseVersion(
+        host.nodeTypesVersion,
+        "E_VSCODE_NODE_TYPES",
+        "editors/vscode/runtime-policy.json#nodeTypesVersion",
+      ),
+    ) !== 0
+  ) {
     fail(
       "E_VSCODE_NODE_TYPES",
-      `editors/vscode/package-lock.json#packages["node_modules/@types/node"].version must stay on major ${String(host.nodeMajor)}; found ${String(lockedNodeTypes.version)}`,
+      `editors/vscode/package-lock.json#packages["node_modules/@types/node"].version must equal the reviewed declaration release ${host.nodeTypesVersion}; found ${String(lockedNodeTypes.version)}`,
     );
   }
 }
@@ -168,14 +182,13 @@ function validateDependabotPolicy(dependabotPolicy) {
   const nodeTypesIgnore = ignore.find(
     (entry) => entry?.["dependency-name"] === "@types/node",
   );
-  const updateTypes = nodeTypesIgnore?.["update-types"];
   if (
-    !Array.isArray(updateTypes) ||
-    !updateTypes.includes(NODE_MAJOR_UPDATE)
+    nodeTypesIgnore === undefined ||
+    Object.hasOwn(nodeTypesIgnore, "update-types")
   ) {
     fail(
       "E_VSCODE_DEPENDABOT_POLICY",
-      `.github/dependabot.yml must ignore ${NODE_MAJOR_UPDATE} updates for @types/node under /editors/vscode`,
+      ".github/dependabot.yml must ignore every @types/node update under /editors/vscode",
     );
   }
 }
@@ -200,7 +213,7 @@ function validateRuntimeDocumentation(documentation, host) {
     `VS Code ${host.minimumVscodeVersion}`,
     `Electron ${host.electronVersion}`,
     `Node ${host.nodeVersion}`,
-    `\`@types/node\` ${String(host.nodeMajor)}`,
+    `\`@types/node\` ${host.nodeTypesVersion}`,
     host.evidenceUrl,
   ];
   for (const [path, contents] of [

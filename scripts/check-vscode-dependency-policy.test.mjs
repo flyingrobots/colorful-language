@@ -32,11 +32,11 @@ function fixture() {
     },
     documentation: {
       adapter: [
-        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.9.0.",
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.19.43.",
         "https://releases.electronjs.org/release/v29.4.0",
       ].join(" "),
       topic: [
-        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.9.0.",
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.19.43.",
         "https://releases.electronjs.org/release/v29.4.0",
       ].join(" "),
     },
@@ -45,7 +45,7 @@ function fixture() {
         "vscode-languageclient": "^10.1.0",
       },
       devDependencies: {
-        "@types/node": "20.9.0",
+        "@types/node": "20.19.43",
       },
       engines: {
         vscode: "^1.91.0",
@@ -58,11 +58,11 @@ function fixture() {
             "vscode-languageclient": "^10.1.0",
           },
           devDependencies: {
-            "@types/node": "20.9.0",
+            "@types/node": "20.19.43",
           },
         },
         "node_modules/@types/node": {
-          version: "20.9.0",
+          version: "20.19.43",
         },
         "node_modules/brace-expansion": {
           version: "5.0.8",
@@ -79,6 +79,7 @@ function fixture() {
       minimumVscodeVersion: "1.91.0",
       electronVersion: "29.4.0",
       nodeVersion: "20.9.0",
+      nodeTypesVersion: "20.19.43",
       evidenceUrl: "https://releases.electronjs.org/release/v29.4.0",
     },
     tsconfig: {
@@ -236,11 +237,11 @@ test("rejects a caret range even when it stays on the host major", () => {
   expectCode(input, "E_VSCODE_NODE_TYPES");
 });
 
-test("rejects a declaration release newer than the minimum host", () => {
+test("rejects drift from the reviewed declaration release", () => {
   const input = fixture();
-  input.editorPackage.devDependencies["@types/node"] = "20.19.43";
-  input.lockfile.packages[""].devDependencies["@types/node"] = "20.19.43";
-  input.lockfile.packages["node_modules/@types/node"].version = "20.19.43";
+  input.editorPackage.devDependencies["@types/node"] = "20.20.0";
+  input.lockfile.packages[""].devDependencies["@types/node"] = "20.20.0";
+  input.lockfile.packages["node_modules/@types/node"].version = "20.20.0";
   expectCode(input, "E_VSCODE_NODE_TYPES");
 });
 
@@ -291,7 +292,7 @@ test("rejects current editor documentation that drifts from host policy", () => 
 test("rejects a documented Node declaration major outside the host line", () => {
   const input = fixture();
   input.documentation.topic = input.documentation.topic.replace(
-    "`@types/node` 20.9.0",
+    "`@types/node` 20.19.43",
     "`@types/node` 26.1.2",
   );
   expectCode(input, "E_VSCODE_RUNTIME_DOCS");

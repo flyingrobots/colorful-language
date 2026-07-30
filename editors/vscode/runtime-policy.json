@@ -2,5 +2,6 @@
   "minimumVscodeVersion": "1.91.0",
   "electronVersion": "29.4.0",
   "nodeVersion": "20.9.0",
+  "nodeTypesVersion": "20.19.43",
   "evidenceUrl": "https://releases.electronjs.org/release/v29.4.0"
 }

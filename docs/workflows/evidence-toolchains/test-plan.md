@@ -113,7 +113,7 @@ bounded property/fuzz evidence tracked by
   removes or changes each protected field independently. *Oracle:* every
   mutation is rejected with its intended stable error category, including
   removal of either npm source's manual TypeScript exclusion; removal,
-  broadening, or scalar corruption of the VS Code `@types/node` semver-major
+  partial or scalar corruption of the VS Code `@types/node` all-update
   exclusion; legal alternate YAML spellings of an unsafe `uses` key; and
   mutable or uncommented Docker action references, while the reviewed
   configuration passes. *Evidence type:* executable policy checker, mutation

@@ -14,9 +14,11 @@ Use VS Code 1.91 or newer. The extension's supported
 The exact minimum, VS Code 1.91.0, uses Electron 29.4.0 and Node 20.9.0
 according to the
 [Electron release record](https://releases.electronjs.org/release/v29.4.0).
-The extension therefore compiles against the `@types/node` 20 declaration
-line. Raising that major requires a reviewed minimum-VS-Code and package-smoke
-update in the same change.
+The extension therefore compiles against the exact TypeScript-5.9-compatible
+`@types/node` 20.19.43 declaration release and separately compiles the extension
+source against the minimum host's Node 20.9.0 API surface. Raising either boundary
+requires a reviewed minimum-VS-Code and package-smoke update in the same
+change.
 
 The extension version is synchronized with the Colorful workspace release. For
 extension `0.Y.Z`, use a stable `colorful-lsp` in

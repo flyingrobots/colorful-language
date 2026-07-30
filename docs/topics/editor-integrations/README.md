@@ -35,9 +35,10 @@ The repository currently ships source integrations and recipes:
   The exact minimum, VS Code 1.91.0, uses Electron 29.4.0 and Node 20.9.0
   according to the
   [Electron release record](https://releases.electronjs.org/release/v29.4.0).
-  The extension therefore stays on the `@types/node` 20 declaration line;
-  dependency automation may update that line but cannot raise its major
-  independently of the reviewed editor-host policy.
+  The extension pins the TypeScript-5.9-compatible `@types/node` 20.19.43
+  declarations and separately compiles the extension source against the
+  minimum host's Node 20.9.0 API surface. Dependency automation cannot move either
+  boundary independently of the reviewed editor-host policy.
 - Zed uses the source extension in [`editors/zed/`](../../../editors/zed/).
   The extension registers `colorful-lsp` for Zed's built-in **Plain Text** and
   **Markdown** languages. Users must enable Zed semantic tokens

@@ -10,6 +10,9 @@
     "url": "https://github.com/flyingrobots/colorful-language",
     "directory": "editors/vscode"
   },
+  "workspaces": [
+    "host-api"
+  ],
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -113,7 +116,8 @@
   },
   "scripts": {
     "bundle": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --sourcemap --outfile=dist/extension.js",
-    "compile": "tsc -p ./ --noEmit && npm run bundle",
+    "check:host-api": "node host-api/node_modules/typescript/bin/tsc -p tsconfig.host-api.json --noEmit",
+    "compile": "tsc -p ./ --noEmit && npm run bundle && npm run check:host-api",
     "package:vsix": "node scripts/package-vsix.mjs",
     "smoke:package": "node smoke/run-packaged-smoke.mjs",
     "watch": "tsc -watch -p ./",
@@ -123,7 +127,7 @@
     "vscode-languageclient": "^10.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "20.19.43",
     "@types/vscode": "^1.91.0",
     "@vscode/test-electron": "3.1.0",
     "@vscode/vsce": "3.9.2",

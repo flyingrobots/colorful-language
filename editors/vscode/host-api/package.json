@@ -1,0 +1,9 @@
+{
+  "name": "colorful-language-host-api-check",
+  "private": true,
+  "version": "0.0.0",
+  "devDependencies": {
+    "@types/node": "20.9.0",
+    "typescript": "5.4.5"
+  }
+}

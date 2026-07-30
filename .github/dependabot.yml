@@ -49,8 +49,6 @@ updates:
     ignore:
       - dependency-name: typescript
       - dependency-name: "@types/node"
-        update-types:
-          - version-update:semver-major
     groups:
       vscode:
         patterns:
