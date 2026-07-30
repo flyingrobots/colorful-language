@@ -14,6 +14,7 @@ import {
 } from "./check-dependency-update-policy.mjs";
 
 const ACTION_SHA = "fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+const UPDATED_ACTION_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1";
 const IMAGE_DIGEST =
   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
@@ -110,6 +111,12 @@ libfuzzer-sys = "=0.4.13"
   - uses: docker://alpine@sha256:${IMAGE_DIGEST} # alpine 3.22
 `,
       ],
+      [
+        ".github/workflows/release.yml",
+        `steps:
+  - uses: actions/checkout@${ACTION_SHA} # v5
+`,
+      ],
     ]),
   };
 }
@@ -131,8 +138,52 @@ function rootCargoUpdate(dependabot) {
   );
 }
 
+function replaceCheckoutPin(workflow, sha, release) {
+  return workflow.replace(
+    /actions\/checkout@[0-9a-f]{40} # \S+/u,
+    `actions/checkout@${sha} # ${release}`,
+  );
+}
+
 test("accepts the reviewed update-source and action-pin policy", () => {
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(fixture()));
+});
+
+test("accepts a coordinated action pin refresh", () => {
+  const candidate = fixture();
+  for (const [file, workflow] of candidate.workflows) {
+    candidate.workflows.set(
+      file,
+      replaceCheckoutPin(workflow, UPDATED_ACTION_SHA, "v7.0.1"),
+    );
+  }
+  assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
+});
+
+test("rejects an inconsistent action pin refresh", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      replaceCheckoutPin(
+        workflows.get(".github/workflows/ci.yml"),
+        UPDATED_ACTION_SHA,
+        "v7.0.1",
+      ),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
+});
+
+test("rejects inconsistent action release comments", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      replaceCheckoutPin(
+        workflows.get(".github/workflows/ci.yml"),
+        ACTION_SHA,
+        "v5.0.0",
+      ),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
 });
 
 test("accepts update sources in any order", () => {

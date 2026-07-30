@@ -22,6 +22,20 @@ const RUST_CACHE_ACTION =
   "Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32";
 const UPLOAD_ACTION =
   "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f";
+const UPDATED_ACTIONS = new Map([
+  [
+    "actions/checkout",
+    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+  ],
+  [
+    "taiki-e/install-action",
+    "taiki-e/install-action@065d6a08a14e61e89fb0a4c10eecdbdef39c7d8e",
+  ],
+  [
+    "actions/upload-artifact",
+    "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+  ],
+]);
 const ACTUAL_POLICY = JSON.parse(
   readFileSync(
     new URL("../.github/coverage-policy.json", import.meta.url),
@@ -261,6 +275,18 @@ function actionWorkflowStep(candidate, action) {
   return candidate.jobs.coverage.steps.find((step) => step.uses === action);
 }
 
+function refreshWorkflowActions(candidate, updates) {
+  for (const step of candidate.jobs.coverage.steps) {
+    if (typeof step.uses !== "string") {
+      continue;
+    }
+    const identity = step.uses.split("@", 1)[0];
+    if (updates.has(identity)) {
+      step.uses = updates.get(identity);
+    }
+  }
+}
+
 test("accepts the reviewed workspace and transport coverage", () => {
   assert.doesNotThrow(() =>
     validateCoveragePolicy(policy(), report(), {
@@ -411,6 +437,12 @@ test("rejects generated-source exclusions", () => {
 
 test("accepts the pinned coverage workflow", () => {
   assert.doesNotThrow(() => validateCoverageWorkflow(workflow(), policy()));
+});
+
+test("accepts a full-SHA action refresh without checker edits", () => {
+  const candidate = workflow();
+  refreshWorkflowActions(candidate, UPDATED_ACTIONS);
+  assert.doesNotThrow(() => validateCoverageWorkflow(candidate, policy()));
 });
 
 test("rejects coverage jobs without explicit read-only permissions", () => {
