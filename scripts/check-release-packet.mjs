@@ -395,8 +395,19 @@ function validateGoalpostEvidence(
     }
     evidenceByLabel.set(label, item);
   }
+  const goalpostLabels = new Set();
   for (const goalpost of goalpostItems) {
     const label = leadingStrongLabel(goalpost);
+    if (label !== undefined && goalpostLabels.has(label)) {
+      reject(
+        "E_RELEASE_PACKET_GOALPOSTS",
+        path,
+        `goalposts contain duplicate label '${label}'`,
+      );
+    }
+    if (label !== undefined) {
+      goalpostLabels.add(label);
+    }
     const evidence = label === undefined
       ? undefined
       : evidenceByLabel.get(label);
