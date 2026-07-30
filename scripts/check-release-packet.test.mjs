@@ -259,6 +259,12 @@ test("rejects invented public evidence in the pre-publication phase", () => {
       );
     }, "E_RELEASE_PACKET_EVIDENCE");
   }
+  expectCode((snapshot) => {
+    snapshot.verification = snapshot.verification.replace(
+      "- Tag and registries: not available.",
+      "- Tag and registries: not available.\n- Tag: published successfully.",
+    );
+  }, "E_RELEASE_PACKET_EVIDENCE");
 });
 
 test("requires the self-test before the live check in every release gate", () => {
