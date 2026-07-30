@@ -179,13 +179,19 @@ bounded property/fuzz evidence tracked by
   deterministic policy mutations, `actionlint`, and full release preparation.
   *Tracking:*
   [#278](https://github.com/flyingrobots/colorful-language/issues/278).
-  *Planned evidence:* `.github/workflows/*.yml`;
+  *Evidence:* `.github/workflows/*.yml`;
   `scripts/check-coverage-policy.mjs`;
-  `scripts/check-coverage-policy.test.mjs`;
+  `scripts/check-coverage-policy.test.mjs` test `accepts a full-SHA action
+  refresh without checker edits`;
   `scripts/check-repository-maintenance.mjs`;
-  `scripts/check-repository-maintenance.test.mjs`;
-  `scripts/check-dependency-update-policy.mjs`; and
-  `scripts/release-prep.sh`. *Status:* planned.
+  `scripts/check-repository-maintenance.test.mjs` test `accepts full-SHA
+  security action refreshes without checker edits`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `accepts a
+  coordinated action pin refresh`, `rejects an inconsistent action pin
+  refresh`, and `rejects inconsistent action release comments`;
+  `actionlint .github/workflows/*.yml`; and `scripts/release-prep.sh`.
+  *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite

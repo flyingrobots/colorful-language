@@ -187,7 +187,12 @@ the deterministic maintenance suite.
 `.github/dependabot.yml` remains the only dependency-update scheduler. Its
 weekly groups preserve separate rollback boundaries for GitHub Actions, the
 root, Zed, and fuzz Cargo workspaces, root Node evidence tooling, and the VS
-Code adapter.
+Code adapter. The workflow family owns each reviewed GitHub Action pin:
+full-SHA references and release comments must agree across repeated uses.
+Coverage, security, release, and distribution policies validate the action
+identity and its required configuration without copying mutable release SHAs,
+so a coordinated workflow-only update can satisfy every first-party gate while
+a partial update fails closed.
 
 The pull-request closure gate keeps human and ordinary automation work tied to
 exactly one slice issue. GitHub-authenticated `app/dependabot` pull requests may

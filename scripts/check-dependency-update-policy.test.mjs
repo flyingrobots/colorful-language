@@ -13,8 +13,8 @@ import {
   validateDependencyUpdatePolicy,
 } from "./check-dependency-update-policy.mjs";
 
-const ACTION_SHA = "fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
-const UPDATED_ACTION_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1";
+const ACTION_SHA = "1111111111111111111111111111111111111111";
+const UPDATED_ACTION_SHA = "2222222222222222222222222222222222222222";
 const IMAGE_DIGEST =
   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 

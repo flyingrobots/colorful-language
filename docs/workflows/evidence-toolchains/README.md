@@ -148,6 +148,26 @@ Dependabot checks six independent weekly dependency sources from
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
 | `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
 
+For the `github-actions` group, the checked-in workflow family is the action
+pin authority. Every third-party action must use a full 40-character commit SHA
+and retain its reviewed release comment. Repeated uses of one action must carry
+the same SHA and release comment in every workflow, so a partial Dependabot
+update fails closed. Action-specific policy checks identify an action by name
+and validate its permissions, credentials, inputs, artifact behavior, and job
+topology without duplicating the mutable commit SHA in checker code. A
+coordinated workflow-only update can therefore advance after review without
+requiring an unrelated checker edit.
+
+Run the pin and semantic policy together before accepting an action update:
+
+```bash
+node --test scripts/check-dependency-update-policy.test.mjs
+node scripts/check-dependency-update-policy.mjs
+node --test scripts/check-coverage-policy.test.mjs
+node --test scripts/check-repository-maintenance.test.mjs
+actionlint .github/workflows/*.yml
+```
+
 The root `cargo` group matches patch updates only. Unmatched root Cargo minor
 and major updates become individually reviewable pull requests instead of
 hiding several breaking-risk changes in one batch. The reviewed exception is

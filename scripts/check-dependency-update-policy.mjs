@@ -81,7 +81,10 @@ function sourceKey(update) {
 }
 
 function validateActionPins(workflows) {
-  for (const [file, workflow] of workflows) {
+  const reviewedPins = new Map();
+  for (const [file, workflow] of [...workflows].toSorted(
+    ([left], [right]) => (left < right ? -1 : Number(left > right)),
+  )) {
     const document = parseDocument(workflow);
     if (document.errors.length > 0) {
       reject("E_WORKFLOW_YAML", `${file}: ${document.errors[0].message}`);
@@ -107,6 +110,7 @@ function validateActionPins(workflows) {
         }
         const line =
           workflow.slice(0, pair.value.range[0]).split(/\r?\n/u).length;
+        let identity;
         if (value.startsWith("docker://")) {
           if (!DOCKER_SHA256.test(value)) {
             reject(
@@ -114,6 +118,7 @@ function validateActionPins(workflows) {
               `${file}:${line}: Docker actions must use a sha256 image digest`,
             );
           }
+          identity = value.slice(0, value.indexOf("@sha256:"));
         } else {
           const action = value.match(/^([^@\s]+)@([^\s]+)$/u);
           if (action === null || !FULL_SHA.test(action[2])) {
@@ -122,17 +127,38 @@ function validateActionPins(workflows) {
               `${file}:${line}: third-party actions must use a full commit SHA`,
             );
           }
+          identity = action[1];
         }
         const trailingSource = workflow.slice(
           pair.value.range[1],
           pair.value.range[2],
         );
-        if (!/^[\t ]+#[\t ]*\S/u.test(trailingSource)) {
+        const releaseComment = trailingSource.match(
+          /^[\t ]+#[\t ]*(\S[^\r\n]*)/u,
+        )?.[1].trim();
+        if (releaseComment === undefined || releaseComment === "") {
           reject(
             "E_ACTION_RELEASE_COMMENT",
             `${file}:${line}: action pins must retain a release comment`,
           );
         }
+        const reviewed = reviewedPins.get(identity);
+        if (
+          reviewed !== undefined &&
+          (reviewed.value !== value ||
+            reviewed.releaseComment !== releaseComment)
+        ) {
+          reject(
+            "E_ACTION_PIN_CONSISTENCY",
+            `${file}:${line}: ${identity} must match ${reviewed.file}:${reviewed.line} (${reviewed.value} # ${reviewed.releaseComment})`,
+          );
+        }
+        reviewedPins.set(identity, {
+          file,
+          line,
+          releaseComment,
+          value,
+        });
       },
     });
   }

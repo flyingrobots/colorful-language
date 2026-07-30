@@ -13,27 +13,27 @@ import {
 } from "./check-coverage-policy.mjs";
 
 const CHECKOUT_ACTION =
-  "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+  "actions/checkout@1111111111111111111111111111111111111111";
 const RUST_TOOLCHAIN_ACTION =
-  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
+  "dtolnay/rust-toolchain@2222222222222222222222222222222222222222";
 const INSTALL_ACTION =
-  "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
+  "taiki-e/install-action@3333333333333333333333333333333333333333";
 const RUST_CACHE_ACTION =
-  "Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32";
+  "Swatinem/rust-cache@4444444444444444444444444444444444444444";
 const UPLOAD_ACTION =
-  "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f";
+  "actions/upload-artifact@5555555555555555555555555555555555555555";
 const UPDATED_ACTIONS = new Map([
   [
     "actions/checkout",
-    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   ],
   [
     "taiki-e/install-action",
-    "taiki-e/install-action@065d6a08a14e61e89fb0a4c10eecdbdef39c7d8e",
+    "taiki-e/install-action@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   ],
   [
     "actions/upload-artifact",
-    "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+    "actions/upload-artifact@cccccccccccccccccccccccccccccccccccccccc",
   ],
 ]);
 const ACTUAL_POLICY = JSON.parse(

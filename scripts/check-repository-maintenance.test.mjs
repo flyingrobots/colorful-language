@@ -11,31 +11,31 @@ import {
 } from "./check-repository-maintenance.mjs";
 
 const CHECKOUT_ACTION =
-  "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+  "actions/checkout@1111111111111111111111111111111111111111";
 const RUST_TOOLCHAIN_ACTION =
-  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
+  "dtolnay/rust-toolchain@2222222222222222222222222222222222222222";
 const INSTALL_ACTION =
-  "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
+  "taiki-e/install-action@3333333333333333333333333333333333333333";
 const SETUP_NODE_ACTION =
-  "actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444";
+  "actions/setup-node@4444444444444444444444444444444444444444";
 const DEPENDENCY_ACTION =
-  "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294";
+  "actions/dependency-review-action@5555555555555555555555555555555555555555";
 const CODEQL_INIT =
-  "github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+  "github/codeql-action/init@6666666666666666666666666666666666666666";
 const CODEQL_ANALYZE =
-  "github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+  "github/codeql-action/analyze@6666666666666666666666666666666666666666";
 const UPDATED_ACTIONS = new Map([
   [
     "actions/checkout",
-    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   ],
   [
     "actions/setup-node",
-    "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+    "actions/setup-node@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   ],
   [
     "taiki-e/install-action",
-    "taiki-e/install-action@065d6a08a14e61e89fb0a4c10eecdbdef39c7d8e",
+    "taiki-e/install-action@cccccccccccccccccccccccccccccccccccccccc",
   ],
 ]);
 const DELIVERY_REFERENCE = [
