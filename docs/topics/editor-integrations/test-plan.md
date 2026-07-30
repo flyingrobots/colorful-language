@@ -40,6 +40,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-15** Markdown analysis must exclude reviewed non-prose syntax regions
   through one coordinate-preserving format adapter outside `colorful-core`,
   while Plain Text keeps the existing whole-document behavior.
+- **EDIT-16** The VS Code extension's ambient Node declarations must not exceed
+  the Node major provided by its minimum supported extension host, and
+  dependency automation must preserve that compatibility boundary.
 
 ## Cases
 
@@ -124,6 +127,19 @@ Verification for editor adapters and the `colorful-lsp` surface.
   editor CI job. *Tracking:*
   [#185](https://github.com/flyingrobots/colorful-language/issues/185).
   *Status:* implemented.
+- **EDIT-16a** — *Requirement:* EDIT-16. *Behavior:* one reviewed runtime policy
+  binds the extension's minimum VS Code release and host Node line to the
+  `@types/node` manifest range, locked major, exact package-smoke download, and
+  Dependabot update policy. Supported Node 20 declaration updates remain
+  admissible, while a Node 21-or-newer proposal equivalent to Dependabot PR
+  #195 fails with a stable policy category before it can enter the shipping
+  graph. TypeScript keeps `strict: true` and `skipLibCheck: false`. *Oracle:*
+  deterministic mutations of each policy input reject drift, the supported
+  fixture passes, TypeScript compiles, and the isolated VS Code 1.91.0 package
+  smoke retains its existing host boundary. *Evidence type:* dependency-policy
+  self-test, editor compile, and package-smoke policy test. *Tracking:*
+  [#267](https://github.com/flyingrobots/colorful-language/issues/267).
+  *Status:* planned.
 - **EDIT-14a** — *Requirement:* EDIT-14. *Behavior:* a generated valid-Unicode
   prefix and selected source span are emitted once as a CLI finding and once as
   an LSP diagnostic. The corpus is bounded to 256 cases under one checked-in
