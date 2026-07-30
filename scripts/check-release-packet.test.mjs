@@ -281,6 +281,20 @@ test("rejects a scoped issue omitted from the slice inventory", () => {
   }, "E_RELEASE_PACKET_SCOPE");
 });
 
+test("resolves reference-style issue links in the scope inventory", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release
+      .replace(
+        "([#154](https://github.com/flyingrobots/colorful-language/issues/154)).",
+        "([#154](https://github.com/flyingrobots/colorful-language/issues/154) and [#99][slice-99]).",
+      )
+      .replace(
+        "## Goalposts",
+        "[slice-99]: https://github.com/flyingrobots/colorful-language/issues/99\n\n## Goalposts",
+      );
+  }, "E_RELEASE_PACKET_SCOPE");
+});
+
 test("rejects every missing verification section", () => {
   for (const heading of [
     "Status",
