@@ -304,15 +304,23 @@ function sectionEvidenceText(section, definitions) {
   return [sectionText(section), ...destinations].join("\n");
 }
 
-function issueNumbers(nodes) {
+function issueNumbers(nodes, definitions) {
   const numbers = new Set();
   walk(nodes, (node) => {
-    if (node.type !== "link") {
-      return;
+    let urls = [];
+    if (node.type === "link") {
+      urls = [node.url];
+    } else if (
+      node.type === "linkReference" &&
+      typeof node.identifier === "string"
+    ) {
+      urls = definitions.get(node.identifier) ?? [];
     }
-    const match = ISSUE_URL.exec(node.url);
-    if (match !== null) {
-      numbers.add(Number.parseInt(match.groups.number, 10));
+    for (const url of urls) {
+      const match = ISSUE_URL.exec(url);
+      if (match !== null) {
+        numbers.add(Number.parseInt(match.groups.number, 10));
+      }
     }
   });
   return numbers;
@@ -320,6 +328,7 @@ function issueNumbers(nodes) {
 
 function validatePacketDocument(snapshot) {
   const document = parseDocument(snapshot.release, snapshot.releasePath);
+  const definitions = definitionDestinations(document);
   const expectedTitle = `colorful-language v${snapshot.version} — Release Packet`;
   if (rootTitle(document, snapshot.releasePath) !== expectedTitle) {
     reject(
@@ -409,7 +418,7 @@ function validatePacketDocument(snapshot) {
     );
   }
 
-  const scopedIssueNumbers = issueNumbers(scopedSlices.nodes);
+  const scopedIssueNumbers = issueNumbers(scopedSlices.nodes, definitions);
   if (scopedIssueNumbers.size === 0) {
     reject(
       "E_RELEASE_PACKET_SCOPE",
@@ -417,10 +426,10 @@ function validatePacketDocument(snapshot) {
       "section 'Scoped slices' must contain at least one repository issue link",
     );
   }
-  const referencedIssueNumbers = issueNumbers([
-    ...scopedNodes,
-    ...goalposts.nodes,
-  ]);
+  const referencedIssueNumbers = issueNumbers(
+    [...scopedNodes, ...goalposts.nodes],
+    definitions,
+  );
   for (const issue of referencedIssueNumbers) {
     if (!scopedIssueNumbers.has(issue)) {
       reject(
