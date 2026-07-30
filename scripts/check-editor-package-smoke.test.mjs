@@ -42,6 +42,7 @@ const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/smoke/suite/index.cjs",
   "editors/vscode/smoke/timing-witness.mjs",
   "editors/vscode/scripts/package-vsix.mjs",
+  "editors/vscode/runtime-policy.json",
   "scripts/stage-zed-extension.mjs",
 ];
 
@@ -67,6 +68,9 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
   const lockfile = JSON.parse(
     readFileSync("editors/vscode/package-lock.json", "utf8"),
   );
+  const runtimePolicy = JSON.parse(
+    readFileSync("editors/vscode/runtime-policy.json", "utf8"),
+  );
 
   for (const [name, version] of Object.entries(EXPECTED_TOOL_VERSIONS)) {
     assert.equal(packageJson.devDependencies?.[name], version);
@@ -82,6 +86,7 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
     "utf8",
   );
   assert.match(packageIgnore, /^node_modules\/\*\*$/mu);
+  assert.match(packageIgnore, /^runtime-policy\.json$/mu);
   assert.match(packageIgnore, /^scripts\/\*\*$/mu);
   assert.match(packageIgnore, /^\*\*\/\*\.map$/mu);
   assert.equal(
@@ -89,6 +94,22 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
     "node smoke/run-packaged-smoke.mjs",
   );
   assert.equal(packageJson.repository?.directory, "editors/vscode");
+  assert.equal(
+    packageJson.engines?.vscode,
+    `^${runtimePolicy.minimumVscodeVersion}`,
+  );
+  assert.equal(packageJson.devDependencies?.["@types/node"], "^20");
+  assert.equal(
+    lockfile.packages?.["node_modules/@types/node"]?.version.split(".")[0],
+    runtimePolicy.nodeVersion.split(".")[0],
+  );
+
+  const smokeRunner = readFileSync(
+    "editors/vscode/smoke/run-packaged-smoke.mjs",
+    "utf8",
+  );
+  assert.match(smokeRunner, /validateVscodeHostPolicy/u);
+  assert.match(smokeRunner, /minimumVscodeVersion: VSCODE_VERSION/u);
 });
 
 test("VSIX packaging resolves the publisher binary from its package manifest", () => {

@@ -33,11 +33,11 @@ function fixture() {
     },
     documentation: {
       adapter: [
-        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0.",
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.",
         "https://releases.electronjs.org/release/v29.4.0",
       ].join(" "),
       topic: [
-        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0.",
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.",
         "https://releases.electronjs.org/release/v29.4.0",
       ].join(" "),
     },
@@ -258,6 +258,15 @@ test("rejects current editor documentation that drifts from host policy", () => 
   const input = fixture();
   input.documentation.adapter =
     "VS Code 1.91.0 is supported, but the host runtime is undocumented.";
+  expectCode(input, "E_VSCODE_RUNTIME_DOCS");
+});
+
+test("rejects a documented Node declaration major outside the host line", () => {
+  const input = fixture();
+  input.documentation.topic = input.documentation.topic.replace(
+    "`@types/node` 20",
+    "`@types/node` 26",
+  );
   expectCode(input, "E_VSCODE_RUNTIME_DOCS");
 });
 

@@ -139,7 +139,17 @@ Verification for editor adapters and the `colorful-lsp` surface.
   smoke retains its existing host boundary. *Evidence type:* dependency-policy
   self-test, editor compile, and package-smoke policy test. *Tracking:*
   [#267](https://github.com/flyingrobots/colorful-language/issues/267).
-  *Status:* planned.
+  *Evidence:* `editors/vscode/runtime-policy.json`;
+  `scripts/check-vscode-dependency-policy.mjs`;
+  `scripts/check-vscode-dependency-policy.test.mjs` tests `rejects Node 26
+  declarations for the VS Code 1.91 host`, `rejects a locked Node declaration
+  major outside the host line`, `rejects a runtime policy that drifts from the
+  extension floor`, `rejects Dependabot policy without the Node declaration
+  major guard`, `rejects weakened TypeScript declaration checking`, and
+  `rejects current editor documentation that drifts from host policy`, plus
+  `rejects a documented Node declaration major outside the host line`;
+  `scripts/check-editor-package-smoke.test.mjs`; and
+  `editors/vscode/smoke/run-packaged-smoke.mjs`. *Status:* implemented.
 - **EDIT-14a** — *Requirement:* EDIT-14. *Behavior:* a generated valid-Unicode
   prefix and selected source span are emitted once as a CLI finding and once as
   an LSP diagnostic. The corpus is bounded to 256 cases under one checked-in

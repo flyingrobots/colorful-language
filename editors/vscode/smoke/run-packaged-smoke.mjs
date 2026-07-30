@@ -22,6 +22,7 @@ import {
   stageZedExtension,
   validateZedSourcePackage,
 } from "../../../scripts/stage-zed-extension.mjs";
+import { validateVscodeHostPolicy } from "../../../scripts/check-vscode-dependency-policy.mjs";
 
 const {
   downloadAndUnzipVSCode,
@@ -37,13 +38,13 @@ const repositoryRoot = path.resolve(vscodeRoot, "../..");
 const packageJson = JSON.parse(
   readFileSync(path.join(vscodeRoot, "package.json"), "utf8"),
 );
-const vscodeEngine = packageJson.engines?.vscode;
-const vscodeEngineMatch = /^\^(\d+\.\d+\.\d+)$/u.exec(vscodeEngine);
-assert.ok(
-  vscodeEngineMatch,
-  `expected an exact caret VS Code engine floor, got ${JSON.stringify(vscodeEngine)}`,
+const runtimePolicy = JSON.parse(
+  readFileSync(path.join(vscodeRoot, "runtime-policy.json"), "utf8"),
 );
-const VSCODE_VERSION = vscodeEngineMatch[1];
+const { minimumVscodeVersion: VSCODE_VERSION } = validateVscodeHostPolicy(
+  packageJson,
+  runtimePolicy,
+);
 const artifactRoot = path.join(repositoryRoot, "target/editor-smoke");
 const cachePath = path.join(vscodeRoot, ".vscode-test");
 const smokeWorkspace = path.join(repositoryRoot, "editors/fixtures");

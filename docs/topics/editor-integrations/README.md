@@ -32,6 +32,12 @@ The repository currently ships source integrations and recipes:
   semantic token types, maps them to TextMate scopes for theme fallback, and
   exposes an **Output -> Colorful Language** channel for LSP startup evidence.
   Its supported language-client release requires VS Code 1.91 or newer.
+  The exact minimum, VS Code 1.91.0, uses Electron 29.4.0 and Node 20.9.0
+  according to the
+  [Electron release record](https://releases.electronjs.org/release/v29.4.0).
+  The extension therefore stays on the `@types/node` 20 declaration line;
+  dependency automation may update that line but cannot raise its major
+  independently of the reviewed editor-host policy.
 - Zed uses the source extension in [`editors/zed/`](../../../editors/zed/).
   The extension registers `colorful-lsp` for Zed's built-in **Plain Text** and
   **Markdown** languages. Users must enable Zed semantic tokens

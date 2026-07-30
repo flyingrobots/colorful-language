@@ -7,5 +7,6 @@ src/**
 node_modules/**
 **/*.map
 package-lock.json
+runtime-policy.json
 tsconfig.json
 *.vsix

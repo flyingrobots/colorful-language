@@ -90,7 +90,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — test analyzer substitution** | An optional external-analyzer adapter proves that the pure port can provide useful substitution without making an external engine mandatory. | #157 keeps Vale v3 process failures outside the pure port, proves built-in/external CLI/LSP parity, and leaves both production binaries Vale-free. |
 | **Delivered — bound external-adapter failures** | A malformed optional-engine response cannot multiply or reproduce process-controlled content in an operator-visible error. | #235 caps and redacts every invalid-alert path before distribution work expands the reachable surface. |
 | **Delivered — restore dependency-update admission** | Weekly dependency updates can reach the normal review and security gates without weakening slice closure. | #265 admits only GitHub-authenticated, dependency-only Dependabot changes without a closing issue before the v0.4.0 packet snapshots the shipping graph. |
-| **Active — keep editor declarations inside the host runtime** | TypeScript cannot compile against ambient Node APIs newer than the minimum supported VS Code extension host. | #267 binds the supported editor floor, host Node line, manifest, lockfile, package smoke, and Dependabot policy before the v0.4.0 packet snapshots the shipping graph. |
+| **Delivered — keep editor declarations inside the host runtime** | TypeScript cannot compile against ambient Node APIs newer than the minimum supported VS Code extension host. | #267 binds the supported editor floor, host Node line, manifest, lockfile, package smoke, and Dependabot policy before the v0.4.0 packet snapshots the shipping graph. |
 | **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #245 implements the repository machinery, #251 derives the Homebrew formula from its native artifacts, and #154 retains public publication proof. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -334,11 +334,11 @@ was installed, and reach the first useful editor result.
   ([#123](https://github.com/flyingrobots/colorful-language/issues/123),
   [#124](https://github.com/flyingrobots/colorful-language/issues/124),
   [#185](https://github.com/flyingrobots/colorful-language/issues/185)).
-- **Active extension-host declaration policy:** keep ambient Node declarations
+- **Delivered extension-host declaration policy:** keep ambient Node declarations
   within the runtime major supplied by the minimum supported VS Code release,
   and stop dependency automation from proposing an incompatible major
   [#267](https://github.com/flyingrobots/colorful-language/issues/267).
-  <!-- roadmap-primary: active #267 -->
+  <!-- roadmap-primary: delivered #267 -->
 - **Delivered compatibility policy:** synchronize adapter/server releases,
   derive same-pre-1.0-minor compatibility, and reject manifest or gate drift
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
