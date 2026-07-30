@@ -201,6 +201,15 @@ test("rejects packet and witness identity drift", () => {
   }
 });
 
+test("requires exact version decision tokens", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "Release 0.4.0 after v0.3.0",
+      "Release 10.4.0 after v0.3.0",
+    );
+  }, "E_RELEASE_PACKET_IDENTITY");
+});
+
 test("rejects every missing or empty release section", () => {
   for (const heading of [
     "Release thesis",
