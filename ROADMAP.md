@@ -91,6 +91,7 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — bound external-adapter failures** | A malformed optional-engine response cannot multiply or reproduce process-controlled content in an operator-visible error. | #235 caps and redacts every invalid-alert path before distribution work expands the reachable surface. |
 | **Delivered — restore dependency-update admission** | Weekly dependency updates can reach the normal review and security gates without weakening slice closure. | #265 admits only GitHub-authenticated, dependency-only Dependabot changes without a closing issue before the v0.4.0 packet snapshots the shipping graph. |
 | **Delivered — keep editor declarations inside the host runtime** | TypeScript cannot compile against ambient Node APIs newer than the minimum supported VS Code extension host. | #267 binds the supported editor floor, host Node line, manifest, lockfile, package smoke, and Dependabot policy before the v0.4.0 packet snapshots the shipping graph. |
+| **Now — preserve reviewed Cargo compatibility** | Routine dependency automation cannot silently undo an explicit adapter-compatibility decision or hide unrelated breaking upgrades in one batch. | #271 keeps DashMap on the tower-lsp-compatible major, groups patch updates, and leaves minor/major updates independently reviewable before dependency refreshes resume. |
 | **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #245 implements the repository machinery, #251 derives the Homebrew formula from its native artifacts, and #154 retains public publication proof. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
@@ -212,6 +213,11 @@ observe public-contract regressions before they ship.
   [#269](https://github.com/flyingrobots/colorful-language/issues/269), before
   the open root and fuzz dependency groups can land.
   <!-- roadmap-primary: delivered #269 -->
+- **Active root Cargo compatibility policy:** keep reviewed dependency pins
+  machine-visible, group only patch updates, and leave larger upgrades
+  independently reviewable before root dependency automation resumes
+  [#271](https://github.com/flyingrobots/colorful-language/issues/271).
+  <!-- roadmap-primary: active #271 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog
