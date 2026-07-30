@@ -1,8 +1,19 @@
 import assert from "node:assert/strict";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
+  CHECK_COMMAND,
   ReleasePacketPolicyError,
+  SELF_TEST_COMMAND,
+  loadRepositorySnapshot,
   validateReleasePacket,
 } from "./check-release-packet.mjs";
 
@@ -66,7 +77,7 @@ Release 0.4.0 after v0.3.0 because pre-1.0 public APIs changed.
 
 ## Status
 
-Pre-publication planning only.
+Release phase: pre-publication.
 
 ## Pre-publication evidence
 
@@ -84,19 +95,191 @@ Pre-publication planning only.
 
 - Release retrospective: not available.
 `,
+    gateSources: {
+      ".github/workflows/ci.yml":
+        `${SELF_TEST_COMMAND}\n${CHECK_COMMAND}\n`,
+      ".github/workflows/release.yml":
+        `${SELF_TEST_COMMAND}\n${CHECK_COMMAND}\n`,
+      "scripts/release-prep.sh":
+        `${SELF_TEST_COMMAND}\n${CHECK_COMMAND}\n`,
+    },
   };
 }
 
-test("rejects a release packet without a thesis", () => {
+function expectCode(mutate, code) {
   const snapshot = validSnapshot();
-  snapshot.release = snapshot.release.replace(
-    "Ship the reviewed product-maturity work through normal public channels.",
-    "",
-  );
+  mutate(snapshot);
   assert.throws(
     () => validateReleasePacket(snapshot),
     (error) =>
-      error instanceof ReleasePacketPolicyError &&
-      error.code === "E_RELEASE_PACKET_SECTION",
+      error instanceof ReleasePacketPolicyError && error.code === code,
   );
+}
+
+test("accepts a complete pre-publication release packet", () => {
+  assert.deepEqual(validateReleasePacket(validSnapshot()), {
+    version: "0.4.0",
+    previousTag: "v0.3.0",
+    goalpostCount: 2,
+    scopedIssueCount: 3,
+    phase: "pre-publication",
+  });
+});
+
+test("rejects a release packet without a thesis", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "Ship the reviewed product-maturity work through normal public channels.",
+      "",
+    );
+  }, "E_RELEASE_PACKET_SECTION");
+});
+
+test("rejects packet and witness identity drift", () => {
+  for (const mutate of [
+    (snapshot) => {
+      snapshot.releasePath = "docs/goalposts/v0.4.1/release.md";
+    },
+    (snapshot) => {
+      snapshot.release = snapshot.release.replace("v0.4.0", "v0.4.1");
+    },
+    (snapshot) => {
+      snapshot.release = snapshot.release.replace("v0.3.0", "v0.2.1");
+    },
+    (snapshot) => {
+      snapshot.verification = snapshot.verification.replace(
+        "v0.4.0",
+        "v0.4.1",
+      );
+    },
+  ]) {
+    expectCode(mutate, "E_RELEASE_PACKET_IDENTITY");
+  }
+});
+
+test("rejects every missing or empty release section", () => {
+  for (const heading of [
+    "Release thesis",
+    "Version decision",
+    "Scope",
+    "Goalposts",
+    "Scoped slices",
+    "Explicit non-claims",
+    "Risks and rollback",
+    "Acceptance evidence",
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.release = snapshot.release.replace(`## ${heading}`, "");
+    }, "E_RELEASE_PACKET_SECTION");
+  }
+});
+
+test("rejects an empty scope bucket", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "- Public Homebrew tap installation may follow ([#37](https://github.com/flyingrobots/colorful-language/issues/37)).",
+      "",
+    );
+  }, "E_RELEASE_PACKET_SCOPE");
+});
+
+test("enforces the two-to-five goalpost bound", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "- **Integrity:** preserve deterministic contract validation.\n",
+      "",
+    );
+  }, "E_RELEASE_PACKET_GOALPOSTS");
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "- **Integrity:** preserve deterministic contract validation.",
+      [
+        "- **Integrity:** preserve deterministic contract validation.",
+        "- **Evidence:** retain executable proof.",
+        "- **Editors:** preserve adapter compatibility.",
+        "- **Operations:** retain rollback ownership.",
+        "- **Extra:** exceed the reviewed bound.",
+      ].join("\n"),
+    );
+  }, "E_RELEASE_PACKET_GOALPOSTS");
+});
+
+test("rejects a scoped issue omitted from the slice inventory", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "- [#37](https://github.com/flyingrobots/colorful-language/issues/37) — Homebrew follow-up.\n",
+      "",
+    );
+  }, "E_RELEASE_PACKET_SCOPE");
+});
+
+test("rejects every missing verification section", () => {
+  for (const heading of [
+    "Status",
+    "Pre-publication evidence",
+    "Publication evidence",
+    "Public verification",
+    "Retrospective",
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.verification = snapshot.verification.replace(
+        `## ${heading}`,
+        "",
+      );
+    }, "E_RELEASE_PACKET_SECTION");
+  }
+});
+
+test("rejects invented public evidence in the pre-publication phase", () => {
+  for (const text of [
+    "Tag and registries: not available.",
+    "Clean installation and public URLs: not available.",
+    "Release retrospective: not available.",
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.verification = snapshot.verification.replace(
+        text,
+        `${text.split(":")[0]}: complete.`,
+      );
+    }, "E_RELEASE_PACKET_EVIDENCE");
+  }
+});
+
+test("requires the self-test before the live check in every release gate", () => {
+  for (const gate of Object.keys(validSnapshot().gateSources)) {
+    expectCode((snapshot) => {
+      snapshot.gateSources[gate] = CHECK_COMMAND;
+    }, "E_RELEASE_PACKET_GATE");
+    expectCode((snapshot) => {
+      snapshot.gateSources[gate] =
+        `# ${SELF_TEST_COMMAND}\n# ${CHECK_COMMAND}\n`;
+    }, "E_RELEASE_PACKET_GATE");
+  }
+});
+
+test("reports a stable category when the target packet is missing", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  mkdirSync(join(root, "docs/goalposts/v0.3.0"), { recursive: true });
+  writeFileSync(
+    join(root, "Cargo.toml"),
+    "[workspace.package]\nversion = \"0.4.0\"\n",
+  );
+  writeFileSync(join(root, "docs/goalposts/v0.3.0/release.md"), "released\n");
+  writeFileSync(
+    join(root, "docs/goalposts/v0.3.0/verification.md"),
+    "verified\n",
+  );
+
+  assert.throws(
+    () => loadRepositorySnapshot(root),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_IO" &&
+      error.message.includes(RELEASE_PATH),
+  );
+});
+
+test("the checked-in v0.4.0 release packet satisfies the policy", () => {
+  assert.doesNotThrow(() => validateReleasePacket(loadRepositorySnapshot()));
 });

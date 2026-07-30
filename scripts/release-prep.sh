@@ -23,6 +23,8 @@ bash scripts/check-node-version.test.sh
 bash scripts/check-node-version.sh
 npm ci
 bash scripts/release-profile-check.sh
+node --test scripts/check-release-packet.test.mjs
+node scripts/check-release-packet.mjs
 node --test scripts/check-editor-version-policy.test.mjs
 node scripts/check-editor-version-policy.mjs
 node --test scripts/check-release-distribution.test.mjs

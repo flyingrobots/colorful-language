@@ -93,7 +93,8 @@ M0 repository-governance and M2 LSP-capacity tracks may advance together.
 | **Delivered — keep editor declarations inside the host runtime** | TypeScript cannot compile against ambient Node APIs newer than the minimum supported VS Code extension host. | #267 binds the supported editor floor, host Node line, manifest, lockfile, package smoke, and Dependabot policy before the v0.4.0 packet snapshots the shipping graph. |
 | **Delivered — preserve reviewed Cargo compatibility** | Routine dependency automation cannot silently undo an explicit adapter-compatibility decision or hide unrelated breaking upgrades in one batch. | #271 keeps DashMap on the tower-lsp-compatible major, groups patch updates, and leaves other minor/major updates independently reviewable before dependency refreshes resume. |
 | **Delivered — make action updates satisfiable** | Full-SHA action updates can advance through the declared workflow boundary without colliding with stale first-party checker constants. | #278 derives consistent reviewed pins from the candidate workflow family while preserving action-specific security and topology gates. |
-| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, and #241's Markdown non-prose boundary delivered, #245 implements the repository machinery, #251 derives the Homebrew formula from its native artifacts, and #154 retains public publication proof. |
+| **Delivered — admit the v0.4.0 packet** | The next release has a machine-checked thesis, bounded scope, explicit non-claims, and a staged evidence witness before publication work begins. | #280 derives the packet from workspace and completed-release identity, rejects incomplete or invented evidence, and wires the same admission into PR CI, local preparation, and tag validation. |
+| **Now — make the product reachable** | A user can install a signed editor/server artifact on a clean machine and reach the first highlight through a version-compatible path. | With #136's packaged smoke evidence, #141's adapter/server compatibility policy, #241's Markdown non-prose boundary, and #280's release packet delivered, #245 implements the repository machinery, #251 derives the Homebrew formula from its native artifacts, and #154 retains public publication proof. |
 | **Validate — choose the product job** | Independent evidence identifies one primary user/job and tests whether the portable IR reduces consumer cost. | M4. Corpus work may start earlier, but behavioral discovery follows real distribution. |
 | **Deepen — resume the cathedral** | New CNL, provenance, Edict, and Ouroboros surface area has an evidenced user and a dependable substrate. | Resume Phase 5 and beyond only after the deep-end evidence gate below. |
 
@@ -224,6 +225,12 @@ observe public-contract regressions before they ship.
   permission, artifact, attestation, coverage, or release-topology invariants
   [#278](https://github.com/flyingrobots/colorful-language/issues/278).
   <!-- roadmap-primary: delivered #278 -->
+- **Delivered v0.4.0 packet admission:** derive the planned packet from current
+  workspace and completed-release identity, require a bounded thesis and scope,
+  and keep pre-publication evidence explicitly unavailable until real public
+  oracles exist
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  <!-- roadmap-primary: delivered #280 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog

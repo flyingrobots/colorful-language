@@ -29,6 +29,7 @@ boring facts automation can check:
 - release signposts such as `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
   `docs/topics/`, `docs/workflows/`, and maintainer docs;
 - validation entrypoints in `scripts/release-profile-check.sh`,
+  `scripts/check-release-packet.mjs`,
   `scripts/check-editor-version-policy.mjs`,
   `scripts/release-prep.sh`, and `scripts/release-preflight.sh`;
 - current publication by pushing a `v*` tag, which triggers
@@ -39,6 +40,21 @@ The profile is enforced by CI and by the release workflow through:
 ```bash
 bash scripts/release-profile-check.sh
 ```
+
+Each planned release packet is admitted before release work can become a
+versioned tracking issue. The policy derives the target from the workspace
+version and the previous public release from completed goalpost packets, then
+checks packet identity, required sections, scope buckets, bounded goalposts,
+slice inventory, staged evidence, and release-gate wiring:
+
+```bash
+node --test scripts/check-release-packet.test.mjs
+node scripts/check-release-packet.mjs
+```
+
+The self-test must run first. Missing required files and invalid packet
+invariants fail with stable `E_RELEASE_PACKET_*` categories; unexpected
+programmer errors remain visible.
 
 ## Current release shape
 
@@ -383,6 +399,7 @@ bash scripts/release-prep.sh
 That script runs:
 
 - release profile check, including `Cargo.lock` workspace crate versions;
+- deterministic release-packet policy self-tests and live packet admission;
 - synchronized editor/server compatibility and gate wiring;
 - signed native/editor distribution policy and mutation self-tests;
 - Homebrew formula generation, archive-integrity, and release-order self-tests;
