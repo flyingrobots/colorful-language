@@ -264,6 +264,17 @@ function listItems(nodes) {
   );
 }
 
+function leadingStrongLabel(item) {
+  const paragraph = item.children?.find(
+    (node) => node.type === "paragraph",
+  );
+  const strong = paragraph?.children?.[0];
+  if (strong?.type !== "strong") {
+    return undefined;
+  }
+  return toString(strong).trim().replace(/:\s*$/u, "").normalize("NFC");
+}
+
 function walk(nodes, visitor) {
   for (const node of nodes) {
     visitor(node);
@@ -326,6 +337,69 @@ function issueNumbers(nodes, definitions) {
   return numbers;
 }
 
+function hasObservableOracle(item, definitions) {
+  let found = false;
+  walk([item], (node) => {
+    if (node.type === "inlineCode" && node.value.trim() !== "") {
+      found = true;
+      return;
+    }
+    let urls = [];
+    if (node.type === "link") {
+      urls = [node.url];
+    } else if (
+      node.type === "linkReference" &&
+      typeof node.identifier === "string"
+    ) {
+      urls = definitions.get(node.identifier) ?? [];
+    }
+    if (urls.some((url) => ISSUE_URL.exec(url) === null)) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+function validateGoalpostEvidence(
+  goalpostItems,
+  evidenceItems,
+  definitions,
+  path,
+) {
+  const evidenceByLabel = new Map();
+  for (const item of evidenceItems) {
+    const label = leadingStrongLabel(item);
+    if (label === undefined) {
+      continue;
+    }
+    if (evidenceByLabel.has(label)) {
+      reject(
+        "E_RELEASE_PACKET_GOALPOSTS",
+        path,
+        `acceptance evidence duplicates goalpost '${label}'`,
+      );
+    }
+    evidenceByLabel.set(label, item);
+  }
+  for (const goalpost of goalpostItems) {
+    const label = leadingStrongLabel(goalpost);
+    const evidence = label === undefined
+      ? undefined
+      : evidenceByLabel.get(label);
+    if (
+      label === undefined ||
+      evidence === undefined ||
+      !hasObservableOracle(evidence, definitions)
+    ) {
+      reject(
+        "E_RELEASE_PACKET_GOALPOSTS",
+        path,
+        `goalpost '${label ?? toString(goalpost).trim()}' requires labeled acceptance evidence with an observable oracle`,
+      );
+    }
+  }
+}
+
 function validatePacketDocument(snapshot) {
   const document = parseDocument(snapshot.release, snapshot.releasePath);
   const definitions = definitionDestinations(document);
@@ -369,7 +443,7 @@ function validatePacketDocument(snapshot) {
     "Risks and rollback",
     snapshot.releasePath,
   );
-  requireSection(
+  const acceptanceEvidence = requireSection(
     sections,
     "Acceptance evidence",
     snapshot.releasePath,
@@ -417,6 +491,12 @@ function validatePacketDocument(snapshot) {
       `section 'Goalposts' must contain two to five list items; found ${goalpostItems.length}`,
     );
   }
+  validateGoalpostEvidence(
+    goalpostItems,
+    listItems(acceptanceEvidence.nodes),
+    definitions,
+    snapshot.releasePath,
+  );
 
   const scopedIssueNumbers = issueNumbers(scopedSlices.nodes, definitions);
   if (scopedIssueNumbers.size === 0) {

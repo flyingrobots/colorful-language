@@ -71,7 +71,8 @@ Release 0.4.0 after v0.3.0 because pre-1.0 public APIs changed.
 
 ## Acceptance evidence
 
-- The complete release-preparation gate passes before tagging.
+- **Reach:** \`node scripts/check-release-distribution.mjs\` proves the artifact graph.
+- **Integrity:** \`node scripts/check-release-packet.mjs\` proves packet admission.
 `,
     verificationPath: VERIFICATION_PATH,
     verification: `# colorful-language v0.4.0 — Verification Witness
@@ -275,7 +276,10 @@ test("enforces the two-to-five goalpost bound", () => {
 test("requires observable acceptance evidence for every goalpost", () => {
   expectCode((snapshot) => {
     snapshot.release = snapshot.release.replace(
-      "- The complete release-preparation gate passes before tagging.",
+      [
+        "- **Reach:** `node scripts/check-release-distribution.mjs` proves the artifact graph.",
+        "- **Integrity:** `node scripts/check-release-packet.mjs` proves packet admission.",
+      ].join("\n"),
       "- The release looks complete.\n- The implementation appears reliable.",
     );
   }, "E_RELEASE_PACKET_GOALPOSTS");

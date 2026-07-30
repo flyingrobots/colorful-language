@@ -179,13 +179,23 @@ Publication and rollback owner: `@flyingrobots`.
 
 ## Acceptance evidence
 
-- The packet-policy self-test rejects missing identity, scope, goalpost,
-  evidence, and gate-wiring invariants, and the live packet check passes.
-- `bash scripts/release-profile-check.sh` and
-  `node scripts/check-editor-version-policy.mjs` agree on synchronized
-  `0.4.0` release sources and `colorful-lsp >=0.4.0 <0.5.0`.
-- `mise exec node@22.23.1 -- bash scripts/release-prep.sh` passes on the
-  reviewed preparation branch.
+- **Boundary integrity:** `bash scripts/ir-witness.sh`,
+  `node --test scripts/check-generated-syntax-admission.test.mjs`, and the
+  bounded IR-validator mutation gate reject malformed or incompatible
+  artifacts through the reviewed Rust and JavaScript boundaries.
+- **Responsive editor behavior:**
+  `mise exec node@22.23.1 -- bash scripts/release-prep.sh` exercises the real
+  LSP transcript, measured service envelope, packaged VS Code host, and staged
+  Zed source on the reviewed preparation branch.
+- **Reachable distribution:**
+  `node --test scripts/check-release-distribution.test.mjs` and
+  `node scripts/check-release-distribution.mjs` prove the tag workflow's
+  native, editor, formula, checksum, attestation, and rollback topology before
+  any public side effect.
+- **Reproducible evidence:** `bash scripts/release-profile-check.sh`,
+  `node scripts/check-editor-version-policy.mjs`, and the complete
+  `mise exec node@22.23.1 -- bash scripts/release-prep.sh` gate agree on the
+  synchronized `0.4.0` graph and pinned evidence toolchains.
 - Pull-request CI is green and every review thread is resolved before the
   packet lands.
 - After the packet lands, `[release] v0.4.0` is created from these reviewed
