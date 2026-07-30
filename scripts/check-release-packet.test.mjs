@@ -116,6 +116,22 @@ function expectCode(mutate, code) {
   );
 }
 
+function writeRepositorySnapshot(root, snapshot = validSnapshot()) {
+  const sources = {
+    "Cargo.toml": `[workspace.package]\nversion = "${snapshot.version}"\n`,
+    [snapshot.releasePath]: snapshot.release,
+    [snapshot.verificationPath]: snapshot.verification,
+    "docs/goalposts/v0.3.0/release.md": "released\n",
+    "docs/goalposts/v0.3.0/verification.md": "verified\n",
+    ...snapshot.gateSources,
+  };
+  for (const [path, source] of Object.entries(sources)) {
+    const destination = join(root, path);
+    mkdirSync(join(destination, ".."), { recursive: true });
+    writeFileSync(destination, source);
+  }
+}
+
 test("accepts a complete pre-publication release packet", () => {
   assert.deepEqual(validateReleasePacket(validSnapshot()), {
     version: "0.4.0",
@@ -277,6 +293,25 @@ test("reports a stable category when the target packet is missing", (t) => {
       error instanceof ReleasePacketPolicyError &&
       error.code === "E_RELEASE_PACKET_IO" &&
       error.message.includes(RELEASE_PATH),
+  );
+});
+
+test("derives the previous release from public tags, not packet directories", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+  mkdirSync(join(root, "docs/goalposts/v0.3.1"), { recursive: true });
+  writeFileSync(join(root, "docs/goalposts/v0.3.1/release.md"), "abandoned\n");
+  writeFileSync(
+    join(root, "docs/goalposts/v0.3.1/verification.md"),
+    "pre-publication\n",
+  );
+
+  assert.equal(
+    loadRepositorySnapshot(root, {
+      publicTags: ["v0.3.0"],
+    }).previousTag,
+    "v0.3.0",
   );
 });
 
