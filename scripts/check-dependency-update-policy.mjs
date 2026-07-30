@@ -330,14 +330,7 @@ function directExternalDependencies(manifest, path) {
     }
     collectOwner(target, `${path}#target.${selector}`);
   }
-  return external.toSorted((left, right) => {
-    const dependencyOrder = left.dependencyName.localeCompare(
-      right.dependencyName,
-    );
-    return dependencyOrder === 0
-      ? left.packageName.localeCompare(right.packageName)
-      : dependencyOrder;
-  });
+  return external;
 }
 
 function validateFuzzDependencyAuthority(update, cargoManifests) {
