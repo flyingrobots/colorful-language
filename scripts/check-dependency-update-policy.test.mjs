@@ -207,6 +207,19 @@ test("rejects a partial update across sibling repository actions", () => {
   }, "E_ACTION_PIN_CONSISTENCY");
 });
 
+test("rejects inconsistent pins across repository identity casing", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      replaceCheckoutPin(
+        workflows.get(".github/workflows/ci.yml"),
+        UPDATED_ACTION_SHA,
+        "v7.0.1",
+      ).replace("actions/checkout@", "Actions/Checkout@"),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
+});
+
 test("accepts update sources in any order", () => {
   const candidate = fixture();
   candidate.dependabot.updates.reverse();
