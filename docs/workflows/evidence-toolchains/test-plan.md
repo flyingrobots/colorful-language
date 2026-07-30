@@ -115,21 +115,23 @@ bounded property/fuzz evidence tracked by
   edit the root workspace manifest or race a root Cargo pull request. *Oracle:*
   the policy checker derives the standalone manifest's direct external
   dependency inventory, requires one exact `allow` rule for `libfuzzer-sys`,
-  rejects missing, broadened, or additional allow rules, and rejects a
-  duplicated adapter dependency in the fuzz manifest. *Evidence type:*
-  manifests, Dependabot configuration, and deterministic policy mutations.
-  *Tracking:*
+  rejects missing, broadened, or additional allow rules, and rejects a fuzz
+  dependency owned by either the root workspace manifest or one of its
+  expanded member manifests. *Evidence type:* manifests, Dependabot
+  configuration, and deterministic policy mutations. *Tracking:*
   [#269](https://github.com/flyingrobots/colorful-language/issues/269).
   *Evidence:* `.github/dependabot.yml`; `Cargo.toml`; `fuzz/Cargo.toml`;
   `scripts/check-dependency-update-policy.mjs`;
   `scripts/check-dependency-update-policy.test.mjs` tests `rejects a fuzz
   source without its direct-runtime allowlist`, `rejects a broadened fuzz
   dependency allowlist`, `rejects a substituted fuzz dependency allowlist`,
-  `rejects a root-owned dependency in the standalone fuzz manifest`, `rejects
-  a renamed root-owned dependency in the fuzz manifest`, `rejects a root-owned
-  standalone fuzz dev dependency`, `rejects a root-owned fuzz workspace
-  dependency`, and `rejects a root-owned target-specific fuzz dependency`.
-  *Status:* implemented.
+  `rejects an allowlist on the root Cargo update source`, `rejects a fuzz
+  manifest without a direct runtime dependency`, `rejects a root-owned
+  dependency in the standalone fuzz manifest`, `rejects a root-member
+  dependency in the fuzz manifest`, `rejects a renamed root-owned dependency
+  in the fuzz manifest`, `rejects a root-owned standalone fuzz dev dependency`,
+  `rejects a root-owned fuzz workspace dependency`, and `rejects a root-owned
+  target-specific fuzz dependency`. *Status:* implemented.
 - **ETC-6c** — *Requirement:* ETC-8. *Behavior:* a root Cargo dependency
   update may carry `fuzz/Cargo.lock` as a dependent evidence refresh without
   granting the standalone fuzz source authority over root Cargo paths.

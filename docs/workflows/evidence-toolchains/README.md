@@ -160,9 +160,10 @@ dependency table in `fuzz/Cargo.toml`; currently that is only
 `libfuzzer-sys`. Product and adapter versions remain in the root Cargo
 workspace. Path dependencies let fuzz targets exercise those crates without
 granting the standalone update source authority to rewrite `Cargo.toml`. The
-policy checker parses both manifests and rejects a fuzz dependency that
-duplicates a root workspace dependency, including one hidden behind Cargo's
-renamed-dependency syntax, a missing allowlist, or any broader/substituted
+policy checker parses the root workspace manifest, every expanded root member
+manifest, and the standalone fuzz manifest. It rejects a fuzz dependency that
+duplicates a root-owned dependency, including one hidden behind Cargo's
+renamed-dependency syntax, a missing allowlist, or any broader or substituted
 allow rule.
 
 A root Cargo update must also refresh `fuzz/Cargo.lock` when a changed
