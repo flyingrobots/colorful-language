@@ -70,11 +70,15 @@ function compareVersions(left, right) {
 
 function repositoryTags(root) {
   try {
-    return execFileSync("git", ["tag", "--list", "v[0-9]*"], {
-      cwd: root,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    })
+    return execFileSync(
+      "git",
+      ["tag", "--merged", "HEAD", "--list", "v[0-9]*"],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    )
       .split(/\r?\n/u)
       .filter((tag) => tag !== "");
   } catch (error) {

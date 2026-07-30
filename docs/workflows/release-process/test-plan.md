@@ -330,8 +330,9 @@ Verification for release preparation, tag automation, and release witnesses.
   one release phase`, `rejects invented public evidence in the pre-publication
   phase`, `requires the self-test before the live check in every release gate`,
   `reports a stable category when the target packet is missing`, `derives the
-  previous release from public tags, not packet directories`, and `the
-  checked-in v0.4.0 release packet satisfies the policy`;
+  previous release from public tags, not packet directories`, `ignores release
+  tags that are not reachable from HEAD`, and `the checked-in v0.4.0 release
+  packet satisfies the policy`;
   `docs/goalposts/v0.4.0/release.md`;
   `docs/goalposts/v0.4.0/verification.md`; `.github/workflows/ci.yml`;
   `.github/workflows/release.yml`; and `scripts/release-prep.sh`. *Status:*

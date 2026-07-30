@@ -48,14 +48,15 @@ Each release also has a packet under `docs/goalposts/vX.Y.Z/`:
 - `verification.md` records commands, results, tag SHAs, publish status, and
   release URLs.
 
-The workspace version selects the packet, and fetched release tags select the
-previous public release. CI, release preparation, and tag admission fail closed
-unless both versions have corresponding packets, the planned packet contains a
-concrete thesis and version decision, every scope bucket is non-empty, two to
-five goalposts are defined, each linked slice is inventoried, and non-claims,
-rollback posture, and acceptance evidence are recorded. Before publication,
-the verification witness must leave tag, registry, public-install, and
-retrospective evidence explicitly pending or unavailable.
+The workspace version selects the packet, and fetched release tags reachable
+from the current history select the previous public release. CI, release
+preparation, and tag admission fail closed unless both versions have
+corresponding packets, the planned packet contains a concrete thesis and
+version decision, every scope bucket is non-empty, two to five goalposts are
+defined, each linked slice is inventoried, and non-claims, rollback posture,
+and acceptance evidence are recorded. Before publication, the verification
+witness must leave tag, registry, public-install, and retrospective evidence
+explicitly pending or unavailable.
 
 ## Automation
 

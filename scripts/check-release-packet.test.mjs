@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test from "node:test";
 
 import {
@@ -128,7 +128,7 @@ function writeRepositorySnapshot(root, snapshot = validSnapshot()) {
   };
   for (const [path, source] of Object.entries(sources)) {
     const destination = join(root, path);
-    mkdirSync(join(destination, ".."), { recursive: true });
+    mkdirSync(dirname(destination), { recursive: true });
     writeFileSync(destination, source);
   }
 }
