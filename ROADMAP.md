@@ -206,12 +206,12 @@ observe public-contract regressions before they ship.
   [#265](https://github.com/flyingrobots/colorful-language/issues/265), before
   the v0.4.0 packet snapshots the dependency graph.
   <!-- roadmap-primary: delivered #265 -->
-- **Active dependency-authority repair:** keep the standalone fuzz update
+- **Delivered dependency-authority repair:** keep the standalone fuzz update
   source limited to its direct fuzz runtime so it cannot edit or race the root
   Cargo manifest authority
   [#269](https://github.com/flyingrobots/colorful-language/issues/269), before
   the open root and fuzz dependency groups can land.
-  <!-- roadmap-primary: active #269 -->
+  <!-- roadmap-primary: delivered #269 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog

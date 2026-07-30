@@ -120,7 +120,13 @@ bounded property/fuzz evidence tracked by
   manifests, Dependabot configuration, and deterministic policy mutations.
   *Tracking:*
   [#269](https://github.com/flyingrobots/colorful-language/issues/269).
-  *Status:* planned.
+  *Evidence:* `.github/dependabot.yml`; `Cargo.toml`; `fuzz/Cargo.toml`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `rejects a fuzz
+  source without its direct-runtime allowlist`, `rejects a broadened fuzz
+  dependency allowlist`, `rejects a substituted fuzz dependency allowlist`,
+  and `rejects a root-owned dependency in the standalone fuzz manifest`.
+  *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite

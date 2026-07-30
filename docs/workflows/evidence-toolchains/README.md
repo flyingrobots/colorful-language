@@ -144,7 +144,7 @@ Dependabot opens six independent weekly groups from
 | `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
 | `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
-| `fuzz-cargo` | Standalone fuzz Cargo workspace and lockfile | Fuzz-only revert |
+| `fuzz-cargo` | Direct standalone fuzz-runtime dependencies and fuzz lockfile | Fuzz-runtime-only revert |
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
 | `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
 
@@ -153,6 +153,15 @@ differ. Issue
 [#152](https://github.com/flyingrobots/colorful-language/issues/152) may extend
 repository maintenance around this configuration, but this workflow remains the
 single owner of update sources, grouping, and cadence.
+
+The `/fuzz` source has one exact `allow` boundary derived from direct external
+dependencies in `fuzz/Cargo.toml`; currently that is only `libfuzzer-sys`.
+Product and adapter versions remain in the root Cargo workspace. Path
+dependencies let fuzz targets exercise those crates without granting the
+standalone update source authority to rewrite `Cargo.toml`. The policy checker
+parses both manifests and rejects a fuzz dependency that duplicates a root
+workspace dependency, a missing allowlist, or any broader/substituted allow
+rule.
 
 For an action update, inspect the upstream release and source commit, retain the
 full 40-character commit SHA in every `uses:` reference, and keep its release
@@ -186,7 +195,8 @@ The mutation suite rejects a floating action ref, a missing action-version
 comment, any missing, duplicate, or unexpected update source, a non-weekly
 cadence, group-name or wildcard-pattern drift, and any attempt to automate one
 side of the shared TypeScript pin. It also rejects a missing, scalar, or
-partial `@types/node` exclusion. The live check parses the YAML node
+partial `@types/node` exclusion and any fuzz allowlist or manifest change that
+would overlap the root Cargo authority. The live check parses the YAML node
 graph, so legal key quoting or whitespace cannot hide a `uses` entry, and scans
 every workflow file, including workflows added later. It also rejects a Docker
 action unless an immutable SHA-256 image digest replaces a mutable tag.

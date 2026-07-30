@@ -28,6 +28,8 @@ updates:
     directory: /fuzz
     schedule:
       interval: weekly
+    allow:
+      - dependency-name: libfuzzer-sys
     groups:
       fuzz-cargo:
         patterns:

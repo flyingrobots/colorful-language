@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+import { parse as parseToml } from "smol-toml";
 import {
   isScalar,
   parse as parseYaml,
@@ -222,7 +223,95 @@ function validateManualDependencies(update, expectedRules, description) {
   }
 }
 
-function validateDependabot(dependabot) {
+function directExternalDependencies(manifest, path) {
+  const dependencies = manifest?.dependencies;
+  if (
+    dependencies === null ||
+    typeof dependencies !== "object" ||
+    Array.isArray(dependencies)
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `${path} must declare a dependency table`,
+    );
+  }
+  return Object.entries(dependencies)
+    .filter(
+      ([, declaration]) =>
+        declaration === null ||
+        typeof declaration !== "object" ||
+        Array.isArray(declaration) ||
+        typeof declaration.path !== "string",
+    )
+    .map(([name]) => name)
+    .toSorted();
+}
+
+function validateFuzzDependencyAuthority(update, cargoManifests) {
+  if (!(cargoManifests instanceof Map)) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "dependency policy requires root and fuzz Cargo manifests",
+    );
+  }
+  const rootDependencies = cargoManifests.get("Cargo.toml")?.workspace
+    ?.dependencies;
+  if (
+    rootDependencies === null ||
+    typeof rootDependencies !== "object" ||
+    Array.isArray(rootDependencies)
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "Cargo.toml must declare workspace dependencies",
+    );
+  }
+  const allowed = directExternalDependencies(
+    cargoManifests.get("fuzz/Cargo.toml"),
+    "fuzz/Cargo.toml",
+  );
+  const overlap = allowed.filter((name) =>
+    Object.hasOwn(rootDependencies, name),
+  );
+  if (overlap.length > 0) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `fuzz/Cargo.toml duplicates root-owned dependencies: ${overlap.join(", ")}`,
+    );
+  }
+  if (allowed.length === 0) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "fuzz/Cargo.toml must retain a direct fuzz-runtime dependency",
+    );
+  }
+
+  const observed =
+    Array.isArray(update.allow) &&
+    update.allow.every(
+      (rule) =>
+        rule !== null &&
+        typeof rule === "object" &&
+        !Array.isArray(rule) &&
+        Object.keys(rule).length === 1 &&
+        typeof rule["dependency-name"] === "string",
+    )
+      ? update.allow
+          .map((rule) => rule["dependency-name"])
+          .toSorted()
+      : null;
+  if (
+    observed === null ||
+    JSON.stringify(observed) !== JSON.stringify(allowed)
+  ) {
+    reject(
+      "E_DEPENDABOT_ALLOW",
+      `cargo at /fuzz must allow exactly: ${allowed.join(", ")}`,
+    );
+  }
+}
+
+function validateDependabot(dependabot, cargoManifests) {
   if (dependabot?.version !== 2) {
     reject(
       "E_DEPENDABOT_VERSION",
@@ -258,6 +347,14 @@ function validateDependabot(dependabot) {
       expected.manualRules,
       `${ecosystem} at ${directory}`,
     );
+    if (key === "cargo\u0000/fuzz") {
+      validateFuzzDependencyAuthority(update, cargoManifests);
+    } else if (update.allow !== undefined) {
+      reject(
+        "E_DEPENDABOT_ALLOW",
+        `${ecosystem} at ${directory}: unexpected dependency allowlist`,
+      );
+    }
   }
 
   if (
@@ -271,7 +368,11 @@ function validateDependabot(dependabot) {
   }
 }
 
-export function validateDependencyUpdatePolicy({ dependabot, workflows }) {
+export function validateDependencyUpdatePolicy({
+  cargoManifests,
+  dependabot,
+  workflows,
+}) {
   if (!(workflows instanceof Map) || workflows.size === 0) {
     reject(
       "E_ACTION_PIN",
@@ -279,7 +380,7 @@ export function validateDependencyUpdatePolicy({ dependabot, workflows }) {
     );
   }
   validateActionPins(workflows);
-  validateDependabot(dependabot);
+  validateDependabot(dependabot, cargoManifests);
 }
 
 function repositoryCandidate() {
@@ -288,6 +389,12 @@ function repositoryCandidate() {
     import.meta.url,
   );
   return {
+    cargoManifests: new Map(
+      ["../Cargo.toml", "../fuzz/Cargo.toml"].map((path) => [
+        path.slice(3),
+        parseToml(readFileSync(new URL(path, import.meta.url), "utf8")),
+      ]),
+    ),
     dependabot: parseYaml(
       readFileSync(
         new URL("../.github/dependabot.yml", import.meta.url),
