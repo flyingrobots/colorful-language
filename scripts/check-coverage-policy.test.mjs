@@ -287,6 +287,27 @@ function refreshWorkflowActions(candidate, updates) {
   }
 }
 
+function assertWorkflowActionsRefreshed(candidate, updates) {
+  for (const [identity, expected] of updates) {
+    const matching = candidate.jobs.coverage.steps
+      .map((step) => step.uses)
+      .filter(
+        (uses) =>
+          typeof uses === "string" && uses.split("@", 1)[0] === identity,
+      );
+    assert.notEqual(
+      matching.length,
+      0,
+      `coverage fixture must use ${identity}`,
+    );
+    assert.deepEqual(
+      matching,
+      Array.from({ length: matching.length }, () => expected),
+      `every ${identity} use must carry the refreshed pin`,
+    );
+  }
+}
+
 test("accepts the reviewed workspace and transport coverage", () => {
   assert.doesNotThrow(() =>
     validateCoveragePolicy(policy(), report(), {
@@ -442,6 +463,7 @@ test("accepts the pinned coverage workflow", () => {
 test("accepts a full-SHA action refresh without checker edits", () => {
   const candidate = workflow();
   refreshWorkflowActions(candidate, UPDATED_ACTIONS);
+  assertWorkflowActionsRefreshed(candidate, UPDATED_ACTIONS);
   assert.doesNotThrow(() => validateCoverageWorkflow(candidate, policy()));
 });
 

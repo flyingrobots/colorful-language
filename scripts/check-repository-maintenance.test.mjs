@@ -461,6 +461,28 @@ function refreshWorkflowActions(candidate, updates) {
   }
 }
 
+function assertWorkflowActionsRefreshed(candidate, updates) {
+  const uses = Object.values(candidate.securityWorkflow.jobs).flatMap((job) =>
+    job.steps.map((step) => step.uses),
+  );
+  for (const [identity, expected] of updates) {
+    const matching = uses.filter(
+      (value) =>
+        typeof value === "string" && value.split("@", 1)[0] === identity,
+    );
+    assert.notEqual(
+      matching.length,
+      0,
+      `security fixture must use ${identity}`,
+    );
+    assert.deepEqual(
+      matching,
+      Array.from({ length: matching.length }, () => expected),
+      `every ${identity} use must carry the refreshed pin`,
+    );
+  }
+}
+
 function dependencyReviewStep(candidate) {
   return actionStep(
     candidate.securityWorkflow.jobs["dependency-review"],
@@ -492,6 +514,7 @@ test("accepts the reviewed repository maintenance policy", () => {
 test("accepts full-SHA security action refreshes without checker edits", () => {
   const candidate = fixture();
   refreshWorkflowActions(candidate, UPDATED_ACTIONS);
+  assertWorkflowActionsRefreshed(candidate, UPDATED_ACTIONS);
   assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
 });
 
