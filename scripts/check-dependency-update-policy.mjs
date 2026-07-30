@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readdirSync, readFileSync } from "node:fs";
+import { globSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { parse as parseToml } from "smol-toml";
@@ -362,13 +362,13 @@ function validateFuzzDependencyAuthority(update, cargoManifests) {
     ),
   ].toSorted();
   const rootPackages = new Set(
-    Object.entries(rootDependencies).map(([name, declaration]) =>
-      dependencyPackageIdentity(
-        name,
-        declaration,
-        `Cargo.toml#workspace.dependencies.${name}`,
+    [...cargoManifests.entries()]
+      .filter(([path]) => path !== "fuzz/Cargo.toml")
+      .flatMap(([path, manifest]) =>
+        directExternalDependencies(manifest, path).map(
+          (dependency) => dependency.packageName,
+        ),
       ),
-    ),
   );
   const overlap = [
     ...new Set(
@@ -491,17 +491,74 @@ export function validateDependencyUpdatePolicy({
   validateDependabot(dependabot, cargoManifests);
 }
 
-function repositoryCandidate() {
+function workspaceMemberManifestPaths(rootManifest, repositoryRoot) {
+  const members = rootManifest?.workspace?.members;
+  if (
+    !Array.isArray(members) ||
+    members.some((member) => typeof member !== "string" || member.length === 0)
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "Cargo.toml must declare string workspace member patterns",
+    );
+  }
+  const excluded = rootManifest.workspace.exclude ?? [];
+  if (
+    !Array.isArray(excluded) ||
+    excluded.some(
+      (member) => typeof member !== "string" || member.length === 0,
+    )
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      "Cargo.toml workspace exclusions must be string patterns",
+    );
+  }
+  const expand = (patterns) =>
+    patterns.flatMap((pattern) =>
+      globSync(`${pattern.replace(/\/$/u, "")}/Cargo.toml`, {
+        cwd: repositoryRoot,
+      }),
+    );
+  const excludedPaths = new Set(expand(excluded));
+  return [
+    ...new Set(expand(members).filter((path) => !excludedPaths.has(path))),
+  ].toSorted();
+}
+
+export function repositoryCandidate() {
   const workflowDirectory = new URL(
     "../.github/workflows/",
     import.meta.url,
   );
+  const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
+  const rootManifest = parseToml(
+    readFileSync(new URL("../Cargo.toml", import.meta.url), "utf8"),
+  );
+  const memberManifestPaths = workspaceMemberManifestPaths(
+    rootManifest,
+    repositoryRoot,
+  );
   return {
     cargoManifests: new Map(
-      ["../Cargo.toml", "../fuzz/Cargo.toml"].map((path) => [
-        path.slice(3),
-        parseToml(readFileSync(new URL(path, import.meta.url), "utf8")),
-      ]),
+      [
+        ["Cargo.toml", rootManifest],
+        [
+          "fuzz/Cargo.toml",
+          parseToml(
+            readFileSync(
+              new URL("../fuzz/Cargo.toml", import.meta.url),
+              "utf8",
+            ),
+          ),
+        ],
+        ...memberManifestPaths.map((path) => [
+          path,
+          parseToml(
+            readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
+          ),
+        ]),
+      ],
     ),
     dependabot: parseYaml(
       readFileSync(

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { parse as parseToml } from "smol-toml";
@@ -9,6 +9,7 @@ import { parse as parseYaml } from "yaml";
 
 import {
   DependencyUpdatePolicyError,
+  repositoryCandidate,
   validateDependencyUpdatePolicy,
 } from "./check-dependency-update-policy.mjs";
 
@@ -114,35 +115,6 @@ function expectCode(mutate, code) {
     (error) =>
       error instanceof DependencyUpdatePolicyError && error.code === code,
   );
-}
-
-function repositoryCandidate() {
-  const workflowDirectory = new URL(
-    "../.github/workflows/",
-    import.meta.url,
-  );
-  return {
-    dependabot: parseYaml(
-      readFileSync(
-        new URL("../.github/dependabot.yml", import.meta.url),
-        "utf8",
-      ),
-    ),
-    cargoManifests: new Map(
-      ["../Cargo.toml", "../fuzz/Cargo.toml"].map((path) => [
-        path.slice(3),
-        parseToml(readFileSync(new URL(path, import.meta.url), "utf8")),
-      ]),
-    ),
-    workflows: new Map(
-      readdirSync(workflowDirectory)
-        .filter((entry) => entry.endsWith(".yml"))
-        .map((entry) => [
-          `.github/workflows/${entry}`,
-          readFileSync(new URL(entry, workflowDirectory), "utf8"),
-        ]),
-    ),
-  };
 }
 
 test("accepts the reviewed update-source and action-pin policy", () => {
