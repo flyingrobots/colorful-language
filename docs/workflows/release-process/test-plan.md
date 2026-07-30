@@ -44,6 +44,10 @@ Verification for release preparation, tag automation, and release witnesses.
   rollback posture before its versioned release tracker can be created; its
   verification witness must distinguish pre-publication proof from public
   release evidence that does not yet exist.
+- **REL-19** A release witness must advance monotonically through
+  pre-publication, published, verified, and retrospected evidence states; each
+  phase must carry the minimum immutable identity and completed-or-unavailable
+  section shape required at that point.
 
 ## Cases
 
@@ -320,9 +324,10 @@ Verification for release preparation, tag automation, and release witnesses.
   target and previous-tag tokens. The exact-pinned GFM grammar parses tables as
   rows and cells. The witness status names the exact target, previous public
   tag, and unavailable target tag; completed evidence includes inline and
-  reference-style link destinations; a target behind the latest reachable
-  public tag is invalid; and the policy self-test and live check remain ordered,
-  unconditional, fail-closed executable steps in every gate. *Oracle:* deleting
+  reference-style link destinations plus literal code and HTML blocks; a target
+  behind the latest reachable public tag is invalid; and the policy self-test
+  and live check remain ordered, unconditional, fail-closed executable steps in
+  every gate. *Oracle:* deleting
   or emptying each required section, changing status or decision identity,
   claiming the target tag, duplicating or exceeding the goalpost bound,
   replacing mapped acceptance oracles with prose, inventing public evidence in
@@ -348,11 +353,12 @@ Verification for release preparation, tag automation, and release witnesses.
   `rejects contradictory pre-publication status identity`, `rejects invented
   public evidence in the pre-publication phase`, `rejects linked public evidence
   in the pre-publication phase`, `rejects reference-linked public evidence in
-  the pre-publication phase`, `accepts the documented unavailable
-  pre-publication state`, `requires the self-test before the live check in every
-  release gate`, `does not accept dormant release gate commands`, `does not
-  accept release gates after shell termination`, `requires fail-closed workflow
-  gate steps`, `reports a stable category when the target packet is missing`,
+  the pre-publication phase`, `rejects public evidence hidden in literal
+  Markdown blocks`, `accepts the documented unavailable pre-publication state`,
+  `requires the self-test before the live check in every release gate`, `does not
+  accept dormant release gate commands`, `does not accept release gates after
+  shell termination`, `requires fail-closed workflow gate steps`, `reports a
+  stable category when the target packet is missing`,
   `derives the previous release from public tags, not packet directories`,
   `rejects a target behind the latest public release`, `ignores release tags
   that are not reachable from HEAD`, and `the checked-in v0.4.0 release packet
@@ -430,6 +436,73 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence:* `scripts/check-release-packet.mjs`;
   `scripts/check-release-packet.test.mjs`
   `shell comments cannot hide later packet commands`. *Status:* implemented.
+- **REL-19a — Supported release-phase matrix.** *Requirement:* REL-19.
+  *Behavior:* one canonical witness fixture for each supported phase carries
+  exactly the completed and unavailable section states admitted at that point.
+  *Oracle:* pre-publication, published, verified, and retrospected fixtures all
+  pass, while changing the declared phase without changing its evidence fails
+  with `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* deterministic witness
+  phase-matrix test. *Tracking:*
+  [#281](https://github.com/flyingrobots/colorful-language/issues/281).
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `accepts one canonical witness for every release phase`,
+  `rejects regression from the previously admitted release phase`,
+  `fails closed when the branch-base phase cannot be resolved`, and
+  `rejects a phase declaration without its required evidence`. *Status:*
+  implemented.
+- **REL-19b — Published evidence gate.** *Requirement:* REL-19. *Behavior:* the
+  published phase requires an available annotated target tag, one completed
+  publication state, the exact target commit, an immutable tag-workflow run
+  URL, and the exact GitHub Release tag URL; public verification and
+  retrospective evidence remain unavailable. *Oracle:* deleting each identity
+  or retaining any unavailable publication placeholder fails with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal publication-evidence
+  mutations. *Tracking:*
+  [#281](https://github.com/flyingrobots/colorful-language/issues/281).
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `requires complete immutable publication evidence`,
+  `accepts autolink publication identities without double counting`,
+  `binds published commit evidence to the annotated target tag`, and
+  `rejects verification or retrospective evidence before its phase`. *Status:*
+  implemented.
+- **REL-19c — Public-verification evidence gate.** *Requirement:* REL-19.
+  *Behavior:* the verified phase retains completed publication evidence and
+  adds one completed public-verification state, a dated passed result, and a
+  dated passed rollback or patch-forward rehearsal; retrospective evidence
+  remains unavailable. *Oracle:* skipping publication, omitting either result,
+  or retaining an unavailable public-verification placeholder fails with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal public-verification
+  mutations. *Tracking:*
+  [#281](https://github.com/flyingrobots/colorful-language/issues/281).
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `requires publication and dated public-verification evidence`,
+  `accepts a dated patch-forward result instead of rollback`, and
+  `rejects verification or retrospective evidence before its phase`. *Status:*
+  implemented.
+- **REL-19d — Retrospective and historical compatibility gate.** *Requirement:*
+  REL-19. *Behavior:* the retrospected phase retains both earlier completed
+  gates and records one completed retrospective with plan-versus-actual,
+  fallout, repeatable-wins, and next-recommendation entries; the checked-in
+  historical witnesses remain readable after historical transitions without the
+  current-train proof shape being applied retroactively. *Oracle:* skipping
+  verified, omitting each retrospective entry, or changing the predecessor's
+  completed retrospective status fails with `E_RELEASE_PACKET_EVIDENCE`; each
+  historical witness stays parseable, preserves the original `#` title, and keeps a `## Status` section. *Evidence type:* repository-reproducible validation with
+  `node --test scripts/check-release-packet.test.mjs`; witness-readability and
+  predecessor-status checks are explicit in
+  `keeps historical v0.1.0 through v0.3.0 witnesses readable`,
+  `requires every completed retrospective field`, and
+  `requires a completed predecessor retrospective`
+  against fixtures `docs/goalposts/v0.1.0/verification.md`,
+  `docs/goalposts/v0.2.0/verification.md`, and
+  `docs/goalposts/v0.3.0/verification.md`, which preserves the original `#` title and a `## Status` section for each. *Tracking:*
+  [#281](https://github.com/flyingrobots/colorful-language/issues/281).
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `requires every completed retrospective field`,
+  `allows completed retrospective fallout to name an unavailable surface`,
+  `requires a completed predecessor retrospective`, and
+  `keeps historical v0.1.0 through v0.3.0 witnesses readable`. *Status:*
+  implemented.
 
 ## Open verification gaps
 

@@ -232,11 +232,16 @@ observe public-contract regressions before they ship.
   evidence explicitly unavailable until real public oracles exist
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   <!-- roadmap-primary: delivered #280 -->
-- **Active release-witness transitions:** extend the pre-publication admission
+- **Active v0.4.0 release train:** keep the reviewed packet, current phase,
+  public evidence, fallout, and final closure under one versioned tracker while
+  slice issues retain their architectural goalposts
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283).
+  <!-- roadmap-primary: active #283 -->
+- **Delivered release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
-  <!-- roadmap-primary: active #281 -->
+  <!-- roadmap-primary: delivered #281 -->
 - **Roadmap follow-up triage:** keep the checker decomposition behind active
   distribution and the cursor-complete transport idea in the scale-triggered
   experiment backlog

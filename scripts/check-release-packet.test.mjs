@@ -22,6 +22,11 @@ import {
 
 const RELEASE_PATH = "docs/goalposts/v0.4.0/release.md";
 const VERIFICATION_PATH = "docs/goalposts/v0.4.0/verification.md";
+const TARGET_COMMIT = "0123456789abcdef0123456789abcdef01234567";
+const PUBLISH_WORKFLOW =
+  "https://github.com/flyingrobots/colorful-language/actions/runs/123456";
+const GITHUB_RELEASE =
+  "https://github.com/flyingrobots/colorful-language/releases/tag/v0.4.0";
 const PREVIOUS_VERIFICATION = `# v0.3.0 verification
 
 ## Retrospective
@@ -154,6 +159,10 @@ ${CHECK_COMMAND}
 
 function expectCode(mutate, code) {
   const snapshot = validSnapshot();
+  expectSnapshotCode(snapshot, mutate, code);
+}
+
+function expectSnapshotCode(snapshot, mutate, code) {
   mutate(snapshot);
   assert.throws(
     () => validateReleasePacket(snapshot),
@@ -162,7 +171,7 @@ function expectCode(mutate, code) {
   );
 }
 
-function blankLevelTwoSection(source, heading) {
+function sectionBounds(source, heading) {
   const marker = `## ${heading}\n`;
   const headingStart = source.indexOf(marker);
   assert.notEqual(
@@ -173,7 +182,71 @@ function blankLevelTwoSection(source, heading) {
   const bodyStart = headingStart + marker.length;
   const nextHeading = source.indexOf("\n## ", bodyStart);
   const bodyEnd = nextHeading === -1 ? source.length : nextHeading;
-  return `${source.slice(0, bodyStart)}\n${source.slice(bodyEnd)}`;
+  return { bodyStart, bodyEnd };
+}
+
+function replaceLevelTwoSection(source, heading, body) {
+  const { bodyStart, bodyEnd } = sectionBounds(source, heading);
+  return `${source.slice(0, bodyStart)}\n${body.trim()}\n${source.slice(bodyEnd)}`;
+}
+
+function sectionBody(source, heading) {
+  const { bodyStart, bodyEnd } = sectionBounds(source, heading);
+  return source.slice(bodyStart, bodyEnd).trim();
+}
+
+function blankLevelTwoSection(source, heading) {
+  return replaceLevelTwoSection(source, heading, "");
+}
+
+function snapshotForPhase(phase) {
+  const snapshot = validSnapshot();
+  if (phase === "pre-publication") {
+    return snapshot;
+  }
+  snapshot.targetCommit = TARGET_COMMIT;
+  snapshot.verification = snapshot.verification
+    .replace("Release phase: pre-publication.", `Release phase: ${phase}.`)
+    .replace(
+      "Annotated v0.4.0 tag: not available.",
+      "Annotated v0.4.0 tag: available.",
+    );
+  snapshot.verification = replaceLevelTwoSection(
+    snapshot.verification,
+    "Publication evidence",
+    `Evidence state: completed.
+
+- Tag target commit: ${TARGET_COMMIT}.
+- Publish workflow: ${PUBLISH_WORKFLOW}.
+- GitHub Release: ${GITHUB_RELEASE}.`,
+  );
+  if (phase === "published") {
+    return snapshot;
+  }
+  snapshot.verification = replaceLevelTwoSection(
+    snapshot.verification,
+    "Public verification",
+    `Evidence state: completed.
+
+- Verification result: passed on 2026-07-30.
+- Rollback result: passed on 2026-07-30.`,
+  );
+  if (phase === "verified") {
+    return snapshot;
+  }
+  snapshot.verification = replaceLevelTwoSection(
+    snapshot.verification,
+    "Retrospective",
+    `Evidence state: completed.
+
+Retrospective status: completed.
+
+- Planned versus actual: reviewed scope recorded.
+- Fallout: none.
+- Repeatable wins: deterministic packet evidence.
+- Next recommendation: begin held-out validation.`,
+  );
+  return snapshot;
 }
 
 function writeRepositorySnapshot(root, snapshot = validSnapshot()) {
@@ -199,6 +272,14 @@ function git(root, ...arguments_) {
   });
 }
 
+function gitOutput(root, ...arguments_) {
+  return execFileSync("git", arguments_, {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
+}
+
 test("accepts a complete pre-publication release packet", () => {
   assert.deepEqual(validateReleasePacket(validSnapshot()), {
     version: "0.4.0",
@@ -207,6 +288,236 @@ test("accepts a complete pre-publication release packet", () => {
     scopedIssueCount: 3,
     phase: "pre-publication",
   });
+});
+
+test("accepts one canonical witness for every release phase", () => {
+  for (const phase of [
+    "pre-publication",
+    "published",
+    "verified",
+    "retrospected",
+  ]) {
+    assert.deepEqual(validateReleasePacket(snapshotForPhase(phase)), {
+      version: "0.4.0",
+      previousTag: "v0.3.0",
+      goalpostCount: 2,
+      scopedIssueCount: 3,
+      phase,
+    });
+  }
+});
+
+test("rejects regression from the previously admitted release phase", () => {
+  for (const [previousPhase, phase] of [
+    ["published", "pre-publication"],
+    ["verified", "published"],
+    ["retrospected", "verified"],
+  ]) {
+    const snapshot = snapshotForPhase(phase);
+    snapshot.previousPhase = previousPhase;
+    expectSnapshotCode(
+      snapshot,
+      () => {},
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
+
+  const advancing = snapshotForPhase("verified");
+  advancing.previousPhase = "published";
+  assert.equal(validateReleasePacket(advancing).phase, "verified");
+});
+
+test("accepts autolink publication identities without double counting", () => {
+  const snapshot = snapshotForPhase("published");
+  snapshot.verification = snapshot.verification
+    .replace(PUBLISH_WORKFLOW, `<${PUBLISH_WORKFLOW}>`)
+    .replace(GITHUB_RELEASE, `<${GITHUB_RELEASE}>`);
+  assert.equal(validateReleasePacket(snapshot).phase, "published");
+});
+
+test("rejects a phase declaration without its required evidence", () => {
+  for (const phase of ["published", "verified", "retrospected"]) {
+    expectCode((snapshot) => {
+      snapshot.verification = snapshot.verification.replace(
+        "Release phase: pre-publication.",
+        `Release phase: ${phase}.`,
+      );
+      snapshot.verification = snapshot.verification.replace(
+        "Annotated v0.4.0 tag: not available.",
+        "Annotated v0.4.0 tag: available.",
+      );
+      snapshot.targetCommit = TARGET_COMMIT;
+    }, "E_RELEASE_PACKET_EVIDENCE");
+  }
+});
+
+test("requires complete immutable publication evidence", () => {
+  const mutations = [
+    (source) =>
+      source.replace(
+        "Annotated v0.4.0 tag: available.",
+        "Annotated v0.4.0 tag: unavailable.",
+      ),
+    (source) => source.replace(`- Tag target commit: ${TARGET_COMMIT}.\n`, ""),
+    (source) =>
+      source.replace(TARGET_COMMIT, TARGET_COMMIT.slice(0, 39)),
+    (source) =>
+      source.replace(TARGET_COMMIT, "f".repeat(TARGET_COMMIT.length)),
+    (source) =>
+      source.replace(
+        `- Publish workflow: ${PUBLISH_WORKFLOW}.`,
+        "- Publish workflow: pending.",
+      ),
+    (source) =>
+      source.replace(PUBLISH_WORKFLOW, `${PUBLISH_WORKFLOW}.invalid`),
+    (source) =>
+      source.replace(
+        `- GitHub Release: ${GITHUB_RELEASE}.`,
+        "- GitHub Release: not available.",
+      ),
+    (source) =>
+      source.replace(GITHUB_RELEASE, GITHUB_RELEASE.replace("0.4.0", "0.4.1")),
+    (source) =>
+      source.replace(
+        "## Publication evidence\n\nEvidence state: completed.",
+        "## Publication evidence\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "## Publication evidence\n\nEvidence state: completed.",
+        "## Publication evidence\n\nEvidence state: completed.\n\nEvidence state: completed.",
+      ),
+  ];
+  for (const mutate of mutations) {
+    expectSnapshotCode(
+      snapshotForPhase("published"),
+      (snapshot) => {
+        snapshot.verification = mutate(snapshot.verification);
+      },
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
+});
+
+test("rejects verification or retrospective evidence before its phase", () => {
+  expectSnapshotCode(
+    snapshotForPhase("published"),
+    (snapshot) => {
+      const verified = snapshotForPhase("verified");
+      snapshot.verification = replaceLevelTwoSection(
+        snapshot.verification,
+        "Public verification",
+        sectionBody(verified.verification, "Public verification"),
+      );
+    },
+    "E_RELEASE_PACKET_EVIDENCE",
+  );
+  expectSnapshotCode(
+    snapshotForPhase("verified"),
+    (snapshot) => {
+      const retrospected = snapshotForPhase("retrospected");
+      snapshot.verification = replaceLevelTwoSection(
+        snapshot.verification,
+        "Retrospective",
+        sectionBody(retrospected.verification, "Retrospective"),
+      );
+    },
+    "E_RELEASE_PACKET_EVIDENCE",
+  );
+});
+
+test("requires publication and dated public-verification evidence", () => {
+  const mutations = [
+    (source) =>
+      source.replace(
+        "## Publication evidence\n\nEvidence state: completed.",
+        "## Publication evidence\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "## Public verification\n\nEvidence state: completed.",
+        "## Public verification\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace("- Verification result: passed on 2026-07-30.\n", ""),
+    (source) => source.replace("- Rollback result: passed on 2026-07-30.", ""),
+    (source) => source.replace("2026-07-30", "2026-02-31"),
+    (source) =>
+      source.replace(
+        "Rollback result: passed on 2026-07-30.",
+        "Rollback result: failed on 2026-07-30.",
+      ),
+  ];
+  for (const mutate of mutations) {
+    expectSnapshotCode(
+      snapshotForPhase("verified"),
+      (snapshot) => {
+        snapshot.verification = mutate(snapshot.verification);
+      },
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
+});
+
+test("accepts a dated patch-forward result instead of rollback", () => {
+  const snapshot = snapshotForPhase("verified");
+  snapshot.verification = snapshot.verification.replace(
+    "Rollback result: passed on 2026-07-30.",
+    "Patch-forward result: passed on 2026-07-30.",
+  );
+  assert.equal(validateReleasePacket(snapshot).phase, "verified");
+});
+
+test("requires every completed retrospective field", () => {
+  const mutations = [
+    (source) =>
+      source.replace(
+        "## Public verification\n\nEvidence state: completed.",
+        "## Public verification\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "## Retrospective\n\nEvidence state: completed.",
+        "## Retrospective\n\nEvidence state: unavailable.",
+      ),
+    (source) =>
+      source.replace(
+        "Retrospective status: completed.",
+        "Retrospective status: pending.",
+      ),
+    (source) =>
+      source.replace(
+        "- Next recommendation: begin held-out validation.",
+        "- Next recommendation: begin held-out validation.\n- Deferred registry: not available.",
+      ),
+    ...[
+      "Planned versus actual",
+      "Fallout",
+      "Repeatable wins",
+      "Next recommendation",
+    ].map(
+      (label) => (source) =>
+        source.replace(new RegExp(`^- ${label}:.*\\n?`, "mu"), ""),
+    ),
+  ];
+  for (const mutate of mutations) {
+    expectSnapshotCode(
+      snapshotForPhase("retrospected"),
+      (snapshot) => {
+        snapshot.verification = mutate(snapshot.verification);
+      },
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
+});
+
+test("allows completed retrospective fallout to name an unavailable surface", () => {
+  const snapshot = snapshotForPhase("retrospected");
+  snapshot.verification = snapshot.verification.replace(
+    "- Fallout: none.",
+    "- Fallout: the may-slip Homebrew channel remained unavailable.",
+  );
+  assert.equal(validateReleasePacket(snapshot).phase, "retrospected");
 });
 
 test("parses release packet pipe tables structurally", () => {
@@ -499,6 +810,21 @@ test("rejects reference-linked public evidence in the pre-publication phase", ()
   }, "E_RELEASE_PACKET_EVIDENCE");
 });
 
+test("rejects public evidence hidden in literal Markdown blocks", () => {
+  for (const hiddenEvidence of [
+    "```text\nTag published successfully at https://example.invalid/release\n```",
+    "<div>Tag published successfully at https://example.invalid/release</div>",
+    "### Tag published successfully at https://example.invalid/release",
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.verification = snapshot.verification.replace(
+        "- Tag and registries: not available.",
+        `- Tag and registries: not available.\n\n${hiddenEvidence}`,
+      );
+    }, "E_RELEASE_PACKET_EVIDENCE");
+  }
+});
+
 test("accepts the documented unavailable pre-publication state", () => {
   const snapshot = validSnapshot();
   snapshot.verification = snapshot.verification.replaceAll(
@@ -743,6 +1069,35 @@ test("requires a completed predecessor retrospective", (t) => {
   }
 });
 
+test("keeps historical v0.1.0 through v0.3.0 witnesses readable", () => {
+  for (const version of ["0.1.0", "0.2.0", "0.2.1", "0.3.0"]) {
+    const source = readFileSync(
+      new URL(`../docs/goalposts/v${version}/verification.md`, import.meta.url),
+      "utf8",
+    );
+  const document = parseDocument(
+    source,
+    `docs/goalposts/v${version}/verification.md`,
+  );
+  assert.match(
+    source,
+    /##\s+Discovery/u,
+    `v${version} missing Discovery section`,
+  );
+  assert.match(
+    source,
+    /##\s+Tag and publish/u,
+    `v${version} missing tag-and-publish section`,
+  );
+    assert.match(
+      source,
+      new RegExp(`^# colorful-language v${version.replaceAll(".", "\\.")}`),
+    );
+    assert.equal(document.children[0]?.type, "heading");
+    assert.equal(document.children[0]?.depth, 1);
+  }
+});
+
 test("rejects a target behind the latest public release", (t) => {
   const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
   t.after(() => rmSync(root, { recursive: true }));
@@ -756,6 +1111,124 @@ test("rejects a target behind the latest public release", (t) => {
     (error) =>
       error instanceof ReleasePacketPolicyError &&
       error.code === "E_RELEASE_PACKET_IDENTITY",
+  );
+});
+
+test("fails closed when the branch-base phase cannot be resolved", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+  git(root, "init", "-b", "main");
+  git(root, "config", "user.email", "release-packet@example.invalid");
+  git(root, "config", "user.name", "Release Packet Test");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "current branch");
+  const tree = gitOutput(root, "write-tree");
+  const unrelated = gitOutput(
+    root,
+    "commit-tree",
+    tree,
+    "-m",
+    "unrelated origin main",
+  );
+  git(
+    root,
+    "update-ref",
+    "refs/remotes/origin/main",
+    unrelated,
+  );
+
+  assert.throws(
+    () =>
+      loadRepositorySnapshot(root, {
+        publicTags: ["v0.3.0"],
+      }),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_IO",
+  );
+});
+
+test("binds published commit evidence to the annotated target tag", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+  git(root, "init", "-b", "main");
+  git(root, "config", "user.email", "release-packet@example.invalid");
+  git(root, "config", "user.name", "Release Packet Test");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "previous release");
+  git(root, "tag", "--no-sign", "v0.3.0");
+  writeFileSync(join(root, "release-target.txt"), "release target\n");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "release target");
+  const targetCommit = gitOutput(root, "rev-parse", "HEAD");
+  git(root, "tag", "--no-sign", "v0.4.0");
+
+  const published = snapshotForPhase("published");
+  published.verification = published.verification.replace(
+    TARGET_COMMIT,
+    targetCommit,
+  );
+  writeFileSync(
+    join(root, published.verificationPath),
+    published.verification,
+  );
+  git(root, "add", ".");
+  git(root, "commit", "-m", "record publication");
+
+  assert.throws(
+    () => validateReleasePacket(loadRepositorySnapshot(root)),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_EVIDENCE",
+  );
+  git(root, "tag", "--delete", "v0.4.0");
+  git(
+    root,
+    "tag",
+    "--no-sign",
+    "-a",
+    "v0.4.0",
+    targetCommit,
+    "-m",
+    "release: v0.4.0",
+  );
+  assert.equal(loadRepositorySnapshot(root).targetCommit, targetCommit);
+  assert.equal(
+    validateReleasePacket(loadRepositorySnapshot(root)).phase,
+    "published",
+  );
+  git(
+    root,
+    "update-ref",
+    "refs/remotes/origin/main",
+    gitOutput(root, "rev-parse", "HEAD"),
+  );
+  const verified = snapshotForPhase("verified");
+  verified.verification = verified.verification.replace(
+    TARGET_COMMIT,
+    targetCommit,
+  );
+  writeFileSync(
+    join(root, verified.verificationPath),
+    verified.verification,
+  );
+  git(root, "add", ".");
+  git(root, "commit", "-m", "record public verification");
+  const loaded = loadRepositorySnapshot(root);
+  assert.equal(loaded.previousPhase, "published");
+  assert.equal(validateReleasePacket(loaded).phase, "verified");
+
+  writeFileSync(
+    join(root, verified.verificationPath),
+    verified.verification.replace(targetCommit, "f".repeat(40)),
+  );
+  assert.throws(
+    () => validateReleasePacket(loadRepositorySnapshot(root)),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_EVIDENCE",
   );
 });
 

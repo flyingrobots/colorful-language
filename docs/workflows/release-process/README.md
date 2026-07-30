@@ -64,7 +64,32 @@ Before publication, the verification witness must name the exact target,
 previous tag, and unavailable target tag; leave registry, public-install, and
 retrospective sections with exactly one explicit unavailable or pending
 `Evidence state:`; and contain no completed claim hidden in ordinary prose,
-commit identifiers, or inline or reference-style link destinations.
+commit identifiers, literal code or HTML blocks, or inline or reference-style
+link destinations.
+After publication, the same witness advances through a fail-closed phase
+matrix:
+
+| Release phase | Target tag | Publication | Public verification | Retrospective |
+| --- | --- | --- | --- | --- |
+| `pre-publication` | unavailable | unavailable | unavailable | unavailable |
+| `published` | available | completed | unavailable | unavailable |
+| `verified` | available | completed | completed | unavailable |
+| `retrospected` | available | completed | completed | completed |
+
+A completed publication records the full commit behind the annotated target
+tag, one immutable GitHub Actions run URL, and the exact GitHub Release tag URL.
+Completed public verification records dated passed verification and rollback or
+patch-forward results. A completed retrospective records one completed status
+plus plan-versus-actual, fallout, repeatable-wins, and next-recommendation
+entries. Every opened gate rejects unavailable placeholders, and every
+unopened gate rejects completed or public evidence. The current phase policy
+compares the active witness with its `origin/main` merge-base witness, so a
+later branch cannot rewrite the file backward to an earlier phase. A missing
+remote-tracking ref or a packet absent from that base is portable baseline
+absence; once the ref and packet exist, merge-base and witness-read failures
+fail closed. Historical v0.1.0 through v0.3.0 witnesses remain readable in their
+original shapes, while the immediate predecessor retains its narrower
+completed-retrospective admission check.
 The packet parser registers the exact-pinned GFM table grammar, so tables are
 validated as rows and cells rather than accidental paragraph text.
 

@@ -31,7 +31,7 @@ const SCOPE_BUCKETS = Object.freeze([
 const COMPLETED_EVIDENCE =
   /\b(?:available|complete|completed|created|finished|installed|landed|pass|passed|published|released|successful|successfully|uploaded|verified)\b|\b[0-9a-f]{7,40}\b|✅|https?:\/\//iu;
 const EVIDENCE_STATE_GLOBAL =
-  /\bEvidence state:\s*(?:not available|pending|unavailable)\b/giu;
+  /\bEvidence state:\s*(completed|not available|pending|unavailable)\b/giu;
 const UNAVAILABLE_EVIDENCE_GLOBAL =
   /\b(?:not available|pending|unavailable)\b/giu;
 
@@ -100,6 +100,179 @@ function repositoryTags(root) {
       `cannot enumerate public release tags: ${error.code ?? error.message}`,
     );
   }
+}
+
+function targetTagCommit(root, version, publicTags, verificationPath) {
+  const targetTag = `v${version}`;
+  if (!publicTags.includes(targetTag)) {
+    return undefined;
+  }
+  let tagType;
+  try {
+    tagType = execFileSync(
+      "git",
+      ["cat-file", "-t", targetTag],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    ).trim();
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      `cannot inspect target tag object: ${error.code ?? error.message}`,
+    );
+  }
+  if (tagType !== "tag") {
+    return undefined;
+  }
+  try {
+    return execFileSync(
+      "git",
+      ["rev-parse", "--verify", `${targetTag}^{commit}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    ).trim();
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      `cannot resolve annotated target tag commit: ${error.code ?? error.message}`,
+    );
+  }
+}
+
+function baselineReleasePhase(root, verificationPath) {
+  try {
+    execFileSync(
+      "git",
+      ["rev-parse", "--is-inside-work-tree"],
+      {
+        cwd: root,
+        stdio: "ignore",
+      },
+    );
+  } catch (error) {
+    if (error.status === 128) {
+      return undefined;
+    }
+    reject(
+      "E_RELEASE_PACKET_IO",
+      root,
+      `cannot inspect repository state: ${error.code ?? error.message}`,
+    );
+  }
+  try {
+    execFileSync(
+      "git",
+      ["show-ref", "--verify", "--quiet", "refs/remotes/origin/main"],
+      {
+        cwd: root,
+        stdio: "ignore",
+      },
+    );
+  } catch (error) {
+    if (error.status === 1) {
+      return undefined;
+    }
+    reject(
+      "E_RELEASE_PACKET_IO",
+      "origin/main",
+      `cannot inspect branch-base authority: ${error.code ?? error.message}`,
+    );
+  }
+  let baseline;
+  try {
+    baseline = execFileSync(
+      "git",
+      ["merge-base", "HEAD", "origin/main"],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    ).trim();
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      "origin/main",
+      `cannot resolve merge base: ${error.code ?? error.message}`,
+    );
+  }
+  let baselinePaths;
+  try {
+    baselinePaths = execFileSync(
+      "git",
+      ["ls-tree", "--name-only", baseline, "--", verificationPath],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    )
+      .split(/\r?\n/u)
+      .filter((path) => path !== "");
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      `cannot inspect branch-base witness path: ${error.code ?? error.message}`,
+    );
+  }
+  if (baselinePaths.length === 0) {
+    return undefined;
+  }
+  if (
+    baselinePaths.length !== 1 ||
+    baselinePaths[0] !== verificationPath
+  ) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      "branch-base witness path resolved ambiguously",
+    );
+  }
+  let source;
+  try {
+    source = execFileSync(
+      "git",
+      ["show", `${baseline}:${verificationPath}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    );
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      `cannot read branch-base witness: ${error.code ?? error.message}`,
+    );
+  }
+  const document = parseDocument(source, verificationPath);
+  const status = sectionMap(document, verificationPath).get("Status");
+  const phases =
+    status === undefined
+      ? []
+      : [
+          ...sectionText(status).matchAll(
+            /Release phase:\s*(pre-publication|published|verified|retrospected)\b/giu,
+          ),
+        ];
+  if (phases.length !== 1) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      verificationPath,
+      `branch-base witness at ${baseline} must name exactly one admitted release phase`,
+    );
+  }
+  return phases[0][1].toLowerCase();
 }
 
 function previousPublicRelease(root, targetVersion, publicTags) {
@@ -270,6 +443,249 @@ function validateCompletedRetrospective(source, path) {
   }
 }
 
+function normalizedEvidenceState(state) {
+  return state === "completed" ? state : "unavailable";
+}
+
+function hasUnavailablePlaceholder(section) {
+  let found = false;
+  walk(section.nodes, (node) => {
+    if (
+      ["listItem", "paragraph", "tableCell"].includes(node.type) &&
+      /(?:^|:\s*)(?:not available|pending|unavailable)\.?\s*$/iu.test(
+        toString(node).trim(),
+      )
+    ) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+function requireEvidenceState(
+  section,
+  sectionName,
+  expectedState,
+  definitions,
+  path,
+) {
+  const text = sectionEvidenceText(section, definitions);
+  const states = [...text.matchAll(EVIDENCE_STATE_GLOBAL)];
+  if (
+    states.length !== 1 ||
+    normalizedEvidenceState(states[0][1].toLowerCase()) !== expectedState
+  ) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `section '${sectionName}' must declare exactly one ${expectedState} evidence state`,
+    );
+  }
+  if (expectedState === "completed") {
+    if (hasUnavailablePlaceholder(section)) {
+      reject(
+        "E_RELEASE_PACKET_EVIDENCE",
+        path,
+        `section '${sectionName}' cannot retain unavailable or pending evidence after completion`,
+      );
+    }
+  } else {
+    const claims = text.replace(UNAVAILABLE_EVIDENCE_GLOBAL, "");
+    if (COMPLETED_EVIDENCE.test(claims)) {
+      reject(
+        "E_RELEASE_PACKET_EVIDENCE",
+        path,
+        `section '${sectionName}' contradicts its unavailable state with completed or public evidence`,
+      );
+    }
+  }
+  return text;
+}
+
+function requireOneMatch(text, expression, sectionName, description, path) {
+  if ([...text.matchAll(expression)].length !== 1) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `section '${sectionName}' must contain exactly one ${description}`,
+    );
+  }
+}
+
+function requireOneUniqueMatch(
+  text,
+  expression,
+  sectionName,
+  description,
+  path,
+) {
+  const matches = new Set(
+    [...text.matchAll(expression)].map((match) => match[0]),
+  );
+  if (matches.size !== 1) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `section '${sectionName}' must contain exactly one ${description}`,
+    );
+  }
+}
+
+function requirePublicationEvidence(
+  section,
+  definitions,
+  version,
+  targetCommit,
+  path,
+) {
+  const sectionName = "Publication evidence";
+  const text = requireEvidenceState(
+    section,
+    sectionName,
+    "completed",
+    definitions,
+    path,
+  );
+  const targetCommitMatches = [
+    ...text.matchAll(
+      /\bTag target commit:\s*([0-9a-f]{40})(?![0-9a-f])/giu,
+    ),
+  ];
+  if (typeof targetCommit !== "string") {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `annotated tag v${version} must resolve before section '${sectionName}' can be completed`,
+    );
+  }
+  if (
+    targetCommitMatches.length !== 1 ||
+    targetCommitMatches[0][1].toLowerCase() !== targetCommit.toLowerCase()
+  ) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `section '${sectionName}' must contain the full commit behind annotated tag v${version}`,
+    );
+  }
+  requireOneUniqueMatch(
+    text,
+    /https:\/\/github\.com\/flyingrobots\/colorful-language\/actions\/runs\/[1-9]\d*(?![/#?\w-]|\.[0-9A-Za-z])/gu,
+    sectionName,
+    "immutable publish workflow run URL",
+    path,
+  );
+  const escapedVersion = version.replaceAll(".", "\\.");
+  requireOneUniqueMatch(
+    text,
+    new RegExp(
+      `https://github\\.com/flyingrobots/colorful-language/releases/tag/v${escapedVersion}(?![/#?\\w-]|\\.[0-9A-Za-z])`,
+      "gu",
+    ),
+    sectionName,
+    `GitHub Release URL for v${version}`,
+    path,
+  );
+}
+
+function validCalendarDate(date) {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return (
+    !Number.isNaN(parsed.valueOf()) &&
+    parsed.toISOString().slice(0, 10) === date
+  );
+}
+
+function requireDatedResult(text, label, sectionName, path) {
+  const matches = [
+    ...text.matchAll(
+      new RegExp(
+        `\\b${label} result:\\s*passed on (\\d{4}-\\d{2}-\\d{2})(?!\\d)`,
+        "giu",
+      ),
+    ),
+  ];
+  if (matches.length !== 1 || !validCalendarDate(matches[0][1])) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `section '${sectionName}' must contain exactly one dated passed ${label.toLowerCase()} result`,
+    );
+  }
+}
+
+function requirePublicVerificationEvidence(section, definitions, path) {
+  const sectionName = "Public verification";
+  const text = requireEvidenceState(
+    section,
+    sectionName,
+    "completed",
+    definitions,
+    path,
+  );
+  requireDatedResult(text, "Verification", sectionName, path);
+  const fallbackMatches = [
+    ...text.matchAll(
+      /\b(?:Rollback|Patch-forward) result:\s*passed on (\d{4}-\d{2}-\d{2})(?!\d)/giu,
+    ),
+  ];
+  if (
+    fallbackMatches.length !== 1 ||
+    !validCalendarDate(fallbackMatches[0][1])
+  ) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `section '${sectionName}' must contain exactly one dated passed rollback or patch-forward result`,
+    );
+  }
+}
+
+function requireListEntry(section, label, path) {
+  const items = [];
+  walk(section.nodes, (node) => {
+    if (node.type === "listItem") {
+      items.push(toString(node).trim());
+    }
+  });
+  const matches = items.filter((item) =>
+    new RegExp(`^${label}:\\s*\\S`, "iu").test(item),
+  );
+  if (matches.length !== 1) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `section 'Retrospective' must contain exactly one non-empty '${label}' entry`,
+    );
+  }
+}
+
+function requireRetrospectiveEvidence(section, definitions, path) {
+  const sectionName = "Retrospective";
+  const text = requireEvidenceState(
+    section,
+    sectionName,
+    "completed",
+    definitions,
+    path,
+  );
+  requireOneMatch(
+    text,
+    /\bRetrospective status:\s*completed\b/giu,
+    sectionName,
+    "completed retrospective status",
+    path,
+  );
+  for (const label of [
+    "Planned versus actual",
+    "Fallout",
+    "Repeatable wins",
+    "Next recommendation",
+  ]) {
+    requireListEntry(section, label, path);
+  }
+}
+
 function subsectionMap(section, path) {
   const subsections = new Map();
   let current;
@@ -344,21 +760,28 @@ function definitionDestinations(document) {
 }
 
 function sectionEvidenceText(section, definitions) {
-  const destinations = [];
+  const fragments = [];
   walk(section.nodes, (node) => {
+    if (
+      ["code", "heading", "html", "paragraph", "tableCell"].includes(
+        node.type,
+      )
+    ) {
+      fragments.push(toString(node));
+    }
     if (
       ["definition", "image", "link"].includes(node.type) &&
       typeof node.url === "string"
     ) {
-      destinations.push(node.url);
+      fragments.push(node.url);
     } else if (
       ["imageReference", "linkReference"].includes(node.type) &&
       typeof node.identifier === "string"
     ) {
-      destinations.push(...(definitions.get(node.identifier) ?? []));
+      fragments.push(...(definitions.get(node.identifier) ?? []));
     }
   });
-  return [sectionText(section), ...destinations].join("\n");
+  return fragments.join("\n");
 }
 
 function issueNumbers(nodes, definitions) {
@@ -692,37 +1115,89 @@ function validateVerificationDocument(snapshot) {
     );
   }
   const phase = phaseMatches[0][1].toLowerCase();
-  if (phase === "pre-publication") {
-    const targetTagState = targetTagMatches[0][2].toLowerCase();
-    if (!["not available", "unavailable", "pending"].includes(targetTagState)) {
+  const phaseIndex = RELEASE_PHASES.indexOf(phase);
+  if (phaseIndex === 0 && snapshot.targetCommit !== undefined) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      snapshot.verificationPath,
+      `release phase ${phase} cannot be pre-publication while ${expectedTargetTag} already resolves to ${snapshot.targetCommit}`,
+    );
+  }
+  if (snapshot.previousPhase !== undefined) {
+    const previousPhaseIndex = RELEASE_PHASES.indexOf(
+      snapshot.previousPhase,
+    );
+    if (
+      previousPhaseIndex === -1 ||
+      phaseIndex < previousPhaseIndex
+    ) {
       reject(
         "E_RELEASE_PACKET_EVIDENCE",
         snapshot.verificationPath,
-        `section 'Status' must keep annotated target tag ${expectedTargetTag} unavailable or pending before publication`,
+        `release phase ${phase} cannot regress from branch-base phase ${snapshot.previousPhase}`,
       );
     }
-    for (const [name, section] of [
-      ["Publication evidence", publication],
-      ["Public verification", publicVerification],
-      ["Retrospective", retrospective],
-    ]) {
-      const text = sectionEvidenceText(section, definitions).toLowerCase();
-      const evidenceStates = [...text.matchAll(EVIDENCE_STATE_GLOBAL)];
-      if (evidenceStates.length !== 1) {
-        reject(
-          "E_RELEASE_PACKET_EVIDENCE",
+  }
+  const targetTagState = targetTagMatches[0][2].toLowerCase();
+  const expectedTargetTagState = phaseIndex === 0 ? "unavailable" : "available";
+  if (
+    (targetTagState === "available" ? "available" : "unavailable") !==
+    expectedTargetTagState
+  ) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      snapshot.verificationPath,
+      `section 'Status' must keep annotated target tag ${expectedTargetTag} ${expectedTargetTagState} during the ${phase} phase`,
+    );
+  }
+  const evidenceSections = [
+    {
+      name: "Publication evidence",
+      section: publication,
+      completedFrom: 1,
+      validate: () =>
+        requirePublicationEvidence(
+          publication,
+          definitions,
+          snapshot.version,
+          snapshot.targetCommit,
           snapshot.verificationPath,
-          `section '${name}' must declare exactly one unavailable or pending evidence state before publication`,
-        );
-      }
-      const claims = text.replace(UNAVAILABLE_EVIDENCE_GLOBAL, "");
-      if (COMPLETED_EVIDENCE.test(claims)) {
-        reject(
-          "E_RELEASE_PACKET_EVIDENCE",
+        ),
+    },
+    {
+      name: "Public verification",
+      section: publicVerification,
+      completedFrom: 2,
+      validate: () =>
+        requirePublicVerificationEvidence(
+          publicVerification,
+          definitions,
           snapshot.verificationPath,
-          `section '${name}' contradicts its pre-publication state with completed or public evidence`,
-        );
-      }
+        ),
+    },
+    {
+      name: "Retrospective",
+      section: retrospective,
+      completedFrom: 3,
+      validate: () =>
+        requireRetrospectiveEvidence(
+          retrospective,
+          definitions,
+          snapshot.verificationPath,
+        ),
+    },
+  ];
+  for (const evidence of evidenceSections) {
+    if (phaseIndex >= evidence.completedFrom) {
+      evidence.validate();
+    } else {
+      requireEvidenceState(
+        evidence.section,
+        evidence.name,
+        "unavailable",
+        definitions,
+        snapshot.verificationPath,
+      );
     }
   }
   return { phase };
@@ -1007,6 +1482,8 @@ export function loadRepositorySnapshot(
   return {
     version,
     previousTag: previous.tag,
+    previousPhase: baselineReleasePhase(root, verificationPath),
+    targetCommit: targetTagCommit(root, version, publicTags),
     releasePath,
     release: readRequiredFile(root, releasePath),
     verificationPath,
