@@ -623,6 +623,14 @@ function commandsRunInOrder(commands) {
   );
 }
 
+function isFailClosedWorkflowEntry(entry) {
+  return (
+    !Object.hasOwn(entry, "if") &&
+    (entry["continue-on-error"] === undefined ||
+      entry["continue-on-error"] === false)
+  );
+}
+
 function workflowRunsCommandsInOrder(source, gate) {
   let workflow;
   try {
@@ -646,14 +654,18 @@ function workflowRunsCommandsInOrder(source, gate) {
     if (
       job === null ||
       typeof job !== "object" ||
-      !Array.isArray(job.steps)
+      Array.isArray(job) ||
+      !Array.isArray(job.steps) ||
+      !isFailClosedWorkflowEntry(job)
     ) {
       return false;
     }
     const commands = job.steps.flatMap((step) =>
       step !== null &&
       typeof step === "object" &&
-      typeof step.run === "string"
+      !Array.isArray(step) &&
+      typeof step.run === "string" &&
+      isFailClosedWorkflowEntry(step)
         ? topLevelShellCommands(step.run)
         : [],
     );
