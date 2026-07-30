@@ -226,9 +226,10 @@ observe public-contract regressions before they ship.
   [#278](https://github.com/flyingrobots/colorful-language/issues/278).
   <!-- roadmap-primary: delivered #278 -->
 - **Delivered v0.4.0 packet admission:** derive the planned packet from current
-  workspace and completed-release identity, require a bounded thesis and scope,
-  and keep pre-publication evidence explicitly unavailable until real public
-  oracles exist
+  workspace and completed-release identity; require exact version tokens,
+  uniquely labeled goalposts with observable acceptance oracles, and an
+  exhaustive inline/reference slice inventory; and keep pre-publication
+  evidence explicitly unavailable until real public oracles exist
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   <!-- roadmap-primary: delivered #280 -->
 - **Active release-witness transitions:** extend the pre-publication admission

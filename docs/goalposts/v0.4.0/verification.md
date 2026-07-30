@@ -20,11 +20,11 @@ after its command or public oracle has been observed.
 | Evidence | Oracle | Result |
 | --- | --- | --- |
 | Scope reconciliation | `git log --first-parent v0.3.0..origin/main`; Unreleased `CHANGELOG.md`; open issue and PR inventory | Pass on 2026-07-29: 102 first-parent commits, 25 open issues, three open dependency-major PRs, synchronized 0.4.0 manifests, and 21 Markdown files across 10 topic homes reviewed. |
-| Release packet policy | `node --test scripts/check-release-packet.test.mjs`; `node scripts/check-release-packet.mjs` | Pass on 2026-07-29: 24/24 tests; live packet admitted four goalposts and 33 scoped issues. |
+| Release packet policy | `node --test scripts/check-release-packet.test.mjs`; `node scripts/check-release-packet.mjs` | Pass on 2026-07-29: 29/29 tests; live packet admitted four uniquely labeled goalposts with observable oracles and 33 inline/reference-inventoried scoped issues. |
 | Release profile | `bash scripts/release-profile-check.sh` | Pass on 2026-07-29: workspace version 0.4.0. |
 | Unified release preparation | `mise exec node@22.23.1 -- bash scripts/release-prep.sh` | Pass on 2026-07-29 at `b2303d0de30611fec6ce88a6bdaa3a3276a5b323`: 24 release-packet cases, 80 IR-validator mutations with zero survivors, packaged editor smoke, and `RELEASE PREP PASSED`. |
 | Pull-request CI | Required CI and security check rollup | Pass on 2026-07-29 at pushed head `7a4f351693d5c9c3837bfd79583e0ca68a1083ad`: all 17 executable checks and CodeRabbit succeeded; the exact reviewed head remains pending push. |
-| Review | CodeRabbit or Codex review plus zero unresolved GraphQL threads | Codex reported five actionable threads against the earlier pushed head; their regression fixes pass locally, and exact-head review and thread resolution remain pending push. |
+| Review | CodeRabbit or Codex review plus zero unresolved GraphQL threads | Five initial Codex threads are resolved. A cursor-complete audit found six additional review threads, and self-review found one duplicate-goalpost edge; their fixes pass locally, while exact-head review and thread resolution remain pending push. |
 | Release tracker | `[release] v0.4.0`, created from the reviewed packet after merge | Pending packet merge. |
 | Final preflight | `bash scripts/release-preflight.sh v0.4.0` on clean, aligned `main` | Pending packet and tracker. |
 

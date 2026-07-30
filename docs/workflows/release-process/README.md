@@ -52,14 +52,19 @@ The workspace version selects the packet, and fetched release tags reachable
 from the current history select the previous public release. CI, release
 preparation, and tag admission fail closed unless both versions have
 corresponding packets, the planned packet contains a concrete thesis and
-version decision, every scope bucket is non-empty, two to five goalposts are
-defined, each linked slice is inventoried, and non-claims, rollback posture,
-and acceptance evidence are recorded. A workspace version behind the latest
-reachable public tag is rejected instead of being treated as a new release.
+an exact target/previous-tag decision, every scope bucket is non-empty, and two
+to five uniquely labeled goalposts are defined. Each goalpost must have a
+same-label acceptance item with an inline command or non-issue URL as its
+observable oracle. Inline and reference-style issue links share one exhaustive
+slice inventory; non-claims and rollback posture are also required. A workspace
+version behind the latest reachable public tag is rejected instead of being
+treated as a new release.
 Before publication, the verification witness must name the exact target,
 previous tag, and unavailable target tag; leave registry, public-install, and
 retrospective evidence explicitly pending or unavailable; and contain no
 completed claim hidden in inline or reference-style link destinations.
+The packet parser registers the exact-pinned GFM table grammar, so tables are
+validated as rows and cells rather than accidental paragraph text.
 
 ## Automation
 

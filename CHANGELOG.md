@@ -16,9 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   release tracker can exist. Deterministic policy mutations reject missing
   files, untagged, unreachable, stale, or ambiguous identity drift, incomplete
   sections, undeclared scope buckets, asymmetric slice inventories, unbounded
-  goalposts, contradictory pre-publication status or linked evidence, and
-  dormant, conditional, failure-tolerant, or unreachable CI, tag-admission, and
-  local-preparation wiring with stable path-addressed categories.
+  or duplicate goalposts, unmapped acceptance evidence, contradictory
+  pre-publication status or linked evidence, and dormant, reversed,
+  conditional, failure-tolerant, or unreachable CI, tag-admission, and
+  local-preparation wiring with stable path-addressed categories. Exact target
+  tokens, reference-style slice links, and structurally parsed GFM tables share
+  the same admission boundary.
 - **Automation-satisfiable GitHub Actions pin authority.** The checked-in
   workflow family now owns reviewed full-SHA action pins and release comments,
   rejects partial or inconsistent updates deterministically, and lets

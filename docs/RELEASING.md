@@ -46,7 +46,11 @@ versioned tracking issue. The policy derives the target from the workspace
 version and the previous public release from fetched repository tags reachable
 from the current history with corresponding goalpost packets, then checks
 packet identity, required sections, scope buckets, bounded goalposts, slice
-inventory, staged evidence, and release-gate wiring:
+inventory, staged evidence, and release-gate wiring. The version decision begins
+with the exact target and previous-tag tokens. Goalpost labels are unique and
+each has a same-label acceptance item carrying an inline command or non-issue
+URL; inline and reference-style slice links share one exhaustive inventory.
+The parser reads GFM tables structurally:
 
 ```bash
 node --test scripts/check-release-packet.test.mjs
@@ -318,6 +322,9 @@ Record three scope buckets:
 Each planned release should have two to five goalposts. Each goalpost must have
 observable acceptance evidence: command output, test result, workflow run,
 screenshot, registry lookup, release URL, smoke test, closed issue, or merged PR.
+In the packet, give every goalpost a unique leading bold label and repeat that
+label on its acceptance-evidence item. Include an inline command or a non-issue
+URL so the policy can distinguish an observable oracle from unsupported prose.
 
 ## Scope reconciliation
 
