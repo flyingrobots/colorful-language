@@ -518,8 +518,10 @@ test("requires the self-test before the live check in every release gate", () =>
         `# ${SELF_TEST_COMMAND}\n# ${CHECK_COMMAND}\n`;
     }, "E_RELEASE_PACKET_GATE");
     expectCode((snapshot) => {
-      snapshot.gateSources[gate] =
-        `${CHECK_COMMAND}\n${SELF_TEST_COMMAND}\n`;
+      snapshot.gateSources[gate] = snapshot.gateSources[gate]
+        .replace(SELF_TEST_COMMAND, "__RELEASE_GATE_ORDER_SWAP__")
+        .replace(CHECK_COMMAND, SELF_TEST_COMMAND)
+        .replace("__RELEASE_GATE_ORDER_SWAP__", CHECK_COMMAND);
     }, "E_RELEASE_PACKET_GATE");
   }
 });
