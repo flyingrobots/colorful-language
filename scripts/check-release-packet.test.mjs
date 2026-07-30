@@ -94,13 +94,19 @@ Release phase: pre-publication.
 
 ## Publication evidence
 
+Evidence state: unavailable.
+
 - Tag and registries: not available.
 
 ## Public verification
 
+Evidence state: unavailable.
+
 - Clean installation and public URLs: not available.
 
 ## Retrospective
+
+Evidence state: unavailable.
 
 - Release retrospective: not available.
 `,
@@ -433,6 +439,21 @@ test("rejects invented public evidence in the pre-publication phase", () => {
     snapshot.verification = snapshot.verification.replace(
       "- Tag and registries: not available.",
       "- Tag and registries: not available.\n- Tag: published successfully.",
+    );
+  }, "E_RELEASE_PACKET_EVIDENCE");
+});
+
+test("requires structured unavailable evidence states before publication", () => {
+  expectCode((snapshot) => {
+    snapshot.verification = snapshot.verification.replace(
+      "## Publication evidence\n\nEvidence state: unavailable.\n\n",
+      "## Publication evidence\n\n",
+    );
+  }, "E_RELEASE_PACKET_EVIDENCE");
+  expectCode((snapshot) => {
+    snapshot.verification = snapshot.verification.replace(
+      "- Tag and registries: not available.",
+      "- The v0.4.0 tag was created at abc1234; registry checks are pending.",
     );
   }, "E_RELEASE_PACKET_EVIDENCE");
 });
