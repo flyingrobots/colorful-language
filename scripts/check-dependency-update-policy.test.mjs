@@ -625,3 +625,22 @@ test("the current dependency update table documents every group", () => {
     );
   }
 });
+
+test("current pin references distinguish action commits from Docker digests", () => {
+  for (const file of [
+    "docs/workflows/evidence-toolchains/README.md",
+    "docs/workflows/repository-maintenance/README.md",
+  ]) {
+    const documentation = readFileSync(file, "utf8");
+    assert.match(
+      documentation,
+      /Non-Docker third-party actions use full 40-character commit SHA references/u,
+      `${file} must state the GitHub Action commit-pin rule`,
+    );
+    assert.match(
+      documentation,
+      /`docker:\/\/` actions use full `sha256` image digest references/u,
+      `${file} must state the Docker digest-pin rule`,
+    );
+  }
+});
