@@ -28,6 +28,10 @@ const SCOPE_BUCKETS = Object.freeze([
 ]);
 const COMPLETED_EVIDENCE =
   /\b(?:available|complete|completed|pass|passed|published|successful|successfully|verified)\b|✅|https?:\/\//iu;
+const UNAVAILABLE_EVIDENCE =
+  /\b(?:not available|pending|unavailable)\b/iu;
+const UNAVAILABLE_EVIDENCE_GLOBAL =
+  /\b(?:not available|pending|unavailable)\b/giu;
 
 export const CHECK_COMMAND = "node scripts/check-release-packet.mjs";
 export const SELF_TEST_COMMAND =
@@ -521,14 +525,14 @@ function validateVerificationDocument(snapshot) {
       ["Retrospective", retrospective],
     ]) {
       const text = sectionEvidenceText(section).toLowerCase();
-      if (!text.includes("not available") && !text.includes("pending")) {
+      if (!UNAVAILABLE_EVIDENCE.test(text)) {
         reject(
           "E_RELEASE_PACKET_EVIDENCE",
           snapshot.verificationPath,
           `section '${name}' must remain explicitly unavailable or pending before publication`,
         );
       }
-      const claims = text.replace(/\b(?:not available|pending)\b/giu, "");
+      const claims = text.replace(UNAVAILABLE_EVIDENCE_GLOBAL, "");
       if (COMPLETED_EVIDENCE.test(claims)) {
         reject(
           "E_RELEASE_PACKET_EVIDENCE",
