@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -65,14 +66,29 @@ function compareVersions(left, right) {
   return 0;
 }
 
-function completedReleaseVersions(root, targetVersion) {
+function repositoryTags(root) {
+  try {
+    return execFileSync("git", ["tag", "--list", "v[0-9]*"], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+      .split(/\r?\n/u)
+      .filter((tag) => tag !== "");
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      "git tags",
+      `cannot enumerate public release tags: ${error.code ?? error.message}`,
+    );
+  }
+}
+
+function previousPublicRelease(root, targetVersion, publicTags) {
   const target = parseVersion(targetVersion, "Cargo.toml");
-  return readdirSync(resolve(root, "docs/goalposts"), {
-    withFileTypes: true,
-  })
-    .filter((entry) => entry.isDirectory())
-    .flatMap((entry) => {
-      const match = RELEASE_DIRECTORY.exec(entry.name);
+  const releases = publicTags
+    .flatMap((tag) => {
+      const match = RELEASE_DIRECTORY.exec(tag);
       if (match === null) {
         return [];
       }
@@ -80,27 +96,20 @@ function completedReleaseVersions(root, targetVersion) {
       if (compareVersions(version, target) >= 0) {
         return [];
       }
-      const releasePath = resolve(
-        root,
-        "docs/goalposts",
-        entry.name,
-        "release.md",
-      );
-      const verificationPath = resolve(
-        root,
-        "docs/goalposts",
-        entry.name,
-        "verification.md",
-      );
-      try {
-        readFileSync(releasePath);
-        readFileSync(verificationPath);
-      } catch {
-        return [];
-      }
-      return [{ tag: entry.name, version }];
+      return [{ tag, version }];
     })
     .sort((left, right) => compareVersions(right.version, left.version));
+  if (releases.length === 0) {
+    reject(
+      "E_RELEASE_PACKET_IDENTITY",
+      "git tags",
+      `no public release tag precedes ${targetVersion}`,
+    );
+  }
+  const previous = releases[0];
+  readRequiredFile(root, `docs/goalposts/${previous.tag}/release.md`);
+  readRequiredFile(root, `docs/goalposts/${previous.tag}/verification.md`);
+  return previous;
 }
 
 function parseDocument(source, path) {
@@ -479,7 +488,10 @@ export function validateReleasePacket(snapshot) {
   };
 }
 
-export function loadRepositorySnapshot(root = ROOT) {
+export function loadRepositorySnapshot(
+  root = ROOT,
+  { publicTags = repositoryTags(root) } = {},
+) {
   const manifest = parseToml(readRequiredFile(root, "Cargo.toml"));
   const version = manifest.workspace?.package?.version;
   if (typeof version !== "string") {
@@ -489,20 +501,13 @@ export function loadRepositorySnapshot(root = ROOT) {
       "workspace.package.version must be a string",
     );
   }
-  const completed = completedReleaseVersions(root, version);
-  if (completed.length === 0) {
-    reject(
-      "E_RELEASE_PACKET_IDENTITY",
-      "docs/goalposts",
-      `no completed release precedes ${version}`,
-    );
-  }
+  const previous = previousPublicRelease(root, version, publicTags);
   const releasePath = `docs/goalposts/v${version}/release.md`;
   const verificationPath =
     `docs/goalposts/v${version}/verification.md`;
   return {
     version,
-    previousTag: completed[0].tag,
+    previousTag: previous.tag,
     releasePath,
     release: readRequiredFile(root, releasePath),
     verificationPath,

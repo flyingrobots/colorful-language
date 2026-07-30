@@ -288,7 +288,10 @@ test("reports a stable category when the target packet is missing", (t) => {
   );
 
   assert.throws(
-    () => loadRepositorySnapshot(root),
+    () =>
+      loadRepositorySnapshot(root, {
+        publicTags: ["v0.3.0"],
+      }),
     (error) =>
       error instanceof ReleasePacketPolicyError &&
       error.code === "E_RELEASE_PACKET_IO" &&
