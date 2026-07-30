@@ -272,6 +272,15 @@ test("enforces the two-to-five goalpost bound", () => {
   }, "E_RELEASE_PACKET_GOALPOSTS");
 });
 
+test("requires observable acceptance evidence for every goalpost", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "- The complete release-preparation gate passes before tagging.",
+      "- The release looks complete.\n- The implementation appears reliable.",
+    );
+  }, "E_RELEASE_PACKET_GOALPOSTS");
+});
+
 test("rejects a scoped issue omitted from the slice inventory", () => {
   expectCode((snapshot) => {
     snapshot.release = snapshot.release.replace(
