@@ -614,6 +614,12 @@ function topLevelShellCommands(source) {
     }
     if (
       depth === 0 &&
+      /^(?:exec|exit|return)(?:\s|$)/u.test(trimmed)
+    ) {
+      break;
+    }
+    if (
+      depth === 0 &&
       (trimmed === SELF_TEST_COMMAND || trimmed === CHECK_COMMAND)
     ) {
       commands.push(trimmed);
