@@ -1102,6 +1102,41 @@ test("rejects a target behind the latest public release", (t) => {
   );
 });
 
+test("fails closed when the branch-base phase cannot be resolved", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+  git(root, "init", "-b", "main");
+  git(root, "config", "user.email", "release-packet@example.invalid");
+  git(root, "config", "user.name", "Release Packet Test");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "current branch");
+  const tree = gitOutput(root, "write-tree");
+  const unrelated = gitOutput(
+    root,
+    "commit-tree",
+    tree,
+    "-m",
+    "unrelated origin main",
+  );
+  git(
+    root,
+    "update-ref",
+    "refs/remotes/origin/main",
+    unrelated,
+  );
+
+  assert.throws(
+    () =>
+      loadRepositorySnapshot(root, {
+        publicTags: ["v0.3.0"],
+      }),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_IO",
+  );
+});
+
 test("binds published commit evidence to the annotated target tag", (t) => {
   const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
   t.after(() => rmSync(root, { recursive: true }));

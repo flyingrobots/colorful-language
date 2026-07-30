@@ -152,6 +152,44 @@ function targetTagCommit(root, version, publicTags) {
 }
 
 function baselineReleasePhase(root, verificationPath) {
+  try {
+    execFileSync(
+      "git",
+      ["rev-parse", "--is-inside-work-tree"],
+      {
+        cwd: root,
+        stdio: "ignore",
+      },
+    );
+  } catch (error) {
+    if (error.status === 128) {
+      return undefined;
+    }
+    reject(
+      "E_RELEASE_PACKET_IO",
+      root,
+      `cannot inspect repository state: ${error.code ?? error.message}`,
+    );
+  }
+  try {
+    execFileSync(
+      "git",
+      ["show-ref", "--verify", "--quiet", "refs/remotes/origin/main"],
+      {
+        cwd: root,
+        stdio: "ignore",
+      },
+    );
+  } catch (error) {
+    if (error.status === 1) {
+      return undefined;
+    }
+    reject(
+      "E_RELEASE_PACKET_IO",
+      "origin/main",
+      `cannot inspect branch-base authority: ${error.code ?? error.message}`,
+    );
+  }
   let baseline;
   try {
     baseline = execFileSync(
@@ -163,8 +201,45 @@ function baselineReleasePhase(root, verificationPath) {
         stdio: ["ignore", "pipe", "ignore"],
       },
     ).trim();
-  } catch {
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      "origin/main",
+      `cannot resolve merge base: ${error.code ?? error.message}`,
+    );
+  }
+  let baselinePaths;
+  try {
+    baselinePaths = execFileSync(
+      "git",
+      ["ls-tree", "--name-only", baseline, "--", verificationPath],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    )
+      .split(/\r?\n/u)
+      .filter((path) => path !== "");
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      `cannot inspect branch-base witness path: ${error.code ?? error.message}`,
+    );
+  }
+  if (baselinePaths.length === 0) {
     return undefined;
+  }
+  if (
+    baselinePaths.length !== 1 ||
+    baselinePaths[0] !== verificationPath
+  ) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      "branch-base witness path resolved ambiguously",
+    );
   }
   let source;
   try {
@@ -177,8 +252,12 @@ function baselineReleasePhase(root, verificationPath) {
         stdio: ["ignore", "pipe", "ignore"],
       },
     );
-  } catch {
-    return undefined;
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      `cannot read branch-base witness: ${error.code ?? error.message}`,
+    );
   }
   const document = parseDocument(source, verificationPath);
   const status = sectionMap(document, verificationPath).get("Status");

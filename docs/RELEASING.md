@@ -246,7 +246,11 @@ incomplete identities, or a phase below the available `origin/main` merge-base
 witness fail with `E_RELEASE_PACKET_EVIDENCE`. This active state machine does
 not rewrite historical packets: v0.1.0 through v0.3.0 remain readable in their
 original shapes, and only the immediate predecessor's completed retrospective
-is required when admitting a new train.
+is required when admitting a new train. A clone without an `origin/main`
+remote-tracking ref, or a new packet absent from that ref, has no comparison
+baseline. If the ref and packet exist, failure to resolve their merge base or
+read the witness is `E_RELEASE_PACKET_IO`; regression protection never silently
+turns off.
 
 ## Version selection
 

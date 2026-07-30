@@ -446,7 +446,8 @@ Verification for release preparation, tag automation, and release witnesses.
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
   *Evidence:* `scripts/check-release-packet.test.mjs`
   `accepts one canonical witness for every release phase`,
-  `rejects regression from the previously admitted release phase`, and
+  `rejects regression from the previously admitted release phase`,
+  `fails closed when the branch-base phase cannot be resolved`, and
   `rejects a phase declaration without its required evidence`. *Status:*
   implemented.
 - **REL-19b — Published evidence gate.** *Requirement:* REL-19. *Behavior:* the
