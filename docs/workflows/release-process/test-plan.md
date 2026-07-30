@@ -396,6 +396,15 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-release-packet.test.mjs`
   `requires structured unavailable evidence states before publication`;
   `docs/goalposts/v0.4.0/verification.md`. *Status:* implemented.
+- **REL-18e — Unguarded local packet commands.** *Requirement:* REL-18.
+  *Behavior:* local release preparation admits packet commands only at the
+  executable shell top level; operator-guarded brace and subshell groups do not
+  satisfy the gate. *Oracle:* wrapping the ordered commands in `false && { ... }`
+  or `false && ( ... )` fails with `E_RELEASE_PACKET_GATE`. *Evidence type:*
+  deterministic shell-structure mutation test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
+  planned.
 
 ## Open verification gaps
 
