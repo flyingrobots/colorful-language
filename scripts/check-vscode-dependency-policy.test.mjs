@@ -248,6 +248,19 @@ test("rejects Dependabot policy without the Node declaration major guard", () =>
   expectCode(input, "E_VSCODE_DEPENDABOT_POLICY");
 });
 
+test("rejects a scalar Dependabot update-types impostor", () => {
+  const input = fixture();
+  input.dependabotPolicy.updates[0].ignore[1]["update-types"] =
+    "version-update:semver-major";
+  expectCode(input, "E_VSCODE_DEPENDABOT_POLICY");
+});
+
+test("categorizes malformed Dependabot policy containers", () => {
+  const input = fixture();
+  input.dependabotPolicy.updates = {};
+  expectCode(input, "E_VSCODE_DEPENDABOT_POLICY");
+});
+
 test("rejects weakened TypeScript declaration checking", () => {
   const input = fixture();
   input.tsconfig.compilerOptions.skipLibCheck = true;
