@@ -138,6 +138,20 @@ function expectCode(mutate, code) {
   );
 }
 
+function blankLevelTwoSection(source, heading) {
+  const marker = `## ${heading}\n`;
+  const headingStart = source.indexOf(marker);
+  assert.notEqual(
+    headingStart,
+    -1,
+    `fixture is missing level-two heading ${heading}`,
+  );
+  const bodyStart = headingStart + marker.length;
+  const nextHeading = source.indexOf("\n## ", bodyStart);
+  const bodyEnd = nextHeading === -1 ? source.length : nextHeading;
+  return `${source.slice(0, bodyStart)}\n${source.slice(bodyEnd)}`;
+}
+
 function writeRepositorySnapshot(root, snapshot = validSnapshot()) {
   const sources = {
     "Cargo.toml": `[workspace.package]\nversion = "${snapshot.version}"\n`,
@@ -225,6 +239,12 @@ test("rejects every missing or empty release section", () => {
     expectCode((snapshot) => {
       snapshot.release = snapshot.release.replace(`## ${heading}`, "");
     }, "E_RELEASE_PACKET_SECTION");
+    expectCode((snapshot) => {
+      snapshot.release = blankLevelTwoSection(
+        snapshot.release,
+        heading,
+      );
+    }, "E_RELEASE_PACKET_SECTION");
   }
 });
 
@@ -308,7 +328,7 @@ test("resolves reference-style issue links in the scope inventory", () => {
   }, "E_RELEASE_PACKET_SCOPE");
 });
 
-test("rejects every missing verification section", () => {
+test("rejects every missing or empty verification section", () => {
   for (const heading of [
     "Status",
     "Pre-publication evidence",
@@ -320,6 +340,12 @@ test("rejects every missing verification section", () => {
       snapshot.verification = snapshot.verification.replace(
         `## ${heading}`,
         "",
+      );
+    }, "E_RELEASE_PACKET_SECTION");
+    expectCode((snapshot) => {
+      snapshot.verification = blankLevelTwoSection(
+        snapshot.verification,
+        heading,
       );
     }, "E_RELEASE_PACKET_SECTION");
   }
