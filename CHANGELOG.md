@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Automation-satisfiable GitHub Actions pin authority.** The checked-in
+  workflow family now owns reviewed full-SHA action pins and release comments,
+  rejects partial or inconsistent updates deterministically, and lets
+  coordinated workflow-only refreshes satisfy coverage, security, and
+  repository-maintenance semantics without duplicating mutable release SHAs in
+  checker code. The reviewed workflow set advances checkout to 7.0.1,
+  setup-node to 7.0.0, markdownlint-cli2-action to 24.1.0,
+  install-action to 2.85.4, upload-artifact to 7.0.1, and attest to 4.2.1.
 - **Root Cargo compatibility automation policy.** Weekly root Cargo patch
   updates remain grouped, while other minor and major updates stay
   independently reviewable. Dependabot ignores only DashMap SemVer-major

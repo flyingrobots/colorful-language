@@ -13,7 +13,8 @@ import {
   validateDependencyUpdatePolicy,
 } from "./check-dependency-update-policy.mjs";
 
-const ACTION_SHA = "fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+const ACTION_SHA = "1111111111111111111111111111111111111111";
+const UPDATED_ACTION_SHA = "2222222222222222222222222222222222222222";
 const IMAGE_DIGEST =
   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
@@ -110,6 +111,19 @@ libfuzzer-sys = "=0.4.13"
   - uses: docker://alpine@sha256:${IMAGE_DIGEST} # alpine 3.22
 `,
       ],
+      [
+        ".github/workflows/release.yml",
+        `steps:
+  - uses: actions/checkout@${ACTION_SHA} # v5
+`,
+      ],
+      [
+        ".github/workflows/security.yml",
+        `steps:
+  - uses: github/codeql-action/init@${ACTION_SHA} # v4
+  - uses: github/codeql-action/analyze@${ACTION_SHA} # v4
+`,
+      ],
     ]),
   };
 }
@@ -131,8 +145,79 @@ function rootCargoUpdate(dependabot) {
   );
 }
 
+function replaceCheckoutPin(workflow, sha, release) {
+  return workflow.replace(
+    /actions\/checkout@[0-9a-f]{40} # \S+/u,
+    `actions/checkout@${sha} # ${release}`,
+  );
+}
+
 test("accepts the reviewed update-source and action-pin policy", () => {
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(fixture()));
+});
+
+test("accepts a coordinated action pin refresh", () => {
+  const candidate = fixture();
+  for (const [file, workflow] of candidate.workflows) {
+    candidate.workflows.set(
+      file,
+      replaceCheckoutPin(workflow, UPDATED_ACTION_SHA, "v7.0.1"),
+    );
+  }
+  assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
+});
+
+test("rejects an inconsistent action pin refresh", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      replaceCheckoutPin(
+        workflows.get(".github/workflows/ci.yml"),
+        UPDATED_ACTION_SHA,
+        "v7.0.1",
+      ),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
+});
+
+test("rejects inconsistent action release comments", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      replaceCheckoutPin(
+        workflows.get(".github/workflows/ci.yml"),
+        ACTION_SHA,
+        "v5.0.0",
+      ),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
+});
+
+test("rejects a partial update across sibling repository actions", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/security.yml",
+      workflows
+        .get(".github/workflows/security.yml")
+        .replace(
+          `github/codeql-action/init@${ACTION_SHA} # v4`,
+          `github/codeql-action/init@${UPDATED_ACTION_SHA} # v5`,
+        ),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
+});
+
+test("rejects inconsistent pins across repository identity casing", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      replaceCheckoutPin(
+        workflows.get(".github/workflows/ci.yml"),
+        UPDATED_ACTION_SHA,
+        "v7.0.1",
+      ).replace("actions/checkout@", "Actions/Checkout@"),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
 });
 
 test("accepts update sources in any order", () => {
@@ -372,6 +457,15 @@ test("rejects a missing comment behind a quoted YAML key", () => {
   }, "E_ACTION_RELEASE_COMMENT");
 });
 
+test("rejects empty action path segments", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/ci.yml",
+      `steps:\n  - uses: actions/checkout//setup@${ACTION_SHA} # v5\n`,
+    );
+  }, "E_ACTION_PIN");
+});
+
 test("rejects a mutable Docker action tag", () => {
   expectCode(({ workflows }) => {
     workflows.set(
@@ -552,4 +646,41 @@ test("the current dependency update table documents every group", () => {
       `dependency update table must document ${group}`,
     );
   }
+});
+
+test("current pin references distinguish action commits from Docker digests", () => {
+  for (const file of [
+    "docs/workflows/evidence-toolchains/README.md",
+    "docs/workflows/repository-maintenance/README.md",
+  ]) {
+    const documentation = readFileSync(file, "utf8");
+    assert.match(
+      documentation,
+      /Non-Docker third-party actions use full 40-character commit SHA references/u,
+      `${file} must state the GitHub Action commit-pin rule`,
+    );
+    assert.match(
+      documentation,
+      /`docker:\/\/` actions use full `sha256` image digest references/u,
+      `${file} must state the Docker digest-pin rule`,
+    );
+  }
+});
+
+test("the action update reference runs the complete release gate", () => {
+  const documentation = readFileSync(
+    "docs/workflows/evidence-toolchains/README.md",
+    "utf8",
+  );
+  const start = documentation.indexOf(
+    "Run the pin and semantic policy together before accepting an action update:",
+  );
+  const end = documentation.indexOf("The root `cargo` group", start);
+  assert.notEqual(start, -1, "action-update gate introduction must exist");
+  assert.notEqual(end, -1, "action-update gate boundary must exist");
+  assert.match(
+    documentation.slice(start, end),
+    /```bash\nbash scripts\/release-prep\.sh\n```/u,
+    "action updates must run the complete release-preparation gate",
+  );
 });

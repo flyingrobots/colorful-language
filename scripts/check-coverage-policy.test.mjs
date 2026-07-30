@@ -13,15 +13,29 @@ import {
 } from "./check-coverage-policy.mjs";
 
 const CHECKOUT_ACTION =
-  "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+  "actions/checkout@1111111111111111111111111111111111111111";
 const RUST_TOOLCHAIN_ACTION =
-  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
+  "dtolnay/rust-toolchain@2222222222222222222222222222222222222222";
 const INSTALL_ACTION =
-  "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
+  "taiki-e/install-action@3333333333333333333333333333333333333333";
 const RUST_CACHE_ACTION =
-  "Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32";
+  "Swatinem/rust-cache@4444444444444444444444444444444444444444";
 const UPLOAD_ACTION =
-  "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f";
+  "actions/upload-artifact@5555555555555555555555555555555555555555";
+const UPDATED_ACTIONS = new Map([
+  [
+    "actions/checkout",
+    "actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  ],
+  [
+    "taiki-e/install-action",
+    "taiki-e/install-action@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  ],
+  [
+    "actions/upload-artifact",
+    "actions/upload-artifact@cccccccccccccccccccccccccccccccccccccccc",
+  ],
+]);
 const ACTUAL_POLICY = JSON.parse(
   readFileSync(
     new URL("../.github/coverage-policy.json", import.meta.url),
@@ -261,6 +275,39 @@ function actionWorkflowStep(candidate, action) {
   return candidate.jobs.coverage.steps.find((step) => step.uses === action);
 }
 
+function refreshWorkflowActions(candidate, updates) {
+  for (const step of candidate.jobs.coverage.steps) {
+    if (typeof step.uses !== "string") {
+      continue;
+    }
+    const identity = step.uses.split("@", 1)[0];
+    if (updates.has(identity)) {
+      step.uses = updates.get(identity);
+    }
+  }
+}
+
+function assertWorkflowActionsRefreshed(candidate, updates) {
+  for (const [identity, expected] of updates) {
+    const matching = candidate.jobs.coverage.steps
+      .map((step) => step.uses)
+      .filter(
+        (uses) =>
+          typeof uses === "string" && uses.split("@", 1)[0] === identity,
+      );
+    assert.notEqual(
+      matching.length,
+      0,
+      `coverage fixture must use ${identity}`,
+    );
+    assert.deepEqual(
+      matching,
+      Array.from({ length: matching.length }, () => expected),
+      `every ${identity} use must carry the refreshed pin`,
+    );
+  }
+}
+
 test("accepts the reviewed workspace and transport coverage", () => {
   assert.doesNotThrow(() =>
     validateCoveragePolicy(policy(), report(), {
@@ -411,6 +458,13 @@ test("rejects generated-source exclusions", () => {
 
 test("accepts the pinned coverage workflow", () => {
   assert.doesNotThrow(() => validateCoverageWorkflow(workflow(), policy()));
+});
+
+test("accepts a full-SHA action refresh without checker edits", () => {
+  const candidate = workflow();
+  refreshWorkflowActions(candidate, UPDATED_ACTIONS);
+  assertWorkflowActionsRefreshed(candidate, UPDATED_ACTIONS);
+  assert.doesNotThrow(() => validateCoverageWorkflow(candidate, policy()));
 });
 
 test("rejects coverage jobs without explicit read-only permissions", () => {

@@ -69,20 +69,14 @@ const DEPLOYMENT_EVIDENCE = [
   "node scripts/verify-editor-publication.mjs",
   "npm --prefix editors/vscode run smoke:package",
 ];
-const CHECKOUT_ACTION =
-  "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
-const RUST_TOOLCHAIN_ACTION =
-  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
-const INSTALL_ACTION =
-  "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
-const SETUP_NODE_ACTION =
-  "actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444";
-const DEPENDENCY_REVIEW_ACTION =
-  "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294";
-const CODEQL_INIT_ACTION =
-  "github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
-const CODEQL_ANALYZE_ACTION =
-  "github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+const CHECKOUT_ACTION = "actions/checkout";
+const RUST_TOOLCHAIN_ACTION = "dtolnay/rust-toolchain";
+const INSTALL_ACTION = "taiki-e/install-action";
+const SETUP_NODE_ACTION = "actions/setup-node";
+const DEPENDENCY_REVIEW_ACTION = "actions/dependency-review-action";
+const CODEQL_INIT_ACTION = "github/codeql-action/init";
+const CODEQL_ANALYZE_ACTION = "github/codeql-action/analyze";
+const PINNED_ACTION = /^(?<identity>[^@\s]+)@[0-9a-f]{40}$/u;
 const CARGO_DENY_VERSION = "cargo-deny@0.18.9";
 const RUST_LICENSES = [
   "0BSD",
@@ -821,8 +815,14 @@ function validateSecurityEvents(workflow) {
   }
 }
 
-function stepWithUse(job, value) {
-  return job?.steps?.find((step) => step?.uses === value);
+function stepWithUse(job, identity) {
+  return job?.steps?.find((step) => {
+    const match =
+      typeof step?.uses === "string"
+        ? step.uses.match(PINNED_ACTION)
+        : null;
+    return match?.groups?.identity === identity;
+  });
 }
 
 function requireBlockingStep(step, path) {
@@ -860,7 +860,7 @@ function requireAction(job, action, path) {
     reject(
       "E_SECURITY_ACTION_PIN",
       path,
-      `must use ${action}`,
+      `must use ${action} at a full commit SHA`,
     );
   }
   requireBlockingStep(step, path);

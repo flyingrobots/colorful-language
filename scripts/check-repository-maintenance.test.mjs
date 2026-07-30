@@ -11,19 +11,33 @@ import {
 } from "./check-repository-maintenance.mjs";
 
 const CHECKOUT_ACTION =
-  "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
+  "actions/checkout@1111111111111111111111111111111111111111";
 const RUST_TOOLCHAIN_ACTION =
-  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
+  "dtolnay/rust-toolchain@2222222222222222222222222222222222222222";
 const INSTALL_ACTION =
-  "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
+  "taiki-e/install-action@3333333333333333333333333333333333333333";
 const SETUP_NODE_ACTION =
-  "actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444";
+  "actions/setup-node@4444444444444444444444444444444444444444";
 const DEPENDENCY_ACTION =
-  "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294";
+  "actions/dependency-review-action@5555555555555555555555555555555555555555";
 const CODEQL_INIT =
-  "github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+  "github/codeql-action/init@6666666666666666666666666666666666666666";
 const CODEQL_ANALYZE =
-  "github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81";
+  "github/codeql-action/analyze@6666666666666666666666666666666666666666";
+const UPDATED_ACTIONS = new Map([
+  [
+    "actions/checkout",
+    "actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  ],
+  [
+    "actions/setup-node",
+    "actions/setup-node@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  ],
+  [
+    "taiki-e/install-action",
+    "taiki-e/install-action@cccccccccccccccccccccccccccccccccccccccc",
+  ],
+]);
 const DELIVERY_REFERENCE = [
   "GitHub milestones are goalposts.",
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
@@ -433,6 +447,42 @@ function actionStep(job, action) {
   return job.steps.find((step) => step.uses === action);
 }
 
+function refreshWorkflowActions(candidate, updates) {
+  for (const job of Object.values(candidate.securityWorkflow.jobs)) {
+    for (const step of job.steps) {
+      if (typeof step.uses !== "string") {
+        continue;
+      }
+      const identity = step.uses.split("@", 1)[0];
+      if (updates.has(identity)) {
+        step.uses = updates.get(identity);
+      }
+    }
+  }
+}
+
+function assertWorkflowActionsRefreshed(candidate, updates) {
+  const uses = Object.values(candidate.securityWorkflow.jobs).flatMap((job) =>
+    job.steps.map((step) => step.uses),
+  );
+  for (const [identity, expected] of updates) {
+    const matching = uses.filter(
+      (value) =>
+        typeof value === "string" && value.split("@", 1)[0] === identity,
+    );
+    assert.notEqual(
+      matching.length,
+      0,
+      `security fixture must use ${identity}`,
+    );
+    assert.deepEqual(
+      matching,
+      Array.from({ length: matching.length }, () => expected),
+      `every ${identity} use must carry the refreshed pin`,
+    );
+  }
+}
+
 function dependencyReviewStep(candidate) {
   return actionStep(
     candidate.securityWorkflow.jobs["dependency-review"],
@@ -459,6 +509,13 @@ function addAdvisoryException(candidate) {
 
 test("accepts the reviewed repository maintenance policy", () => {
   assert.doesNotThrow(() => validateRepositoryMaintenance(fixture()));
+});
+
+test("accepts full-SHA security action refreshes without checker edits", () => {
+  const candidate = fixture();
+  refreshWorkflowActions(candidate, UPDATED_ACTIONS);
+  assertWorkflowActionsRefreshed(candidate, UPDATED_ACTIONS);
+  assert.doesNotThrow(() => validateRepositoryMaintenance(candidate));
 });
 
 test("rejects repository homepage drift", () => {

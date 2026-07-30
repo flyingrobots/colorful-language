@@ -33,16 +33,12 @@ const REPORT_DIRECTORY = "target/llvm-cov";
 const HTML_PATH = "target/llvm-cov/html";
 const PREPARE_OUTPUT_COMMAND = `mkdir -p ${REPORT_DIRECTORY}`;
 const ARTIFACT_RETENTION_DAYS = 14;
-const CHECKOUT_ACTION =
-  "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09";
-const RUST_TOOLCHAIN_ACTION =
-  "dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4";
-const INSTALL_ACTION =
-  "taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf";
-const RUST_CACHE_ACTION =
-  "Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32";
-const UPLOAD_ACTION =
-  "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f";
+const CHECKOUT_ACTION = "actions/checkout";
+const RUST_TOOLCHAIN_ACTION = "dtolnay/rust-toolchain";
+const INSTALL_ACTION = "taiki-e/install-action";
+const RUST_CACHE_ACTION = "Swatinem/rust-cache";
+const UPLOAD_ACTION = "actions/upload-artifact";
+const PINNED_ACTION = /^(?<identity>[^@\s]+)@[0-9a-f]{40}$/u;
 const REQUIRED_CONTEXT = {
   context: "Rust coverage",
   integration_id: 15368,
@@ -522,7 +518,13 @@ function normalizedCommand(command) {
 }
 
 function actionStep(steps, action) {
-  return steps.find((step) => step?.uses === action);
+  return steps.find((step) => {
+    const match =
+      typeof step?.uses === "string"
+        ? step.uses.match(PINNED_ACTION)
+        : null;
+    return match?.groups?.identity === action;
+  });
 }
 
 function commandStep(steps, command) {
@@ -588,7 +590,7 @@ export function validateCoverageWorkflow(workflow, policy) {
       reject(
         "E_COVERAGE_ACTION",
         "CI workflow.jobs.coverage.steps",
-        `missing reviewed action ${action}`,
+        `missing full-SHA action ${action}`,
       );
     }
   }
