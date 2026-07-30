@@ -136,7 +136,7 @@ it never silently rewrites the reviewed evidence versions.
 
 ## Reviewing dependency updates
 
-Dependabot opens five independent weekly groups from
+Dependabot opens six independent weekly groups from
 `.github/dependabot.yml`:
 
 | Group | Dependency boundary | Rollback boundary |
@@ -145,7 +145,7 @@ Dependabot opens five independent weekly groups from
 | `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
-| `vscode` | VS Code packages except TypeScript | Editor-adapter revert |
+| `vscode` | VS Code packages except TypeScript and unsupported `@types/node` majors | Editor-adapter revert |
 
 Do not combine these groups. Their evidence, failure modes, and rollback scopes
 differ. Issue
@@ -167,8 +167,11 @@ Changing a primary Rust, Node, or TypeScript evidence release remains a manual
 policy change: update every authority and current reference named above in the
 same reviewed pull request. Both npm update sources explicitly ignore
 `typescript`, because an independent root or VS Code update cannot satisfy the
-cross-graph exact-version invariant. A Dependabot lockfile update must not
-silently change those exact declarations.
+cross-graph exact-version invariant. The VS Code source also ignores only
+semver-major `@types/node` updates: minor and patch updates on the reviewed Node
+20 declaration line remain automatic, while a new major requires a coordinated
+minimum-editor and extension-host policy change. A Dependabot lockfile update
+must not silently change those exact declarations or cross that runtime line.
 
 Run the update-policy evidence directly with:
 
@@ -181,10 +184,11 @@ node scripts/check-dependency-update-policy.mjs
 The mutation suite rejects a floating action ref, a missing action-version
 comment, any missing, duplicate, or unexpected update source, a non-weekly
 cadence, group-name or wildcard-pattern drift, and any attempt to automate one
-side of the shared TypeScript pin. The live check parses the YAML node graph, so
-legal key quoting or whitespace cannot hide a `uses` entry, and scans every
-workflow file, including workflows added later. It also rejects a Docker action
-unless an immutable SHA-256 image digest replaces a mutable tag.
+side of the shared TypeScript pin. It also rejects a missing, scalar, or
+overbroad `@types/node` major exclusion. The live check parses the YAML node
+graph, so legal key quoting or whitespace cannot hide a `uses` entry, and scans
+every workflow file, including workflows added later. It also rejects a Docker
+action unless an immutable SHA-256 image digest replaces a mutable tag.
 
 The complete requirements and evidence map live in the
 [evidence-toolchain test plan](test-plan.md).

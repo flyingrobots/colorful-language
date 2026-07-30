@@ -150,6 +150,11 @@ Verification for editor adapters and the `colorful-lsp` surface.
   TypeScript declaration checking`, and `rejects current editor documentation
   that drifts from host policy`, plus `rejects a documented Node declaration
   major outside the host line`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `rejects automatic VS
+  Code Node declaration major updates`, `rejects an overbroad VS Code Node
+  declaration exclusion`, and `rejects a scalar VS Code Node update-type
+  policy`;
   `scripts/check-editor-package-smoke.test.mjs`; and
   `editors/vscode/smoke/run-packaged-smoke.mjs`. *Status:* implemented.
 - **EDIT-14a** — *Requirement:* EDIT-14. *Behavior:* a generated valid-Unicode

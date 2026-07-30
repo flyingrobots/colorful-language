@@ -131,6 +131,18 @@ test("accepts update sources in any order", () => {
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
 });
 
+test("accepts reviewed manual dependency rules in any order", () => {
+  const candidate = fixture();
+  candidate.dependabot.updates
+    .find(
+      (update) =>
+        update["package-ecosystem"] === "npm" &&
+        update.directory === "/editors/vscode",
+    )
+    .ignore.reverse();
+  assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
+});
+
 test("accepts a reviewed standalone fuzz Cargo update source", () => {
   const candidate = fixture();
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));

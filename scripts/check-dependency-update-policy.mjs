@@ -16,21 +16,36 @@ const DOCKER_SHA256 = /^docker:\/\/[^@\s]+@sha256:[0-9a-f]{64}$/u;
 const EXPECTED_SOURCES = new Map([
   [
     "github-actions\u0000/",
-    { group: "github-actions", manualDependencies: [] },
+    { group: "github-actions", manualRules: [] },
   ],
-  ["cargo\u0000/", { group: "cargo", manualDependencies: [] }],
+  ["cargo\u0000/", { group: "cargo", manualRules: [] }],
   [
     "cargo\u0000/editors/zed",
-    { group: "zed-cargo", manualDependencies: [] },
+    { group: "zed-cargo", manualRules: [] },
   ],
   [
     "cargo\u0000/fuzz",
-    { group: "fuzz-cargo", manualDependencies: [] },
+    { group: "fuzz-cargo", manualRules: [] },
   ],
-  ["npm\u0000/", { group: "root-node", manualDependencies: ["typescript"] }],
+  [
+    "npm\u0000/",
+    {
+      group: "root-node",
+      manualRules: [{ dependencyName: "typescript", updateTypes: [] }],
+    },
+  ],
   [
     "npm\u0000/editors/vscode",
-    { group: "vscode", manualDependencies: ["typescript"] },
+    {
+      group: "vscode",
+      manualRules: [
+        {
+          dependencyName: "@types/node",
+          updateTypes: ["version-update:semver-major"],
+        },
+        { dependencyName: "typescript", updateTypes: [] },
+      ],
+    },
   ],
 ]);
 
@@ -136,8 +151,45 @@ function validateUpdateGroup(update, expectedGroup, description) {
   }
 }
 
-function validateManualDependencies(update, expectedDependencies, description) {
-  if (expectedDependencies.length === 0) {
+function normalizeManualRule(rule, description) {
+  if (
+    rule === null ||
+    typeof rule !== "object" ||
+    typeof rule["dependency-name"] !== "string"
+  ) {
+    reject(
+      "E_DEPENDABOT_MANUAL_DEPENDENCY",
+      `${description}: manual dependency exclusions must name one dependency`,
+    );
+  }
+  const updateTypes = rule["update-types"];
+  const expectedKeys =
+    updateTypes === undefined
+      ? ["dependency-name"]
+      : ["dependency-name", "update-types"];
+  if (
+    Object.keys(rule)
+      .toSorted()
+      .some((key, index) => key !== expectedKeys[index]) ||
+    Object.keys(rule).length !== expectedKeys.length ||
+    (updateTypes !== undefined &&
+      (!Array.isArray(updateTypes) ||
+        updateTypes.length === 0 ||
+        updateTypes.some((updateType) => typeof updateType !== "string")))
+  ) {
+    reject(
+      "E_DEPENDABOT_MANUAL_DEPENDENCY",
+      `${description}: manual dependency exclusions must match the reviewed shape`,
+    );
+  }
+  return {
+    dependencyName: rule["dependency-name"],
+    updateTypes: updateTypes?.toSorted() ?? [],
+  };
+}
+
+function validateManualDependencies(update, expectedRules, description) {
+  if (expectedRules.length === 0) {
     if (update.ignore !== undefined) {
       reject(
         "E_DEPENDABOT_MANUAL_DEPENDENCY",
@@ -148,35 +200,24 @@ function validateManualDependencies(update, expectedDependencies, description) {
   }
   if (
     !Array.isArray(update.ignore) ||
-    update.ignore.length !== expectedDependencies.length
+    update.ignore.length !== expectedRules.length
   ) {
     reject(
       "E_DEPENDABOT_MANUAL_DEPENDENCY",
-      `${description}: exact shared dependencies must remain manual`,
+      `${description}: reviewed manual dependency rules must remain exact`,
     );
   }
-  const observed = update.ignore.map((rule) => {
-    if (
-      rule === null ||
-      typeof rule !== "object" ||
-      Object.keys(rule).length !== 1 ||
-      typeof rule["dependency-name"] !== "string"
-    ) {
-      reject(
-        "E_DEPENDABOT_MANUAL_DEPENDENCY",
-        `${description}: manual dependency exclusions must name one dependency`,
-      );
-    }
-    return rule["dependency-name"];
-  });
-  if (
-    observed
-      .toSorted()
-      .some((dependency, index) => dependency !== expectedDependencies[index])
-  ) {
+  const observed = update.ignore
+    .map((rule) => normalizeManualRule(rule, description))
+    .toSorted((left, right) =>
+      left.dependencyName < right.dependencyName
+        ? -1
+        : Number(left.dependencyName > right.dependencyName),
+    );
+  if (JSON.stringify(observed) !== JSON.stringify(expectedRules)) {
     reject(
       "E_DEPENDABOT_MANUAL_DEPENDENCY",
-      `${description}: exact shared dependencies must remain manual`,
+      `${description}: reviewed manual dependency rules must remain exact`,
     );
   }
 }
@@ -214,7 +255,7 @@ function validateDependabot(dependabot) {
     );
     validateManualDependencies(
       update,
-      expected.manualDependencies,
+      expected.manualRules,
       `${ecosystem} at ${directory}`,
     );
   }
