@@ -19,7 +19,19 @@ const EXPECTED_SOURCES = new Map([
     "github-actions\u0000/",
     { group: "github-actions", manualRules: [] },
   ],
-  ["cargo\u0000/", { group: "cargo", manualRules: [] }],
+  [
+    "cargo\u0000/",
+    {
+      group: "cargo",
+      groupUpdateTypes: ["patch"],
+      manualRules: [
+        {
+          dependencyName: "dashmap",
+          updateTypes: ["version-update:semver-major"],
+        },
+      ],
+    },
+  ],
   [
     "cargo\u0000/editors/zed",
     { group: "zed-cargo", manualRules: [] },
@@ -126,7 +138,12 @@ function validateActionPins(workflows) {
   }
 }
 
-function validateUpdateGroup(update, expectedGroup, description) {
+function validateUpdateGroup(
+  update,
+  expectedGroup,
+  expectedUpdateTypes,
+  description,
+) {
   if (update?.schedule?.interval !== "weekly") {
     reject(
       "E_DEPENDABOT_SCHEDULE",
@@ -137,17 +154,35 @@ function validateUpdateGroup(update, expectedGroup, description) {
     update?.groups !== null && typeof update?.groups === "object"
       ? Object.entries(update.groups)
       : [];
+  const group = groups[0]?.[1];
+  const expectedKeys =
+    expectedUpdateTypes.length === 0
+      ? ["patterns"]
+      : ["patterns", "update-types"];
+  const observedUpdateTypes =
+    Array.isArray(group?.["update-types"]) &&
+    group["update-types"].every((updateType) => typeof updateType === "string")
+      ? group["update-types"].toSorted()
+      : null;
   if (
     groups.length !== 1 ||
     groups[0][0] !== expectedGroup ||
-    Object.keys(groups[0][1] ?? {}).length !== 1 ||
-    !Array.isArray(groups[0][1]?.patterns) ||
-    groups[0][1].patterns.length !== 1 ||
-    groups[0][1].patterns[0] !== "*"
+    JSON.stringify(Object.keys(group ?? {}).toSorted()) !==
+      JSON.stringify(expectedKeys) ||
+    !Array.isArray(group?.patterns) ||
+    group.patterns.length !== 1 ||
+    group.patterns[0] !== "*" ||
+    (expectedUpdateTypes.length > 0 &&
+      JSON.stringify(observedUpdateTypes) !==
+        JSON.stringify(expectedUpdateTypes))
   ) {
+    const updateTypeDescription =
+      expectedUpdateTypes.length === 0
+        ? ""
+        : ` with update types ${expectedUpdateTypes.join(", ")}`;
     reject(
       "E_DEPENDABOT_GROUP",
-      `${description}: expected only the ${expectedGroup} wildcard group`,
+      `${description}: expected only the ${expectedGroup} wildcard group${updateTypeDescription}`,
     );
   }
 }
@@ -419,6 +454,26 @@ function validateFuzzDependencyAuthority(update, cargoManifests) {
   }
 }
 
+function validateRootCargoCompatibility(cargoManifests) {
+  if (!(cargoManifests instanceof Map)) {
+    reject(
+      "E_ROOT_CARGO_COMPATIBILITY",
+      "dependency policy requires the root Cargo manifest",
+    );
+  }
+  const dependencies =
+    cargoManifests.get("Cargo.toml")?.workspace?.dependencies;
+  if (
+    dependencies?.["tower-lsp"] !== "0.20" ||
+    dependencies?.dashmap !== "5.5.3"
+  ) {
+    reject(
+      "E_ROOT_CARGO_COMPATIBILITY",
+      'the DashMap major exclusion requires tower-lsp = "0.20" and dashmap = "5.5.3"',
+    );
+  }
+}
+
 function validateDependabot(dependabot, cargoManifests) {
   if (dependabot?.version !== 2) {
     reject(
@@ -448,6 +503,7 @@ function validateDependabot(dependabot, cargoManifests) {
     validateUpdateGroup(
       update,
       expected.group,
+      expected.groupUpdateTypes ?? [],
       `${ecosystem} at ${directory}`,
     );
     validateManualDependencies(
@@ -455,6 +511,9 @@ function validateDependabot(dependabot, cargoManifests) {
       expected.manualRules,
       `${ecosystem} at ${directory}`,
     );
+    if (key === "cargo\u0000/") {
+      validateRootCargoCompatibility(cargoManifests);
+    }
     if (key === "cargo\u0000/fuzz") {
       validateFuzzDependencyAuthority(update, cargoManifests);
     } else if (update.allow !== undefined) {

@@ -136,20 +136,36 @@ it never silently rewrites the reviewed evidence versions.
 
 ## Reviewing dependency updates
 
-Dependabot opens six independent weekly groups from
+Dependabot checks six independent weekly dependency sources from
 `.github/dependabot.yml`:
 
 | Group | Dependency boundary | Rollback boundary |
 | --- | --- | --- |
 | `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
-| `cargo` | The root Cargo workspace and lockfile, plus a dependent fuzz-lock refresh when resolution changes | Root graph and companion fuzz-lock revert |
+| `cargo` | Patch updates for the root Cargo workspace and lockfile, plus a dependent fuzz-lock refresh when resolution changes | Root graph and companion fuzz-lock revert |
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
 | `fuzz-cargo` | Direct standalone fuzz-runtime dependencies and fuzz lockfile | Fuzz-runtime-only revert |
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
 | `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
 
-Do not combine these groups. Their evidence, failure modes, and rollback scopes
-differ. Issue
+The root `cargo` group matches patch updates only. Root Cargo minor and major
+updates do not match that group, so Dependabot proposes them as individually
+reviewable pull requests instead of hiding several breaking-risk changes in one
+batch. Dependabot ignores DashMap SemVer-major updates while the workspace
+declares `tower-lsp = "0.20"` and its reviewed compatible
+`dashmap = "5.5.3"` line. This is the machine-visible form of the decision in
+[#124](https://github.com/flyingrobots/colorful-language/issues/124), not a
+license to force a dependency version solely to reduce duplicate bytes.
+
+Change or remove the DashMap exclusion in the same reviewed pull request that
+changes either owning manifest declaration. The dependency-policy checker
+rejects a stale exception, a broader DashMap freeze, or a root group that
+admits minor or major updates. Run the full release-preparation gate before
+accepting a new compatibility decision; [#271](https://github.com/flyingrobots/colorful-language/issues/271)
+records why this automation boundary exists.
+
+Do not combine the independent source boundaries. Their evidence, failure
+modes, and rollback scopes differ. Issue
 [#152](https://github.com/flyingrobots/colorful-language/issues/152) may extend
 repository maintenance around this configuration, but this workflow remains the
 single owner of update sources, grouping, and cadence.

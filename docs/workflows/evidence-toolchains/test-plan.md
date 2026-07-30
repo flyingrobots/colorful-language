@@ -156,10 +156,17 @@ bounded property/fuzz evidence tracked by
   category. *Evidence type:* manifest, Dependabot configuration, deterministic
   policy mutations, and full release-preparation gate. *Tracking:*
   [#271](https://github.com/flyingrobots/colorful-language/issues/271).
-  *Planned evidence:* `.github/dependabot.yml`; `Cargo.toml`;
+  *Evidence:* `.github/dependabot.yml`; `Cargo.toml`;
   `scripts/check-dependency-update-policy.mjs`;
-  `scripts/check-dependency-update-policy.test.mjs`; and
-  `scripts/release-prep.sh`. *Status:* planned.
+  `scripts/check-dependency-update-policy.test.mjs` tests `accepts the reviewed
+  root Cargo compatibility policy`, `rejects a root Cargo group without patch
+  isolation`, `rejects a broadened root Cargo update group`, `rejects scalar
+  root Cargo group update types`, `rejects removal of the DashMap major
+  exclusion`, `rejects a broadened DashMap exclusion`, `rejects a substituted
+  root Cargo compatibility exclusion`, `rejects scalar DashMap compatibility
+  update types`, `rejects a stale tower-lsp compatibility policy`, and
+  `rejects a stale DashMap compatibility policy`; and
+  `scripts/release-prep.sh`. *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite
