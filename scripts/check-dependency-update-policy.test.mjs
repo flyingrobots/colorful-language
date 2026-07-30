@@ -176,6 +176,14 @@ test("rejects a substituted fuzz dependency allowlist", () => {
   }, "E_DEPENDABOT_ALLOW");
 });
 
+test("rejects a fuzz manifest without a direct runtime dependency", () => {
+  expectCode(({ cargoManifests }) => {
+    delete cargoManifests.get("fuzz/Cargo.toml").dependencies[
+      "libfuzzer-sys"
+    ];
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
 test("rejects a root-owned dependency in the standalone fuzz manifest", () => {
   expectCode(({ cargoManifests }) => {
     cargoManifests.get("fuzz/Cargo.toml").dependencies["tower-lsp"] = "0.20";
