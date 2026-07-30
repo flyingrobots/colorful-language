@@ -167,6 +167,25 @@ bounded property/fuzz evidence tracked by
   update types`, `rejects a stale tower-lsp compatibility policy`, and
   `rejects a stale DashMap compatibility policy`; and
   `scripts/release-prep.sh`. *Status:* implemented.
+- **ETC-6e** — *Requirements:* ETC-8, ETC-9. *Behavior:* a coordinated
+  full-SHA GitHub Actions update can change the reviewed workflow family
+  without also editing duplicated checker constants outside Dependabot's
+  declared boundary. *Oracle:* policy checks derive the candidate's reviewed
+  action pins from one deterministic workflow authority, accept a coordinated
+  update, and reject partial, inconsistent, unpinned, or uncommented
+  references by stable category while preserving action-specific permission,
+  credential, artifact, attestation, coverage, and release-topology checks.
+  *Evidence type:* workflow fixtures, dependency-update configuration,
+  deterministic policy mutations, `actionlint`, and full release preparation.
+  *Tracking:*
+  [#278](https://github.com/flyingrobots/colorful-language/issues/278).
+  *Planned evidence:* `.github/workflows/*.yml`;
+  `scripts/check-coverage-policy.mjs`;
+  `scripts/check-coverage-policy.test.mjs`;
+  `scripts/check-repository-maintenance.mjs`;
+  `scripts/check-repository-maintenance.test.mjs`;
+  `scripts/check-dependency-update-policy.mjs`; and
+  `scripts/release-prep.sh`. *Status:* planned.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite
