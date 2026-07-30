@@ -380,8 +380,9 @@ Verification for release preparation, tag automation, and release witnesses.
   fails a deterministic documentation-index assertion. *Evidence type:*
   release-packet policy test. *Tracking:*
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs`
+  `documentation spine links the planned packet and witness`;
+  `docs/README.md`. *Status:* implemented.
 
 ## Open verification gaps
 

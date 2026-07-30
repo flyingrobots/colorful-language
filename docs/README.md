@@ -129,6 +129,10 @@ each page's own status note before trusting a specific finding.
 
 ## Releases
 
+- **Planned v0.4.0:** [release packet](goalposts/v0.4.0/release.md) — hardened
+  public boundaries, responsive editor analysis, reproducible evidence, and
+  signed distribution preparation. It is not yet tagged or published
+  ([pre-publication verification witness](goalposts/v0.4.0/verification.md)).
 - [v0.3.0](goalposts/v0.3.0/release.md) — deterministic open-class POS roles
   (noun/verb/adjective/adverb), contextual disambiguation, diagnostic JSON, and
   Plain Text editor activation fixes
