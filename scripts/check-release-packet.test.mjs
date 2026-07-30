@@ -319,6 +319,15 @@ test("requires observable acceptance evidence for every goalpost", () => {
   }, "E_RELEASE_PACKET_GOALPOSTS");
 });
 
+test("requires unique goalpost labels", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "- **Integrity:** preserve deterministic contract validation.",
+      "- **Reach:** preserve deterministic contract validation.",
+    );
+  }, "E_RELEASE_PACKET_GOALPOSTS");
+});
+
 test("rejects a scoped issue omitted from the slice inventory", () => {
   expectCode((snapshot) => {
     snapshot.release = snapshot.release.replace(
