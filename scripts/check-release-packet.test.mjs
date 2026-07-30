@@ -207,6 +207,21 @@ test("rejects an empty scope bucket", () => {
   }, "E_RELEASE_PACKET_SCOPE");
 });
 
+test("requires exact scope buckets and slice inventory", () => {
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "## Goalposts",
+      "### Undeclared\n\n- Ship an unreviewed surface.\n\n## Goalposts",
+    );
+  }, "E_RELEASE_PACKET_SCOPE");
+  expectCode((snapshot) => {
+    snapshot.release = snapshot.release.replace(
+      "## Explicit non-claims",
+      "- [#99](https://github.com/flyingrobots/colorful-language/issues/99) — inventory-only scope.\n\n## Explicit non-claims",
+    );
+  }, "E_RELEASE_PACKET_SCOPE");
+});
+
 test("enforces the two-to-five goalpost bound", () => {
   expectCode((snapshot) => {
     snapshot.release = snapshot.release.replace(
