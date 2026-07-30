@@ -232,6 +232,11 @@ observe public-contract regressions before they ship.
   evidence explicitly unavailable until real public oracles exist
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   <!-- roadmap-primary: delivered #280 -->
+- **Active v0.4.0 release train:** keep the reviewed packet, current phase,
+  public evidence, fallout, and final closure under one versioned tracker while
+  slice issues retain their architectural goalposts
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283).
+  <!-- roadmap-primary: active #283 -->
 - **Active release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
