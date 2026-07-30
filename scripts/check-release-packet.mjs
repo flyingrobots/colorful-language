@@ -29,9 +29,9 @@ const SCOPE_BUCKETS = Object.freeze([
   "Not included",
 ]);
 const COMPLETED_EVIDENCE =
-  /\b(?:available|complete|completed|pass|passed|published|successful|successfully|verified)\b|✅|https?:\/\//iu;
-const UNAVAILABLE_EVIDENCE =
-  /\b(?:not available|pending|unavailable)\b/iu;
+  /\b(?:available|complete|completed|created|finished|installed|landed|pass|passed|published|released|successful|successfully|uploaded|verified)\b|\b[0-9a-f]{7,40}\b|✅|https?:\/\//iu;
+const EVIDENCE_STATE_GLOBAL =
+  /\bEvidence state:\s*(?:not available|pending|unavailable)\b/giu;
 const UNAVAILABLE_EVIDENCE_GLOBAL =
   /\b(?:not available|pending|unavailable)\b/giu;
 
@@ -675,11 +675,12 @@ function validateVerificationDocument(snapshot) {
       ["Retrospective", retrospective],
     ]) {
       const text = sectionEvidenceText(section, definitions).toLowerCase();
-      if (!UNAVAILABLE_EVIDENCE.test(text)) {
+      const evidenceStates = [...text.matchAll(EVIDENCE_STATE_GLOBAL)];
+      if (evidenceStates.length !== 1) {
         reject(
           "E_RELEASE_PACKET_EVIDENCE",
           snapshot.verificationPath,
-          `section '${name}' must remain explicitly unavailable or pending before publication`,
+          `section '${name}' must declare exactly one unavailable or pending evidence state before publication`,
         );
       }
       const claims = text.replace(UNAVAILABLE_EVIDENCE_GLOBAL, "");

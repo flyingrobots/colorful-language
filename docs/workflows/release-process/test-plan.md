@@ -392,8 +392,10 @@ Verification for release preparation, tag automation, and release witnesses.
   `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* deterministic witness mutation
   test. *Tracking:*
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `requires structured unavailable evidence states before publication`;
+  `docs/goalposts/v0.4.0/verification.md`. *Status:* implemented.
 
 ## Open verification gaps
 

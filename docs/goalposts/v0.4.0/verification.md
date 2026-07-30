@@ -30,6 +30,8 @@ after its command or public oracle has been observed.
 
 ## Publication evidence
 
+Evidence state: unavailable.
+
 Publication evidence is not available. The following rows are filled
 from the immutable tag workflow; this packet does not authorize or claim those
 side effects.
@@ -48,6 +50,8 @@ side effects.
 
 ## Public verification
 
+Evidence state: unavailable.
+
 Public verification is not available. After publication, record the exact
 commands, host/toolchain identity, timestamps, public URLs, and results for:
 
@@ -63,6 +67,8 @@ commands, host/toolchain identity, timestamps, public URLs, and results for:
 Until those oracles run, current-reference publication claims remain absent.
 
 ## Retrospective
+
+Evidence state: unavailable.
 
 The release retrospective is pending and therefore not available. After public
 verification, record:
