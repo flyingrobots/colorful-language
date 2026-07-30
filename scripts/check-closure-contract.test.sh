@@ -147,6 +147,12 @@ run_case \
   "" \
   "Cargo.toml|Cargo.lock"
 run_case \
+  "root Cargo update family with fuzz-lock companion" \
+  pass \
+  "app/dependabot" \
+  "" \
+  "Cargo.toml|Cargo.lock|fuzz/Cargo.lock"
+run_case \
   "Zed Cargo update family" \
   pass \
   "app/dependabot" \
