@@ -104,20 +104,30 @@ function previousPublicRelease(root, targetVersion, publicTags) {
         return [];
       }
       const version = match.slice(1).map((part) => Number.parseInt(part, 10));
-      if (compareVersions(version, target) >= 0) {
-        return [];
-      }
       return [{ tag, version }];
     })
     .sort((left, right) => compareVersions(right.version, left.version));
-  if (releases.length === 0) {
+  const newerRelease = releases.find(
+    ({ version }) => compareVersions(version, target) > 0,
+  );
+  if (newerRelease !== undefined) {
+    reject(
+      "E_RELEASE_PACKET_IDENTITY",
+      "git tags",
+      `public tag ${newerRelease.tag} is newer than target v${targetVersion}`,
+    );
+  }
+  const predecessors = releases.filter(
+    ({ version }) => compareVersions(version, target) < 0,
+  );
+  if (predecessors.length === 0) {
     reject(
       "E_RELEASE_PACKET_IDENTITY",
       "git tags",
       `no public release tag precedes ${targetVersion}`,
     );
   }
-  const previous = releases[0];
+  const previous = predecessors[0];
   readRequiredFile(root, `docs/goalposts/${previous.tag}/release.md`);
   readRequiredFile(root, `docs/goalposts/${previous.tag}/verification.md`);
   return previous;
