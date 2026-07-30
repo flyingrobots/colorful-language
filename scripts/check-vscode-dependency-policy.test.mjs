@@ -13,9 +13,40 @@ import {
 
 function fixture() {
   return {
+    dependabotPolicy: {
+      version: 2,
+      updates: [
+        {
+          "package-ecosystem": "npm",
+          directory: "/editors/vscode",
+          ignore: [
+            {
+              "dependency-name": "typescript",
+            },
+            {
+              "dependency-name": "@types/node",
+              "update-types": ["version-update:semver-major"],
+            },
+          ],
+        },
+      ],
+    },
+    documentation: {
+      adapter: [
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0.",
+        "https://releases.electronjs.org/release/v29.4.0",
+      ].join(" "),
+      topic: [
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0.",
+        "https://releases.electronjs.org/release/v29.4.0",
+      ].join(" "),
+    },
     editorPackage: {
       dependencies: {
         "vscode-languageclient": "^10.1.0",
+      },
+      devDependencies: {
+        "@types/node": "^20",
       },
       engines: {
         vscode: "^1.91.0",
@@ -27,6 +58,12 @@ function fixture() {
           dependencies: {
             "vscode-languageclient": "^10.1.0",
           },
+          devDependencies: {
+            "@types/node": "^20",
+          },
+        },
+        "node_modules/@types/node": {
+          version: "20.19.43",
         },
         "node_modules/brace-expansion": {
           version: "5.0.8",
@@ -39,12 +76,40 @@ function fixture() {
         },
       },
     },
+    runtimePolicy: {
+      minimumVscodeVersion: "1.91.0",
+      electronVersion: "29.4.0",
+      nodeVersion: "20.9.0",
+      evidenceUrl: "https://releases.electronjs.org/release/v29.4.0",
+    },
+    tsconfig: {
+      compilerOptions: {
+        skipLibCheck: false,
+        strict: true,
+      },
+    },
   };
 }
 
-function expectCode(editorPackage, lockfile, code) {
+function validateFixture({
+  dependabotPolicy,
+  documentation,
+  editorPackage,
+  lockfile,
+  runtimePolicy,
+  tsconfig,
+}) {
+  validateVscodeDependencyPolicy(editorPackage, lockfile, {
+    dependabotPolicy,
+    documentation,
+    runtimePolicy,
+    tsconfig,
+  });
+}
+
+function expectCode(input, code) {
   assert.throws(
-    () => validateVscodeDependencyPolicy(editorPackage, lockfile),
+    () => validateFixture(input),
     (error) =>
       error instanceof VscodeDependencyPolicyError && error.code === code,
   );
@@ -76,78 +141,124 @@ function assertReleaseAuditCommand(releasePrep) {
 }
 
 test("accepts the fixed client, leaf, and editor floors", () => {
-  const { editorPackage, lockfile } = fixture();
-  assert.doesNotThrow(() =>
-    validateVscodeDependencyPolicy(editorPackage, lockfile),
-  );
+  assert.doesNotThrow(() => validateFixture(fixture()));
 });
 
 test("rejects a vulnerable declared language client", () => {
-  const { editorPackage, lockfile } = fixture();
-  editorPackage.dependencies["vscode-languageclient"] = "^9.0.1";
-  expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_RANGE");
+  const input = fixture();
+  input.editorPackage.dependencies["vscode-languageclient"] = "^9.0.1";
+  expectCode(input, "E_VSCODE_CLIENT_RANGE");
 });
 
 test("rejects a prerelease declared language client", () => {
-  const { editorPackage, lockfile } = fixture();
-  editorPackage.dependencies["vscode-languageclient"] = "^10.1.0-next.1";
-  expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_RANGE");
+  const input = fixture();
+  input.editorPackage.dependencies["vscode-languageclient"] = "^10.1.0-next.1";
+  expectCode(input, "E_VSCODE_CLIENT_RANGE");
 });
 
 test("rejects a vulnerable locked language client", () => {
-  const { editorPackage, lockfile } = fixture();
-  lockfile.packages["node_modules/vscode-languageclient"].version = "9.0.1";
-  expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_LOCK");
+  const input = fixture();
+  input.lockfile.packages["node_modules/vscode-languageclient"].version =
+    "9.0.1";
+  expectCode(input, "E_VSCODE_CLIENT_LOCK");
 });
 
 test("rejects a prerelease locked language client", () => {
-  const { editorPackage, lockfile } = fixture();
-  lockfile.packages["node_modules/vscode-languageclient"].version =
+  const input = fixture();
+  input.lockfile.packages["node_modules/vscode-languageclient"].version =
     "10.1.0-next.1";
-  expectCode(editorPackage, lockfile, "E_VSCODE_CLIENT_LOCK");
+  expectCode(input, "E_VSCODE_CLIENT_LOCK");
 });
 
 test("rejects a manifest and lockfile dependency mismatch", () => {
-  const { editorPackage, lockfile } = fixture();
-  lockfile.packages[""].dependencies["vscode-languageclient"] = "^10.2.0";
-  expectCode(editorPackage, lockfile, "E_VSCODE_LOCK_DEPENDENCY");
+  const input = fixture();
+  input.lockfile.packages[""].dependencies["vscode-languageclient"] = "^10.2.0";
+  expectCode(input, "E_VSCODE_LOCK_DEPENDENCY");
 });
 
 test("rejects the last vulnerable brace-expansion release", () => {
-  const { editorPackage, lockfile } = fixture();
-  lockfile.packages["node_modules/brace-expansion"].version = "5.0.7";
-  expectCode(editorPackage, lockfile, "E_BRACE_EXPANSION");
+  const input = fixture();
+  input.lockfile.packages["node_modules/brace-expansion"].version = "5.0.7";
+  expectCode(input, "E_BRACE_EXPANSION");
 });
 
 test("rejects the currently locked vulnerable brace-expansion major", () => {
-  const { editorPackage, lockfile } = fixture();
-  lockfile.packages["node_modules/brace-expansion"].version = "2.1.2";
-  expectCode(editorPackage, lockfile, "E_BRACE_EXPANSION");
+  const input = fixture();
+  input.lockfile.packages["node_modules/brace-expansion"].version = "2.1.2";
+  expectCode(input, "E_BRACE_EXPANSION");
 });
 
 test("rejects a prerelease patched brace-expansion", () => {
-  const { editorPackage, lockfile } = fixture();
-  lockfile.packages["node_modules/brace-expansion"].version = "5.0.8-beta.0";
-  expectCode(editorPackage, lockfile, "E_BRACE_EXPANSION");
+  const input = fixture();
+  input.lockfile.packages["node_modules/brace-expansion"].version =
+    "5.0.8-beta.0";
+  expectCode(input, "E_BRACE_EXPANSION");
 });
 
 test("rejects an extension floor below the client floor", () => {
-  const { editorPackage, lockfile } = fixture();
-  editorPackage.engines.vscode = "^1.90.0";
-  expectCode(editorPackage, lockfile, "E_VSCODE_ENGINE");
+  const input = fixture();
+  input.editorPackage.engines.vscode = "^1.90.0";
+  expectCode(input, "E_VSCODE_ENGINE");
 });
 
 test("rejects a prerelease extension engine floor", () => {
-  const { editorPackage, lockfile } = fixture();
-  editorPackage.engines.vscode = "^1.91.0-insiders";
-  expectCode(editorPackage, lockfile, "E_VSCODE_ENGINE");
+  const input = fixture();
+  input.editorPackage.engines.vscode = "^1.91.0-insiders";
+  expectCode(input, "E_VSCODE_ENGINE");
 });
 
 test("rejects a prerelease locked client engine floor", () => {
-  const { editorPackage, lockfile } = fixture();
-  lockfile.packages["node_modules/vscode-languageclient"].engines.vscode =
+  const input = fixture();
+  input.lockfile.packages["node_modules/vscode-languageclient"].engines.vscode =
     "^1.91.0-next.1";
-  expectCode(editorPackage, lockfile, "E_VSCODE_ENGINE");
+  expectCode(input, "E_VSCODE_ENGINE");
+});
+
+test("rejects Node 26 declarations for the VS Code 1.91 host", () => {
+  const input = fixture();
+  input.editorPackage.devDependencies["@types/node"] = "^26";
+  input.lockfile.packages[""].devDependencies["@types/node"] = "^26";
+  input.lockfile.packages["node_modules/@types/node"].version = "26.1.2";
+  assert.throws(
+    () => validateFixture(input),
+    (error) =>
+      error instanceof VscodeDependencyPolicyError &&
+      error.code === "E_VSCODE_NODE_TYPES" &&
+      error.message.includes(
+        'editors/vscode/package.json#devDependencies["@types/node"]',
+      ),
+  );
+});
+
+test("rejects a locked Node declaration major outside the host line", () => {
+  const input = fixture();
+  input.lockfile.packages["node_modules/@types/node"].version = "21.7.3";
+  expectCode(input, "E_VSCODE_NODE_TYPES");
+});
+
+test("rejects a runtime policy that drifts from the extension floor", () => {
+  const input = fixture();
+  input.runtimePolicy.minimumVscodeVersion = "1.92.0";
+  expectCode(input, "E_VSCODE_HOST_POLICY");
+});
+
+test("rejects Dependabot policy without the Node declaration major guard", () => {
+  const input = fixture();
+  input.dependabotPolicy.updates[0].ignore.pop();
+  expectCode(input, "E_VSCODE_DEPENDABOT_POLICY");
+});
+
+test("rejects weakened TypeScript declaration checking", () => {
+  const input = fixture();
+  input.tsconfig.compilerOptions.skipLibCheck = true;
+  expectCode(input, "E_VSCODE_TYPESCRIPT_POLICY");
+});
+
+test("rejects current editor documentation that drifts from host policy", () => {
+  const input = fixture();
+  input.documentation.adapter =
+    "VS Code 1.91.0 is supported, but the host runtime is undocumented.";
+  expectCode(input, "E_VSCODE_RUNTIME_DOCS");
 });
 
 test("runs the high-severity advisory audit in CI and release preparation", () => {
@@ -184,10 +295,7 @@ test("tracks the advisory slice in the editor plan and roadmap", () => {
   const issueLink =
     "https://github.com/flyingrobots/colorful-language/issues/185";
   const testPlan = readFileSync(
-    new URL(
-      "../docs/topics/editor-integrations/test-plan.md",
-      import.meta.url,
-    ),
+    new URL("../docs/topics/editor-integrations/test-plan.md", import.meta.url),
     "utf8",
   );
   assert.match(testPlan, new RegExp(issueLink, "u"));
