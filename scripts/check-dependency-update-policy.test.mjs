@@ -68,6 +68,7 @@ updates:
       interval: weekly
     ignore:
       - dependency-name: typescript
+      - dependency-name: "@types/node"
     groups:
       vscode:
         patterns:
@@ -125,6 +126,18 @@ test("accepts the reviewed update-source and action-pin policy", () => {
 test("accepts update sources in any order", () => {
   const candidate = fixture();
   candidate.dependabot.updates.reverse();
+  assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
+});
+
+test("accepts reviewed manual dependency rules in any order", () => {
+  const candidate = fixture();
+  candidate.dependabot.updates
+    .find(
+      (update) =>
+        update["package-ecosystem"] === "npm" &&
+        update.directory === "/editors/vscode",
+    )
+    .ignore.reverse();
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
 });
 
@@ -285,8 +298,68 @@ test("rejects automatic VS Code TypeScript updates", () => {
   }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
 });
 
+test("rejects automatic VS Code Node declaration updates", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    update.ignore = update.ignore.filter(
+      (rule) => rule["dependency-name"] !== "@types/node",
+    );
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects a partial VS Code Node declaration exclusion", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    update.ignore.find(
+      (rule) => rule["dependency-name"] === "@types/node",
+    )["update-types"] = ["version-update:semver-major"];
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects a scalar VS Code Node update-type policy", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    update.ignore.find(
+      (rule) => rule["dependency-name"] === "@types/node",
+    )["update-types"] = "version-update:semver-major";
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
 test("the checked-in update and workflow policy passes", () => {
   assert.doesNotThrow(() =>
     validateDependencyUpdatePolicy(repositoryCandidate()),
   );
+});
+
+test("the current dependency update table documents every group", () => {
+  const documentation = readFileSync(
+    "docs/workflows/evidence-toolchains/README.md",
+    "utf8",
+  );
+  for (const group of [
+    "github-actions",
+    "cargo",
+    "zed-cargo",
+    "fuzz-cargo",
+    "root-node",
+    "vscode",
+  ]) {
+    assert.match(
+      documentation,
+      new RegExp(`^\\| \`${group}\` \\|`, "mu"),
+      `dependency update table must document ${group}`,
+    );
+  }
 });

@@ -35,6 +35,8 @@ const EXPECTED_TOOL_VERSIONS = {
 };
 const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/.vscodeignore",
+  "editors/vscode/host-api/fixtures/unsupported-node-api.ts",
+  "editors/vscode/host-api/package.json",
   "editors/vscode/LICENSE",
   "editors/vscode/smoke/harness/package.json",
   "editors/vscode/smoke/log-files.mjs",
@@ -42,6 +44,8 @@ const EXPECTED_HARNESS_PATHS = [
   "editors/vscode/smoke/suite/index.cjs",
   "editors/vscode/smoke/timing-witness.mjs",
   "editors/vscode/scripts/package-vsix.mjs",
+  "editors/vscode/runtime-policy.json",
+  "editors/vscode/tsconfig.host-api.json",
   "scripts/stage-zed-extension.mjs",
 ];
 
@@ -67,6 +71,15 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
   const lockfile = JSON.parse(
     readFileSync("editors/vscode/package-lock.json", "utf8"),
   );
+  const runtimePolicy = JSON.parse(
+    readFileSync("editors/vscode/runtime-policy.json", "utf8"),
+  );
+  const hostApiPackage = JSON.parse(
+    readFileSync("editors/vscode/host-api/package.json", "utf8"),
+  );
+  const hostApiTsconfig = JSON.parse(
+    readFileSync("editors/vscode/tsconfig.host-api.json", "utf8"),
+  );
 
   for (const [name, version] of Object.entries(EXPECTED_TOOL_VERSIONS)) {
     assert.equal(packageJson.devDependencies?.[name], version);
@@ -77,11 +90,18 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
     packageJson.scripts?.["package:vsix"],
     "node scripts/package-vsix.mjs",
   );
+  assert.equal(
+    packageJson.scripts?.["check:host-api"],
+    "node host-api/node_modules/typescript/bin/tsc -p tsconfig.host-api.json --noEmit",
+  );
+  assert.match(packageJson.scripts?.compile ?? "", /npm run check:host-api/u);
   const packageIgnore = readFileSync(
     "editors/vscode/.vscodeignore",
     "utf8",
   );
   assert.match(packageIgnore, /^node_modules\/\*\*$/mu);
+  assert.match(packageIgnore, /^host-api\/\*\*$/mu);
+  assert.match(packageIgnore, /^runtime-policy\.json$/mu);
   assert.match(packageIgnore, /^scripts\/\*\*$/mu);
   assert.match(packageIgnore, /^\*\*\/\*\.map$/mu);
   assert.equal(
@@ -89,6 +109,82 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
     "node smoke/run-packaged-smoke.mjs",
   );
   assert.equal(packageJson.repository?.directory, "editors/vscode");
+  assert.equal(
+    packageJson.engines?.vscode,
+    `^${runtimePolicy.minimumVscodeVersion}`,
+  );
+  assert.equal(
+    packageJson.devDependencies?.["@types/node"],
+    runtimePolicy.nodeTypesVersion,
+  );
+  assert.equal(
+    lockfile.packages?.["node_modules/@types/node"]?.version,
+    runtimePolicy.nodeTypesVersion,
+  );
+  assert.deepEqual(packageJson.workspaces, ["host-api"]);
+  assert.equal(
+    hostApiPackage.devDependencies?.["@types/node"],
+    runtimePolicy.nodeVersion,
+  );
+  assert.equal(hostApiPackage.devDependencies?.typescript, "5.4.5");
+  assert.equal(
+    lockfile.packages?.["host-api"]?.devDependencies?.["@types/node"],
+    runtimePolicy.nodeVersion,
+  );
+  assert.equal(
+    lockfile.packages?.["host-api/node_modules/@types/node"]?.version,
+    runtimePolicy.nodeVersion,
+  );
+  assert.equal(
+    lockfile.packages?.["host-api/node_modules/typescript"]?.version,
+    hostApiPackage.devDependencies.typescript,
+  );
+  assert.equal(hostApiTsconfig.compilerOptions?.strict, true);
+  assert.equal(hostApiTsconfig.compilerOptions?.skipLibCheck, false);
+
+  const smokeRunner = readFileSync(
+    "editors/vscode/smoke/run-packaged-smoke.mjs",
+    "utf8",
+  );
+  assert.match(smokeRunner, /validateVscodeHostPolicy/u);
+  assert.match(smokeRunner, /minimumVscodeVersion: VSCODE_VERSION/u);
+});
+
+test("minimum-host API compile rejects newer Node built-ins", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      "host-api/node_modules/typescript/bin/tsc",
+      "--noEmit",
+      "--strict",
+      "--skipLibCheck",
+      "false",
+      "--module",
+      "node16",
+      "--moduleResolution",
+      "node16",
+      "--target",
+      "es2022",
+      "--types",
+      "node",
+      "--typeRoots",
+      "host-api/node_modules/@types",
+      "host-api/fixtures/unsupported-node-api.ts",
+    ],
+    {
+      cwd: VSCODE_DIRECTORY,
+      encoding: "utf8",
+    },
+  );
+  assert.notEqual(
+    result.status,
+    0,
+    `Node 20.9.0 API check unexpectedly accepted fs.glob:\n${result.stdout}${result.stderr}`,
+  );
+  assert.match(
+    `${result.stdout}${result.stderr}`,
+    /Module '"node:fs"' has no exported member 'glob'/u,
+  );
 });
 
 test("VSIX packaging resolves the publisher binary from its package manifest", () => {

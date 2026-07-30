@@ -4,8 +4,11 @@
 smoke/**
 scripts/**
 src/**
+host-api/**
 node_modules/**
 **/*.map
 package-lock.json
+runtime-policy.json
 tsconfig.json
+tsconfig.host-api.json
 *.vsix

@@ -40,6 +40,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-15** Markdown analysis must exclude reviewed non-prose syntax regions
   through one coordinate-preserving format adapter outside `colorful-core`,
   while Plain Text keeps the existing whole-document behavior.
+- **EDIT-16** The VS Code extension's ambient Node declarations must not exceed
+  the Node major provided by its minimum supported extension host, and
+  dependency automation must preserve that compatibility boundary.
 
 ## Cases
 
@@ -124,6 +127,43 @@ Verification for editor adapters and the `colorful-lsp` surface.
   editor CI job. *Tracking:*
   [#185](https://github.com/flyingrobots/colorful-language/issues/185).
   *Status:* implemented.
+- **EDIT-16a** — *Requirement:* EDIT-16. *Behavior:* one reviewed runtime policy
+  binds the extension's minimum VS Code release and host Node version to the
+  exact TypeScript-compatible `@types/node` manifest and lockfile release,
+  package-smoke download, isolated minimum-host API compile, and Dependabot
+  update policy. Declaration updates remain frozen until a reviewed editor-host
+  policy change, while the Node 26 proposal in Dependabot PR #195 or extension
+  use of an API newer than Node 20.9.0 fails before it can enter the shipping
+  graph. TypeScript keeps `strict: true` and `skipLibCheck: false`. *Oracle:*
+  deterministic mutations of each policy input reject drift, the supported
+  fixture passes, TypeScript compiles, and the isolated VS Code 1.91.0 package
+  smoke retains its existing host boundary. *Evidence type:* dependency-policy
+  self-test, editor compile, and package-smoke policy test. *Tracking:*
+  [#267](https://github.com/flyingrobots/colorful-language/issues/267).
+  *Evidence:* `editors/vscode/runtime-policy.json`;
+  `scripts/check-vscode-dependency-policy.mjs`;
+  `scripts/check-vscode-dependency-policy.test.mjs` tests `rejects Node 26
+  declarations for the VS Code 1.91 host`, `rejects a caret range even when it
+  stays on the host major`, `rejects drift from the reviewed declaration
+  release`, `rejects a locked Node declaration major outside the host
+  line`, `rejects a runtime policy that drifts from the extension floor`,
+  `rejects an evidence URL that drifts from the Electron pin`,
+  `rejects Dependabot policy without the Node declaration freeze`, `rejects a
+  partial scalar Dependabot update-types impostor`,
+  `categorizes malformed Dependabot policy containers`, `rejects weakened
+  TypeScript declaration checking`, `rejects disabled TypeScript strict mode`,
+  `rejects a lockfile root that stops repeating the declaration pin`, and
+  `rejects current editor documentation that drifts from host policy`, plus
+  `rejects a documented Node declaration major outside the host line` and
+  `accepts runtime documentation facts wrapped across lines`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `rejects automatic VS
+  Code Node declaration updates`, `rejects a partial VS Code Node declaration
+  exclusion`, and `rejects a scalar VS Code Node update-type
+  policy`;
+  `scripts/check-editor-package-smoke.test.mjs` tests `minimum-host API compile
+  rejects newer Node built-ins`; and
+  `editors/vscode/smoke/run-packaged-smoke.mjs`. *Status:* implemented.
 - **EDIT-14a** — *Requirement:* EDIT-14. *Behavior:* a generated valid-Unicode
   prefix and selected source span are emitted once as a CLI finding and once as
   an LSP diagnostic. The corpus is bounded to 256 cases under one checked-in

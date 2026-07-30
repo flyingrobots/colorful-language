@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **VS Code extension-host declaration policy.** One reviewed runtime policy
+  binds the minimum VS Code 1.91.0 package-smoke host, Electron 29.4.0, Node
+  20.9.0, the exact TypeScript-compatible `@types/node` 20.19.43 manifest and
+  lockfile release, an isolated minimum-host API compile, strict TypeScript
+  declaration checking, current editor references, and Dependabot automation.
+  Deterministic mutations reject declaration drift, unsupported host APIs, a
+  missing all-update freeze, weakened compiler checking, or stale
+  documentation before unsupported APIs can enter the extension build.
 - **Independent goalpost and release-train ownership.** GitHub milestones remain
   the product and architecture goalpost axis, while each release train uses one
   versioned tracking issue and packet. Slice issues therefore keep their

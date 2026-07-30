@@ -48,6 +48,7 @@ updates:
       interval: weekly
     ignore:
       - dependency-name: typescript
+      - dependency-name: "@types/node"
     groups:
       vscode:
         patterns:
