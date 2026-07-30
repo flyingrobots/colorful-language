@@ -117,6 +117,13 @@ libfuzzer-sys = "=0.4.13"
   - uses: actions/checkout@${ACTION_SHA} # v5
 `,
       ],
+      [
+        ".github/workflows/security.yml",
+        `steps:
+  - uses: github/codeql-action/init@${ACTION_SHA} # v4
+  - uses: github/codeql-action/analyze@${ACTION_SHA} # v4
+`,
+      ],
     ]),
   };
 }
@@ -182,6 +189,20 @@ test("rejects inconsistent action release comments", () => {
         ACTION_SHA,
         "v5.0.0",
       ),
+    );
+  }, "E_ACTION_PIN_CONSISTENCY");
+});
+
+test("rejects a partial update across sibling repository actions", () => {
+  expectCode(({ workflows }) => {
+    workflows.set(
+      ".github/workflows/security.yml",
+      workflows
+        .get(".github/workflows/security.yml")
+        .replace(
+          `github/codeql-action/init@${ACTION_SHA} # v4`,
+          `github/codeql-action/init@${UPDATED_ACTION_SHA} # v5`,
+        ),
     );
   }, "E_ACTION_PIN_CONSISTENCY");
 });
