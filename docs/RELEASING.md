@@ -242,10 +242,11 @@ and add non-empty list entries labeled `Planned versus actual`, `Fallout`,
 
 Run the packet self-test and live check after every transition. Invalid
 ordering, skipped evidence, later-phase claims, stale unavailable placeholders,
-or incomplete identities fail with `E_RELEASE_PACKET_EVIDENCE`. This active
-state machine does not rewrite historical packets: v0.1.0 through v0.3.0 remain
-readable in their original shapes, and only the immediate predecessor's
-completed retrospective is required when admitting a new train.
+incomplete identities, or a phase below the available `origin/main` merge-base
+witness fail with `E_RELEASE_PACKET_EVIDENCE`. This active state machine does
+not rewrite historical packets: v0.1.0 through v0.3.0 remain readable in their
+original shapes, and only the immediate predecessor's completed retrospective
+is required when admitting a new train.
 
 ## Version selection
 

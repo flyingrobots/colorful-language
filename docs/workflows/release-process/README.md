@@ -82,9 +82,11 @@ patch-forward results. A completed retrospective records one completed status
 plus plan-versus-actual, fallout, repeatable-wins, and next-recommendation
 entries. Every opened gate rejects unavailable placeholders, and every
 unopened gate rejects completed or public evidence. The current phase policy
-applies to the active packet only; historical v0.1.0 through v0.3.0 witnesses
-remain readable in their original shapes, while the immediate predecessor
-retains its narrower completed-retrospective admission check.
+compares the active witness with its `origin/main` merge-base witness when that
+branch-base evidence is available, so a later branch cannot rewrite the file
+backward to an earlier phase. Historical v0.1.0 through v0.3.0 witnesses remain
+readable in their original shapes, while the immediate predecessor retains its
+narrower completed-retrospective admission check.
 The packet parser registers the exact-pinned GFM table grammar, so tables are
 validated as rows and cells rather than accidental paragraph text.
 

@@ -151,6 +151,55 @@ function targetTagCommit(root, version, publicTags) {
   }
 }
 
+function baselineReleasePhase(root, verificationPath) {
+  let baseline;
+  try {
+    baseline = execFileSync(
+      "git",
+      ["merge-base", "HEAD", "origin/main"],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    ).trim();
+  } catch {
+    return undefined;
+  }
+  let source;
+  try {
+    source = execFileSync(
+      "git",
+      ["show", `${baseline}:${verificationPath}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    );
+  } catch {
+    return undefined;
+  }
+  const document = parseDocument(source, verificationPath);
+  const status = sectionMap(document, verificationPath).get("Status");
+  const phases =
+    status === undefined
+      ? []
+      : [
+          ...sectionText(status).matchAll(
+            /Release phase:\s*(pre-publication|published|verified|retrospected)\b/giu,
+          ),
+        ];
+  if (phases.length !== 1) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      verificationPath,
+      "branch-base witness must name exactly one admitted release phase",
+    );
+  }
+  return phases[0][1].toLowerCase();
+}
+
 function previousPublicRelease(root, targetVersion, publicTags) {
   const target = parseVersion(targetVersion, "Cargo.toml");
   const releases = publicTags
@@ -982,6 +1031,21 @@ function validateVerificationDocument(snapshot) {
   }
   const phase = phaseMatches[0][1].toLowerCase();
   const phaseIndex = RELEASE_PHASES.indexOf(phase);
+  if (snapshot.previousPhase !== undefined) {
+    const previousPhaseIndex = RELEASE_PHASES.indexOf(
+      snapshot.previousPhase,
+    );
+    if (
+      previousPhaseIndex === -1 ||
+      phaseIndex < previousPhaseIndex
+    ) {
+      reject(
+        "E_RELEASE_PACKET_EVIDENCE",
+        snapshot.verificationPath,
+        `release phase ${phase} cannot regress from branch-base phase ${snapshot.previousPhase}`,
+      );
+    }
+  }
   const targetTagState = targetTagMatches[0][2].toLowerCase();
   const expectedTargetTagState = phaseIndex === 0 ? "unavailable" : "available";
   if (
@@ -1326,6 +1390,7 @@ export function loadRepositorySnapshot(
   return {
     version,
     previousTag: previous.tag,
+    previousPhase: baselineReleasePhase(root, verificationPath),
     targetCommit: targetTagCommit(root, version, publicTags),
     releasePath,
     release: readRequiredFile(root, releasePath),

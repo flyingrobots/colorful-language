@@ -311,6 +311,26 @@ test("accepts one canonical witness for every release phase", () => {
   }
 });
 
+test("rejects regression from the previously admitted release phase", () => {
+  for (const [previousPhase, phase] of [
+    ["published", "pre-publication"],
+    ["verified", "published"],
+    ["retrospected", "verified"],
+  ]) {
+    const snapshot = snapshotForPhase(phase);
+    snapshot.previousPhase = previousPhase;
+    expectSnapshotCode(
+      snapshot,
+      () => {},
+      "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
+
+  const advancing = snapshotForPhase("verified");
+  advancing.previousPhase = "published";
+  assert.equal(validateReleasePacket(advancing).phase, "verified");
+});
+
 test("accepts autolink publication identities without double counting", () => {
   const snapshot = snapshotForPhase("published");
   snapshot.verification = snapshot.verification
@@ -1118,9 +1138,30 @@ test("binds published commit evidence to the annotated target tag", (t) => {
     validateReleasePacket(loadRepositorySnapshot(root)).phase,
     "published",
   );
+  git(
+    root,
+    "update-ref",
+    "refs/remotes/origin/main",
+    gitOutput(root, "rev-parse", "HEAD"),
+  );
+  const verified = snapshotForPhase("verified");
+  verified.verification = verified.verification.replace(
+    TARGET_COMMIT,
+    targetCommit,
+  );
   writeFileSync(
-    join(root, published.verificationPath),
-    published.verification.replace(targetCommit, "f".repeat(40)),
+    join(root, verified.verificationPath),
+    verified.verification,
+  );
+  git(root, "add", ".");
+  git(root, "commit", "-m", "record public verification");
+  const loaded = loadRepositorySnapshot(root);
+  assert.equal(loaded.previousPhase, "published");
+  assert.equal(validateReleasePacket(loaded).phase, "verified");
+
+  writeFileSync(
+    join(root, verified.verificationPath),
+    verified.verification.replace(targetCommit, "f".repeat(40)),
   );
   assert.throws(
     () => validateReleasePacket(loadRepositorySnapshot(root)),
