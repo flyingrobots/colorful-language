@@ -125,7 +125,9 @@ bounded property/fuzz evidence tracked by
   `scripts/check-dependency-update-policy.test.mjs` tests `rejects a fuzz
   source without its direct-runtime allowlist`, `rejects a broadened fuzz
   dependency allowlist`, `rejects a substituted fuzz dependency allowlist`,
-  and `rejects a root-owned dependency in the standalone fuzz manifest`.
+  `rejects a root-owned dependency in the standalone fuzz manifest`, `rejects
+  a root-owned standalone fuzz dev dependency`, and `rejects a root-owned
+  target-specific fuzz dependency`.
   *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release

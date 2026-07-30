@@ -224,27 +224,70 @@ function validateManualDependencies(update, expectedRules, description) {
 }
 
 function directExternalDependencies(manifest, path) {
-  const dependencies = manifest?.dependencies;
   if (
-    dependencies === null ||
-    typeof dependencies !== "object" ||
-    Array.isArray(dependencies)
+    manifest === null ||
+    typeof manifest !== "object" ||
+    Array.isArray(manifest)
   ) {
     reject(
       "E_FUZZ_DEPENDENCY_AUTHORITY",
-      `${path} must declare a dependency table`,
+      `${path} must be a Cargo manifest`,
     );
   }
-  return Object.entries(dependencies)
-    .filter(
-      ([, declaration]) =>
+  const external = new Set();
+  const collect = (table, location) => {
+    if (table === undefined) {
+      return;
+    }
+    if (table === null || typeof table !== "object" || Array.isArray(table)) {
+      reject(
+        "E_FUZZ_DEPENDENCY_AUTHORITY",
+        `${location} must be a dependency table`,
+      );
+    }
+    for (const [name, declaration] of Object.entries(table)) {
+      if (
         declaration === null ||
         typeof declaration !== "object" ||
         Array.isArray(declaration) ||
-        typeof declaration.path !== "string",
-    )
-    .map(([name]) => name)
-    .toSorted();
+        typeof declaration.path !== "string"
+      ) {
+        external.add(name);
+      }
+    }
+  };
+  const collectOwner = (owner, location) => {
+    for (const kind of [
+      "dependencies",
+      "dev-dependencies",
+      "build-dependencies",
+    ]) {
+      collect(owner?.[kind], `${location}#${kind}`);
+    }
+  };
+
+  collectOwner(manifest, path);
+  if (
+    manifest.target !== undefined &&
+    (manifest.target === null ||
+      typeof manifest.target !== "object" ||
+      Array.isArray(manifest.target))
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `${path}#target must be a table`,
+    );
+  }
+  for (const [selector, target] of Object.entries(manifest.target ?? {})) {
+    if (target === null || typeof target !== "object" || Array.isArray(target)) {
+      reject(
+        "E_FUZZ_DEPENDENCY_AUTHORITY",
+        `${path}#target.${selector} must be a table`,
+      );
+    }
+    collectOwner(target, `${path}#target.${selector}`);
+  }
+  return [...external].toSorted();
 }
 
 function validateFuzzDependencyAuthority(update, cargoManifests) {

@@ -565,9 +565,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Independent fuzz dependency updates.** The `/fuzz` Dependabot source now
   allows only direct standalone fuzz-runtime dependencies and cannot propose
   root-owned product or adapter versions. The dependency-policy gate derives
-  that boundary from the root and fuzz Cargo manifests, rejects missing,
-  broadened, or substituted allow rules and duplicated dependency authority,
-  and keeps the documented fuzz-only rollback boundary honest.
+  that boundary from every root and fuzz Cargo dependency table, rejects
+  missing, broadened, or substituted allow rules and duplicated dependency
+  authority, and keeps the documented fuzz-only rollback boundary honest.
 - **Satisfiable Dependabot closure admission.** Human and ordinary automation
   pull requests still require exactly one body-level issue-closing reference,
   while GitHub-authenticated Dependabot updates may carry zero or one. Zero is

@@ -155,13 +155,13 @@ repository maintenance around this configuration, but this workflow remains the
 single owner of update sources, grouping, and cadence.
 
 The `/fuzz` source has one exact `allow` boundary derived from direct external
-dependencies in `fuzz/Cargo.toml`; currently that is only `libfuzzer-sys`.
-Product and adapter versions remain in the root Cargo workspace. Path
-dependencies let fuzz targets exercise those crates without granting the
-standalone update source authority to rewrite `Cargo.toml`. The policy checker
-parses both manifests and rejects a fuzz dependency that duplicates a root
-workspace dependency, a missing allowlist, or any broader/substituted allow
-rule.
+dependencies across every Cargo dependency table in `fuzz/Cargo.toml`;
+currently that is only `libfuzzer-sys`. Product and adapter versions remain in
+the root Cargo workspace. Path dependencies let fuzz targets exercise those
+crates without granting the standalone update source authority to rewrite
+`Cargo.toml`. The policy checker parses both manifests and rejects a fuzz
+dependency that duplicates a root workspace dependency, a missing allowlist,
+or any broader/substituted allow rule.
 
 For an action update, inspect the upstream release and source commit, retain the
 full 40-character commit SHA in every `uses:` reference, and keep its release
