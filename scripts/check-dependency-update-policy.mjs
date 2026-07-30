@@ -296,6 +296,21 @@ function directExternalDependencies(manifest, path) {
 
   collectOwner(manifest, path);
   if (
+    manifest.workspace !== undefined &&
+    (manifest.workspace === null ||
+      typeof manifest.workspace !== "object" ||
+      Array.isArray(manifest.workspace))
+  ) {
+    reject(
+      "E_FUZZ_DEPENDENCY_AUTHORITY",
+      `${path}#workspace must be a table`,
+    );
+  }
+  collect(
+    manifest.workspace?.dependencies,
+    `${path}#workspace.dependencies`,
+  );
+  if (
     manifest.target !== undefined &&
     (manifest.target === null ||
       typeof manifest.target !== "object" ||
