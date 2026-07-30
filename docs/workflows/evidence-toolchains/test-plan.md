@@ -141,8 +141,9 @@ bounded property/fuzz evidence tracked by
   [#269](https://github.com/flyingrobots/colorful-language/issues/269).
   *Evidence:* `scripts/check-closure-contract.sh` and
   `scripts/check-closure-contract.test.sh` cases `root Cargo update family with
-  fuzz-lock companion`, `root Cargo update family with only fuzz-lock
-  companion`, and `mixed root and fuzz Cargo manifests`. *Status:* implemented.
+  fuzz-lock companion`, `fuzz Cargo update family`, `root Cargo update family
+  with only fuzz-lock companion`, and `mixed root and fuzz Cargo manifests`.
+  *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite
