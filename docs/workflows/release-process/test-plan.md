@@ -373,6 +373,15 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-release-packet.test.mjs`
   `requires packet admission in every tag-workflow dependency path`. *Status:*
   implemented.
+- **REL-18c — Planned packet discoverability.** *Requirement:* REL-18.
+  *Behavior:* the documentation spine links the planned release packet and its
+  verification witness without presenting the target as tagged or published.
+  *Oracle:* removing either v0.4.0 link or its explicit pre-publication wording
+  fails a deterministic documentation-index assertion. *Evidence type:*
+  release-packet policy test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
+  planned.
 
 ## Open verification gaps
 
