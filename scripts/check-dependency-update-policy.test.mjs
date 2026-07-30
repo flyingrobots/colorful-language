@@ -210,6 +210,26 @@ test("rejects a root-owned dependency in the standalone fuzz manifest", () => {
   }, "E_FUZZ_DEPENDENCY_AUTHORITY");
 });
 
+test("rejects a root-owned standalone fuzz dev dependency", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("fuzz/Cargo.toml")["dev-dependencies"] = {
+      "tower-lsp": "0.20",
+    };
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
+test("rejects a root-owned target-specific fuzz dependency", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("fuzz/Cargo.toml").target = {
+      'cfg(target_family = "unix")': {
+        dependencies: {
+          "tower-lsp": "0.20",
+        },
+      },
+    };
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
 test("rejects a floating third-party action reference", () => {
   expectCode(({ workflows }) => {
     workflows.set(
