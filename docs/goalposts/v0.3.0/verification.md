@@ -102,3 +102,20 @@ Run after PR #55 merged and before the public tag was pushed.
 - Release binaries are `x86_64-unknown-linux-gnu` only; macOS/Windows/aarch64
   artifacts are a future cross-build addition.
 - Homebrew packaging is tracked separately.
+
+## Retrospective
+
+Retrospective status: completed on 2026-07-29 from the release evidence above.
+This dated addition closes the historical release-train record without changing
+the immutable v0.3.0 tag or published bytes.
+
+- **Planned versus actual:** the open-class noun, verb, adjective, and adverb
+  roles, diagnostic JSON, seven crates, and source editor integrations shipped;
+  packaged marketplace distribution remained outside the release.
+- **Publication outcome:** the tag workflow, crates.io packages, Linux archive,
+  GitHub Release, and recorded CLI/LSP installation oracles passed.
+- **Fallout:** the witness recorded a Linux-only binary matrix and deferred
+  Homebrew packaging; no broader platform or editor-marketplace claim was made.
+- **Next recommendation:** harden public contract boundaries, extend the native
+  and editor distribution matrix, and require reproducible evidence before
+  deeper language expansion.

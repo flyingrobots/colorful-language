@@ -136,7 +136,12 @@ function previousPublicRelease(root, targetVersion, publicTags) {
   }
   const previous = predecessors[0];
   readRequiredFile(root, `docs/goalposts/${previous.tag}/release.md`);
-  readRequiredFile(root, `docs/goalposts/${previous.tag}/verification.md`);
+  const previousVerificationPath =
+    `docs/goalposts/${previous.tag}/verification.md`;
+  validateCompletedRetrospective(
+    readRequiredFile(root, previousVerificationPath),
+    previousVerificationPath,
+  );
   return previous;
 }
 
@@ -236,6 +241,33 @@ function requireSection(sections, name, path) {
     );
   }
   return section;
+}
+
+function validateCompletedRetrospective(source, path) {
+  const document = parseDocument(source, path);
+  const retrospective = sectionMap(document, path).get("Retrospective");
+  if (
+    retrospective === undefined ||
+    sectionText(retrospective) === ""
+  ) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      "previous release must contain a non-empty retrospective",
+    );
+  }
+  const completedStates = [
+    ...sectionText(retrospective).matchAll(
+      /\bRetrospective status:\s*completed\b/giu,
+    ),
+  ];
+  if (completedStates.length !== 1) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      "previous release must declare exactly one completed retrospective status",
+    );
+  }
 }
 
 function subsectionMap(section, path) {

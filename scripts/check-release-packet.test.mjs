@@ -644,7 +644,7 @@ test("reports a stable category when the target packet is missing", (t) => {
   writeFileSync(join(root, "docs/goalposts/v0.3.0/release.md"), "released\n");
   writeFileSync(
     join(root, "docs/goalposts/v0.3.0/verification.md"),
-    "verified\n",
+    PREVIOUS_VERIFICATION,
   );
 
   assert.throws(

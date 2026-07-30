@@ -49,16 +49,17 @@ Each release also has a packet under `docs/goalposts/vX.Y.Z/`:
   release URLs.
 
 The workspace version selects the packet, and fetched release tags reachable
-from the current history select the previous public release. CI, release
-preparation, and tag admission fail closed unless both versions have
-corresponding packets, the planned packet contains a concrete thesis and
-an exact target/previous-tag decision, every scope bucket is non-empty, and two
-to five uniquely labeled goalposts are defined. Each goalpost must have a
-same-label acceptance item with an inline command or non-issue URL as its
-observable oracle. Inline and reference-style issue links share one exhaustive
-slice inventory; non-claims and rollback posture are also required. A workspace
-version behind the latest reachable public tag is rejected instead of being
-treated as a new release.
+from the current history select the previous public release. The predecessor
+must have a non-empty retrospective with one explicit completed status before a
+new train is admitted. CI, release preparation, and tag admission fail closed
+unless both versions have corresponding packets, the planned packet contains a
+concrete thesis and an exact target/previous-tag decision, every scope bucket is
+non-empty, and two to five uniquely labeled goalposts are defined. Each
+goalpost must have a same-label acceptance item with an inline command or
+non-issue URL as its observable oracle. Inline and reference-style issue links
+share one exhaustive slice inventory; non-claims and rollback posture are also
+required. A workspace version behind the latest reachable public tag is
+rejected instead of being treated as a new release.
 Before publication, the verification witness must name the exact target,
 previous tag, and unavailable target tag; leave registry, public-install, and
 retrospective sections with exactly one explicit unavailable or pending
