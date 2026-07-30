@@ -298,6 +298,14 @@ test("rejects a documented Node declaration major outside the host line", () => 
   expectCode(input, "E_VSCODE_RUNTIME_DOCS");
 });
 
+test("accepts runtime documentation facts wrapped across lines", () => {
+  const input = fixture();
+  input.documentation.adapter = input.documentation.adapter
+    .replace("VS Code 1.91.0", "VS Code\n1.91.0")
+    .replace("`@types/node` 20.19.43", "`@types/node`\n20.19.43");
+  assert.doesNotThrow(() => validateFixture(input));
+});
+
 test("runs the high-severity advisory audit in CI and release preparation", () => {
   const workflow = readFileSync(
     new URL("../.github/workflows/ci.yml", import.meta.url),
