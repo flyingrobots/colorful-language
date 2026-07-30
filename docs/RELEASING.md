@@ -43,9 +43,10 @@ bash scripts/release-profile-check.sh
 
 Each planned release packet is admitted before release work can become a
 versioned tracking issue. The policy derives the target from the workspace
-version and the previous public release from completed goalpost packets, then
-checks packet identity, required sections, scope buckets, bounded goalposts,
-slice inventory, staged evidence, and release-gate wiring:
+version and the previous public release from fetched repository tags with
+corresponding goalpost packets, then checks packet identity, required sections,
+scope buckets, bounded goalposts, slice inventory, staged evidence, and
+release-gate wiring:
 
 ```bash
 node --test scripts/check-release-packet.test.mjs
