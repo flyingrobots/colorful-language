@@ -74,6 +74,7 @@ silent patch to an older public contract.
   editor, and Homebrew-formula artifact machinery, followed by public
   publication and verification
   ([#280](https://github.com/flyingrobots/colorful-language/issues/280),
+  [#281](https://github.com/flyingrobots/colorful-language/issues/281),
   [#245](https://github.com/flyingrobots/colorful-language/issues/245),
   [#251](https://github.com/flyingrobots/colorful-language/issues/251), and
   [#154](https://github.com/flyingrobots/colorful-language/issues/154)).
@@ -130,7 +131,7 @@ silent patch to an older public contract.
 | Responsive analysis and editors | [#121](https://github.com/flyingrobots/colorful-language/issues/121), [#122](https://github.com/flyingrobots/colorful-language/issues/122), [#136](https://github.com/flyingrobots/colorful-language/issues/136), [#141](https://github.com/flyingrobots/colorful-language/issues/141), [#241](https://github.com/flyingrobots/colorful-language/issues/241) |
 | Findings and analyzers | [#138](https://github.com/flyingrobots/colorful-language/issues/138), [#139](https://github.com/flyingrobots/colorful-language/issues/139), [#143](https://github.com/flyingrobots/colorful-language/issues/143), [#157](https://github.com/flyingrobots/colorful-language/issues/157) |
 | Reproducible evidence | [#81](https://github.com/flyingrobots/colorful-language/issues/81), [#82](https://github.com/flyingrobots/colorful-language/issues/82), [#134](https://github.com/flyingrobots/colorful-language/issues/134), [#135](https://github.com/flyingrobots/colorful-language/issues/135), [#137](https://github.com/flyingrobots/colorful-language/issues/137), [#140](https://github.com/flyingrobots/colorful-language/issues/140), [#147](https://github.com/flyingrobots/colorful-language/issues/147), [#152](https://github.com/flyingrobots/colorful-language/issues/152) |
-| Release preparation and publication | [#280](https://github.com/flyingrobots/colorful-language/issues/280), [#245](https://github.com/flyingrobots/colorful-language/issues/245), [#251](https://github.com/flyingrobots/colorful-language/issues/251), [#154](https://github.com/flyingrobots/colorful-language/issues/154), [#37](https://github.com/flyingrobots/colorful-language/issues/37) |
+| Release preparation and publication | [#280](https://github.com/flyingrobots/colorful-language/issues/280), [#281](https://github.com/flyingrobots/colorful-language/issues/281), [#245](https://github.com/flyingrobots/colorful-language/issues/245), [#251](https://github.com/flyingrobots/colorful-language/issues/251), [#154](https://github.com/flyingrobots/colorful-language/issues/154), [#37](https://github.com/flyingrobots/colorful-language/issues/37) |
 | Explicitly excluded evidence phases | [#155](https://github.com/flyingrobots/colorful-language/issues/155), [#158](https://github.com/flyingrobots/colorful-language/issues/158), [#13](https://github.com/flyingrobots/colorful-language/issues/13), [#14](https://github.com/flyingrobots/colorful-language/issues/14) |
 
 `CHANGELOG.md` remains the exhaustive release-visible ledger. This packet
