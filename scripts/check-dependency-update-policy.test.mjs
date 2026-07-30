@@ -644,3 +644,21 @@ test("current pin references distinguish action commits from Docker digests", ()
     );
   }
 });
+
+test("the action update reference runs the complete release gate", () => {
+  const documentation = readFileSync(
+    "docs/workflows/evidence-toolchains/README.md",
+    "utf8",
+  );
+  const start = documentation.indexOf(
+    "Run the pin and semantic policy together before accepting an action update:",
+  );
+  const end = documentation.indexOf("The root `cargo` group", start);
+  assert.notEqual(start, -1, "action-update gate introduction must exist");
+  assert.notEqual(end, -1, "action-update gate boundary must exist");
+  assert.match(
+    documentation.slice(start, end),
+    /```bash\nbash scripts\/release-prep\.sh\n```/u,
+    "action updates must run the complete release-preparation gate",
+  );
+});
