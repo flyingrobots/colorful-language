@@ -54,9 +54,12 @@ preparation, and tag admission fail closed unless both versions have
 corresponding packets, the planned packet contains a concrete thesis and
 version decision, every scope bucket is non-empty, two to five goalposts are
 defined, each linked slice is inventoried, and non-claims, rollback posture,
-and acceptance evidence are recorded. Before publication, the verification
-witness must leave tag, registry, public-install, and retrospective evidence
-explicitly pending or unavailable.
+and acceptance evidence are recorded. A workspace version behind the latest
+reachable public tag is rejected instead of being treated as a new release.
+Before publication, the verification witness must name the exact target,
+previous tag, and unavailable target tag; leave registry, public-install, and
+retrospective evidence explicitly pending or unavailable; and contain no
+completed claim hidden in inline or reference-style link destinations.
 
 ## Automation
 
@@ -74,6 +77,13 @@ its own packet:
 node --test scripts/check-release-packet.test.mjs
 node scripts/check-release-packet.mjs
 ```
+
+The same checker parses workflow jobs and shell command structure. The self-test
+and live check must remain an ordered, unconditional, fail-closed executable
+sequence in one CI job, one release-admission job, and the top level of
+`scripts/release-prep.sh`. Comments, workflow data, conditional or
+failure-tolerant steps, unreachable branches, and commands after shell
+termination do not satisfy the gate.
 
 Editor adapters follow the same fixed release version as the Cargo workspace.
 For a pre-1.0 `0.Y.Z` release, each adapter accepts stable `colorful-lsp`

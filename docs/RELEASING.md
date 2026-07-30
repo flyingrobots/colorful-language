@@ -419,6 +419,14 @@ That script runs:
 - pinned, offline workflow-security analysis with `zizmor`;
 - whitespace / conflict marker check.
 
+Packet admission derives the previous release from reachable public tags and
+rejects a workspace target older than any such tag. Its pre-publication witness
+must name the exact target, predecessor, and unavailable target tag; public
+evidence stays explicitly unavailable or pending and cannot be hidden in a
+Markdown link destination. The policy counts its self-test and live check only
+when they are ordered, unconditional, fail-closed workflow steps or reachable
+top-level release-prep commands.
+
 The tag-triggered `Release` workflow repeats the release profile check, verifies
 release metadata matches the tag, verifies the tag is on `main`, and reruns the
 editor-compatibility, Rust, build, and package final guards in the read-only

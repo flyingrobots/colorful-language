@@ -314,11 +314,20 @@ Verification for release preparation, tag automation, and release witnesses.
   buckets; declare two to five goalposts with acceptance evidence; name
   non-claims, risks, and rollback posture; link every scoped slice; and mark
   tag, registry, attestation, public-install, Zed-submission, Homebrew, and
-  retrospective evidence as not yet available before publication. *Oracle:*
-  deleting or emptying each required section, changing the version or previous
-  tag, exceeding the goalpost bound, inventing public evidence, or omitting a
-  scoped-slice link fails with a stable path-addressed category. *Evidence
-  type:* deterministic release-packet policy and mutation tests. *Tracking:*
+  retrospective evidence as not yet available before publication. The witness
+  status names the exact target, previous public tag, and unavailable target
+  tag; completed evidence includes inline and reference-style link
+  destinations; a target behind the latest reachable public tag is invalid; and
+  the policy self-test and live check remain ordered, unconditional,
+  fail-closed executable steps in every gate. *Oracle:* deleting or emptying
+  each required section, changing status identity, claiming the target tag,
+  exceeding the goalpost bound, inventing public evidence in prose or a link,
+  omitting a scoped-slice link, selecting a stale target, moving commands into
+  dormant workflow data or unreachable shell, or making a workflow gate
+  conditional or failure-tolerant fails with a stable path-addressed category;
+  the documented `not available`, `unavailable`, and `pending` states remain
+  valid. *Evidence type:* deterministic release-packet policy and mutation
+  tests. *Tracking:*
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   *Evidence:* `scripts/check-release-packet.mjs`;
   `scripts/check-release-packet.test.mjs` cases `accepts a complete
@@ -328,12 +337,18 @@ Verification for release preparation, tag automation, and release witnesses.
   scope buckets and slice inventory`, `enforces the two-to-five goalpost
   bound`, `rejects a scoped issue omitted from the slice inventory`, `rejects
   every missing verification section`, `requires exactly one release phase`,
-  `rejects invented public evidence in the pre-publication phase`, `requires
-  the self-test before the live check in every release gate`, `reports a stable
-  category when the target packet is missing`, `derives the previous release
-  from public tags, not packet directories`, `ignores release tags that are not
-  reachable from HEAD`, and `the checked-in v0.4.0 release packet satisfies the
-  policy`;
+  `rejects contradictory pre-publication status identity`, `rejects invented
+  public evidence in the pre-publication phase`, `rejects linked public evidence
+  in the pre-publication phase`, `rejects reference-linked public evidence in
+  the pre-publication phase`, `accepts the documented unavailable
+  pre-publication state`, `requires the self-test before the live check in every
+  release gate`, `does not accept dormant release gate commands`, `does not
+  accept release gates after shell termination`, `requires fail-closed workflow
+  gate steps`, `reports a stable category when the target packet is missing`,
+  `derives the previous release from public tags, not packet directories`,
+  `rejects a target behind the latest public release`, `ignores release tags
+  that are not reachable from HEAD`, and `the checked-in v0.4.0 release packet
+  satisfies the policy`;
   `docs/goalposts/v0.4.0/release.md`;
   `docs/goalposts/v0.4.0/verification.md`; `.github/workflows/ci.yml`;
   `.github/workflows/release.yml`; and `scripts/release-prep.sh`. *Status:*
