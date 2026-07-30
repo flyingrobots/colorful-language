@@ -603,6 +603,19 @@ test("does not accept release-tracker labels outside the command", () => {
   }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
 });
 
+test("includes continued options after the tracker body file", () => {
+  expectCode(({ deliveryReferences }) => {
+    deliveryReferences.releasing =
+      deliveryReferences.releasing.replace(
+        "--body-file docs/goalposts/v0.4.0/release.md",
+        [
+          "--body-file docs/goalposts/v0.4.0/release.md \\",
+          "--label area:lsp",
+        ].join("\n"),
+      );
+  }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
+});
+
 test("accepts a future aligned release example without policy code edits", () => {
   const candidate = fixture();
   candidate.deliveryReferences.releasing =
