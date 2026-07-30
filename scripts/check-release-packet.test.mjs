@@ -246,6 +246,15 @@ test("rejects every missing verification section", () => {
   }
 });
 
+test("requires exactly one release phase", () => {
+  expectCode((snapshot) => {
+    snapshot.verification = snapshot.verification.replace(
+      "Release phase: pre-publication.",
+      "Release phase: pre-publication.\n\nRelease phase: published.",
+    );
+  }, "E_RELEASE_PACKET_EVIDENCE");
+});
+
 test("rejects invented public evidence in the pre-publication phase", () => {
   for (const text of [
     "Tag and registries: not available.",
