@@ -239,8 +239,15 @@ gh issue create \
   --milestone "Product Maturity — Evidence before expansion" \
   --label documentation \
   --label slice \
+  --label area:core \
   --body-file docs/goalposts/v0.4.0/release.md
 ```
+
+The cross-cutting release tracker uses the existing `area:core` label because
+the release process is repository-wide coordination rather than a second
+product area. The maintenance gate requires exactly the three labels shown
+above; a missing, duplicate, or substituted label makes the worked command
+invalid.
 
 Then add the issue to `ROADMAP.md` with one active primary marker. Individual
 v0.4.0 slices stay on their existing goalpost milestones and are linked from
@@ -264,6 +271,10 @@ each required family when that family exists in the repo:
 - `priority:*`
 - `status:*`
 - `area:*`
+
+At present only the `area:*` family exists, so the release tracker carries
+exactly one `area:*` label. If the live taxonomy changes, update the command,
+policy evidence, and tracker together before creating the issue.
 
 A release should not tag while unrelated open `priority:asap` issues exist
 unless the release owner records why they do not block the release.

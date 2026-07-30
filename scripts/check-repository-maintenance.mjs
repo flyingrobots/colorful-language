@@ -18,6 +18,11 @@ const REPOSITORY_OWNER = "@flyingrobots";
 const DELIVERY_ISSUE_ROLES = ["release-trains", "slices"];
 const DELIVERY_MILESTONE_ROLE = "goalposts";
 const RELEASE_ISSUE_FORMAT = "[release] v{version}";
+const RELEASE_TRACKING_LABELS = [
+  "area:core",
+  "documentation",
+  "slice",
+];
 const DELIVERY_REFERENCE_CLAIMS = [
   "GitHub milestones are goalposts.",
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
@@ -30,10 +35,17 @@ const COMPETING_DELIVERY_REFERENCE_PATTERNS = [
   /\bassign\s+releases?\s+to\s+GitHub milestones?\b/i,
 ];
 const RELEASE_TRACKING_REFERENCE_CLAIMS = [
-  "--label slice",
   "complete and review the packet's release thesis",
   "bash scripts/release-prep.sh",
 ];
+const RELEASE_TRACKING_COMMAND_BLOCK_PATTERN =
+  /```bash\r?\n(?<command>gh issue create[^\r\n]*(?:\r?\n(?!```)[^\r\n]*)*)\r?\n```/gu;
+const RELEASE_TRACKING_LABEL_LINE_PATTERN =
+  /^  --label (?<label>[a-z0-9][a-z0-9:._-]*) \\$/u;
+const RELEASE_TRACKING_TITLE_LINE_PATTERN =
+  /^  --title "\[release\] v(?<version>\d+\.\d+\.\d+)" \\$/u;
+const RELEASE_TRACKING_BODY_LINE_PATTERN =
+  /^  --body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md$/u;
 const RELEASE_TRACKING_REFERENCE_PATTERNS = [
   /--title "\[release\] v(?<version>\d+\.\d+\.\d+)"/u,
   /--body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md/u,
@@ -185,6 +197,49 @@ function oneVersionMatch(reference, pattern) {
     : undefined;
 }
 
+function allMatches(reference, pattern) {
+  const flags = pattern.flags.includes("g")
+    ? pattern.flags
+    : `${pattern.flags}g`;
+  return [...reference.matchAll(new RegExp(pattern.source, flags))];
+}
+
+function releaseTrackingCommand(reference) {
+  const blocks = allMatches(
+    reference,
+    RELEASE_TRACKING_COMMAND_BLOCK_PATTERN,
+  );
+  if (blocks.length !== 1) {
+    return undefined;
+  }
+  const command = blocks[0].groups?.command;
+  const lines = command?.split(/\r?\n/u);
+  if (
+    lines?.length !== 8 ||
+    lines[0] !== "gh issue create \\" ||
+    lines[1] !==
+      "  --repo flyingrobots/colorful-language \\" ||
+    lines[3] !==
+      '  --milestone "Product Maturity — Evidence before expansion" \\'
+  ) {
+    return undefined;
+  }
+  const title = RELEASE_TRACKING_TITLE_LINE_PATTERN.exec(lines[2]);
+  const labels = lines.slice(4, 7).map(
+    (line) =>
+      RELEASE_TRACKING_LABEL_LINE_PATTERN.exec(line)?.groups?.label,
+  );
+  const body = RELEASE_TRACKING_BODY_LINE_PATTERN.exec(lines[7]);
+  if (
+    title?.groups?.version === undefined ||
+    body?.groups?.version !== title.groups.version ||
+    !sameStringSet(labels, RELEASE_TRACKING_LABELS)
+  ) {
+    return undefined;
+  }
+  return normalizeReference(command);
+}
+
 function normalizeReference(reference) {
   return typeof reference === "string"
     ? reference.replace(/`/gu, "").replace(/\s+/gu, " ")
@@ -271,17 +326,21 @@ function validateDeliveryTracking(
     RELEASE_TRACKING_REFERENCE_PATTERNS.map(
       (pattern) => oneVersionMatch(releasingReference, pattern),
     );
+  const trackingCommand = releaseTrackingCommand(
+    deliveryReferences.releasing,
+  );
   if (
     RELEASE_TRACKING_REFERENCE_CLAIMS.some(
       (claim) => !releasingReference.includes(claim),
     ) ||
+    trackingCommand === undefined ||
     releaseExampleVersions.some((version) => version === undefined) ||
     new Set(releaseExampleVersions).size !== 1
   ) {
     reject(
       "E_DELIVERY_TRACKING",
       DELIVERY_REFERENCE_PATHS.releasing,
-      "must retain one aligned release-tracking example and its preparation command",
+      "must retain one aligned release-tracking example, its exact role and area labels, and its preparation command",
     );
   }
 }

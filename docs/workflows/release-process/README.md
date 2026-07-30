@@ -27,6 +27,9 @@ Releases are prepared on a branch, reviewed through a pull request, merged to
 GitHub milestones are goalposts. Release trains use one versioned tracking
 issue; slice issues keep their goalpost milestone. The tracking issue owns the
 release thesis and scope links without becoming a second product milestone.
+The current cross-cutting tracker command selects the existing `area:core`
+query axis alongside its `documentation` and `slice` roles. The maintenance
+gate rejects missing, duplicate, or substituted labels in that worked command.
 
 The durable runbook is [`docs/RELEASING.md`](../../RELEASING.md). It defines:
 

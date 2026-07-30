@@ -554,6 +554,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Policy-compliant release-tracker labels.** The reviewed v0.4.0 tracker
+  command now selects the existing cross-cutting `area:core` query axis
+  alongside its `documentation` and `slice` roles. Deterministic policy
+  mutations reject missing, duplicate, or substituted labels at the release
+  runbook before a noncompliant tracker can be created.
 - **Unique roadmap architecture accountability.** The offline roadmap gate now
   fails closed without exactly one non-empty canonical accountability table,
   ignores fenced or commented table-shaped examples, compares canonical

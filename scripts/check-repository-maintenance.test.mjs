@@ -29,9 +29,16 @@ const DELIVERY_REFERENCE = [
   "Release trains use one versioned tracking issue; slice issues keep their goalpost milestone.",
 ].join("\n");
 const RELEASE_TRACKING_COMMANDS = [
-  '--title "[release] v0.4.0"',
-  "--label slice",
-  "--body-file docs/goalposts/v0.4.0/release.md",
+  "```bash",
+  "gh issue create \\",
+  "  --repo flyingrobots/colorful-language \\",
+  '  --title "[release] v0.4.0" \\',
+  '  --milestone "Product Maturity — Evidence before expansion" \\',
+  "  --label documentation \\",
+  "  --label slice \\",
+  "  --label area:core \\",
+  "  --body-file docs/goalposts/v0.4.0/release.md",
+  "```",
   "complete and review the packet's release thesis",
   "git switch -c release/v0.4.0",
   "bash scripts/release-prep.sh",
@@ -398,13 +405,15 @@ bash scripts/check-rust-dependency-policy.sh
   };
 }
 
-function expectCode(mutate, code) {
+function expectCode(mutate, code, path) {
   const candidate = fixture();
   mutate(candidate);
   assert.throws(
     () => validateRepositoryMaintenance(candidate),
     (error) =>
-      error instanceof RepositoryMaintenanceError && error.code === code,
+      error instanceof RepositoryMaintenanceError &&
+      error.code === code &&
+      (path === undefined || error.message.startsWith(`${path}:`)),
   );
 }
 
@@ -541,6 +550,74 @@ test("rejects an incomplete v0.4.0 tracking and prep sequence", () => {
       ].join("\n");
     }, "E_DELIVERY_TRACKING");
   }
+});
+
+test("rejects a noncompliant release-tracker label set", () => {
+  for (const mutate of [
+    (reference) => reference.replace("--label area:core", ""),
+    (reference) =>
+      reference.replace(
+        "--label area:core",
+        "--label area:core --label area:core",
+      ),
+    (reference) =>
+      reference.replace("--label area:core", "--label area:lsp"),
+    (reference) => reference.replace("--label documentation", ""),
+    (reference) =>
+      reference.replace(
+        "--label slice",
+        "--label slice --label slice",
+      ),
+    (reference) =>
+      reference.replace(
+        "--label area:core",
+        '--label area:core --label "area:lsp"',
+      ),
+    (reference) =>
+      reference.replace(
+        "--label area:core",
+        "--label area:core -l area:lsp",
+      ),
+    (reference) =>
+      reference.replace(
+        "--label area:core",
+        "--label area:core,area:lsp",
+      ),
+  ]) {
+    expectCode(({ deliveryReferences }) => {
+      deliveryReferences.releasing = mutate(
+        deliveryReferences.releasing,
+      );
+    }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
+  }
+});
+
+test("does not accept release-tracker labels outside the command", () => {
+  expectCode(({ deliveryReferences }) => {
+    deliveryReferences.releasing =
+      deliveryReferences.releasing
+        .replace("--label area:core", "")
+        .replace(
+          "bash scripts/release-prep.sh",
+          [
+            "bash scripts/release-prep.sh",
+            "Unrelated example: --label area:core",
+          ].join("\n"),
+        );
+  }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
+});
+
+test("includes continued options after the tracker body file", () => {
+  expectCode(({ deliveryReferences }) => {
+    deliveryReferences.releasing =
+      deliveryReferences.releasing.replace(
+        "--body-file docs/goalposts/v0.4.0/release.md",
+        [
+          "--body-file docs/goalposts/v0.4.0/release.md \\",
+          "--label area:lsp",
+        ].join("\n"),
+      );
+  }, "E_DELIVERY_TRACKING", "docs/RELEASING.md");
 });
 
 test("accepts a future aligned release example without policy code edits", () => {

@@ -19,7 +19,9 @@ their goalpost milestone. Discussions are not a supported intake channel
 because no maintainer response commitment has been made. The repository may
 retain GitHub's default Discussion categories, but the issue chooser does not
 advertise Q&A or Ideas as supported routes. The maintenance gate rejects both
-Discussion claims and direct `/discussions` links in issue-form Markdown.
+Discussion claims and direct `/discussions` links in issue-form Markdown. It
+also rejects a release-tracker example whose `documentation`, `slice`, and
+current `area:core` labels are missing, duplicated, or substituted.
 
 ## Public repository and deployment posture
 
