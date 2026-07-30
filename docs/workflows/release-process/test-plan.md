@@ -419,6 +419,16 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-release-packet.test.mjs`
   `requires a completed predecessor retrospective`;
   `docs/goalposts/v0.3.0/verification.md`. *Status:* implemented.
+- **REL-18g — Shell comment isolation.** *Requirement:* REL-18. *Behavior:*
+  release-preparation comments cannot create quote or here-document state that
+  hides later executable packet commands, while comment markers inside quoted
+  shell words remain data. *Oracle:* ordered top-level packet commands following
+  apostrophe, backtick, and here-document-shaped comments are admitted; the same
+  tokens inside live quoted or here-document content remain non-executable.
+  *Evidence type:* deterministic shell-scanner regression test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
+  planned.
 
 ## Open verification gaps
 
