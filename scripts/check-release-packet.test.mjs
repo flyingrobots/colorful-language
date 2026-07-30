@@ -22,6 +22,14 @@ import {
 
 const RELEASE_PATH = "docs/goalposts/v0.4.0/release.md";
 const VERIFICATION_PATH = "docs/goalposts/v0.4.0/verification.md";
+const PREVIOUS_VERIFICATION = `# v0.3.0 verification
+
+## Retrospective
+
+Retrospective status: completed.
+
+- The release outcome and next recommendation were recorded.
+`;
 
 function validSnapshot() {
   return {
@@ -174,7 +182,7 @@ function writeRepositorySnapshot(root, snapshot = validSnapshot()) {
     [snapshot.releasePath]: snapshot.release,
     [snapshot.verificationPath]: snapshot.verification,
     "docs/goalposts/v0.3.0/release.md": "released\n",
-    "docs/goalposts/v0.3.0/verification.md": "verified\n",
+    "docs/goalposts/v0.3.0/verification.md": PREVIOUS_VERIFICATION,
     ...snapshot.gateSources,
   };
   for (const [path, source] of Object.entries(sources)) {
@@ -668,6 +676,35 @@ test("derives the previous release from public tags, not packet directories", (t
     }).previousTag,
     "v0.3.0",
   );
+});
+
+test("requires a completed predecessor retrospective", (t) => {
+  for (const [name, previousVerification] of [
+    ["missing", "# v0.3.0 verification\n"],
+    [
+      "pending",
+      "# v0.3.0 verification\n\n## Retrospective\n\nRetrospective status: pending.\n",
+    ],
+  ]) {
+    const root = mkdtempSync(
+      join(tmpdir(), `colorful-release-packet-${name}-`),
+    );
+    t.after(() => rmSync(root, { recursive: true }));
+    writeRepositorySnapshot(root);
+    writeFileSync(
+      join(root, "docs/goalposts/v0.3.0/verification.md"),
+      previousVerification,
+    );
+    assert.throws(
+      () =>
+        loadRepositorySnapshot(root, {
+          publicTags: ["v0.3.0"],
+        }),
+      (error) =>
+        error instanceof ReleasePacketPolicyError &&
+        error.code === "E_RELEASE_PACKET_EVIDENCE",
+    );
+  }
 });
 
 test("rejects a target behind the latest public release", (t) => {
