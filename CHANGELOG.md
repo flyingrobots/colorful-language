@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Root Cargo compatibility automation policy.** Weekly root Cargo patch
+  updates remain grouped, while other minor and major updates stay
+  independently reviewable. Dependabot ignores only DashMap SemVer-major
+  updates while the workspace retains the reviewed `tower-lsp = "0.20"` and
+  `dashmap = "5.5.3"` declarations. Deterministic policy mutations reject a
+  missing or broadened update boundary, malformed manual exclusions, and stale
+  manifest ownership before automation can silently reverse the compatibility
+  decision.
 - **VS Code extension-host declaration policy.** One reviewed runtime policy
   binds the minimum VS Code 1.91.0 package-smoke host, Electron 29.4.0, Node
   20.9.0, the exact TypeScript-compatible `@types/node` 20.19.43 manifest and

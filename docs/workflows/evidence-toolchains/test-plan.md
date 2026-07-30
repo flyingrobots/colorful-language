@@ -146,6 +146,27 @@ bounded property/fuzz evidence tracked by
   fuzz-lock companion`, `fuzz Cargo update family`, `root Cargo update family
   with only fuzz-lock companion`, and `mixed root and fuzz Cargo manifests`.
   *Status:* implemented.
+- **ETC-6d** — *Requirements:* ETC-8, ETC-9. *Behavior:* root Cargo automation
+  groups patch updates while leaving other minor and major updates independently
+  reviewable, and ignores only DashMap SemVer-major updates while
+  `tower-lsp 0.20` owns the compatible 5.5 line. *Oracle:* the policy checker
+  requires the exact patch-only group and exact DashMap major exclusion, ties
+  that exclusion to the reviewed root manifest declarations, and rejects a
+  missing, broadened, substituted, malformed, or stale rule with a stable
+  category. *Evidence type:* manifest, Dependabot configuration, deterministic
+  policy mutations, and full release-preparation gate. *Tracking:*
+  [#271](https://github.com/flyingrobots/colorful-language/issues/271).
+  *Evidence:* `.github/dependabot.yml`; `Cargo.toml`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `accepts the reviewed
+  root Cargo compatibility policy`, `rejects a root Cargo group without patch
+  isolation`, `rejects a broadened root Cargo update group`, `rejects scalar
+  root Cargo group update types`, `rejects removal of the DashMap major
+  exclusion`, `rejects a broadened DashMap exclusion`, `rejects a substituted
+  root Cargo compatibility exclusion`, `rejects scalar DashMap compatibility
+  update types`, `rejects a stale tower-lsp compatibility policy`, and
+  `rejects a stale DashMap compatibility policy`; and
+  `scripts/release-prep.sh`. *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite

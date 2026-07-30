@@ -12,10 +12,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: dashmap
+        update-types:
+          - version-update:semver-major
     groups:
       cargo:
         patterns:
           - "*"
+        update-types:
+          - patch
   - package-ecosystem: cargo
     directory: /editors/zed
     schedule:

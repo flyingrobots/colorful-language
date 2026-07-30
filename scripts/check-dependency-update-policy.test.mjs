@@ -34,10 +34,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: dashmap
+        update-types:
+          - version-update:semver-major
     groups:
       cargo:
         patterns:
           - "*"
+        update-types:
+          - patch
   - package-ecosystem: cargo
     directory: /editors/zed
     schedule:
@@ -84,6 +90,7 @@ updates:
         parseToml(`
 [workspace.dependencies]
 tower-lsp = "0.20"
+dashmap = "5.5.3"
 `),
       ],
       [
@@ -117,6 +124,13 @@ function expectCode(mutate, code) {
   );
 }
 
+function rootCargoUpdate(dependabot) {
+  return dependabot.updates.find(
+    (update) =>
+      update["package-ecosystem"] === "cargo" && update.directory === "/",
+  );
+}
+
 test("accepts the reviewed update-source and action-pin policy", () => {
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(fixture()));
 });
@@ -142,6 +156,66 @@ test("accepts reviewed manual dependency rules in any order", () => {
 test("accepts a reviewed standalone fuzz Cargo update source", () => {
   const candidate = fixture();
   assert.doesNotThrow(() => validateDependencyUpdatePolicy(candidate));
+});
+
+test("accepts the reviewed root Cargo compatibility policy", () => {
+  assert.doesNotThrow(() => validateDependencyUpdatePolicy(fixture()));
+});
+
+test("rejects a root Cargo group without patch isolation", () => {
+  expectCode(({ dependabot }) => {
+    delete rootCargoUpdate(dependabot).groups.cargo["update-types"];
+  }, "E_DEPENDABOT_GROUP");
+});
+
+test("rejects a broadened root Cargo update group", () => {
+  expectCode(({ dependabot }) => {
+    rootCargoUpdate(dependabot).groups.cargo["update-types"].push("minor");
+  }, "E_DEPENDABOT_GROUP");
+});
+
+test("rejects scalar root Cargo group update types", () => {
+  expectCode(({ dependabot }) => {
+    rootCargoUpdate(dependabot).groups.cargo["update-types"] = "patch";
+  }, "E_DEPENDABOT_GROUP");
+});
+
+test("rejects removal of the DashMap major exclusion", () => {
+  expectCode(({ dependabot }) => {
+    delete rootCargoUpdate(dependabot).ignore;
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects a broadened DashMap exclusion", () => {
+  expectCode(({ dependabot }) => {
+    delete rootCargoUpdate(dependabot).ignore[0]["update-types"];
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects a substituted root Cargo compatibility exclusion", () => {
+  expectCode(({ dependabot }) => {
+    rootCargoUpdate(dependabot).ignore[0]["dependency-name"] = "tower-lsp";
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects scalar DashMap compatibility update types", () => {
+  expectCode(({ dependabot }) => {
+    rootCargoUpdate(dependabot).ignore[0]["update-types"] =
+      "version-update:semver-major";
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects a stale tower-lsp compatibility policy", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("Cargo.toml").workspace.dependencies["tower-lsp"] =
+      "0.21";
+  }, "E_ROOT_CARGO_COMPATIBILITY");
+});
+
+test("rejects a stale DashMap compatibility policy", () => {
+  expectCode(({ cargoManifests }) => {
+    cargoManifests.get("Cargo.toml").workspace.dependencies.dashmap = "6.2.1";
+  }, "E_ROOT_CARGO_COMPATIBILITY");
 });
 
 test("rejects a fuzz source without its direct-runtime allowlist", () => {
@@ -178,10 +252,7 @@ test("rejects a substituted fuzz dependency allowlist", () => {
 
 test("rejects an allowlist on the root Cargo update source", () => {
   expectCode(({ dependabot }) => {
-    dependabot.updates.find(
-      (update) =>
-        update["package-ecosystem"] === "cargo" && update.directory === "/",
-    ).allow = [{ "dependency-name": "tower-lsp" }];
+    rootCargoUpdate(dependabot).allow = [{ "dependency-name": "tower-lsp" }];
   }, "E_DEPENDABOT_ALLOW");
 });
 
