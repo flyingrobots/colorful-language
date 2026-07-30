@@ -6,7 +6,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { fromMarkdown } from "mdast-util-from-markdown";
+import { gfmTableFromMarkdown } from "mdast-util-gfm-table";
 import { toString } from "mdast-util-to-string";
+import { gfmTable } from "micromark-extension-gfm-table";
 import { parse as parseToml } from "smol-toml";
 import { parse as parseYaml } from "yaml";
 
@@ -140,7 +142,10 @@ function previousPublicRelease(root, targetVersion, publicTags) {
 
 export function parseDocument(source, path) {
   try {
-    return fromMarkdown(source);
+    return fromMarkdown(source, {
+      extensions: [gfmTable()],
+      mdastExtensions: [gfmTableFromMarkdown()],
+    });
   } catch (error) {
     reject(
       "E_RELEASE_PACKET_MARKDOWN",
@@ -187,7 +192,16 @@ function sectionMap(document, path) {
 }
 
 function sectionText(section) {
-  return section.nodes.map((node) => toString(node)).join("\n").trim();
+  return section.nodes
+    .flatMap((node) =>
+      node.type === "table"
+        ? node.children.flatMap((row) =>
+            row.children.map((cell) => toString(cell))
+          )
+        : [toString(node)],
+    )
+    .join("\n")
+    .trim();
 }
 
 function versionDecisionMatches(section, version, previousTag) {
