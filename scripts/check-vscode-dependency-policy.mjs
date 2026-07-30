@@ -22,7 +22,9 @@ function fail(code, message) {
 
 function parseVersion(value, code, subject) {
   const match =
-    typeof value === "string" ? value.match(/^(\d+)\.(\d+)\.(\d+)$/u) : null;
+    typeof value === "string"
+      ? value.match(/^(\d+)\.(\d+)\.(\d+)$/u)
+      : null;
   if (match === null) {
     fail(code, `${subject} must be an X.Y.Z version; found ${String(value)}`);
   }
@@ -144,15 +146,33 @@ function validateNodeDeclarations(editorPackage, lockfile, lockRoot, host) {
 }
 
 function validateDependabotPolicy(dependabotPolicy) {
-  const editorUpdate = dependabotPolicy?.updates?.find(
+  const updates = dependabotPolicy?.updates;
+  if (!Array.isArray(updates)) {
+    fail(
+      "E_VSCODE_DEPENDABOT_POLICY",
+      ".github/dependabot.yml#updates must be an array",
+    );
+  }
+  const editorUpdate = updates.find(
     (update) =>
       update?.["package-ecosystem"] === "npm" &&
       update.directory === "/editors/vscode",
   );
-  const nodeTypesIgnore = editorUpdate?.ignore?.find(
+  const ignore = editorUpdate?.ignore;
+  if (!Array.isArray(ignore)) {
+    fail(
+      "E_VSCODE_DEPENDABOT_POLICY",
+      ".github/dependabot.yml must define an ignore array for /editors/vscode",
+    );
+  }
+  const nodeTypesIgnore = ignore.find(
     (entry) => entry?.["dependency-name"] === "@types/node",
   );
-  if (!nodeTypesIgnore?.["update-types"]?.includes(NODE_MAJOR_UPDATE)) {
+  const updateTypes = nodeTypesIgnore?.["update-types"];
+  if (
+    !Array.isArray(updateTypes) ||
+    !updateTypes.includes(NODE_MAJOR_UPDATE)
+  ) {
     fail(
       "E_VSCODE_DEPENDABOT_POLICY",
       `.github/dependabot.yml must ignore ${NODE_MAJOR_UPDATE} updates for @types/node under /editors/vscode`,
@@ -198,7 +218,12 @@ function validateRuntimeDocumentation(documentation, host) {
 export function validateVscodeDependencyPolicy(
   editorPackage,
   lockfile,
-  { dependabotPolicy, documentation, runtimePolicy, tsconfig } = {},
+  {
+    dependabotPolicy,
+    documentation,
+    runtimePolicy,
+    tsconfig,
+  } = {},
 ) {
   const declaredClient = editorPackage.dependencies?.["vscode-languageclient"];
   const clientFloor = declaredFloor(
@@ -287,7 +312,11 @@ export function validateVscodeDependencyPolicy(
     if (
       path.endsWith("node_modules/brace-expansion") &&
       compareVersions(
-        parseVersion(entry.version, "E_BRACE_EXPANSION", `locked ${path}`),
+        parseVersion(
+          entry.version,
+          "E_BRACE_EXPANSION",
+          `locked ${path}`,
+        ),
         lastVulnerable,
       ) <= 0
     ) {

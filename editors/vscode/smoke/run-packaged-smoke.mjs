@@ -22,7 +22,9 @@ import {
   stageZedExtension,
   validateZedSourcePackage,
 } from "../../../scripts/stage-zed-extension.mjs";
-import { validateVscodeHostPolicy } from "../../../scripts/check-vscode-dependency-policy.mjs";
+import {
+  validateVscodeHostPolicy,
+} from "../../../scripts/check-vscode-dependency-policy.mjs";
 
 const {
   downloadAndUnzipVSCode,

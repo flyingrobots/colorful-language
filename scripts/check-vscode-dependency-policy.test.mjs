@@ -317,7 +317,10 @@ test("tracks the advisory slice in the editor plan and roadmap", () => {
   const issueLink =
     "https://github.com/flyingrobots/colorful-language/issues/185";
   const testPlan = readFileSync(
-    new URL("../docs/topics/editor-integrations/test-plan.md", import.meta.url),
+    new URL(
+      "../docs/topics/editor-integrations/test-plan.md",
+      import.meta.url,
+    ),
     "utf8",
   );
   assert.match(testPlan, new RegExp(issueLink, "u"));
