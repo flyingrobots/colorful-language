@@ -190,6 +190,21 @@ function sectionText(section) {
   return section.nodes.map((node) => toString(node)).join("\n").trim();
 }
 
+function versionDecisionMatches(section, version, previousTag) {
+  const firstParagraph = section.nodes.find(
+    (node) => node.type === "paragraph",
+  );
+  if (firstParagraph === undefined) {
+    return false;
+  }
+  const escapedVersion = version.replaceAll(".", "\\.");
+  const escapedPreviousTag = previousTag.replaceAll(".", "\\.");
+  return new RegExp(
+    `^Release\\s+${escapedVersion}(?![-+\\d]|\\.\\d)\\s+after\\s+${escapedPreviousTag}(?![-+\\d]|\\.\\d)(?:[.!?]|\\s|$)`,
+    "u",
+  ).test(toString(firstParagraph).trim());
+}
+
 function requireSection(sections, name, path) {
   const section = sections.get(name);
   if (section === undefined) {
@@ -358,15 +373,17 @@ function validatePacketDocument(snapshot) {
       "section 'Release thesis' must state a concrete release promise",
     );
   }
-  const versionText = sectionText(version);
   if (
-    !versionText.includes(snapshot.version) ||
-    !versionText.includes(snapshot.previousTag)
+    !versionDecisionMatches(
+      version,
+      snapshot.version,
+      snapshot.previousTag,
+    )
   ) {
     reject(
       "E_RELEASE_PACKET_IDENTITY",
       snapshot.releasePath,
-      `version decision must name ${snapshot.version} and ${snapshot.previousTag}`,
+      `version decision must begin with exact tokens ${snapshot.version} and ${snapshot.previousTag}`,
     );
   }
 
