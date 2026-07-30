@@ -210,6 +210,26 @@ test("rejects a root-owned dependency in the standalone fuzz manifest", () => {
   }, "E_FUZZ_DEPENDENCY_AUTHORITY");
 });
 
+test("rejects a root-member dependency in the fuzz manifest", () => {
+  expectCode(({ cargoManifests, dependabot }) => {
+    cargoManifests.set(
+      "crates/member/Cargo.toml",
+      parseToml(`
+[dependencies]
+member-only = "1"
+`),
+    );
+    cargoManifests.get("fuzz/Cargo.toml").dependencies["member-only"] = "1";
+    dependabot.updates
+      .find(
+        (update) =>
+          update["package-ecosystem"] === "cargo" &&
+          update.directory === "/fuzz",
+      )
+      .allow.push({ "dependency-name": "member-only" });
+  }, "E_FUZZ_DEPENDENCY_AUTHORITY");
+});
+
 test("rejects a renamed root-owned dependency in the fuzz manifest", () => {
   expectCode(({ cargoManifests, dependabot }) => {
     cargoManifests.get("fuzz/Cargo.toml").dependencies["lsp-alias"] = {
