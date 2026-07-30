@@ -809,6 +809,20 @@ test("rejects reference-linked public evidence in the pre-publication phase", ()
   }, "E_RELEASE_PACKET_EVIDENCE");
 });
 
+test("rejects public evidence hidden in literal Markdown blocks", () => {
+  for (const hiddenEvidence of [
+    "```text\nTag published successfully at https://example.invalid/release\n```",
+    "<div>Tag published successfully at https://example.invalid/release</div>",
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.verification = snapshot.verification.replace(
+        "- Tag and registries: not available.",
+        `- Tag and registries: not available.\n\n${hiddenEvidence}`,
+      );
+    }, "E_RELEASE_PACKET_EVIDENCE");
+  }
+});
+
 test("accepts the documented unavailable pre-publication state", () => {
   const snapshot = validSnapshot();
   snapshot.verification = snapshot.verification.replaceAll(

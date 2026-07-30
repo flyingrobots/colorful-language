@@ -681,7 +681,7 @@ function definitionDestinations(document) {
 function sectionEvidenceText(section, definitions) {
   const fragments = [];
   walk(section.nodes, (node) => {
-    if (["paragraph", "tableCell"].includes(node.type)) {
+    if (["code", "html", "paragraph", "tableCell"].includes(node.type)) {
       fragments.push(toString(node));
     }
     if (

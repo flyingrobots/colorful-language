@@ -324,9 +324,10 @@ Verification for release preparation, tag automation, and release witnesses.
   target and previous-tag tokens. The exact-pinned GFM grammar parses tables as
   rows and cells. The witness status names the exact target, previous public
   tag, and unavailable target tag; completed evidence includes inline and
-  reference-style link destinations; a target behind the latest reachable
-  public tag is invalid; and the policy self-test and live check remain ordered,
-  unconditional, fail-closed executable steps in every gate. *Oracle:* deleting
+  reference-style link destinations plus literal code and HTML blocks; a target
+  behind the latest reachable public tag is invalid; and the policy self-test
+  and live check remain ordered, unconditional, fail-closed executable steps in
+  every gate. *Oracle:* deleting
   or emptying each required section, changing status or decision identity,
   claiming the target tag, duplicating or exceeding the goalpost bound,
   replacing mapped acceptance oracles with prose, inventing public evidence in
@@ -352,11 +353,12 @@ Verification for release preparation, tag automation, and release witnesses.
   `rejects contradictory pre-publication status identity`, `rejects invented
   public evidence in the pre-publication phase`, `rejects linked public evidence
   in the pre-publication phase`, `rejects reference-linked public evidence in
-  the pre-publication phase`, `accepts the documented unavailable
-  pre-publication state`, `requires the self-test before the live check in every
-  release gate`, `does not accept dormant release gate commands`, `does not
-  accept release gates after shell termination`, `requires fail-closed workflow
-  gate steps`, `reports a stable category when the target packet is missing`,
+  the pre-publication phase`, `rejects public evidence hidden in literal
+  Markdown blocks`, `accepts the documented unavailable pre-publication state`,
+  `requires the self-test before the live check in every release gate`, `does not
+  accept dormant release gate commands`, `does not accept release gates after
+  shell termination`, `requires fail-closed workflow gate steps`, `reports a
+  stable category when the target packet is missing`,
   `derives the previous release from public tags, not packet directories`,
   `rejects a target behind the latest public release`, `ignores release tags
   that are not reachable from HEAD`, and `the checked-in v0.4.0 release packet

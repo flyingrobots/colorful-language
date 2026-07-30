@@ -64,7 +64,8 @@ Before publication, the verification witness must name the exact target,
 previous tag, and unavailable target tag; leave registry, public-install, and
 retrospective sections with exactly one explicit unavailable or pending
 `Evidence state:`; and contain no completed claim hidden in ordinary prose,
-commit identifiers, or inline or reference-style link destinations.
+commit identifiers, literal code or HTML blocks, or inline or reference-style
+link destinations.
 After publication, the same witness advances through a fail-closed phase
 matrix:
 
