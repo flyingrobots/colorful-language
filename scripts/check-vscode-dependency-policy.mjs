@@ -220,8 +220,10 @@ function validateRuntimeDocumentation(documentation, host) {
     ["docs/topics/editor-integrations/README.md", documentation?.topic],
     ["editors/vscode/README.md", documentation?.adapter],
   ]) {
+    const normalized =
+      typeof contents === "string" ? contents.replace(/\s+/gu, " ") : null;
     for (const requirement of requirements) {
-      if (typeof contents !== "string" || !contents.includes(requirement)) {
+      if (normalized === null || !normalized.includes(requirement)) {
         fail("E_VSCODE_RUNTIME_DOCS", `${path} must record ${requirement}`);
       }
     }
