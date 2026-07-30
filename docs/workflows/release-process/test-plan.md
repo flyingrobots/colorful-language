@@ -39,6 +39,11 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-17** GitHub milestones must remain goalposts while each release train
   uses one versioned tracking issue and packet, so a slice never loses its
   product/architecture owner merely to join a release.
+- **REL-18** A release packet must define its thesis, version decision, complete
+  scope buckets, bounded goalposts, acceptance evidence, non-claims, risks, and
+  rollback posture before its versioned release tracker can be created; its
+  verification witness must distinguish pre-publication proof from public
+  release evidence that does not yet exist.
 
 ## Cases
 
@@ -302,6 +307,20 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-repository-maintenance.mjs`; `docs/RELEASING.md`;
   `docs/workflows/release-process/README.md`; and
   `docs/workflows/repository-maintenance/README.md`. *Status:* implemented.
+- **REL-18a — Complete pre-publication release packet.** *Requirement:* REL-18.
+  *Behavior:* the v0.4.0 packet and verification scaffold identify the release
+  version and previous public tag; define one release thesis and SemVer
+  justification; contain non-empty must-ship, may-slip, and not-included scope
+  buckets; declare two to five goalposts with acceptance evidence; name
+  non-claims, risks, and rollback posture; link every scoped slice; and mark
+  tag, registry, attestation, public-install, Zed-submission, Homebrew, and
+  retrospective evidence as not yet available before publication. *Oracle:*
+  deleting or emptying each required section, changing the version or previous
+  tag, exceeding the goalpost bound, inventing public evidence, or omitting a
+  scoped-slice link fails with a stable path-addressed category. *Evidence
+  type:* deterministic release-packet policy and mutation tests. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* planned. *Status:* planned.
 
 ## Open verification gaps
 
