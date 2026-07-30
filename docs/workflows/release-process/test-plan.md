@@ -427,8 +427,9 @@ Verification for release preparation, tag automation, and release witnesses.
   tokens inside live quoted or here-document content remain non-executable.
   *Evidence type:* deterministic shell-scanner regression test. *Tracking:*
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `shell comments cannot hide later packet commands`. *Status:* implemented.
 
 ## Open verification gaps
 

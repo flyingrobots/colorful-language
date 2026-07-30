@@ -587,9 +587,17 @@ test("shell comments cannot hide later packet commands", () => {
 ${comment}
 ${SELF_TEST_COMMAND}
 ${CHECK_COMMAND}
-`;
+    `;
     assert.doesNotThrow(() => validateReleasePacket(snapshot));
   }
+  const quotedMarkerSnapshot = validSnapshot();
+  quotedMarkerSnapshot.gateSources["scripts/release-prep.sh"] =
+    `#!/usr/bin/env bash
+printf '%s\\n' "# don't strip <<COMMENT or \`quoted data"
+${SELF_TEST_COMMAND}
+${CHECK_COMMAND}
+`;
+  assert.doesNotThrow(() => validateReleasePacket(quotedMarkerSnapshot));
 });
 
 test("does not accept packet commands inside guarded compound lists", () => {

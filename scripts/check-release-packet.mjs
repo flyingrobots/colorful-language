@@ -728,25 +728,54 @@ function validateVerificationDocument(snapshot) {
   return { phase };
 }
 
-function updateMultilineQuote(line, initialQuote) {
+function shellCodeBeforeComment(line, initialQuote) {
   let quote = initialQuote;
   let escaped = false;
-  for (const character of line) {
+  const syntax = [];
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
     if (escaped) {
+      syntax.push(quote === null ? character : " ");
       escaped = false;
       continue;
     }
     if (character === "\\" && quote !== "'") {
+      syntax.push(quote === null ? character : " ");
       escaped = true;
       continue;
     }
     if (quote === null && ["'", '"', "`"].includes(character)) {
       quote = character;
+      syntax.push(" ");
     } else if (character === quote) {
       quote = null;
+      syntax.push(" ");
+    } else if (
+      quote === null &&
+      character === "#" &&
+      (index === 0 || /[ \t;&|()<>]/u.test(line[index - 1]))
+    ) {
+      return {
+        code: line.slice(0, index),
+        quote,
+        syntax: syntax.join(""),
+      };
+    } else {
+      syntax.push(quote === null ? character : " ");
     }
   }
-  return quote;
+  return { code: line, quote, syntax: syntax.join("") };
+}
+
+function hereDocumentDelimiter(scannedLine) {
+  const pattern =
+    /<<-?\s*['"]?(?<delimiter>[A-Za-z_][A-Za-z0-9_]*)['"]?/gu;
+  for (const match of scannedLine.code.matchAll(pattern)) {
+    if (scannedLine.syntax.slice(match.index, match.index + 2) === "<<") {
+      return match.groups.delimiter;
+    }
+  }
+  return undefined;
 }
 
 function topLevelShellCommands(source) {
@@ -755,23 +784,20 @@ function topLevelShellCommands(source) {
   let hereDocument;
   let quote = null;
   for (const line of source.split(/\r?\n/u)) {
-    const trimmed = line.trim();
     if (hereDocument !== undefined) {
-      if (trimmed === hereDocument) {
+      if (line.trim() === hereDocument) {
         hereDocument = undefined;
       }
       continue;
     }
     const startedInsideQuote = quote !== null;
-    quote = updateMultilineQuote(line, quote);
+    const scannedLine = shellCodeBeforeComment(line, quote);
+    quote = scannedLine.quote;
     if (startedInsideQuote || quote !== null) {
       continue;
     }
-    const hereDocumentMatch =
-      /<<-?\s*['"]?(?<delimiter>[A-Za-z_][A-Za-z0-9_]*)['"]?/u.exec(line);
-    if (hereDocumentMatch !== null) {
-      hereDocument = hereDocumentMatch.groups.delimiter;
-    }
+    const trimmed = scannedLine.syntax.trim();
+    hereDocument = hereDocumentDelimiter(scannedLine);
     if (
       /^(?:done|esac|fi)\b/u.test(trimmed) ||
       trimmed === "}" ||
