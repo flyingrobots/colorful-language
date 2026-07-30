@@ -30,7 +30,7 @@ after its command or public oracle has been observed.
 
 ## Publication evidence
 
-Publication evidence is not available. The following rows must be completed
+Publication evidence is not available. The following rows are filled
 from the immutable tag workflow; this packet does not authorize or claim those
 side effects.
 
@@ -44,7 +44,7 @@ side effects.
 | Open VSX | Public version URL and downloaded VSIX SHA-256 parity | Not available. |
 | Zed | Versioned source archive, attestation, and registry pull request | Not available. |
 | Homebrew formula | Attested GitHub Release formula asset | Not available. |
-| GitHub Release | Release URL and complete asset inventory | Not available. |
+| GitHub Release | Release URL and full asset inventory | Not available. |
 
 ## Public verification
 
@@ -58,7 +58,7 @@ commands, host/toolchain identity, timestamps, public URLs, and results for:
 - Zed registry installation when the external submission is accepted;
 - Homebrew install, upgrade, and rollback after a public tap exists;
 - checksum, provenance, and public-package byte verification;
-- one bounded rollback or patch-forward rehearsal per published channel.
+- one bounded rollback or patch-forward rehearsal per release channel.
 
 Until those oracles run, current-reference publication claims remain absent.
 

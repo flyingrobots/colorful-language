@@ -20,6 +20,8 @@ const RELEASE_PHASES = Object.freeze([
   "verified",
   "retrospected",
 ]);
+const COMPLETED_EVIDENCE =
+  /\b(?:available|complete|completed|pass|passed|published|successful|successfully|verified)\b|✅|https?:\/\//iu;
 
 export const CHECK_COMMAND = "node scripts/check-release-packet.mjs";
 export const SELF_TEST_COMMAND =
@@ -421,6 +423,14 @@ function validateVerificationDocument(snapshot) {
           "E_RELEASE_PACKET_EVIDENCE",
           snapshot.verificationPath,
           `section '${name}' must remain explicitly unavailable or pending before publication`,
+        );
+      }
+      const claims = text.replace(/\b(?:not available|pending)\b/giu, "");
+      if (COMPLETED_EVIDENCE.test(claims)) {
+        reject(
+          "E_RELEASE_PACKET_EVIDENCE",
+          snapshot.verificationPath,
+          `section '${name}' contradicts its pre-publication state with completed or public evidence`,
         );
       }
     }
