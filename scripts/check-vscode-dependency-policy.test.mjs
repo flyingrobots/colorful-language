@@ -25,7 +25,6 @@ function fixture() {
             },
             {
               "dependency-name": "@types/node",
-              "update-types": ["version-update:semver-major"],
             },
           ],
         },
@@ -33,11 +32,11 @@ function fixture() {
     },
     documentation: {
       adapter: [
-        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.",
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.9.0.",
         "https://releases.electronjs.org/release/v29.4.0",
       ].join(" "),
       topic: [
-        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.",
+        "VS Code 1.91.0 uses Electron 29.4.0 and Node 20.9.0 with `@types/node` 20.9.0.",
         "https://releases.electronjs.org/release/v29.4.0",
       ].join(" "),
     },
@@ -46,7 +45,7 @@ function fixture() {
         "vscode-languageclient": "^10.1.0",
       },
       devDependencies: {
-        "@types/node": "^20",
+        "@types/node": "20.9.0",
       },
       engines: {
         vscode: "^1.91.0",
@@ -59,11 +58,11 @@ function fixture() {
             "vscode-languageclient": "^10.1.0",
           },
           devDependencies: {
-            "@types/node": "^20",
+            "@types/node": "20.9.0",
           },
         },
         "node_modules/@types/node": {
-          version: "20.19.43",
+          version: "20.9.0",
         },
         "node_modules/brace-expansion": {
           version: "5.0.8",
@@ -216,8 +215,8 @@ test("rejects a prerelease locked client engine floor", () => {
 
 test("rejects Node 26 declarations for the VS Code 1.91 host", () => {
   const input = fixture();
-  input.editorPackage.devDependencies["@types/node"] = "^26";
-  input.lockfile.packages[""].devDependencies["@types/node"] = "^26";
+  input.editorPackage.devDependencies["@types/node"] = "26.1.2";
+  input.lockfile.packages[""].devDependencies["@types/node"] = "26.1.2";
   input.lockfile.packages["node_modules/@types/node"].version = "26.1.2";
   assert.throws(
     () => validateFixture(input),
@@ -228,6 +227,21 @@ test("rejects Node 26 declarations for the VS Code 1.91 host", () => {
         'editors/vscode/package.json#devDependencies["@types/node"]',
       ),
   );
+});
+
+test("rejects a caret range even when it stays on the host major", () => {
+  const input = fixture();
+  input.editorPackage.devDependencies["@types/node"] = "^20";
+  input.lockfile.packages[""].devDependencies["@types/node"] = "^20";
+  expectCode(input, "E_VSCODE_NODE_TYPES");
+});
+
+test("rejects a declaration release newer than the minimum host", () => {
+  const input = fixture();
+  input.editorPackage.devDependencies["@types/node"] = "20.19.43";
+  input.lockfile.packages[""].devDependencies["@types/node"] = "20.19.43";
+  input.lockfile.packages["node_modules/@types/node"].version = "20.19.43";
+  expectCode(input, "E_VSCODE_NODE_TYPES");
 });
 
 test("rejects a locked Node declaration major outside the host line", () => {
@@ -242,13 +256,13 @@ test("rejects a runtime policy that drifts from the extension floor", () => {
   expectCode(input, "E_VSCODE_HOST_POLICY");
 });
 
-test("rejects Dependabot policy without the Node declaration major guard", () => {
+test("rejects Dependabot policy without the Node declaration freeze", () => {
   const input = fixture();
   input.dependabotPolicy.updates[0].ignore.pop();
   expectCode(input, "E_VSCODE_DEPENDABOT_POLICY");
 });
 
-test("rejects a scalar Dependabot update-types impostor", () => {
+test("rejects a partial scalar Dependabot update-types impostor", () => {
   const input = fixture();
   input.dependabotPolicy.updates[0].ignore[1]["update-types"] =
     "version-update:semver-major";
@@ -277,8 +291,8 @@ test("rejects current editor documentation that drifts from host policy", () => 
 test("rejects a documented Node declaration major outside the host line", () => {
   const input = fixture();
   input.documentation.topic = input.documentation.topic.replace(
-    "`@types/node` 20",
-    "`@types/node` 26",
+    "`@types/node` 20.9.0",
+    "`@types/node` 26.1.2",
   );
   expectCode(input, "E_VSCODE_RUNTIME_DOCS");
 });

@@ -69,8 +69,6 @@ updates:
     ignore:
       - dependency-name: typescript
       - dependency-name: "@types/node"
-        update-types:
-          - version-update:semver-major
     groups:
       vscode:
         patterns:
@@ -300,7 +298,7 @@ test("rejects automatic VS Code TypeScript updates", () => {
   }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
 });
 
-test("rejects automatic VS Code Node declaration major updates", () => {
+test("rejects automatic VS Code Node declaration updates", () => {
   expectCode(({ dependabot }) => {
     const update = dependabot.updates.find(
       (candidate) =>
@@ -313,16 +311,16 @@ test("rejects automatic VS Code Node declaration major updates", () => {
   }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
 });
 
-test("rejects an overbroad VS Code Node declaration exclusion", () => {
+test("rejects a partial VS Code Node declaration exclusion", () => {
   expectCode(({ dependabot }) => {
     const update = dependabot.updates.find(
       (candidate) =>
         candidate["package-ecosystem"] === "npm" &&
         candidate.directory === "/editors/vscode",
     );
-    delete update.ignore.find(
+    update.ignore.find(
       (rule) => rule["dependency-name"] === "@types/node",
-    )["update-types"];
+    )["update-types"] = ["version-update:semver-major"];
   }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
 });
 

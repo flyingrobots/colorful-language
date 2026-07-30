@@ -98,10 +98,13 @@ test("package tooling and smoke commands are exact and lockfile-backed", () => {
     packageJson.engines?.vscode,
     `^${runtimePolicy.minimumVscodeVersion}`,
   );
-  assert.equal(packageJson.devDependencies?.["@types/node"], "^20");
   assert.equal(
-    lockfile.packages?.["node_modules/@types/node"]?.version.split(".")[0],
-    runtimePolicy.nodeVersion.split(".")[0],
+    packageJson.devDependencies?.["@types/node"],
+    runtimePolicy.nodeVersion,
+  );
+  assert.equal(
+    lockfile.packages?.["node_modules/@types/node"]?.version,
+    runtimePolicy.nodeVersion,
   );
 
   const smokeRunner = readFileSync(
