@@ -361,6 +361,16 @@ Verification for release preparation, tag automation, and release witnesses.
   `docs/goalposts/v0.4.0/verification.md`; `.github/workflows/ci.yml`;
   `.github/workflows/release.yml`; and `scripts/release-prep.sh`. *Status:*
   implemented.
+- **REL-18b — Release-packet publication dependency.** *Requirement:* REL-18.
+  *Behavior:* the tag workflow runs the packet self-test and live check in its
+  fail-closed `validate-release` job, and every other tag-workflow job depends
+  on that admission job transitively. *Oracle:* moving the packet commands to
+  an independent job, removing them from `validate-release`, or detaching any
+  downstream job fails with `E_RELEASE_PACKET_GATE`. *Evidence type:*
+  deterministic release-workflow mutation test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
+  planned.
 
 ## Open verification gaps
 
