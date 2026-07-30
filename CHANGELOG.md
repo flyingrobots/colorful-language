@@ -554,6 +554,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Satisfiable Dependabot closure admission.** Human and ordinary automation
+  pull requests still require exactly one body-level issue-closing reference,
+  while GitHub-authenticated Dependabot updates may carry zero or one. Zero is
+  admitted only when the complete changed-file inventory fits one reviewed
+  dependency family.
+  Incomplete inventories, mixed or unrelated paths, spoofed identities,
+  multiple references, and commit-level closing keywords fail closed. A
+  19-case fixture matrix runs in required pull-request CI and release
+  preparation, and maintenance-policy mutations prevent either wiring from
+  disappearing.
 - **Policy-compliant release-tracker labels.** The reviewed v0.4.0 tracker
   command now selects the existing cross-cutting `area:core` query axis
   alongside its `documentation` and `slice` roles. Deterministic policy

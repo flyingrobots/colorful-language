@@ -158,6 +158,12 @@ implementation, honest current reference.
   via merge commits, so a closing keyword on a non-final commit would close the
   issue before the PR is done. A CI check enforces this on every pull request;
   see `scripts/check-closure-contract.sh`.
+- The only body-level closure exception is a GitHub-authenticated
+  `app/dependabot` pull request whose complete changed-file inventory fits one
+  reviewed dependency-update family. It may carry zero or one unique closing
+  reference. Do not infer this authority from a branch name, title, or body;
+  human and other automation pull requests still require exactly one, and all
+  commits still reject closing keywords.
 - A breaking change carries a `BREAKING CHANGE:` footer and warrants a version
   bump.
 - History is append-only: **no** force-push, rebase, squash, or amend on shared

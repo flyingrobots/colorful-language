@@ -26,6 +26,42 @@ commit_has_closing_keyword() {
   grep -qiE "$closing_keyword_pattern" <<<"$1"
 }
 
+paths_match_family() {
+  local files_json="$1" pattern="$2"
+  jq -e --arg pattern "$pattern" \
+    'length > 0 and all(.[]; type == "string" and test($pattern))' \
+    <<<"$files_json" >/dev/null
+}
+
+dependabot_source_family() {
+  local files_json="$1"
+  if paths_match_family \
+    "$files_json" \
+    '^\.github/workflows/[^/]+\.(yml|yaml)$'; then
+    echo "github-actions"
+  elif paths_match_family "$files_json" '^Cargo\.(toml|lock)$'; then
+    echo "cargo-root"
+  elif paths_match_family \
+    "$files_json" \
+    '^editors/zed/Cargo\.(toml|lock)$'; then
+    echo "cargo-zed"
+  elif paths_match_family \
+    "$files_json" \
+    '^(Cargo\.toml|fuzz/Cargo\.(toml|lock))$'; then
+    echo "cargo-fuzz"
+  elif paths_match_family \
+    "$files_json" \
+    '^(package\.json|package-lock\.json)$'; then
+    echo "npm-root"
+  elif paths_match_family \
+    "$files_json" \
+    '^editors/vscode/(package\.json|package-lock\.json)$'; then
+    echo "npm-vscode"
+  else
+    return 1
+  fi
+}
+
 run_self_test() {
   local failures=0
 
@@ -107,9 +143,15 @@ main() {
   command -v gh >/dev/null 2>&1 || { echo "gh CLI is required" >&2; exit 2; }
   command -v jq >/dev/null 2>&1 || { echo "jq is required" >&2; exit 2; }
 
-  local title body
-  title="$(gh pr view "$pr" --repo "$repo" --json title -q .title)"
-  body="$(gh pr view "$pr" --repo "$repo" --json body -q .body)"
+  local pr_data title body author
+  pr_data="$(
+    gh pr view "$pr" \
+      --repo "$repo" \
+      --json title,body,author,changedFiles,files,commits
+  )"
+  title="$(jq -r '.title // ""' <<<"$pr_data")"
+  body="$(jq -r '.body // ""' <<<"$pr_data")"
+  author="$(jq -r '.author.login // ""' <<<"$pr_data")"
 
   if commit_has_closing_keyword "$title"; then
     echo "PR #$pr's title contains a closing keyword; that belongs on the PR body description only: $title" >&2
@@ -118,20 +160,60 @@ main() {
 
   local count
   count="$(count_closed_issues "$body")"
-  if [[ "$count" -ne 1 ]]; then
+  if [[ "$author" == "app/dependabot" ]]; then
+    if ! jq -e '
+      (.changedFiles | type == "number") and
+      (.changedFiles >= 0) and
+      (.changedFiles == (.changedFiles | floor)) and
+      (.files | type == "array") and
+      all(.files[]; .path | type == "string")
+    ' <<<"$pr_data" >/dev/null; then
+      echo "E_CLOSURE_DEPENDABOT_FILES: PR #$pr returned malformed" \
+        "changed-file metadata" >&2
+      exit 1
+    fi
+    local files_json changed_files returned_files
+    files_json="$(jq -c '[.files[].path]' <<<"$pr_data")"
+    changed_files="$(jq -r '.changedFiles' <<<"$pr_data")"
+    returned_files="$(jq -r '.files | length' <<<"$pr_data")"
+    if [[ "$changed_files" -ne "$returned_files" ]]; then
+      echo "E_CLOSURE_DEPENDABOT_FILES: PR #$pr file inventory is incomplete:" \
+        "received $returned_files of $changed_files changed paths" >&2
+      exit 1
+    fi
+    local dependabot_family path_summary
+    if ! dependabot_family="$(dependabot_source_family "$files_json")"; then
+      path_summary="$(
+        jq -r \
+          'if length == 0 then "<none>" else .[0:8] | join(", ") end' \
+          <<<"$files_json"
+      )"
+      echo "E_CLOSURE_DEPENDABOT_PATH: PR #$pr paths do not fit one" \
+        "reviewed dependency source: $path_summary" >&2
+      exit 1
+    fi
+    if [[ "$count" -gt 1 ]]; then
+      echo "PR #$pr's description may contain at most one unique" \
+        "issue-closing reference for Dependabot, found: $count" >&2
+      exit 1
+    fi
+  elif [[ "$count" -ne 1 ]]; then
     echo "PR #$pr's description must contain exactly one unique issue-closing reference" \
       "(Closes/Fixes/Resolves #NN or Closes/Fixes/Resolves owner/repo#NN), found: $count" >&2
     exit 1
   fi
 
   local commit_data
-  commit_data="$(gh pr view "$pr" --repo "$repo" --json commits --jq '.commits[] | {oid: .oid, message: (.messageHeadline + " " + .messageBody)} | @json')"
+  commit_data="$(
+    jq -c \
+      '.commits[] |
+       {oid: .oid, message: (.messageHeadline + " " + .messageBody)}' \
+      <<<"$pr_data"
+  )"
 
   local bad=0
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
-    local oid
-    oid="$(jq -r .oid <<< "$line")"
     local msg
     msg="$(jq -r .message <<< "$line")"
 
@@ -160,7 +242,12 @@ main() {
     exit 1
   fi
 
-  echo "PR #$pr satisfies the issue-closure contract."
+  if [[ "$author" == "app/dependabot" ]]; then
+    echo "PR #$pr satisfies the Dependabot closure contract" \
+      "for $dependabot_family."
+  else
+    echo "PR #$pr satisfies the issue-closure contract."
+  fi
 }
 
 main "$@"

@@ -381,10 +381,22 @@ allow-git = []
             { run: "node scripts/check-repository-maintenance.mjs" },
           ],
         },
+        "closure-contract": {
+          steps: [
+            {
+              run: "bash scripts/check-closure-contract.sh --self-test",
+            },
+            {
+              run: "bash scripts/check-closure-contract.test.sh",
+            },
+          ],
+        },
       },
     },
     releasePrep: `node --test scripts/check-repository-maintenance.test.mjs
 node scripts/check-repository-maintenance.mjs
+bash scripts/check-closure-contract.sh --self-test
+bash scripts/check-closure-contract.test.sh
 node --test scripts/check-workflow-security.test.mjs
 node scripts/check-workflow-security.mjs
 bash scripts/check-rust-dependency-policy.test.sh
@@ -1191,6 +1203,21 @@ test("rejects missing release-preparation policy execution", () => {
       "",
     );
   }, "E_RELEASE_PREP");
+});
+
+test("rejects missing hosted closure-contract fixtures", () => {
+  expectCode(({ ciWorkflow }) => {
+    ciWorkflow.jobs["closure-contract"].steps.pop();
+  }, "E_CLOSURE_WIRING");
+});
+
+test("rejects missing release-preparation closure-contract fixtures", () => {
+  expectCode((candidate) => {
+    candidate.releasePrep = candidate.releasePrep.replace(
+      "bash scripts/check-closure-contract.test.sh\n",
+      "",
+    );
+  }, "E_CLOSURE_WIRING");
 });
 
 test("the repository satisfies the maintenance policy", () => {
