@@ -243,6 +243,19 @@ function walk(nodes, visitor) {
   }
 }
 
+function sectionEvidenceText(section) {
+  const destinations = [];
+  walk(section.nodes, (node) => {
+    if (
+      ["definition", "image", "link"].includes(node.type) &&
+      typeof node.url === "string"
+    ) {
+      destinations.push(node.url);
+    }
+  });
+  return [sectionText(section), ...destinations].join("\n");
+}
+
 function issueNumbers(nodes) {
   const numbers = new Set();
   walk(nodes, (node) => {
@@ -496,7 +509,7 @@ function validateVerificationDocument(snapshot) {
       ["Public verification", publicVerification],
       ["Retrospective", retrospective],
     ]) {
-      const text = sectionText(section).toLowerCase();
+      const text = sectionEvidenceText(section).toLowerCase();
       if (!text.includes("not available") && !text.includes("pending")) {
         reject(
           "E_RELEASE_PACKET_EVIDENCE",
