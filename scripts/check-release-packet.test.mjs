@@ -394,6 +394,22 @@ test("derives the previous release from public tags, not packet directories", (t
   );
 });
 
+test("rejects a target behind the latest public release", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+
+  assert.throws(
+    () =>
+      loadRepositorySnapshot(root, {
+        publicTags: ["v0.3.0", "v0.5.0"],
+      }),
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === "E_RELEASE_PACKET_IDENTITY",
+  );
+});
+
 test("ignores release tags that are not reachable from HEAD", (t) => {
   const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
   t.after(() => rmSync(root, { recursive: true }));
