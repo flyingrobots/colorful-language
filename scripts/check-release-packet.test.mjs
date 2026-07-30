@@ -576,6 +576,22 @@ ${CHECK_COMMAND}
   }, "E_RELEASE_PACKET_GATE");
 });
 
+test("shell comments cannot hide later packet commands", () => {
+  for (const comment of [
+    "# don't treat this apostrophe as shell syntax",
+    "# `this unmatched backtick is inert",
+    "# <<COMMENT is not a here-document",
+  ]) {
+    const snapshot = validSnapshot();
+    snapshot.gateSources["scripts/release-prep.sh"] = `#!/usr/bin/env bash
+${comment}
+${SELF_TEST_COMMAND}
+${CHECK_COMMAND}
+`;
+    assert.doesNotThrow(() => validateReleasePacket(snapshot));
+  }
+});
+
 test("does not accept packet commands inside guarded compound lists", () => {
   for (const [opening, closing] of [
     ["false && {", "}"],
