@@ -119,6 +119,14 @@ Release phase: pre-publication.
         run: ${SELF_TEST_COMMAND}
       - name: Check packet
         run: ${CHECK_COMMAND}
+  binary-artifacts:
+    needs: validate-release
+    steps:
+      - run: "true"
+  release:
+    needs: binary-artifacts
+    steps:
+      - run: "true"
 `,
       "scripts/release-prep.sh": `#!/usr/bin/env bash
 set -euo pipefail
@@ -474,6 +482,31 @@ test("requires the self-test before the live check in every release gate", () =>
         `${CHECK_COMMAND}\n${SELF_TEST_COMMAND}\n`;
     }, "E_RELEASE_PACKET_GATE");
   }
+});
+
+test("requires packet admission in every tag-workflow dependency path", () => {
+  expectCode((snapshot) => {
+    snapshot.gateSources[".github/workflows/release.yml"] = `jobs:
+  validate-release:
+    steps:
+      - run: "true"
+  detached-packet-check:
+    steps:
+      - run: ${SELF_TEST_COMMAND}
+      - run: ${CHECK_COMMAND}
+  release:
+    needs: validate-release
+    steps:
+      - run: "true"
+`;
+  }, "E_RELEASE_PACKET_GATE");
+  expectCode((snapshot) => {
+    snapshot.gateSources[".github/workflows/release.yml"] =
+      snapshot.gateSources[".github/workflows/release.yml"].replace(
+        "  binary-artifacts:\n    needs: validate-release",
+        "  binary-artifacts:",
+      );
+  }, "E_RELEASE_PACKET_GATE");
 });
 
 test("does not accept dormant release gate commands", () => {
