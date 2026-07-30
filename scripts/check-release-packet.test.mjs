@@ -352,6 +352,15 @@ test("rejects linked public evidence in the pre-publication phase", () => {
   }, "E_RELEASE_PACKET_EVIDENCE");
 });
 
+test("accepts the documented unavailable pre-publication state", () => {
+  const snapshot = validSnapshot();
+  snapshot.verification = snapshot.verification.replaceAll(
+    "not available",
+    "unavailable",
+  );
+  assert.doesNotThrow(() => validateReleasePacket(snapshot));
+});
+
 test("requires the self-test before the live check in every release gate", () => {
   for (const gate of Object.keys(validSnapshot().gateSources)) {
     expectCode((snapshot) => {
