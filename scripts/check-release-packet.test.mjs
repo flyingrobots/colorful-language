@@ -414,6 +414,16 @@ fi
   }, "E_RELEASE_PACKET_GATE");
 });
 
+test("does not accept release gates after shell termination", () => {
+  expectCode((snapshot) => {
+    snapshot.gateSources["scripts/release-prep.sh"] = `#!/usr/bin/env bash
+exit 0
+${SELF_TEST_COMMAND}
+${CHECK_COMMAND}
+`;
+  }, "E_RELEASE_PACKET_GATE");
+});
+
 test("requires fail-closed workflow gate steps", () => {
   for (const gate of [
     ".github/workflows/ci.yml",
