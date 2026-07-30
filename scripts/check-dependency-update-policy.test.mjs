@@ -68,6 +68,9 @@ updates:
       interval: weekly
     ignore:
       - dependency-name: typescript
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
     groups:
       vscode:
         patterns:
@@ -282,6 +285,45 @@ test("rejects automatic VS Code TypeScript updates", () => {
         update["package-ecosystem"] === "npm" &&
         update.directory === "/editors/vscode",
     ).ignore;
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects automatic VS Code Node declaration major updates", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    update.ignore = update.ignore.filter(
+      (rule) => rule["dependency-name"] !== "@types/node",
+    );
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects an overbroad VS Code Node declaration exclusion", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    delete update.ignore.find(
+      (rule) => rule["dependency-name"] === "@types/node",
+    )["update-types"];
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects a scalar VS Code Node update-type policy", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    update.ignore.find(
+      (rule) => rule["dependency-name"] === "@types/node",
+    )["update-types"] = "version-update:semver-major";
   }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
 });
 
