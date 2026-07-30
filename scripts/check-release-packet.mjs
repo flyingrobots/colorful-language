@@ -400,17 +400,19 @@ function validateVerificationDocument(snapshot) {
     "Retrospective",
     snapshot.verificationPath,
   );
-  const phaseMatch = sectionText(status).match(
-    /Release phase:\s*(pre-publication|published|verified|retrospected)\b/iu,
-  );
-  if (phaseMatch === null) {
+  const phaseMatches = [
+    ...sectionText(status).matchAll(
+      /Release phase:\s*(pre-publication|published|verified|retrospected)\b/giu,
+    ),
+  ];
+  if (phaseMatches.length !== 1) {
     reject(
       "E_RELEASE_PACKET_EVIDENCE",
       snapshot.verificationPath,
-      `section 'Status' must name one release phase: ${RELEASE_PHASES.join(", ")}`,
+      `section 'Status' must name exactly one release phase: ${RELEASE_PHASES.join(", ")}`,
     );
   }
-  const phase = phaseMatch[1].toLowerCase();
+  const phase = phaseMatches[0][1].toLowerCase();
   if (phase === "pre-publication") {
     for (const [name, section] of [
       ["Publication evidence", publication],
