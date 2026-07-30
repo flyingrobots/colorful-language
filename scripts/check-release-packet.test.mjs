@@ -352,6 +352,20 @@ test("rejects linked public evidence in the pre-publication phase", () => {
   }, "E_RELEASE_PACKET_EVIDENCE");
 });
 
+test("rejects reference-linked public evidence in the pre-publication phase", () => {
+  expectCode((snapshot) => {
+    snapshot.verification = snapshot.verification
+      .replace(
+        "- Release preparation: pending.",
+        "- Release preparation: pending.\n\n[published-run]: https://github.com/flyingrobots/colorful-language/actions/runs/1",
+      )
+      .replace(
+        "- Tag and registries: not available.",
+        "- Tag and registries: not available. [release run][published-run]",
+      );
+  }, "E_RELEASE_PACKET_EVIDENCE");
+});
+
 test("accepts the documented unavailable pre-publication state", () => {
   const snapshot = validSnapshot();
   snapshot.verification = snapshot.verification.replaceAll(
