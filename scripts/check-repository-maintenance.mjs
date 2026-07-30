@@ -42,7 +42,7 @@ const RELEASE_TRACKING_COMMAND_START_PATTERN = /\bgh issue create\b/u;
 const RELEASE_TRACKING_LABEL_OPTION_PATTERN =
   /--label(?=$|[\s=])|(?:^|\s)-l(?=$|[\s=])/gu;
 const RELEASE_TRACKING_LABEL_PATTERN =
-  /--label (?<label>[a-z0-9][a-z0-9:._-]*)/gu;
+  /--label (?<label>[a-z0-9][a-z0-9:._-]*)(?=$|\s)/gu;
 const RELEASE_TRACKING_REFERENCE_PATTERNS = [
   /--title "\[release\] v(?<version>\d+\.\d+\.\d+)"/u,
   /--body-file docs\/goalposts\/v(?<version>\d+\.\d+\.\d+)\/release\.md/u,
