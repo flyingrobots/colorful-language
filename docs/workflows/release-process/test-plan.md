@@ -407,6 +407,16 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-release-packet.test.mjs`
   `does not accept packet commands inside guarded compound lists`. *Status:*
   implemented.
+- **REL-18f — Completed predecessor retrospective.** *Requirement:* REL-18.
+  *Behavior:* the latest reachable public predecessor is eligible for a new
+  release train only when its verification witness contains one explicit
+  completed retrospective. *Oracle:* a missing or pending predecessor
+  retrospective fails packet loading with `E_RELEASE_PACKET_EVIDENCE`.
+  *Evidence type:* temporary-repository release-history mutation test.
+  *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
+  planned.
 
 ## Open verification gaps
 
