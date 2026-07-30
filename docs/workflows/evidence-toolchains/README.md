@@ -142,7 +142,7 @@ Dependabot opens six independent weekly groups from
 | Group | Dependency boundary | Rollback boundary |
 | --- | --- | --- |
 | `github-actions` | Every GitHub Actions workflow | Workflow-only revert |
-| `cargo` | The root Cargo workspace and lockfile | Core Rust dependency revert |
+| `cargo` | The root Cargo workspace and lockfile, plus a dependent fuzz-lock refresh when resolution changes | Root graph and companion fuzz-lock revert |
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
 | `fuzz-cargo` | Direct standalone fuzz-runtime dependencies and fuzz lockfile | Fuzz-runtime-only revert |
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
@@ -164,6 +164,22 @@ policy checker parses both manifests and rejects a fuzz dependency that
 duplicates a root workspace dependency, including one hidden behind Cargo's
 renamed-dependency syntax, a missing allowlist, or any broader/substituted
 allow rule.
+
+A root Cargo update must also refresh `fuzz/Cargo.lock` when a changed
+root-owned package is reachable through the fuzz package's path dependencies.
+Resolve that package to the exact version selected in `Cargo.lock`, then run:
+
+```bash
+cargo update --manifest-path fuzz/Cargo.toml \
+  -p <changed-package> --precise <root-lock-version>
+cargo check --manifest-path fuzz/Cargo.toml --locked --bins
+```
+
+Commit the resulting `fuzz/Cargo.lock` change on the root update pull request.
+The issue-closure gate admits that lockfile only as a companion to at least one
+root `Cargo.toml` or `Cargo.lock` path. A fuzz-runtime pull request remains
+limited to `fuzz/Cargo.toml` and `fuzz/Cargo.lock`; mixing the root and fuzz
+manifests is rejected.
 
 For an action update, inspect the upstream release and source commit, retain the
 full 40-character commit SHA in every `uses:` reference, and keep its release

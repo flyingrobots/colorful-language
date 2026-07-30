@@ -569,7 +569,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   workspace-level declarations, rejects missing, broadened, or substituted
   allow rules, resolves renamed Cargo declarations to their package identities
   before detecting duplicated authority, and keeps the documented fuzz-only
-  rollback boundary honest.
+  rollback boundary honest. Root Cargo updates may carry the dependent fuzz
+  lockfile needed to keep path-crate evidence synchronized, while the closure
+  contract rejects a pull request that mixes root and fuzz manifests.
 - **Satisfiable Dependabot closure admission.** Human and ordinary automation
   pull requests still require exactly one body-level issue-closing reference,
   while GitHub-authenticated Dependabot updates may carry zero or one. Zero is

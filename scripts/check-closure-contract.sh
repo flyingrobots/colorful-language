@@ -33,13 +33,27 @@ paths_match_family() {
     <<<"$files_json" >/dev/null
 }
 
+paths_match_anchored_family() {
+  local files_json="$1" allowed_pattern="$2" anchor_pattern="$3"
+  jq -e \
+    --arg allowed_pattern "$allowed_pattern" \
+    --arg anchor_pattern "$anchor_pattern" \
+    'length > 0 and
+     all(.[]; type == "string" and test($allowed_pattern)) and
+     any(.[]; test($anchor_pattern))' \
+    <<<"$files_json" >/dev/null
+}
+
 dependabot_source_family() {
   local files_json="$1"
   if paths_match_family \
     "$files_json" \
     '^\.github/workflows/[^/]+\.(yml|yaml)$'; then
     echo "github-actions"
-  elif paths_match_family "$files_json" '^Cargo\.(toml|lock)$'; then
+  elif paths_match_anchored_family \
+    "$files_json" \
+    '^(Cargo\.(toml|lock)|fuzz/Cargo\.lock)$' \
+    '^Cargo\.(toml|lock)$'; then
     echo "cargo-root"
   elif paths_match_family \
     "$files_json" \
@@ -47,7 +61,7 @@ dependabot_source_family() {
     echo "cargo-zed"
   elif paths_match_family \
     "$files_json" \
-    '^(Cargo\.toml|fuzz/Cargo\.(toml|lock))$'; then
+    '^fuzz/Cargo\.(toml|lock)$'; then
     echo "cargo-fuzz"
   elif paths_match_family \
     "$files_json" \

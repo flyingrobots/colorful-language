@@ -130,6 +130,19 @@ bounded property/fuzz evidence tracked by
   standalone fuzz dev dependency`, `rejects a root-owned fuzz workspace
   dependency`, and `rejects a root-owned target-specific fuzz dependency`.
   *Status:* implemented.
+- **ETC-6c** — *Requirement:* ETC-8. *Behavior:* a root Cargo dependency
+  update may carry `fuzz/Cargo.lock` as a dependent evidence refresh without
+  granting the standalone fuzz source authority over root Cargo paths.
+  *Oracle:* Dependabot path classification accepts root `Cargo.toml` or
+  `Cargo.lock` changes with a fuzz-lock companion, accepts fuzz-only manifest
+  and lock changes separately, and rejects any pull request that mixes the
+  root and fuzz manifests. *Evidence type:* deterministic pull-request
+  metadata fixtures. *Tracking:*
+  [#269](https://github.com/flyingrobots/colorful-language/issues/269).
+  *Evidence:* `scripts/check-closure-contract.sh` and
+  `scripts/check-closure-contract.test.sh` cases `root Cargo update family with
+  fuzz-lock companion`, `root Cargo update family with only fuzz-lock
+  companion`, and `mixed root and fuzz Cargo manifests`. *Status:* implemented.
 - **ETC-7a** — *Requirement:* ETC-9. *Behavior:* a deterministic dependency
   policy checker preserves full-SHA third-party action references with release
   comments and the exact Dependabot source/group matrix. Its mutation suite
