@@ -39,6 +39,7 @@ const RELEASE_TRACKING_REFERENCE_CLAIMS = [
   "bash scripts/release-prep.sh",
 ];
 const RELEASE_TRACKING_COMMAND_START_PATTERN = /\bgh issue create\b/u;
+const RELEASE_TRACKING_LABEL_OPTION_PATTERN = /--label(?=$|[\s=])/gu;
 const RELEASE_TRACKING_LABEL_PATTERN =
   /--label (?<label>[a-z0-9][a-z0-9:._-]*)/gu;
 const RELEASE_TRACKING_REFERENCE_PATTERNS = [
@@ -308,6 +309,13 @@ function validateDeliveryTracking(
       (pattern) => oneVersionMatch(releasingReference, pattern),
     );
   const trackingCommand = releaseTrackingCommand(releasingReference);
+  const releaseTrackingLabelOptions =
+    trackingCommand === undefined
+      ? []
+      : allMatches(
+          trackingCommand,
+          RELEASE_TRACKING_LABEL_OPTION_PATTERN,
+        );
   const releaseTrackingLabels =
     trackingCommand === undefined
       ? []
@@ -322,6 +330,8 @@ function validateDeliveryTracking(
     trackingCommand === undefined ||
     releaseExampleVersions.some((version) => version === undefined) ||
     new Set(releaseExampleVersions).size !== 1 ||
+    releaseTrackingLabelOptions.length !==
+      releaseTrackingLabels.length ||
     !sameStringSet(releaseTrackingLabels, RELEASE_TRACKING_LABELS)
   ) {
     reject(
