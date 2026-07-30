@@ -383,6 +383,17 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence:* `scripts/check-release-packet.test.mjs`
   `documentation spine links the planned packet and witness`;
   `docs/README.md`. *Status:* implemented.
+- **REL-18d — Structured pre-publication evidence state.** *Requirement:*
+  REL-18. *Behavior:* publication, public-verification, and retrospective
+  sections each declare one explicit unavailable or pending evidence state and
+  cannot combine that state with ordinary completion prose, commit identifiers,
+  public URLs, or success markers. *Oracle:* removing the structured state or
+  adding a created-tag claim beside a pending registry claim fails with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* deterministic witness mutation
+  test. *Tracking:*
+  [#280](https://github.com/flyingrobots/colorful-language/issues/280).
+  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
+  planned.
 
 ## Open verification gaps
 
