@@ -336,15 +336,20 @@ test("enforces the two-to-five goalpost bound", () => {
 });
 
 test("requires observable acceptance evidence for every goalpost", () => {
-  expectCode((snapshot) => {
-    snapshot.release = snapshot.release.replace(
-      [
-        "- **Reach:** `node scripts/check-release-distribution.mjs` proves the artifact graph.",
-        "- **Integrity:** `node scripts/check-release-packet.mjs` proves packet admission.",
-      ].join("\n"),
-      "- The release looks complete.\n- The implementation appears reliable.",
-    );
-  }, "E_RELEASE_PACKET_GOALPOSTS");
+  for (const [evidence, vague] of [
+    [
+      "- **Reach:** `node scripts/check-release-distribution.mjs` proves the artifact graph.",
+      "- **Reach:** the release looks complete.",
+    ],
+    [
+      "- **Integrity:** `node scripts/check-release-packet.mjs` proves packet admission.",
+      "- **Integrity:** the implementation appears reliable.",
+    ],
+  ]) {
+    expectCode((snapshot) => {
+      snapshot.release = snapshot.release.replace(evidence, vague);
+    }, "E_RELEASE_PACKET_GOALPOSTS");
+  }
 });
 
 test("requires unique goalpost labels", () => {
