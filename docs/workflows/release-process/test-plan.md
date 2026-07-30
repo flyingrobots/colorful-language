@@ -403,8 +403,10 @@ Verification for release preparation, tag automation, and release witnesses.
   or `false && ( ... )` fails with `E_RELEASE_PACKET_GATE`. *Evidence type:*
   deterministic shell-structure mutation test. *Tracking:*
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `does not accept packet commands inside guarded compound lists`. *Status:*
+  implemented.
 
 ## Open verification gaps
 

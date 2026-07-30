@@ -91,7 +91,8 @@ level of `scripts/release-prep.sh`. Every other tag-workflow job must depend on
 `validate-release` transitively, so publication cannot run beside rather than
 behind packet admission. Comments, workflow data, conditional or
 failure-tolerant steps, unreachable branches, and commands after shell
-termination do not satisfy the gate.
+termination do not satisfy the gate. Local commands inside operator-guarded
+brace or subshell groups are not treated as top-level preparation evidence.
 
 Editor adapters follow the same fixed release version as the Cargo workspace.
 For a pre-1.0 `0.Y.Z` release, each adapter accepts stable `colorful-lsp`

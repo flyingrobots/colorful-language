@@ -740,7 +740,11 @@ function topLevelShellCommands(source) {
     if (hereDocumentMatch !== null) {
       hereDocument = hereDocumentMatch.groups.delimiter;
     }
-    if (/^(?:done|esac|fi)\b/u.test(trimmed) || trimmed === "}") {
+    if (
+      /^(?:done|esac|fi)\b/u.test(trimmed) ||
+      trimmed === "}" ||
+      trimmed === ")"
+    ) {
       depth = Math.max(0, depth - 1);
       continue;
     }
@@ -762,7 +766,8 @@ function topLevelShellCommands(source) {
         trimmed,
       ) ||
       trimmed === "(" ||
-      trimmed === "{"
+      trimmed === "{" ||
+      /(?:&&|\|\||;|&)\s*[({]\s*(?:#.*)?$/u.test(trimmed)
     ) {
       depth += 1;
     }
