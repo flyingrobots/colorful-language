@@ -148,12 +148,12 @@ Dependabot checks six independent weekly dependency sources from
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
 | `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
 
-The root `cargo` group matches patch updates only. Root Cargo minor and major
-updates do not match that group, so Dependabot proposes them as individually
-reviewable pull requests instead of hiding several breaking-risk changes in one
-batch. Dependabot ignores DashMap SemVer-major updates while the workspace
-declares `tower-lsp = "0.20"` and its reviewed compatible
-`dashmap = "5.5.3"` line. This is the machine-visible form of the decision in
+The root `cargo` group matches patch updates only. Unmatched root Cargo minor
+and major updates become individually reviewable pull requests instead of
+hiding several breaking-risk changes in one batch. The reviewed exception is
+DashMap: Dependabot ignores its SemVer-major updates while the workspace
+declares `tower-lsp = "0.20"` and the compatible `dashmap = "5.5.3"` line.
+This is the machine-visible form of the decision in
 [#124](https://github.com/flyingrobots/colorful-language/issues/124), not a
 license to force a dependency version solely to reduce duplicate bytes.
 
