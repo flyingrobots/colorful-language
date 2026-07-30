@@ -85,8 +85,10 @@ node scripts/check-release-packet.mjs
 
 The same checker parses workflow jobs and shell command structure. The self-test
 and live check must remain an ordered, unconditional, fail-closed executable
-sequence in one CI job, one release-admission job, and the top level of
-`scripts/release-prep.sh`. Comments, workflow data, conditional or
+sequence in one CI job, the tag workflow's `validate-release` job, and the top
+level of `scripts/release-prep.sh`. Every other tag-workflow job must depend on
+`validate-release` transitively, so publication cannot run beside rather than
+behind packet admission. Comments, workflow data, conditional or
 failure-tolerant steps, unreachable branches, and commands after shell
 termination do not satisfy the gate.
 

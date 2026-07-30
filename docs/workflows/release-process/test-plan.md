@@ -369,8 +369,10 @@ Verification for release preparation, tag automation, and release witnesses.
   downstream job fails with `E_RELEASE_PACKET_GATE`. *Evidence type:*
   deterministic release-workflow mutation test. *Tracking:*
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
-  *Evidence:* planned in `scripts/check-release-packet.test.mjs`. *Status:*
-  planned.
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs`
+  `requires packet admission in every tag-workflow dependency path`. *Status:*
+  implemented.
 
 ## Open verification gaps
 

@@ -787,6 +787,55 @@ function isFailClosedWorkflowEntry(entry) {
   );
 }
 
+function workflowJobRunsCommandsInOrder(job) {
+  if (
+    job === null ||
+    typeof job !== "object" ||
+    Array.isArray(job) ||
+    !Array.isArray(job.steps) ||
+    !isFailClosedWorkflowEntry(job)
+  ) {
+    return false;
+  }
+  const commands = job.steps.flatMap((step) =>
+    step !== null &&
+    typeof step === "object" &&
+    !Array.isArray(step) &&
+    typeof step.run === "string" &&
+    isFailClosedWorkflowEntry(step)
+      ? topLevelShellCommands(step.run)
+      : [],
+  );
+  return commandsRunInOrder(commands);
+}
+
+function workflowJobNeeds(job) {
+  if (
+    job === null ||
+    typeof job !== "object" ||
+    Array.isArray(job) ||
+    job.needs === undefined
+  ) {
+    return [];
+  }
+  const needs = Array.isArray(job.needs) ? job.needs : [job.needs];
+  return needs.every((dependency) => typeof dependency === "string")
+    ? needs
+    : [];
+}
+
+function workflowJobDependsOn(jobs, jobName, dependency, visited = new Set()) {
+  if (visited.has(jobName)) {
+    return false;
+  }
+  visited.add(jobName);
+  return workflowJobNeeds(jobs[jobName]).some(
+    (neededJob) =>
+      neededJob === dependency ||
+      workflowJobDependsOn(jobs, neededJob, dependency, visited),
+  );
+}
+
 function workflowRunsCommandsInOrder(source, gate) {
   let workflow;
   try {
@@ -806,27 +855,18 @@ function workflowRunsCommandsInOrder(source, gate) {
   ) {
     return false;
   }
-  return Object.values(workflow.jobs).some((job) => {
-    if (
-      job === null ||
-      typeof job !== "object" ||
-      Array.isArray(job) ||
-      !Array.isArray(job.steps) ||
-      !isFailClosedWorkflowEntry(job)
-    ) {
-      return false;
-    }
-    const commands = job.steps.flatMap((step) =>
-      step !== null &&
-      typeof step === "object" &&
-      !Array.isArray(step) &&
-      typeof step.run === "string" &&
-      isFailClosedWorkflowEntry(step)
-        ? topLevelShellCommands(step.run)
-        : [],
+  if (gate === ".github/workflows/release.yml") {
+    const admissionJob = "validate-release";
+    return (
+      workflowJobRunsCommandsInOrder(workflow.jobs[admissionJob]) &&
+      Object.keys(workflow.jobs).every(
+        (jobName) =>
+          jobName === admissionJob ||
+          workflowJobDependsOn(workflow.jobs, jobName, admissionJob),
+      )
     );
-    return commandsRunInOrder(commands);
-  });
+  }
+  return Object.values(workflow.jobs).some(workflowJobRunsCommandsInOrder);
 }
 
 function validateGateWiring(snapshot) {
