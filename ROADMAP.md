@@ -232,7 +232,7 @@ observe public-contract regressions before they ship.
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   <!-- roadmap-primary: delivered #280 -->
 - **Active release-witness transitions:** extend the pre-publication admission
-  state machine with explicit published, verified, and retrospectived evidence
+  state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
   <!-- roadmap-primary: active #281 -->
