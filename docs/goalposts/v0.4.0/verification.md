@@ -19,10 +19,10 @@ after its command or public oracle has been observed.
 
 | Evidence | Oracle | Result |
 | --- | --- | --- |
-| Scope reconciliation | `git log --first-parent v0.3.0..origin/main`; Unreleased `CHANGELOG.md`; open issue and PR inventory | Pending final packet review. |
-| Release packet policy | `node --test scripts/check-release-packet.test.mjs`; `node scripts/check-release-packet.mjs` | Pending implementation completion. |
-| Release profile | `bash scripts/release-profile-check.sh` | Pending final branch execution. |
-| Unified release preparation | `mise exec node@22.23.1 -- bash scripts/release-prep.sh` | Pending final branch execution. |
+| Scope reconciliation | `git log --first-parent v0.3.0..origin/main`; Unreleased `CHANGELOG.md`; open issue and PR inventory | Pass on 2026-07-29: 102 first-parent commits, 25 open issues, three open dependency-major PRs, synchronized 0.4.0 manifests, and 21 Markdown files across 10 topic homes reviewed. |
+| Release packet policy | `node --test scripts/check-release-packet.test.mjs`; `node scripts/check-release-packet.mjs` | Pass on 2026-07-29: 16/16 tests; live packet admitted four goalposts and 33 scoped issues. |
+| Release profile | `bash scripts/release-profile-check.sh` | Pass on 2026-07-29: workspace version 0.4.0. |
+| Unified release preparation | `mise exec node@22.23.1 -- bash scripts/release-prep.sh` | Pass on 2026-07-29 at `300113eeb78768814cdc9837da81999487d8b154`: `RELEASE PREP PASSED`. |
 | Pull-request CI | Required CI and security check rollup | Not available before the pull request runs. |
 | Review | CodeRabbit or Codex review plus zero unresolved GraphQL threads | Not available before the pull request runs. |
 | Release tracker | `[release] v0.4.0`, created from the reviewed packet after merge | Pending packet merge. |
