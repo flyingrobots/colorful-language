@@ -188,10 +188,12 @@ the deterministic maintenance suite.
 weekly groups preserve separate rollback boundaries for GitHub Actions, the
 root, Zed, and fuzz Cargo workspaces, root Node evidence tooling, and the VS
 Code adapter. The workflow family owns each reviewed GitHub Action pin:
-full-SHA references and release comments must agree across every use and
+Non-Docker third-party actions use full 40-character commit SHA references;
+`docker://` actions use full `sha256` image digest references.
+The immutable references and release comments must agree across every use and
 sibling path from the same action repository. Coverage, security, release, and
 distribution policies validate the action identity and its required
-configuration without copying mutable release SHAs, so a coordinated
+configuration without copying mutable release references, so a coordinated
 workflow-only update can satisfy every first-party gate while a partial update
 fails closed.
 

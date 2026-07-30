@@ -149,15 +149,18 @@ Dependabot checks six independent weekly dependency sources from
 | `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
 
 For the `github-actions` group, the checked-in workflow family is the action
-pin authority. Every third-party action must use a full 40-character commit SHA
-and retain its reviewed release comment. Every action path from one repository,
-including sibling paths such as `github/codeql-action/init` and
-`github/codeql-action/analyze`, must carry the same SHA and release comment in
-every workflow, so a partial Dependabot update fails closed. Action-specific
-policy checks identify an action by name and validate its permissions,
-credentials, inputs, artifact behavior, and job topology without duplicating
-the mutable commit SHA in checker code. A coordinated workflow-only update can
-therefore advance after review without requiring an unrelated checker edit.
+pin authority.
+Non-Docker third-party actions use full 40-character commit SHA references;
+`docker://` actions use full `sha256` image digest references.
+Both forms retain a reviewed release comment. Every action path from one
+repository, including sibling paths such as `github/codeql-action/init` and
+`github/codeql-action/analyze`, must carry the same reference and release
+comment in every workflow, so a partial Dependabot update fails closed.
+Action-specific policy checks identify an action by name and validate its
+permissions, credentials, inputs, artifact behavior, and job topology without
+duplicating the mutable reference in checker code. A coordinated workflow-only
+update can therefore advance after review without requiring an unrelated
+checker edit.
 
 Run the pin and semantic policy together before accepting an action update:
 
