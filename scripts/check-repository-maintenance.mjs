@@ -39,7 +39,8 @@ const RELEASE_TRACKING_REFERENCE_CLAIMS = [
   "bash scripts/release-prep.sh",
 ];
 const RELEASE_TRACKING_COMMAND_START_PATTERN = /\bgh issue create\b/u;
-const RELEASE_TRACKING_LABEL_OPTION_PATTERN = /--label(?=$|[\s=])/gu;
+const RELEASE_TRACKING_LABEL_OPTION_PATTERN =
+  /--label(?=$|[\s=])|(?:^|\s)-l(?=$|[\s=])/gu;
 const RELEASE_TRACKING_LABEL_PATTERN =
   /--label (?<label>[a-z0-9][a-z0-9:._-]*)/gu;
 const RELEASE_TRACKING_REFERENCE_PATTERNS = [
