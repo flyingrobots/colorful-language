@@ -21,7 +21,8 @@
 
 use colorful_lexicon::ContextualOpenClassAnnotator;
 use colorful_parse::ProseParser;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 
 /// Read a fixture shared with `colorful-cli` at runtime rather than
 /// `include_str!`-ing it: `scripts/package-witness.sh` compiles this bench
