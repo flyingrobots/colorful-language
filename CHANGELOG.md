@@ -532,7 +532,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   snapshotted across all 92 tracked prose corpora before and after and are
   identical per-file. `fuzz/Cargo.lock` is resynchronized in the same change,
   which Dependabot cannot do itself because that workspace only allows
-  `libfuzzer-sys`.
+  `libfuzzer-sys`. `criterion` 0.8 also adds a target-gated `winapi` edge
+  through `page_size`, which exposed a latent gap: the cross-stage benchmark
+  report asserts on `cargo metadata --locked --offline`, and a Linux CI build
+  never downloads target-gated crates on its own. The Rust, coverage, and
+  package-witness jobs now run `cargo fetch --locked` first, so the whole
+  resolved graph is cached before any locked-offline resolution. No test was
+  relaxed.
 - **Maintained roadmap structure parsing.** The fail-closed roadmap inventory
   gate now delegates CommonMark and GFM table interpretation to exact-pinned
   `mdast` and `micromark` packages while retaining every stable fixture,
