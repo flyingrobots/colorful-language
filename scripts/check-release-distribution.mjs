@@ -82,9 +82,17 @@ export const EXPECTED_FORMULA_RUBY = Object.freeze({
     "ruby-version": "3.4.10",
   }),
 });
+// The SBOM is generated after the native archives land in dist/ so the
+// dependency graph ships beside the bytes it describes, and before the
+// attestation step so it is covered by the same provenance.
+const EXPECTED_SBOM_TOOL = "cargo-cyclonedx@0.5.9";
+const EXPECTED_SBOM_ASSET = "dist/*sbom.cdx.json";
+
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Set up formula syntax Ruby",
   "Download native archives",
+  "Install SBOM tool",
+  "Generate SBOM",
   "Generate Homebrew formula",
   "Build and smoke editor packages",
   "Attest Homebrew and editor artifacts",
@@ -403,6 +411,22 @@ function validateReleaseJob(job) {
     throw new Error(`${context} must download native archives into dist`);
   }
 
+  const sbomInstall = requiredStep(steps, "Install SBOM tool", context);
+  requirePinnedAction(sbomInstall, "taiki-e/install-action", context);
+  const sbomGenerate = requiredStep(steps, "Generate SBOM", context);
+  const sbomSource = String(sbomGenerate.run ?? "");
+  if (
+    sbomInstall.with?.tool !== EXPECTED_SBOM_TOOL ||
+    !sbomSource.includes("cargo cyclonedx") ||
+    !sbomSource.includes("--locked") ||
+    !/dist\/[^"'\s]*sbom\.cdx\.json/u.test(sbomSource)
+  ) {
+    throw new Error(
+      `${context} must generate an SBOM with ${EXPECTED_SBOM_TOOL} ` +
+        `into a dist/ CycloneDX asset`,
+    );
+  }
+
   const homebrew = requiredStep(
     steps,
     "Generate Homebrew formula",
@@ -477,10 +501,11 @@ function validateReleaseJob(job) {
   if (
     !attested.includes("target/editor-smoke/*.vsix") ||
     !attested.includes("dist/*zed-source.tar.gz") ||
-    !attested.includes("dist/colorful.rb")
+    !attested.includes("dist/colorful.rb") ||
+    !attested.includes(EXPECTED_SBOM_ASSET)
   ) {
     throw new Error(
-      `${context} must attest the formula, VSIX, and Zed source archive`,
+      `${context} must attest the formula, VSIX, Zed source archive, and SBOM`,
     );
   }
 

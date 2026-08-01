@@ -159,11 +159,12 @@ observe public-contract regressions before they ship.
   library calls
   [#224](https://github.com/flyingrobots/colorful-language/issues/224).
   <!-- roadmap-primary: parked #224 -->
-- **Parked release provenance:** attach a reviewed SBOM and build-provenance
-  attestation to release artifacts after the distribution and signing
-  authorities are established
+- **Delivered release provenance:** generate a CycloneDX bill of materials from
+  the locked dependency graph and attest it with the same provenance as the
+  artifacts it describes, now that the distribution and signing authorities
+  exist
   [#227](https://github.com/flyingrobots/colorful-language/issues/227).
-  <!-- roadmap-primary: parked #227 -->
+  <!-- roadmap-primary: delivered #227 -->
 - **Delivered evidence hygiene:** derive the cross-stage allocation-profiler
   identity from the resolved dependency authority
   [#207](https://github.com/flyingrobots/colorful-language/issues/207) after
