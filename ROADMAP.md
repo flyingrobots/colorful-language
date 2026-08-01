@@ -227,8 +227,8 @@ observe public-contract regressions before they ship.
   <!-- roadmap-primary: delivered #278 -->
 - **Delivered queued dependency-major adoption:** adopt the `criterion`, `sha2`,
   and `logos` majors in one reviewed change carrying the source and sibling
-  lockfile edits Dependabot cannot, with byte-identical canonical IR evidence
-  proving the lexer upgrade drifts no token spans
+  lockfile edits that Dependabot cannot make, with byte-identical canonical IR
+  evidence proving that the lexer upgrade does not change token spans
   [#285](https://github.com/flyingrobots/colorful-language/issues/285), before
   the v0.4.0 packet freezes the shipping graph.
   <!-- roadmap-primary: delivered #285 -->
