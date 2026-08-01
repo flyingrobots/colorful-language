@@ -235,6 +235,21 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: Install SBOM tool
+        uses: taiki-e/install-action@065d6a08a14e61e89fb0a4c10eecdbdef39c7d8e # v2.85.4
+        with:
+          tool: cargo-cyclonedx@0.5.9
+          fallback: none
+
+      # Runs after the native archives land in dist/ so the dependency graph
+      # ships beside the bytes it describes, and before the attestation step so
+      # the SBOM carries the same provenance as the artifacts it covers.
+      - name: Generate SBOM
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --locked --format json --override-filename sbom
+          cp sbom.cdx.json "dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"
+
       - name: Generate Homebrew formula
         run: |
           set -euo pipefail
@@ -269,6 +284,7 @@ jobs:
             target/editor-smoke/*.vsix
             dist/*zed-source.tar.gz
             dist/colorful.rb
+            dist/*sbom.cdx.json
 
       - name: Verify and publish VS Marketplace extension
         env:

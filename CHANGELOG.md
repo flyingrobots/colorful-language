@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Attested software bill of materials.** The tag workflow now generates a
+  CycloneDX SBOM from the locked dependency graph using an exact pinned
+  `cargo-cyclonedx`, writes it into `dist/` so it publishes as a release asset,
+  and attests it alongside the Homebrew formula, VSIX, and Zed source archive so
+  it carries the same GitHub/Sigstore provenance as the bytes it describes.
+  Generation is ordered after the native archives are downloaded and before
+  attestation, so the SBOM ships beside the artifacts it covers and cannot be
+  published unattested. Deterministic release-topology mutations reject a
+  removed generation step, an unpinned tool, output written outside `dist/`, a
+  step reordered before the native download, and an attestation that omits the
+  SBOM. Build provenance attestation already shipped; this closes the
+  bill-of-materials half.
+
 - **Monotonic release-witness evidence gates.** The active release packet now
   advances through explicit pre-publication, published, verified, and
   retrospected states. Publication requires an available annotated target tag,

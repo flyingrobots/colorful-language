@@ -17,6 +17,7 @@ import {
 } from "./check-release-distribution.mjs";
 
 const ACTION_SHA = "a".repeat(40);
+const SBOM_TOOL_VERSION = "cargo-cyclonedx@0.5.9";
 const ADMISSION_COMMANDS = Object.freeze([
   "bash scripts/release-profile-check.sh",
   "node scripts/check-editor-version-policy.mjs",
@@ -146,6 +147,19 @@ function validSnapshot() {
               },
             },
             {
+              name: "Install SBOM tool",
+              uses: `taiki-e/install-action@${ACTION_SHA}`,
+              with: { tool: SBOM_TOOL_VERSION, fallback: "none" },
+            },
+            {
+              name: "Generate SBOM",
+              run:
+                "set -euo pipefail\n" +
+                "cargo cyclonedx --locked --format json " +
+                "--override-filename sbom\n" +
+                'cp sbom.cdx.json "dist/${GITHUB_REF_NAME}-sbom.cdx.json"\n',
+            },
+            {
               name: "Generate Homebrew formula",
               run:
                 "set -euo pipefail\n" +
@@ -169,7 +183,8 @@ function validSnapshot() {
                 "subject-path":
                 "target/editor-smoke/*.vsix\n" +
                 "dist/*zed-source.tar.gz\n" +
-                "dist/colorful.rb",
+                "dist/colorful.rb\n" +
+                "dist/*sbom.cdx.json",
               },
             },
             {
@@ -473,6 +488,8 @@ test("binds native dispatch and release side effects to the reviewed topology", 
   const reviewedOrder = [
     "Set up formula syntax Ruby",
     "Download native archives",
+    "Install SBOM tool",
+    "Generate SBOM",
     "Generate Homebrew formula",
     "Build and smoke editor packages",
     "Attest Homebrew and editor artifacts",
@@ -573,7 +590,7 @@ test("derives and attests Homebrew formulae from downloaded native assets", () =
     ["before-download", /must preserve the reviewed release step order/u],
     [
       "unattested",
-      /must attest the formula, VSIX, and Zed source archive/u,
+      /must attest the formula, VSIX, Zed source archive, and SBOM/u,
     ],
   ]) {
     const snapshot = validSnapshot();
@@ -621,7 +638,7 @@ test("rejects Homebrew command and attestation prefix bypasses", () => {
     ["duplicate-command", /exact reviewed command sequence/u],
     [
       "attestation-suffix",
-      /must attest the formula, VSIX, and Zed source archive/u,
+      /must attest the formula, VSIX, Zed source archive, and SBOM/u,
     ],
   ]) {
     const snapshot = validSnapshot();
@@ -942,6 +959,49 @@ test("verifies checksums and provenance for the complete release matrix", () => 
       /verify checksums and provenance for every release artifact/u,
     );
   }
+});
+
+test("requires a generated SBOM covering the shipped dependency graph", () => {
+  for (const [mutation, expected] of [
+    ["missing-step", /must contain exactly one 'Generate SBOM' step/u],
+    ["unpinned-tool", /must generate an SBOM/u],
+    ["wrong-dist", /must generate an SBOM/u],
+    ["before-download", /must preserve the reviewed release step order/u],
+  ]) {
+    const snapshot = validSnapshot();
+    const steps = snapshot.workflow.jobs.release.steps;
+    const index = steps.findIndex((step) => step.name === "Generate SBOM");
+    assert.notEqual(
+      index,
+      -1,
+      "the valid snapshot must contain a Generate SBOM step",
+    );
+    if (mutation === "missing-step") {
+      steps.splice(index, 1);
+    } else if (mutation === "unpinned-tool") {
+      const install = releaseStep(snapshot, "Install SBOM tool");
+      install.with.tool = "cargo-cyclonedx";
+    } else if (mutation === "wrong-dist") {
+      steps[index].run = steps[index].run.replace("dist/", "elsewhere/");
+    } else if (mutation === "before-download") {
+      const [sbom] = steps.splice(index, 1);
+      steps.unshift(sbom);
+    }
+    assert.throws(() => validateReleaseDistribution(snapshot), expected);
+  }
+});
+
+test("attests the SBOM alongside the formula and editor artifacts", () => {
+  const snapshot = validSnapshot();
+  const attest = releaseStep(snapshot, "Attest Homebrew and editor artifacts");
+  attest.with["subject-path"] = attest.with["subject-path"]
+    .split(/\r?\n/u)
+    .filter((line) => !line.includes("sbom"))
+    .join("\n");
+  assert.throws(
+    () => validateReleaseDistribution(snapshot),
+    /must attest the formula, VSIX, Zed source archive, and SBOM/u,
+  );
 });
 
 test("the checked-in repository satisfies the distribution policy", () => {
