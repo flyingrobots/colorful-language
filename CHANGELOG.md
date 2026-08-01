@@ -518,6 +518,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Adopted the queued major dependency updates before the v0.4.0 snapshot.**
+  `criterion` moves to 0.8.2, `sha2` to 0.11.0, and `logos` to 0.16.1, so the
+  release ships one reviewed dependency graph instead of three deferred majors.
+  `criterion` 0.8 drops its re-exported `black_box`, so both bench crates now
+  use `std::hint::black_box`. `sha2` 0.11 moves onto `digest` 0.11 and
+  `crypto-common` 0.2, replacing `generic-array` with `hybrid-array`; its digest
+  output no longer implements `LowerHex`, so the one `{:x}` formatting site
+  now uses the byte-iteration idiom already used elsewhere. The canonical
+  hashing path was already immune, so `syntax_schema_hash`, `vocabulary_hash`,
+  and `build_hash` are unchanged. `logos` 0.16 needs no source change. Because
+  the lexer produces every downstream token span, canonical IR bytes were
+  snapshotted across all 92 tracked prose corpora before and after and are
+  identical per-file. `fuzz/Cargo.lock` is resynchronized in the same change,
+  which Dependabot cannot do itself because that workspace only allows
+  `libfuzzer-sys`. `criterion` 0.8 also adds a target-gated `winapi` edge
+  through `page_size`, which exposed a latent gap: the cross-stage benchmark
+  report asserts on `cargo metadata --locked --offline`, and a Linux CI build
+  never downloads target-gated crates on its own. The Rust, coverage, and
+  package-witness jobs now run `cargo fetch --locked` first, so the whole
+  resolved graph is cached before any locked-offline resolution. No test was
+  relaxed.
 - **Maintained roadmap structure parsing.** The fail-closed roadmap inventory
   gate now delegates CommonMark and GFM table interpretation to exact-pinned
   `mdast` and `micromark` packages while retaining every stable fixture,

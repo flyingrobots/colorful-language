@@ -202,7 +202,10 @@ fn claimed_corpus_is_consistent(report: &Value) -> bool {
             let repetitions = byte_count.div_ceil(template.len());
             let mut corpus = template.repeat(repetitions);
             corpus.truncate(byte_count);
-            let expected = format!("{:x}", Sha256::digest(corpus.as_bytes()));
+            let expected: String = Sha256::digest(corpus.as_bytes())
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect();
             scenario["corpusBytes"].as_u64() == Some(byte_count as u64)
                 && scenario["corpusSha256"].as_str() == Some(&expected)
         })

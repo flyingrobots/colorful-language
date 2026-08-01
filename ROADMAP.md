@@ -225,6 +225,13 @@ observe public-contract regressions before they ship.
   permission, artifact, attestation, coverage, or release-topology invariants
   [#278](https://github.com/flyingrobots/colorful-language/issues/278).
   <!-- roadmap-primary: delivered #278 -->
+- **Delivered queued dependency-major adoption:** adopt the `criterion`, `sha2`,
+  and `logos` majors in one reviewed change carrying the source and sibling
+  lockfile edits that Dependabot cannot make, with byte-identical canonical IR
+  evidence proving that the lexer upgrade does not change token spans
+  [#285](https://github.com/flyingrobots/colorful-language/issues/285), before
+  the v0.4.0 packet freezes the shipping graph.
+  <!-- roadmap-primary: delivered #285 -->
 - **Delivered v0.4.0 packet admission:** derive the planned packet from current
   workspace and completed-release identity; require exact version tokens,
   uniquely labeled goalposts with observable acceptance oracles, and an

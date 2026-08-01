@@ -7,7 +7,8 @@
 //! published numbers themselves, so it can't go stale in a way that silently
 //! invalidates the docs.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 
 const SMALL: &str = include_str!("../fixtures/editor-smoke-prose.txt");
 const MEDIUM: &str = include_str!("../fixtures/bench-corpus.txt");

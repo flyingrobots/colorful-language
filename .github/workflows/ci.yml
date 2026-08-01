@@ -132,6 +132,11 @@ jobs:
         with:
           tool: cargo-mutants@27.0.0
           fallback: none
+      # Populate the registry cache for every target, not just the host. The
+      # cross-stage benchmark report asserts on `cargo metadata --locked
+      # --offline`, which resolves the whole graph including target-gated
+      # crates a Linux build never downloads on its own.
+      - run: cargo fetch --locked
       - run: node scripts/check-release-publish-order.mjs
       - run: bash scripts/check-rust-source-policy.test.sh
       - run: bash scripts/check-rust-source-policy.sh
@@ -168,6 +173,9 @@ jobs:
         with:
           tool: cargo-llvm-cov@0.8.7
           fallback: none
+      # See the note in the Rust job: locked-offline metadata needs the whole
+      # graph cached, including target-gated crates.
+      - run: cargo fetch --locked
       - name: Install coverage policy dependencies
         run: npm ci
       - name: Prepare coverage output
@@ -213,6 +221,9 @@ jobs:
         with:
           toolchain: "1.97.1"
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      # The packaged workspace runs the same locked-offline metadata assertion
+      # from a temporary directory, resolving against this shared cache.
+      - run: cargo fetch --locked
       - run: bash scripts/package-witness.sh
 
   install-local-smoke:
