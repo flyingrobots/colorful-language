@@ -131,6 +131,10 @@ publish:
       platform: package-recipe
       contents:
         - dist/colorful.rb
+    - name: software-bill-of-materials
+      platform: provenance
+      contents:
+        - dist/colorful-language-v{version}-sbom.cdx.json
 distribution:
   owner: "@flyingrobots"
   provenance: github-sigstore

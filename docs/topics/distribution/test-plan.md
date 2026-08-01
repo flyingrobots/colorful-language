@@ -102,18 +102,6 @@ Verification for install paths and published artifacts.
   deterministic generator, archive-integrity, and release-policy mutation
   tests. *Tracking:*
   [#251](https://github.com/flyingrobots/colorful-language/issues/251).
-- **DIST-9a** — *Requirement:* DIST-9. *Behavior:* the tag workflow installs
-  `cargo-cyclonedx` at an exact pinned version, generates a CycloneDX SBOM from
-  the locked dependency graph into `dist/`, and attests it alongside the
-  formula, VSIX, and Zed source archive so it inherits the same provenance.
-  Generation runs after the native archives are downloaded, so the dependency
-  graph ships beside the bytes it describes, and before attestation, so it
-  cannot be published unattested. *Oracle:* one mutation per refused shape — a
-  removed generation step, an unpinned tool, an output written outside `dist/`,
-  a step reordered before the native download, and an attestation omitting the
-  SBOM — each produces a stable release-policy error. *Evidence type:*
-  release-topology mutation tests. *Tracking:*
-  [#227](https://github.com/flyingrobots/colorful-language/issues/227).
   *Evidence:* `scripts/generate-homebrew-formula.mjs`;
   `scripts/generate-homebrew-formula.test.mjs`
   `renders exact synchronized Homebrew formula bytes`,
@@ -129,6 +117,27 @@ Verification for install paths and published artifacts.
   `scripts/release-prep.sh`. *Status:* implemented for generation, syntax, and
   release attachment; public tap audit/install/upgrade/rollback evidence
   remains planned in DIST-6a.
+- **DIST-9a** — *Requirement:* DIST-9. *Behavior:* the tag workflow installs
+  `cargo-cyclonedx` at an exact pinned version, generates a CycloneDX SBOM from
+  the locked dependency graph into `dist/`, and attests it alongside the
+  formula, VSIX, and Zed source archive so it inherits the same provenance.
+  Generation runs after the native archives are downloaded, so the dependency
+  graph ships beside the bytes it describes, and before attestation, so it
+  cannot be published unattested. *Oracle:* one mutation per refused shape — a
+  removed generation step, an unpinned tool, an output written outside `dist/`,
+  a step reordered before the native download, and an attestation omitting the
+  SBOM — each produces a stable release-policy error. *Evidence type:*
+  release-topology mutation tests. *Tracking:*
+  [#227](https://github.com/flyingrobots/colorful-language/issues/227).
+  *Evidence:* `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `requires a generated SBOM covering the shipped dependency graph`,
+  `rejects inert or misdirected SBOM generation commands`, and
+  `attests the SBOM alongside the formula and editor artifacts`;
+  `scripts/release-prep.sh`. *Status:* implemented for generation and release
+  attestation; public download and attestation-verification evidence arrives
+  with the first tagged release under DIST-7a.
 
 ## Open verification gaps
 

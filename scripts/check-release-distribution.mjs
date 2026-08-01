@@ -87,6 +87,14 @@ export const EXPECTED_FORMULA_RUBY = Object.freeze({
 // attestation step so it is covered by the same provenance.
 const EXPECTED_SBOM_TOOL = "cargo-cyclonedx@0.5.9";
 const EXPECTED_SBOM_ASSET = "dist/*sbom.cdx.json";
+// Matched as an exact sequence rather than by token presence, so an inert
+// stand-in such as `echo 'cargo cyclonedx'; touch dist/fake-sbom.cdx.json`
+// cannot satisfy the gate and publish an arbitrary attested file.
+const REVIEWED_SBOM_COMMANDS = Object.freeze([
+  "set -euo pipefail",
+  "cargo cyclonedx --locked --format json --override-filename sbom",
+  'cp sbom.cdx.json "dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"',
+]);
 
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Set up formula syntax Ruby",
@@ -414,16 +422,16 @@ function validateReleaseJob(job) {
   const sbomInstall = requiredStep(steps, "Install SBOM tool", context);
   requirePinnedAction(sbomInstall, "taiki-e/install-action", context);
   const sbomGenerate = requiredStep(steps, "Generate SBOM", context);
-  const sbomSource = String(sbomGenerate.run ?? "");
   if (
     sbomInstall.with?.tool !== EXPECTED_SBOM_TOOL ||
-    !sbomSource.includes("cargo cyclonedx") ||
-    !sbomSource.includes("--locked") ||
-    !/dist\/[^"'\s]*sbom\.cdx\.json/u.test(sbomSource)
+    !isDeepStrictEqual(
+      shellCommandLines(sbomGenerate.run ?? ""),
+      REVIEWED_SBOM_COMMANDS,
+    )
   ) {
     throw new Error(
       `${context} must generate an SBOM with ${EXPECTED_SBOM_TOOL} ` +
-        `into a dist/ CycloneDX asset`,
+        `through the exact reviewed command sequence`,
     );
   }
 

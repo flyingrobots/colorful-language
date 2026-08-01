@@ -157,7 +157,8 @@ function validSnapshot() {
                 "set -euo pipefail\n" +
                 "cargo cyclonedx --locked --format json " +
                 "--override-filename sbom\n" +
-                'cp sbom.cdx.json "dist/${GITHUB_REF_NAME}-sbom.cdx.json"\n',
+                "cp sbom.cdx.json " +
+                '"dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n',
             },
             {
               name: "Generate Homebrew formula",
@@ -964,8 +965,8 @@ test("verifies checksums and provenance for the complete release matrix", () => 
 test("requires a generated SBOM covering the shipped dependency graph", () => {
   for (const [mutation, expected] of [
     ["missing-step", /must contain exactly one 'Generate SBOM' step/u],
-    ["unpinned-tool", /must generate an SBOM/u],
-    ["wrong-dist", /must generate an SBOM/u],
+    ["unpinned-tool", /exact reviewed command sequence/u],
+    ["wrong-dist", /exact reviewed command sequence/u],
     ["before-download", /must preserve the reviewed release step order/u],
   ]) {
     const snapshot = validSnapshot();
@@ -988,6 +989,37 @@ test("requires a generated SBOM covering the shipped dependency graph", () => {
       steps.unshift(sbom);
     }
     assert.throws(() => validateReleaseDistribution(snapshot), expected);
+  }
+});
+
+test("rejects inert or misdirected SBOM generation commands", () => {
+  for (const run of [
+    // an inert stand-in that merely mentions the tool and touches a file
+    "set -euo pipefail\n" +
+      "echo 'cargo cyclonedx --locked --format json'\n" +
+      'touch "dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n',
+    // real invocation, but the format is unbound
+    "set -euo pipefail\n" +
+      "cargo cyclonedx --locked --override-filename sbom\n" +
+      "cp sbom.cdx.json " +
+      '"dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n',
+    // real invocation, but the asset is written outside dist/
+    "set -euo pipefail\n" +
+      "cargo cyclonedx --locked --format json --override-filename sbom\n" +
+      'cp sbom.cdx.json "elsewhere/sbom.cdx.json"\n',
+    // an extra command smuggled in after the reviewed sequence
+    "set -euo pipefail\n" +
+      "cargo cyclonedx --locked --format json --override-filename sbom\n" +
+      "cp sbom.cdx.json " +
+      '"dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n' +
+      'echo overwritten > "dist/colorful-language-x-sbom.cdx.json"\n',
+  ]) {
+    const snapshot = validSnapshot();
+    releaseStep(snapshot, "Generate SBOM").run = run;
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /exact reviewed command sequence/u,
+    );
   }
 });
 
