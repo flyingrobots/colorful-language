@@ -561,7 +561,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `fuzz/Cargo.lock` is resynchronized in the same change, which
   Dependabot cannot do itself because that workspace only allows
   `libfuzzer-sys`; leaving it stale is what made the Dependabot pull request
-  fail `--locked` resolution rather than any API break. No test was relaxed.
+  fail `--locked` resolution rather than any API break. The upgrade also
+  contracts the graph: `phf_generator` moving from `rand` to `fastrand` drops
+  the last user of `rand` 0.8, so `rand` 0.8.6 and `rand_core` 0.6.4 leave the
+  lockfile and both crates collapse from two coexisting majors to one. No test
+  was relaxed.
 - **Adopted the queued major dependency updates before the v0.4.0 snapshot.**
   `criterion` moves to 0.8.2, `sha2` to 0.11.0, and `logos` to 0.16.1, so the
   release ships one reviewed dependency graph instead of three deferred majors.
