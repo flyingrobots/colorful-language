@@ -118,9 +118,13 @@ Verification for install paths and published artifacts.
   release attachment; public tap audit/install/upgrade/rollback evidence
   remains planned in DIST-6a.
 - **DIST-9a** — *Requirement:* DIST-9. *Behavior:* the tag workflow installs
-  `cargo-cyclonedx` at an exact pinned version, generates a CycloneDX SBOM from
-  the locked dependency graph into `dist/`, and attests it alongside the
-  formula, VSIX, and Zed source archive so it inherits the same provenance.
+  `cargo-cyclonedx` at an exact pinned version and generates one CycloneDX SBOM
+  per shipped binary — `colorful` and `colorful-lsp` — into `dist/`, attested
+  alongside the formula, VSIX, and Zed source archive so they inherit the same
+  provenance. The tool emits one SBOM per package beside that package's
+  manifest and has no aggregate-workspace mode, so a single workspace-wide
+  document is not available; a per-binary pair is what actually covers the
+  shipped bytes, since `colorful-cli`'s graph excludes `colorful-lsp`'s.
   Generation runs after the native archives are downloaded, so the dependency
   graph ships beside the bytes it describes, and before attestation, so it
   cannot be published unattested. *Oracle:* one mutation per refused shape — a
@@ -129,7 +133,9 @@ Verification for install paths and published artifacts.
   SBOM — each produces a stable release-policy error. *Evidence type:*
   release-topology mutation tests. *Tracking:*
   [#227](https://github.com/flyingrobots/colorful-language/issues/227).
-  *Evidence:* `.github/workflows/release.yml`;
+  *Evidence:* the reviewed command sequence is executed against this workspace
+  with the pinned tool before it is admitted, not merely pattern-matched;
+  `.github/workflows/release.yml`;
   `scripts/check-release-distribution.mjs`;
   `scripts/check-release-distribution.test.mjs`
   `requires a generated SBOM covering the shipped dependency graph`,

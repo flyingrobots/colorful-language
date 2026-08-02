@@ -728,10 +728,11 @@ gh attestation verify colorful.rb --repo flyingrobots/colorful-language
 # The SBOM is attested with the same provenance as the bytes it describes, so
 # a missing or invalid attestation here fails the release gate rather than
 # passing silently.
-python3 -c "import json,sys; json.load(open(sys.argv[1]))" \
-  colorful-language-vX.Y.Z-sbom.cdx.json
-gh attestation verify colorful-language-vX.Y.Z-sbom.cdx.json \
-  --repo flyingrobots/colorful-language
+for sbom in colorful-language-vX.Y.Z-colorful-sbom.cdx.json \
+            colorful-language-vX.Y.Z-colorful-lsp-sbom.cdx.json; do
+  python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$sbom"
+  gh attestation verify "$sbom" --repo flyingrobots/colorful-language
+done
 node scripts/verify-editor-publication.mjs \
   --vsix colorful-language-X.Y.Z.vsix \
   --version X.Y.Z

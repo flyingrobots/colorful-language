@@ -9,14 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Attested software bill of materials.** The tag workflow now generates a
-  CycloneDX SBOM from the locked dependency graph using an exact pinned
-  `cargo-cyclonedx`, writes it into `dist/` so it publishes as a release asset,
+- **Attested software bill of materials.** The tag workflow now generates one
+  CycloneDX SBOM per shipped binary (`colorful` and `colorful-lsp`) using an
+  exact pinned `cargo-cyclonedx`, writes them into `dist/` so they publish as
+  release assets,
   and attests it alongside the Homebrew formula, VSIX, and Zed source archive so
   it carries the same GitHub/Sigstore provenance as the bytes it describes.
   Generation is ordered after the native archives are downloaded and before
-  attestation, so the SBOM ships beside the artifacts it covers and cannot be
-  published unattested. Deterministic release-topology mutations reject a
+  attestation, so the documents ship beside the artifacts they cover and cannot
+  be published unattested. One SBOM per binary rather than one per release
+  because `cargo-cyclonedx` emits per-package documents with no
+  aggregate-workspace mode, and the CLI's dependency graph does not contain the
+  LSP's. Deterministic release-topology mutations reject a
   removed generation step, an unpinned tool, output written outside `dist/`, a
   step reordered before the native download, and an attestation that omits the
   SBOM. Build provenance attestation already shipped; this closes the

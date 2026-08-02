@@ -90,10 +90,19 @@ const EXPECTED_SBOM_ASSET = "dist/*sbom.cdx.json";
 // Matched as an exact sequence rather than by token presence, so an inert
 // stand-in such as `echo 'cargo cyclonedx'; touch dist/fake-sbom.cdx.json`
 // cannot satisfy the gate and publish an arbitrary attested file.
+// cargo-cyclonedx emits one SBOM per package next to that package's manifest;
+// there is no aggregate-workspace mode, and it rejects --locked. The release
+// ships two binaries, so each gets its own bill of materials.
 const REVIEWED_SBOM_COMMANDS = Object.freeze([
   "set -euo pipefail",
-  "cargo cyclonedx --locked --format json --override-filename sbom",
-  'cp sbom.cdx.json "dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"',
+  "cargo cyclonedx --format json --all " +
+    "--manifest-path crates/colorful-cli/Cargo.toml --override-filename sbom",
+  "cargo cyclonedx --format json --all " +
+    "--manifest-path crates/colorful-lsp/Cargo.toml --override-filename sbom",
+  "cp crates/colorful-cli/sbom.json " +
+    '"dist/colorful-language-${GITHUB_REF_NAME}-colorful-sbom.cdx.json"',
+  "cp crates/colorful-lsp/sbom.json " +
+    '"dist/colorful-language-${GITHUB_REF_NAME}-colorful-lsp-sbom.cdx.json"',
 ]);
 
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([

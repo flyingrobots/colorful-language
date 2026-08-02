@@ -247,8 +247,10 @@ jobs:
       - name: Generate SBOM
         run: |
           set -euo pipefail
-          cargo cyclonedx --locked --format json --override-filename sbom
-          cp sbom.cdx.json "dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"
+          cargo cyclonedx --format json --all --manifest-path crates/colorful-cli/Cargo.toml --override-filename sbom
+          cargo cyclonedx --format json --all --manifest-path crates/colorful-lsp/Cargo.toml --override-filename sbom
+          cp crates/colorful-cli/sbom.json "dist/colorful-language-${GITHUB_REF_NAME}-colorful-sbom.cdx.json"
+          cp crates/colorful-lsp/sbom.json "dist/colorful-language-${GITHUB_REF_NAME}-colorful-lsp-sbom.cdx.json"
 
       - name: Generate Homebrew formula
         run: |

@@ -155,10 +155,18 @@ function validSnapshot() {
               name: "Generate SBOM",
               run:
                 "set -euo pipefail\n" +
-                "cargo cyclonedx --locked --format json " +
+                "cargo cyclonedx --format json --all " +
+                "--manifest-path crates/colorful-cli/Cargo.toml " +
                 "--override-filename sbom\n" +
-                "cp sbom.cdx.json " +
-                '"dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n',
+                "cargo cyclonedx --format json --all " +
+                "--manifest-path crates/colorful-lsp/Cargo.toml " +
+                "--override-filename sbom\n" +
+                "cp crates/colorful-cli/sbom.json " +
+                '"dist/colorful-language-${GITHUB_REF_NAME}' +
+                '-colorful-sbom.cdx.json"\n' +
+                "cp crates/colorful-lsp/sbom.json " +
+                '"dist/colorful-language-${GITHUB_REF_NAME}' +
+                '-colorful-lsp-sbom.cdx.json"\n',
             },
             {
               name: "Generate Homebrew formula",
