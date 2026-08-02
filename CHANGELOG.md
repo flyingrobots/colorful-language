@@ -549,8 +549,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `colorful ir` output, then hashing the sorted `<path>` + two spaces +
   `<digest>` manifest, gives
   `e632761224da0cbb3204ef11ce48b843377ec15b8617148e7b61c2ba50e52cd0` on both
-  sides; all 73 digests are distinct, so no file contributed a vacuous empty
-  result.
+  sides. No corpus contributed a vacuous result: no output's digest equals the
+  SHA-256 of zero bytes.
   Lookup integrity is now pinned directly by
   `every_phf_entry_resolves_to_its_own_value`, which walks each table's own
   entries and requires the public `get` path to return that same entry, with
