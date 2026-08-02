@@ -433,6 +433,7 @@ function validateReleaseJob(job) {
   const sbomGenerate = requiredStep(steps, "Generate SBOM", context);
   if (
     sbomInstall.with?.tool !== EXPECTED_SBOM_TOOL ||
+    sbomInstall.with?.fallback !== "none" ||
     !isDeepStrictEqual(
       shellCommandLines(sbomGenerate.run ?? ""),
       REVIEWED_SBOM_COMMANDS,

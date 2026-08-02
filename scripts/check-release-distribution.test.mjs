@@ -1000,6 +1000,22 @@ test("requires a generated SBOM covering the shipped dependency graph", () => {
   }
 });
 
+test("rejects SBOM installer fallback drift", () => {
+  for (const fallback of ["cargo-binstall", "build", undefined]) {
+    const snapshot = validSnapshot();
+    const install = releaseStep(snapshot, "Install SBOM tool");
+    if (fallback === undefined) {
+      delete install.with.fallback;
+    } else {
+      install.with.fallback = fallback;
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /exact reviewed command sequence/u,
+    );
+  }
+});
+
 test("rejects inert or misdirected SBOM generation commands", () => {
   for (const run of [
     // an inert stand-in that merely mentions the tool and touches a file
