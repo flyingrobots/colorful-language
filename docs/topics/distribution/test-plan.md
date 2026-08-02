@@ -142,8 +142,11 @@ Verification for install paths and published artifacts.
   `rejects inert or misdirected SBOM generation commands`, and
   `attests the SBOM alongside the formula and editor artifacts`;
   `scripts/release-prep.sh`. *Status:* implemented for generation and release
-  attestation; public download and attestation-verification evidence arrives
-  with the first tagged release under DIST-7a.
+  attestation; public evidence remains planned under this case — DIST-9a owns
+  it rather than DIST-7a, which covers editor and server artifacts and would
+  otherwise leave the SBOM unrecorded in the release witness. The first tagged
+  release must record both asset filenames, their JSON validation results, and
+  their attestation verification results in the v0.4.0 publication witness.
 
 ## Open verification gaps
 

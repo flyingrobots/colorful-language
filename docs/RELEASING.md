@@ -736,6 +736,14 @@ done
 node scripts/verify-editor-publication.mjs \
   --vsix colorful-language-X.Y.Z.vsix \
   --version X.Y.Z
+```
+
+Record, in the release witness, both SBOM filenames, the JSON validation result
+for each, and the attestation verification result for each. Running the commands
+is not the evidence; the recorded outcome is. An SBOM that was generated and
+attested but never recorded leaves the witness incomplete under DIST-9a.
+
+```bash
 cargo info colorful-core@X.Y.Z
 cargo info colorful-cli@X.Y.Z
 cargo install colorful-cli --version X.Y.Z --locked
