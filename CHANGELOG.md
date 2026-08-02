@@ -535,6 +535,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Adopted the `phf` 0.14 perfect-hash major before the v0.4.0 snapshot.**
+  `phf` moves from 0.11.3 to 0.14.0 so the release ships one reviewed
+  dependency graph rather than deferring a major on a direct dependency.
+  `phf` backs the three `phf_map!` static maps in `crates/colorful-lexicon` —
+  `FUNCTION_WORDS`, `OPEN_CLASS_WORDS`, and `AMBIGUOUS_WORDS` — that classify
+  every word the parser sees, and 0.14 replaces the generator's `rand`
+  dependency with `fastrand`, changing how the perfect hash is chosen. The
+  macro surface is unchanged, so no source edit was required, but a
+  compile-clean upgrade is not evidence that classification held: canonical IR
+  bytes were snapshotted before and after across the 73 corpora listed by
+  `git ls-files '*.md'` at `5ebde5e`, and are identical per file. Running
+  `colorful ir` from the repository root on each repo-relative path — the IR
+  embeds that path, so it is part of the derivation, not incidental to it —
+  then hashing each output and hashing the sorted `<path>` + two spaces +
+  `<digest>` manifest, gives
+  `e632761224da0cbb3204ef11ce48b843377ec15b8617148e7b61c2ba50e52cd0` on both
+  sides. No corpus contributed a vacuous result: no output's digest equals the
+  SHA-256 of zero bytes. The corpus is pinned at `5ebde5e` because
+  `CHANGELOG.md` is itself one of the 73 inputs, so this entry cannot describe
+  a corpus that includes its own later revisions; the measurement covers the
+  `phf` change, which touches no Markdown, and documentation commits on this
+  branch are deliberately outside it.
+  Lookup integrity is now pinned directly by
+  `every_phf_entry_resolves_to_its_own_value`, which walks each table's own
+  entries and requires the public `get` path to return that same entry, with
+  `phf_iteration_visits_every_entry` as an independent witness that the walk
+  is complete; every previous lexicon test reached the tables only through the
+  handful of keys it named. Map *iteration* order is unobservable — outside
+  those two tests no code iterates these tables, only `get` and `len`.
+  `fuzz/Cargo.lock` is resynchronized in the same change, which
+  Dependabot cannot do itself because that workspace only allows
+  `libfuzzer-sys`; leaving it stale is what made the Dependabot pull request
+  fail `--locked` resolution rather than any API break. The upgrade also
+  contracts the graph: `phf_generator` moving from `rand` to `fastrand` drops
+  the last user of `rand` 0.8, so `rand` 0.8.6 and `rand_core` 0.6.4 leave the
+  lockfile and both crates collapse from two coexisting majors to one. No test
+  was relaxed.
 - **Adopted the queued major dependency updates before the v0.4.0 snapshot.**
   `criterion` moves to 0.8.2, `sha2` to 0.11.0, and `logos` to 0.16.1, so the
   release ships one reviewed dependency graph instead of three deferred majors.

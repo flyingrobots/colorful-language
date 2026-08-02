@@ -233,6 +233,13 @@ observe public-contract regressions before they ship.
   [#285](https://github.com/flyingrobots/colorful-language/issues/285), before
   the v0.4.0 packet freezes the shipping graph.
   <!-- roadmap-primary: delivered #285 -->
+- **Delivered the `phf` perfect-hash major adoption:** adopt `phf` 0.14 in one
+  reviewed change carrying the `fuzz/Cargo.lock` synchronization Dependabot
+  cannot make, with byte-identical canonical IR evidence proving that the
+  perfect-hash generator change does not drift lexical classification
+  [#291](https://github.com/flyingrobots/colorful-language/issues/291), before
+  the v0.4.0 packet freezes the shipping graph.
+  <!-- roadmap-primary: delivered #291 -->
 - **Delivered v0.4.0 packet admission:** derive the planned packet from current
   workspace and completed-release identity; require exact version tokens,
   uniquely labeled goalposts with observable acceptance oracles, and an
