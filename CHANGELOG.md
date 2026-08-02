@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Coverage floor carried forward from 0.4.0.** The versioned coverage policy
+  in `.github/coverage-policy.json` is unchanged across the release boundary:
+  exact uncovered-line ceilings ratchet the 94.00% measured baseline recorded
+  for 0.4.0, under the same conservative 92% workspace line floor and the same
+  CLI, LSP, and optional Vale process-transport floors. This entry records the
+  baseline in force for work in progress; it is not a new measurement, and the
+  figure moves only when `.github/coverage-policy.json` is updated through
+  review.
+
+## [0.4.0] - 2026-08-02
+
 ### Added
 
 - **Attested software bill of materials.** The tag workflow now generates one
@@ -617,7 +630,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   missing, duplicated, empty, and changed identities; the packaged
   report-contract test resolves the package witness's generated lockfile and
   rejects stale baseline metadata without rerunning wall-clock measurements.
-- **Breaking diagnostic-rule API queued for v0.4.0.** `Rule` can now carry a
+- **Breaking diagnostic-rule API.** `Rule` can now carry a
   validated owned external diagnostic code via `Rule::external`, and
   `Rule::code` returns a borrow tied to `&self`. Consequently `Rule` is no
   longer `Copy`; callers must borrow or clone a rule when retaining it. Built-in
@@ -632,7 +645,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The documentation index and owning topic test plans now route that work
   through issue-linked planned cases instead of presenting it as current
   behavior.
-- **Breaking vocabulary lookup API queued for v0.4.0.**
+- **Breaking vocabulary lookup API.**
   `colorful_ir::vocabulary::{visual_role, visual_role_for, projection}` now
   return `Option` instead of a bare `VisualRole` / `RoleProjection` reference.
   This is an intentional major-line change, not patch-compatible behavior:
@@ -642,14 +655,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   authored mapping; manifest validation guarantees every current `PosClass`
   and generated `VisualRole` maps to `Some`. A compile-time signature test
   durably pins all three `Option` return types.
-- **Breaking API queued for v0.4.0.** `colorful_ir::from_classification` is a
+- **Breaking API.** `colorful_ir::from_classification` is a
   public function and now takes two additional mandatory parameters,
   `parser_identity: PassIdentity` and `annotator_identity: PassIdentity`.
   Downstream crates calling it directly must update call sites (pass each
   producer's `pass_identity()`) before adopting the `0.4.x` line; there is no
   compatible 4-argument entry point, since a default identity would be exactly
   the dishonest placeholder `PassIdentity` is designed to reject.
-- **Breaking API queued for v0.4.0.** `colorful_ir::ValidationError` now
+- **Breaking API.** `colorful_ir::ValidationError` now
   carries a structured `path: Path` on every variant (e.g.
   `tokens[3].byteRange.startUtf8`) instead of the old ad hoc `what: String` /
   `index: usize` fields, and a new `ValidationError::path()` plus a `Display`
@@ -1002,7 +1015,8 @@ First public release — **Goalpost 0, "English lights up."**
     semantic tokens were unified on the LSP line model; `is_number` accepts
     Unicode `\p{N}`; letter-initial alphanumeric words (`covid19`) stay whole.
 
-[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/flyingrobots/colorful-language/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/flyingrobots/colorful-language/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/flyingrobots/colorful-language/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/flyingrobots/colorful-language/compare/v0.1.0...v0.2.0
