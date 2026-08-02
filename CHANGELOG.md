@@ -545,12 +545,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   macro surface is unchanged, so no source edit was required, but a
   compile-clean upgrade is not evidence that classification held: canonical IR
   bytes were snapshotted before and after across the 73 corpora listed by
-  `git ls-files '*.md'` and are identical per file. Hashing each file's
-  `colorful ir` output, then hashing the sorted `<path>` + two spaces +
+  `git ls-files '*.md'` at `5ebde5e`, and are identical per file. Running
+  `colorful ir` from the repository root on each repo-relative path — the IR
+  embeds that path, so it is part of the derivation, not incidental to it —
+  then hashing each output and hashing the sorted `<path>` + two spaces +
   `<digest>` manifest, gives
   `e632761224da0cbb3204ef11ce48b843377ec15b8617148e7b61c2ba50e52cd0` on both
   sides. No corpus contributed a vacuous result: no output's digest equals the
-  SHA-256 of zero bytes.
+  SHA-256 of zero bytes. The corpus is pinned at `5ebde5e` because
+  `CHANGELOG.md` is itself one of the 73 inputs, so this entry cannot describe
+  a corpus that includes its own later revisions; the measurement covers the
+  `phf` change, which touches no Markdown, and documentation commits on this
+  branch are deliberately outside it.
   Lookup integrity is now pinned directly by
   `every_phf_entry_resolves_to_its_own_value`, which walks each table's own
   entries and requires the public `get` path to return that same entry, with
