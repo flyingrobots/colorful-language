@@ -547,8 +547,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bytes were snapshotted across all 73 tracked Markdown corpora before and
   after and are identical per file, aggregate SHA-256
   `e632761224da0cbb3204ef11ce48b843377ec15b8617148e7b61c2ba50e52cd0`.
-  Generated-validator output is unchanged as well, covering map-iteration
-  order. `fuzz/Cargo.lock` is resynchronized in the same change, which
+  Lookup integrity is now pinned directly by
+  `every_phf_entry_resolves_to_its_own_value`, which walks each table's own
+  entries and requires the public `get` path to return that same entry, with
+  `phf_iteration_visits_every_entry` as an independent witness that the walk
+  is complete; every previous lexicon test reached the tables only through the
+  handful of keys it named. Map *iteration* order is unobservable — outside
+  those two tests no code iterates these tables, only `get` and `len`.
+  `fuzz/Cargo.lock` is resynchronized in the same change, which
   Dependabot cannot do itself because that workspace only allows
   `libfuzzer-sys`; leaving it stale is what made the Dependabot pull request
   fail `--locked` resolution rather than any API break. No test was relaxed.

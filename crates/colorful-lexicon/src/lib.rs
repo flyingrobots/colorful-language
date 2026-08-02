@@ -1139,4 +1139,52 @@ mod tests {
         assert_eq!(classify("\u{0663}"), PosClass::Number); // Arabic-Indic three
         assert_eq!(classify("\u{FF13}"), PosClass::Number); // full-width three
     }
+
+    #[test]
+    fn every_phf_entry_resolves_to_its_own_value() {
+        // These three tables are perfect hash maps built at compile time, so
+        // their lookup correctness is a property of whichever `phf` generator
+        // built them, not of the word data. Every other test here reaches the
+        // tables through `classify`, which only ever exercises the handful of
+        // keys those tests name; a generator that mislaid an unnamed key would
+        // go unnoticed. Walk each table's own entries and require the public
+        // `get` path to return that same entry, so the pairing is checked for
+        // every key rather than for the sampled ones.
+        for (word, kind) in &FUNCTION_WORDS {
+            assert_eq!(
+                FUNCTION_WORDS.get(word),
+                Some(kind),
+                "FUNCTION_WORDS entry {word:?} did not resolve to its own value"
+            );
+        }
+        for (word, kind) in &OPEN_CLASS_WORDS {
+            assert_eq!(
+                OPEN_CLASS_WORDS.get(word),
+                Some(kind),
+                "OPEN_CLASS_WORDS entry {word:?} did not resolve to its own value"
+            );
+        }
+        for (word, senses) in &AMBIGUOUS_WORDS {
+            // `Sense` holds a fn pointer and has no `PartialEq`, so identity of
+            // the borrowed slice is the equality that matters here.
+            let resolved = AMBIGUOUS_WORDS
+                .get(word)
+                .unwrap_or_else(|| panic!("AMBIGUOUS_WORDS entry {word:?} did not resolve"));
+            assert!(
+                std::ptr::eq(*resolved, *senses),
+                "AMBIGUOUS_WORDS entry {word:?} resolved to a different sense table"
+            );
+        }
+    }
+
+    #[test]
+    fn phf_iteration_visits_every_entry() {
+        // The loops above are only as strong as their trip count: an empty or
+        // truncated iterator would make them pass vacuously. `len` is derived
+        // from the compile-time entry count rather than from iteration, so it
+        // is an independent witness that the walk was complete.
+        assert_eq!(FUNCTION_WORDS.into_iter().count(), FUNCTION_WORDS.len());
+        assert_eq!(OPEN_CLASS_WORDS.into_iter().count(), OPEN_CLASS_WORDS.len());
+        assert_eq!(AMBIGUOUS_WORDS.into_iter().count(), AMBIGUOUS_WORDS.len());
+    }
 }
