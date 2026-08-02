@@ -535,6 +535,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Adopted the `phf` 0.14 perfect-hash major before the v0.4.0 snapshot.**
+  `phf` moves from 0.11.3 to 0.14.0 so the release ships one reviewed
+  dependency graph rather than deferring a major on a direct dependency.
+  `phf` backs the three `phf_map!` static maps in `crates/colorful-lexicon` —
+  `FUNCTION_WORDS`, `OPEN_CLASS_WORDS`, and `AMBIGUOUS_WORDS` — that classify
+  every word the parser sees, and 0.14 replaces the generator's `rand`
+  dependency with `fastrand`, changing how the perfect hash is chosen. The
+  macro surface is unchanged, so no source edit was required, but a
+  compile-clean upgrade is not evidence that classification held: canonical IR
+  bytes were snapshotted across all 73 tracked Markdown corpora before and
+  after and are identical per file, aggregate SHA-256
+  `e632761224da0cbb3204ef11ce48b843377ec15b8617148e7b61c2ba50e52cd0`.
+  Generated-validator output is unchanged as well, covering map-iteration
+  order. `fuzz/Cargo.lock` is resynchronized in the same change, which
+  Dependabot cannot do itself because that workspace only allows
+  `libfuzzer-sys`; leaving it stale is what made the Dependabot pull request
+  fail `--locked` resolution rather than any API break. No test was relaxed.
 - **Adopted the queued major dependency updates before the v0.4.0 snapshot.**
   `criterion` moves to 0.8.2, `sha2` to 0.11.0, and `logos` to 0.16.1, so the
   release ships one reviewed dependency graph instead of three deferred majors.
