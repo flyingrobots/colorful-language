@@ -544,9 +544,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependency with `fastrand`, changing how the perfect hash is chosen. The
   macro surface is unchanged, so no source edit was required, but a
   compile-clean upgrade is not evidence that classification held: canonical IR
-  bytes were snapshotted across all 73 tracked Markdown corpora before and
-  after and are identical per file, aggregate SHA-256
-  `e632761224da0cbb3204ef11ce48b843377ec15b8617148e7b61c2ba50e52cd0`.
+  bytes were snapshotted before and after across the 73 corpora listed by
+  `git ls-files '*.md'` and are identical per file. Hashing each file's
+  `colorful ir` output, then hashing the sorted `<path>` + two spaces +
+  `<digest>` manifest, gives
+  `e632761224da0cbb3204ef11ce48b843377ec15b8617148e7b61c2ba50e52cd0` on both
+  sides; all 73 digests are distinct, so no file contributed a vacuous empty
+  result.
   Lookup integrity is now pinned directly by
   `every_phf_entry_resolves_to_its_own_value`, which walks each table's own
   entries and requires the public `get` path to return that same entry, with
