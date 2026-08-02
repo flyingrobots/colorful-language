@@ -383,7 +383,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `colorful-projection::build_document` constructs and projects the validated
   aggregate directly, so CLI IR/diagnostic output crosses the boundary once.
   The two new public `ProjectionError` variants are an intentional exhaustive-
-  match API addition in the queued v0.4.0 line.
+  match API addition in the 0.4.0 line.
 - **Strict received-IR token and outline validation.** Rust
   `validate_document` and the JavaScript `validateWireContract` gate now reject
   empty, unsorted, or overlapping token ranges and outline graphs with invalid
