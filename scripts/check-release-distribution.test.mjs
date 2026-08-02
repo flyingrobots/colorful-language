@@ -10,6 +10,7 @@ import {
   EXPECTED_PLATFORMS,
   EXPECTED_PROVENANCE,
   EXPECTED_PUBLISHER_TOOLS,
+  EXPECTED_SBOM_ARTIFACT,
   EXPECTED_SBOM_TOOL,
   HOMEBREW_SELF_TEST_COMMAND,
   PUBLICATION_SELF_TEST_COMMAND,
@@ -43,6 +44,7 @@ function validSnapshot() {
       homebrew: structuredClone(EXPECTED_HOMEBREW_POLICY),
     },
     publisherTools: structuredClone(EXPECTED_PUBLISHER_TOOLS),
+    releaseArtifacts: [structuredClone(EXPECTED_SBOM_ARTIFACT)],
     repositoryLicense: "license\n",
     zedLicense: "license\n",
     workflow: {
@@ -997,6 +999,44 @@ test("requires a generated SBOM covering the shipped dependency graph", () => {
       steps.unshift(sbom);
     }
     assert.throws(() => validateReleaseDistribution(snapshot), expected);
+  }
+});
+
+test("enforces the SBOM entries in the release artifact inventory", () => {
+  for (const mutation of [
+    "missing-entry",
+    "drop-cli-sbom",
+    "drop-lsp-sbom",
+    "rename-asset",
+    "empty-contents",
+  ]) {
+    const snapshot = validSnapshot();
+    const artifacts = snapshot.releaseArtifacts;
+    const index = artifacts.findIndex(
+      (entry) => entry.name === "software-bill-of-materials",
+    );
+    assert.notEqual(index, -1, "fixture must register the SBOM inventory");
+    if (mutation === "missing-entry") {
+      artifacts.splice(index, 1);
+    } else if (mutation === "drop-cli-sbom") {
+      artifacts[index].contents = artifacts[index].contents.filter(
+        (path) => !path.includes("-colorful-sbom"),
+      );
+    } else if (mutation === "drop-lsp-sbom") {
+      artifacts[index].contents = artifacts[index].contents.filter(
+        (path) => !path.includes("-colorful-lsp-sbom"),
+      );
+    } else if (mutation === "rename-asset") {
+      artifacts[index].contents = artifacts[index].contents.map((path) =>
+        path.replace("dist/", "elsewhere/"),
+      );
+    } else if (mutation === "empty-contents") {
+      artifacts[index].contents = [];
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /release artifact inventory/u,
+    );
   }
 });
 

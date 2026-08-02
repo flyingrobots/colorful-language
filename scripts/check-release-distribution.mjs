@@ -86,6 +86,18 @@ export const EXPECTED_FORMULA_RUBY = Object.freeze({
 // dependency graph ships beside the bytes it describes, and before the
 // attestation step so it is covered by the same provenance.
 export const EXPECTED_SBOM_TOOL = "cargo-cyclonedx@0.5.9";
+// The release profile's artifact inventory is a separate authority from the
+// workflow: the workflow decides what is produced, the inventory decides what a
+// release is required to contain. Both SBOM assets must appear here, or an
+// entry could be dropped without any gate noticing.
+export const EXPECTED_SBOM_ARTIFACT = Object.freeze({
+  name: "software-bill-of-materials",
+  platform: "provenance",
+  contents: Object.freeze([
+    "dist/colorful-language-v{version}-colorful-sbom.cdx.json",
+    "dist/colorful-language-v{version}-colorful-lsp-sbom.cdx.json",
+  ]),
+});
 const EXPECTED_SBOM_ASSET = "dist/*sbom.cdx.json";
 // Matched as an exact sequence rather than by token presence, so an inert
 // stand-in such as `echo 'cargo cyclonedx'; touch dist/fake-sbom.cdx.json`
@@ -649,6 +661,10 @@ export function validateReleaseDistribution(snapshot) {
     snapshot.policy,
     ".continuum/release.yml:distribution",
   );
+  requireSbomArtifactInventory(
+    snapshot.releaseArtifacts,
+    ".continuum/release.yml:publish.artifacts",
+  );
   if (policy.owner !== EXPECTED_OWNER) {
     throw new Error(
       `.continuum/release.yml distribution owner must be ${EXPECTED_OWNER}`,
@@ -730,6 +746,33 @@ function parseRepositoryProfile(source) {
   return document.distribution;
 }
 
+function parseReleaseArtifacts(source) {
+  const document = requiredRecord(
+    parseYaml(source),
+    ".continuum/release.yml",
+  );
+  return document.publish?.artifacts;
+}
+
+function requireSbomArtifactInventory(artifacts, context) {
+  const entries = Array.isArray(artifacts) ? artifacts : [];
+  const entry = entries.find(
+    (candidate) => candidate?.name === EXPECTED_SBOM_ARTIFACT.name,
+  );
+  if (
+    !entry ||
+    entry.platform !== EXPECTED_SBOM_ARTIFACT.platform ||
+    !isDeepStrictEqual(
+      Array.isArray(entry.contents) ? [...entry.contents].sort() : [],
+      [...EXPECTED_SBOM_ARTIFACT.contents].sort(),
+    )
+  ) {
+    throw new Error(
+      `${context} must register both SBOM assets in the release artifact inventory`,
+    );
+  }
+}
+
 export function loadRepositorySnapshot(root = ROOT) {
   const read = (path) => readFileSync(resolve(root, path), "utf8");
   const readOptional = (path) => {
@@ -761,6 +804,7 @@ export function loadRepositorySnapshot(root = ROOT) {
 
   return {
     policy: parseRepositoryProfile(read(".continuum/release.yml")),
+    releaseArtifacts: parseReleaseArtifacts(read(".continuum/release.yml")),
     workflow: releaseWorkflow,
     publisherTools,
     repositoryLicense: read("LICENSE"),
