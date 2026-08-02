@@ -85,7 +85,7 @@ export const EXPECTED_FORMULA_RUBY = Object.freeze({
 // The SBOM is generated after the native archives land in dist/ so the
 // dependency graph ships beside the bytes it describes, and before the
 // attestation step so it is covered by the same provenance.
-const EXPECTED_SBOM_TOOL = "cargo-cyclonedx@0.5.9";
+export const EXPECTED_SBOM_TOOL = "cargo-cyclonedx@0.5.9";
 const EXPECTED_SBOM_ASSET = "dist/*sbom.cdx.json";
 // Matched as an exact sequence rather than by token presence, so an inert
 // stand-in such as `echo 'cargo cyclonedx'; touch dist/fake-sbom.cdx.json`

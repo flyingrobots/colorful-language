@@ -10,6 +10,7 @@ import {
   EXPECTED_PLATFORMS,
   EXPECTED_PROVENANCE,
   EXPECTED_PUBLISHER_TOOLS,
+  EXPECTED_SBOM_TOOL,
   HOMEBREW_SELF_TEST_COMMAND,
   PUBLICATION_SELF_TEST_COMMAND,
   loadRepositorySnapshot,
@@ -17,7 +18,6 @@ import {
 } from "./check-release-distribution.mjs";
 
 const ACTION_SHA = "a".repeat(40);
-const SBOM_TOOL_VERSION = "cargo-cyclonedx@0.5.9";
 const ADMISSION_COMMANDS = Object.freeze([
   "bash scripts/release-profile-check.sh",
   "node scripts/check-editor-version-policy.mjs",
@@ -149,7 +149,7 @@ function validSnapshot() {
             {
               name: "Install SBOM tool",
               uses: `taiki-e/install-action@${ACTION_SHA}`,
-              with: { tool: SBOM_TOOL_VERSION, fallback: "none" },
+              with: { tool: EXPECTED_SBOM_TOOL, fallback: "none" },
             },
             {
               name: "Generate SBOM",
