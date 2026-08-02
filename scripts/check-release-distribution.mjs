@@ -82,9 +82,46 @@ export const EXPECTED_FORMULA_RUBY = Object.freeze({
     "ruby-version": "3.4.10",
   }),
 });
+// The SBOM is generated after the native archives land in dist/ so the
+// dependency graph ships beside the bytes it describes, and before the
+// attestation step so it is covered by the same provenance.
+export const EXPECTED_SBOM_TOOL = "cargo-cyclonedx@0.5.9";
+// The release profile's artifact inventory is a separate authority from the
+// workflow: the workflow decides what is produced, the inventory decides what a
+// release is required to contain. Both SBOM assets must appear here, or an
+// entry could be dropped without any gate noticing.
+export const EXPECTED_SBOM_ARTIFACT = Object.freeze({
+  name: "software-bill-of-materials",
+  platform: "provenance",
+  contents: Object.freeze([
+    "dist/colorful-language-v{version}-colorful-sbom.cdx.json",
+    "dist/colorful-language-v{version}-colorful-lsp-sbom.cdx.json",
+  ]),
+});
+const EXPECTED_SBOM_ASSET = "dist/*sbom.cdx.json";
+// Matched as an exact sequence rather than by token presence, so an inert
+// stand-in such as `echo 'cargo cyclonedx'; touch dist/fake-sbom.cdx.json`
+// cannot satisfy the gate and publish an arbitrary attested file.
+// cargo-cyclonedx emits one SBOM per package next to that package's manifest;
+// there is no aggregate-workspace mode, and it rejects --locked. The release
+// ships two binaries, so each gets its own bill of materials.
+const REVIEWED_SBOM_COMMANDS = Object.freeze([
+  "set -euo pipefail",
+  "cargo cyclonedx --format json --all " +
+    "--manifest-path crates/colorful-cli/Cargo.toml --override-filename sbom",
+  "cargo cyclonedx --format json --all " +
+    "--manifest-path crates/colorful-lsp/Cargo.toml --override-filename sbom",
+  "cp crates/colorful-cli/sbom.json " +
+    '"dist/colorful-language-${GITHUB_REF_NAME}-colorful-sbom.cdx.json"',
+  "cp crates/colorful-lsp/sbom.json " +
+    '"dist/colorful-language-${GITHUB_REF_NAME}-colorful-lsp-sbom.cdx.json"',
+]);
+
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Set up formula syntax Ruby",
   "Download native archives",
+  "Install SBOM tool",
+  "Generate SBOM",
   "Generate Homebrew formula",
   "Build and smoke editor packages",
   "Attest Homebrew and editor artifacts",
@@ -403,6 +440,23 @@ function validateReleaseJob(job) {
     throw new Error(`${context} must download native archives into dist`);
   }
 
+  const sbomInstall = requiredStep(steps, "Install SBOM tool", context);
+  requirePinnedAction(sbomInstall, "taiki-e/install-action", context);
+  const sbomGenerate = requiredStep(steps, "Generate SBOM", context);
+  if (
+    sbomInstall.with?.tool !== EXPECTED_SBOM_TOOL ||
+    sbomInstall.with?.fallback !== "none" ||
+    !isDeepStrictEqual(
+      shellCommandLines(sbomGenerate.run ?? ""),
+      REVIEWED_SBOM_COMMANDS,
+    )
+  ) {
+    throw new Error(
+      `${context} must generate an SBOM with ${EXPECTED_SBOM_TOOL} ` +
+        `through the exact reviewed command sequence`,
+    );
+  }
+
   const homebrew = requiredStep(
     steps,
     "Generate Homebrew formula",
@@ -477,10 +531,11 @@ function validateReleaseJob(job) {
   if (
     !attested.includes("target/editor-smoke/*.vsix") ||
     !attested.includes("dist/*zed-source.tar.gz") ||
-    !attested.includes("dist/colorful.rb")
+    !attested.includes("dist/colorful.rb") ||
+    !attested.includes(EXPECTED_SBOM_ASSET)
   ) {
     throw new Error(
-      `${context} must attest the formula, VSIX, and Zed source archive`,
+      `${context} must attest the formula, VSIX, Zed source archive, and SBOM`,
     );
   }
 
@@ -606,6 +661,10 @@ export function validateReleaseDistribution(snapshot) {
     snapshot.policy,
     ".continuum/release.yml:distribution",
   );
+  requireSbomArtifactInventory(
+    snapshot.releaseArtifacts,
+    ".continuum/release.yml:publish.artifacts",
+  );
   if (policy.owner !== EXPECTED_OWNER) {
     throw new Error(
       `.continuum/release.yml distribution owner must be ${EXPECTED_OWNER}`,
@@ -687,6 +746,33 @@ function parseRepositoryProfile(source) {
   return document.distribution;
 }
 
+function parseReleaseArtifacts(source) {
+  const document = requiredRecord(
+    parseYaml(source),
+    ".continuum/release.yml",
+  );
+  return document.publish?.artifacts;
+}
+
+function requireSbomArtifactInventory(artifacts, context) {
+  const entries = Array.isArray(artifacts) ? artifacts : [];
+  const entry = entries.find(
+    (candidate) => candidate?.name === EXPECTED_SBOM_ARTIFACT.name,
+  );
+  if (
+    !entry ||
+    entry.platform !== EXPECTED_SBOM_ARTIFACT.platform ||
+    !isDeepStrictEqual(
+      Array.isArray(entry.contents) ? [...entry.contents].sort() : [],
+      [...EXPECTED_SBOM_ARTIFACT.contents].sort(),
+    )
+  ) {
+    throw new Error(
+      `${context} must register both SBOM assets in the release artifact inventory`,
+    );
+  }
+}
+
 export function loadRepositorySnapshot(root = ROOT) {
   const read = (path) => readFileSync(resolve(root, path), "utf8");
   const readOptional = (path) => {
@@ -718,6 +804,7 @@ export function loadRepositorySnapshot(root = ROOT) {
 
   return {
     policy: parseRepositoryProfile(read(".continuum/release.yml")),
+    releaseArtifacts: parseReleaseArtifacts(read(".continuum/release.yml")),
     workflow: releaseWorkflow,
     publisherTools,
     repositoryLicense: read("LICENSE"),

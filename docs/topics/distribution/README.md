@@ -33,7 +33,10 @@ the next deliberate release: native jobs build Linux x86-64, Apple Silicon, and
 Windows x86-64 archives, checksum each archive, and publish
 GitHub/Sigstore provenance. The same tagged workflow clean-installs one exact
 VSIX before using those bytes for VS Code Marketplace and Open VSX, and it
-packages the licensed Zed registry source. These are release mechanics, not
+packages the licensed Zed registry source. It also generates a CycloneDX
+software bill of materials from the locked dependency graph and attests it with
+the same provenance as the artifacts it describes, so a consumer can audit what
+a release contains without building it. These are release mechanics, not
 current install claims. No macOS, Windows, VS Code Marketplace, Open VSX, or Zed
 public URL is documented as available until the tagged workflow and external
 registries provide verification evidence.

@@ -46,6 +46,7 @@ side effects.
 | Open VSX | Public version URL and downloaded VSIX SHA-256 parity | Not available. |
 | Zed | Versioned source archive, attestation, and registry pull request | Not available. |
 | Homebrew formula | Attested GitHub Release formula asset | Not available. |
+| Software bill of materials | Two CycloneDX assets, one per shipped binary, with JSON well-formedness and GitHub attestation verification | Not available. |
 | GitHub Release | Release URL and full asset inventory | Not available. |
 
 ## Public verification

@@ -10,6 +10,8 @@ import {
   EXPECTED_PLATFORMS,
   EXPECTED_PROVENANCE,
   EXPECTED_PUBLISHER_TOOLS,
+  EXPECTED_SBOM_ARTIFACT,
+  EXPECTED_SBOM_TOOL,
   HOMEBREW_SELF_TEST_COMMAND,
   PUBLICATION_SELF_TEST_COMMAND,
   loadRepositorySnapshot,
@@ -42,6 +44,7 @@ function validSnapshot() {
       homebrew: structuredClone(EXPECTED_HOMEBREW_POLICY),
     },
     publisherTools: structuredClone(EXPECTED_PUBLISHER_TOOLS),
+    releaseArtifacts: [structuredClone(EXPECTED_SBOM_ARTIFACT)],
     repositoryLicense: "license\n",
     zedLicense: "license\n",
     workflow: {
@@ -146,6 +149,28 @@ function validSnapshot() {
               },
             },
             {
+              name: "Install SBOM tool",
+              uses: `taiki-e/install-action@${ACTION_SHA}`,
+              with: { tool: EXPECTED_SBOM_TOOL, fallback: "none" },
+            },
+            {
+              name: "Generate SBOM",
+              run:
+                "set -euo pipefail\n" +
+                "cargo cyclonedx --format json --all " +
+                "--manifest-path crates/colorful-cli/Cargo.toml " +
+                "--override-filename sbom\n" +
+                "cargo cyclonedx --format json --all " +
+                "--manifest-path crates/colorful-lsp/Cargo.toml " +
+                "--override-filename sbom\n" +
+                "cp crates/colorful-cli/sbom.json " +
+                '"dist/colorful-language-${GITHUB_REF_NAME}' +
+                '-colorful-sbom.cdx.json"\n' +
+                "cp crates/colorful-lsp/sbom.json " +
+                '"dist/colorful-language-${GITHUB_REF_NAME}' +
+                '-colorful-lsp-sbom.cdx.json"\n',
+            },
+            {
               name: "Generate Homebrew formula",
               run:
                 "set -euo pipefail\n" +
@@ -169,7 +194,8 @@ function validSnapshot() {
                 "subject-path":
                 "target/editor-smoke/*.vsix\n" +
                 "dist/*zed-source.tar.gz\n" +
-                "dist/colorful.rb",
+                "dist/colorful.rb\n" +
+                "dist/*sbom.cdx.json",
               },
             },
             {
@@ -473,6 +499,8 @@ test("binds native dispatch and release side effects to the reviewed topology", 
   const reviewedOrder = [
     "Set up formula syntax Ruby",
     "Download native archives",
+    "Install SBOM tool",
+    "Generate SBOM",
     "Generate Homebrew formula",
     "Build and smoke editor packages",
     "Attest Homebrew and editor artifacts",
@@ -573,7 +601,7 @@ test("derives and attests Homebrew formulae from downloaded native assets", () =
     ["before-download", /must preserve the reviewed release step order/u],
     [
       "unattested",
-      /must attest the formula, VSIX, and Zed source archive/u,
+      /must attest the formula, VSIX, Zed source archive, and SBOM/u,
     ],
   ]) {
     const snapshot = validSnapshot();
@@ -621,7 +649,7 @@ test("rejects Homebrew command and attestation prefix bypasses", () => {
     ["duplicate-command", /exact reviewed command sequence/u],
     [
       "attestation-suffix",
-      /must attest the formula, VSIX, and Zed source archive/u,
+      /must attest the formula, VSIX, Zed source archive, and SBOM/u,
     ],
   ]) {
     const snapshot = validSnapshot();
@@ -942,6 +970,134 @@ test("verifies checksums and provenance for the complete release matrix", () => 
       /verify checksums and provenance for every release artifact/u,
     );
   }
+});
+
+test("requires a generated SBOM covering the shipped dependency graph", () => {
+  for (const [mutation, expected] of [
+    ["missing-step", /must contain exactly one 'Generate SBOM' step/u],
+    ["unpinned-tool", /exact reviewed command sequence/u],
+    ["wrong-dist", /exact reviewed command sequence/u],
+    ["before-download", /must preserve the reviewed release step order/u],
+  ]) {
+    const snapshot = validSnapshot();
+    const steps = snapshot.workflow.jobs.release.steps;
+    const index = steps.findIndex((step) => step.name === "Generate SBOM");
+    assert.notEqual(
+      index,
+      -1,
+      "the valid snapshot must contain a Generate SBOM step",
+    );
+    if (mutation === "missing-step") {
+      steps.splice(index, 1);
+    } else if (mutation === "unpinned-tool") {
+      const install = releaseStep(snapshot, "Install SBOM tool");
+      install.with.tool = "cargo-cyclonedx";
+    } else if (mutation === "wrong-dist") {
+      steps[index].run = steps[index].run.replace("dist/", "elsewhere/");
+    } else if (mutation === "before-download") {
+      const [sbom] = steps.splice(index, 1);
+      steps.unshift(sbom);
+    }
+    assert.throws(() => validateReleaseDistribution(snapshot), expected);
+  }
+});
+
+test("enforces the SBOM entries in the release artifact inventory", () => {
+  for (const mutation of [
+    "missing-entry",
+    "drop-cli-sbom",
+    "drop-lsp-sbom",
+    "rename-asset",
+    "empty-contents",
+  ]) {
+    const snapshot = validSnapshot();
+    const artifacts = snapshot.releaseArtifacts;
+    const index = artifacts.findIndex(
+      (entry) => entry.name === "software-bill-of-materials",
+    );
+    assert.notEqual(index, -1, "fixture must register the SBOM inventory");
+    if (mutation === "missing-entry") {
+      artifacts.splice(index, 1);
+    } else if (mutation === "drop-cli-sbom") {
+      artifacts[index].contents = artifacts[index].contents.filter(
+        (path) => !path.includes("-colorful-sbom"),
+      );
+    } else if (mutation === "drop-lsp-sbom") {
+      artifacts[index].contents = artifacts[index].contents.filter(
+        (path) => !path.includes("-colorful-lsp-sbom"),
+      );
+    } else if (mutation === "rename-asset") {
+      artifacts[index].contents = artifacts[index].contents.map((path) =>
+        path.replace("dist/", "elsewhere/"),
+      );
+    } else if (mutation === "empty-contents") {
+      artifacts[index].contents = [];
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /release artifact inventory/u,
+    );
+  }
+});
+
+test("rejects SBOM installer fallback drift", () => {
+  for (const fallback of ["cargo-binstall", "build", undefined]) {
+    const snapshot = validSnapshot();
+    const install = releaseStep(snapshot, "Install SBOM tool");
+    if (fallback === undefined) {
+      delete install.with.fallback;
+    } else {
+      install.with.fallback = fallback;
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /exact reviewed command sequence/u,
+    );
+  }
+});
+
+test("rejects inert or misdirected SBOM generation commands", () => {
+  for (const run of [
+    // an inert stand-in that merely mentions the tool and touches a file
+    "set -euo pipefail\n" +
+      "echo 'cargo cyclonedx --locked --format json'\n" +
+      'touch "dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n',
+    // real invocation, but the format is unbound
+    "set -euo pipefail\n" +
+      "cargo cyclonedx --locked --override-filename sbom\n" +
+      "cp sbom.cdx.json " +
+      '"dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n',
+    // real invocation, but the asset is written outside dist/
+    "set -euo pipefail\n" +
+      "cargo cyclonedx --locked --format json --override-filename sbom\n" +
+      'cp sbom.cdx.json "elsewhere/sbom.cdx.json"\n',
+    // an extra command smuggled in after the reviewed sequence
+    "set -euo pipefail\n" +
+      "cargo cyclonedx --locked --format json --override-filename sbom\n" +
+      "cp sbom.cdx.json " +
+      '"dist/colorful-language-${GITHUB_REF_NAME}-sbom.cdx.json"\n' +
+      'echo overwritten > "dist/colorful-language-x-sbom.cdx.json"\n',
+  ]) {
+    const snapshot = validSnapshot();
+    releaseStep(snapshot, "Generate SBOM").run = run;
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /exact reviewed command sequence/u,
+    );
+  }
+});
+
+test("attests the SBOM alongside the formula and editor artifacts", () => {
+  const snapshot = validSnapshot();
+  const attest = releaseStep(snapshot, "Attest Homebrew and editor artifacts");
+  attest.with["subject-path"] = attest.with["subject-path"]
+    .split(/\r?\n/u)
+    .filter((line) => !line.includes("sbom"))
+    .join("\n");
+  assert.throws(
+    () => validateReleaseDistribution(snapshot),
+    /must attest the formula, VSIX, Zed source archive, and SBOM/u,
+  );
 });
 
 test("the checked-in repository satisfies the distribution policy", () => {
