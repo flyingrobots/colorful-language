@@ -9,12 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Canonical built-in language showcase.** One readable fixture now exercises
-  every current presentation role and emitted LSP token type, the supported
-  contextual decisions for `book`, `record`, `lead`, and `fast`, quoted prose,
-  deliberate non-findings, and all four built-in lint rules. A real-CLI contract
-  pins the fixture bytes, diagnostic summary, role/type counts, ambiguity
-  tuples, exact ordered lint report, and in-process finding parity while keeping
+- **Canonical built-in language fixtures.** A five-line full-spectrum demo uses
+  every seed open-class word while producing all eight LSP token types, no
+  unstyled words, and no lint findings. Its exhaustive showcase companion
+  exercises every current presentation role, the supported contextual
+  decisions for `book`, `record`, `lead`, and `fast`, deliberate non-findings,
+  and all four built-in lint rules. Real-CLI contracts pin their source identity,
+  projection coverage, ambiguity decisions, and lint behavior while keeping
   specialized boundary, protocol, external-adapter, and performance evidence
   separate.
 - **Attested software bill of materials.** The tag workflow now generates one

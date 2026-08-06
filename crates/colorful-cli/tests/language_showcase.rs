@@ -1,4 +1,4 @@
-//! Executable contract for the canonical built-in language showcase.
+//! Executable contracts for the canonical built-in language fixtures.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsStr;

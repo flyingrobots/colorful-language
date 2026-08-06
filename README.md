@@ -78,8 +78,19 @@ Plain Text input. The current diagnostic report and canonical IR deliberately
 remain whole-source projections; `.md`/`.markdown` region selection applies to
 file coloring, linting, and LSP analysis.
 
-For the canonical built-in language showcase, run the same readable fixture
-through the terminal, diagnostic, IR, and lint surfaces:
+For a compact, screenshot-ready view of the complete built-in palette, run the
+full-spectrum demo:
+
+```bash
+colorful crates/colorful-cli/fixtures/colorful-demo.txt
+```
+
+Every word in that five-line scene is styled. It uses every seed noun, verb,
+adjective, and adverb exactly once, emits all eight LSP semantic-token types,
+and produces no built-in lint findings.
+
+For exhaustive conformance, run the canonical language showcase through the
+terminal, diagnostic, IR, and lint surfaces:
 
 ```bash
 colorful crates/colorful-cli/fixtures/language-showcase.txt

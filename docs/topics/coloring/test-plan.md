@@ -417,9 +417,12 @@ Requirements:
   token count equals the complete token count; the emitted LSP token-type set
   is complete; the ordered open-class tuples contain every seed word plus the
   contextual noun; the real lint command succeeds without output. *Evidence
-  type:* checked-in text fixture and real-CLI integration test. *Tracking:*
+  type:* checked-in text fixture and real-CLI integration test. *Evidence:*
+  `crates/colorful-cli/fixtures/colorful-demo.txt` and
+  `language_showcase::full_spectrum_demo_is_completely_styled_and_lint_clean`.
+  *Tracking:*
   [#296](https://github.com/flyingrobots/colorful-language/issues/296).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps
 
