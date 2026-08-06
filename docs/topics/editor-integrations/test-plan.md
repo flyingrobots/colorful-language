@@ -127,6 +127,16 @@ Verification for editor adapters and the `colorful-lsp` surface.
   editor CI job. *Tracking:*
   [#185](https://github.com/flyingrobots/colorful-language/issues/185).
   *Status:* implemented.
+- **EDIT-13b** — *Requirement:* EDIT-13. *Behavior:* every locked
+  `brace-expansion` release below `5.0.9` and every locked `fast-uri` release
+  below `3.1.5`, including nested lockfile instances, is rejected after the
+  August 2026 advisory expansion. *Oracle:* deterministic lockfile-policy
+  mutations reject each last-vulnerable release while a pinned-Node
+  `npm audit --audit-level=high` exits zero on the npm-resolved graph.
+  *Evidence type:* lockfile policy self-test, editor compile, and
+  network-backed advisory audit. *Tracking:*
+  [#298](https://github.com/flyingrobots/colorful-language/issues/298).
+  *Status:* planned.
 - **EDIT-16a** — *Requirement:* EDIT-16. *Behavior:* one reviewed runtime policy
   binds the extension's minimum VS Code release and host Node version to the
   exact TypeScript-compatible `@types/node` manifest and lockfile release,
