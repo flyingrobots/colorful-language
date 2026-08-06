@@ -65,7 +65,10 @@ function fixture() {
           version: "20.19.43",
         },
         "node_modules/brace-expansion": {
-          version: "5.0.8",
+          version: "5.0.9",
+        },
+        "node_modules/fast-uri": {
+          version: "3.1.5",
         },
         "node_modules/vscode-languageclient": {
           version: "10.1.0",
@@ -178,7 +181,15 @@ test("rejects a manifest and lockfile dependency mismatch", () => {
 
 test("rejects the last vulnerable brace-expansion release", () => {
   const input = fixture();
-  input.lockfile.packages["node_modules/brace-expansion"].version = "5.0.7";
+  input.lockfile.packages["node_modules/brace-expansion"].version = "5.0.8";
+  expectCode(input, "E_BRACE_EXPANSION");
+});
+
+test("rejects a nested vulnerable brace-expansion release", () => {
+  const input = fixture();
+  input.lockfile.packages[
+    "node_modules/example/node_modules/brace-expansion"
+  ] = { version: "5.0.8" };
   expectCode(input, "E_BRACE_EXPANSION");
 });
 
@@ -193,6 +204,26 @@ test("rejects a prerelease patched brace-expansion", () => {
   input.lockfile.packages["node_modules/brace-expansion"].version =
     "5.0.8-beta.0";
   expectCode(input, "E_BRACE_EXPANSION");
+});
+
+test("rejects the last vulnerable fast-uri release", () => {
+  const input = fixture();
+  input.lockfile.packages["node_modules/fast-uri"].version = "3.1.4";
+  expectCode(input, "E_FAST_URI");
+});
+
+test("rejects a nested vulnerable fast-uri release", () => {
+  const input = fixture();
+  input.lockfile.packages["node_modules/example/node_modules/fast-uri"] = {
+    version: "3.1.4",
+  };
+  expectCode(input, "E_FAST_URI");
+});
+
+test("rejects a prerelease patched fast-uri", () => {
+  const input = fixture();
+  input.lockfile.packages["node_modules/fast-uri"].version = "3.1.5-beta.0";
+  expectCode(input, "E_FAST_URI");
 });
 
 test("rejects an extension floor below the client floor", () => {
