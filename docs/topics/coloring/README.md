@@ -88,6 +88,20 @@ The committed smoke fixture
 contains README-style prose plus deterministic noun, verb, adjective, adverb,
 proper noun, quote, number, and punctuation probes for cross-editor comparison.
 
+The canonical built-in language showcase
+[`crates/colorful-cli/fixtures/language-showcase.txt`](../../../crates/colorful-cli/fixtures/language-showcase.txt)
+is the readable coverage authority across the presentation and built-in lint
+surfaces. Its executable contract pins all ten visual roles, all eight emitted
+LSP token types, and the contextual noun/verb/adjective/adverb decisions for
+`book`, `record`, `lead`, and `fast`. It also contains quoted prose, deliberate
+non-findings, and one finding from each built-in lint rule. It does not replace
+the separate Unicode/property, malformed-input, Markdown-region,
+editor-lifecycle, external-analyzer, or performance corpora.
+
+```bash
+colorful diagnose --json crates/colorful-cli/fixtures/language-showcase.txt
+```
+
 ## Editor output (`colorful-lsp`)
 
 The server keeps a `ropey` mirror of each open document, applies incremental

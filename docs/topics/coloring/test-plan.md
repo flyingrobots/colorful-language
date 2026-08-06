@@ -405,9 +405,12 @@ Requirements:
   performance evidence retain their separate authorities. *Oracle:* exact
   fixture byte length and SHA-256 identity; exact visual-role and LSP-token-type
   sets; exact contextual probe tuples. *Evidence type:* checked-in text fixture
-  and real-CLI integration test. *Tracking:*
+  and real-CLI integration test. *Evidence:*
+  `crates/colorful-cli/fixtures/language-showcase.txt` and
+  `language_showcase::canonical_showcase_covers_the_complete_builtin_language_surface`.
+  *Tracking:*
   [#296](https://github.com/flyingrobots/colorful-language/issues/296).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps
 

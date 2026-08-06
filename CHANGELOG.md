@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Canonical built-in language showcase.** One readable fixture now exercises
+  every current presentation role and emitted LSP token type, the supported
+  contextual decisions for `book`, `record`, `lead`, and `fast`, quoted prose,
+  deliberate non-findings, and all four built-in lint rules. A real-CLI contract
+  pins the fixture bytes, diagnostic summary, role/type counts, ambiguity
+  tuples, exact ordered lint report, and in-process finding parity while keeping
+  specialized boundary, protocol, external-adapter, and performance evidence
+  separate.
 - **Attested software bill of materials.** The tag workflow now generates one
   CycloneDX SBOM per shipped binary (`colorful` and `colorful-lsp`) using an
   exact pinned `cargo-cyclonedx`, writes them into `dist/` so they publish as

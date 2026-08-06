@@ -537,9 +537,12 @@ Implemented and planned cases are listed below.
   prose and deliberate non-finding context. *Oracle:* non-zero CLI exit status;
   exact ordered rule, severity, message, line, and column tuples; complete
   equality with the structured in-process analyzer findings. *Evidence type:*
-  checked-in text fixture and real-CLI integration test. *Tracking:*
+  checked-in text fixture and real-CLI integration test. *Evidence:*
+  `crates/colorful-cli/fixtures/language-showcase.txt` and
+  `language_showcase::canonical_showcase_covers_the_complete_builtin_language_surface`.
+  *Tracking:*
   [#296](https://github.com/flyingrobots/colorful-language/issues/296).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Open verification gaps
 
