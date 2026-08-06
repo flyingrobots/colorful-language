@@ -1,6 +1,6 @@
 //! Executable contract for the canonical built-in language showcase.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -15,11 +15,25 @@ const FIXTURE_NAME: &str = "language-showcase.txt";
 const FIXTURE_BYTES: usize = 1_134;
 const FIXTURE_SHA256: &str =
     "sha256:8b4031e9d5344db077253455b6fb7567e2d64559540063462ddbdfd43fee3556";
+const DEMO_NAME: &str = "colorful-demo.txt";
+const DEMO_BYTES: usize = 183;
+const DEMO_SHA256: &str = "sha256:28010ec1d4557ab6f8ece30437613bfc8e8c779b6add08cf88c97baa1af1cfe3";
+const DEMO_SOURCE: &str = "At 7, Ada writes carefully:\n\
+\"The silent river glows slowly below the mountain.\"\n\
+\n\
+The quick cat connects silently with the careful dog\n\
+while Paris quickly renders a structural record.\n";
 
 fn fixture_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("fixtures")
         .join(FIXTURE_NAME)
+}
+
+fn demo_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("fixtures")
+        .join(DEMO_NAME)
 }
 
 fn run<I, S>(args: I) -> Output
@@ -216,4 +230,93 @@ fn canonical_showcase_covers_the_complete_builtin_language_surface() {
             ),
         ]
     );
+}
+
+#[test]
+fn full_spectrum_demo_is_completely_styled_and_lint_clean() {
+    let fixture = demo_path();
+    let source = std::fs::read_to_string(&fixture)
+        .unwrap_or_else(|error| panic!("read full-spectrum demo {}: {error}", fixture.display()));
+    assert_eq!(source, DEMO_SOURCE, "canonical demo source drift");
+    assert_eq!(source.len(), DEMO_BYTES, "canonical demo byte drift");
+
+    let passthrough = run([OsStr::new("--no-color"), fixture.as_os_str()]);
+    assert_eq!(passthrough.status.code(), Some(0));
+    assert!(stderr(&passthrough).is_empty(), "{}", stderr(&passthrough));
+    assert_eq!(stdout(&passthrough), source);
+
+    let diagnose = run([
+        OsStr::new("diagnose"),
+        OsStr::new("--json"),
+        fixture.as_os_str(),
+    ]);
+    assert_eq!(diagnose.status.code(), Some(0));
+    assert!(stderr(&diagnose).is_empty(), "{}", stderr(&diagnose));
+    let report: Value = serde_json::from_str(stdout(&diagnose)).expect("decode diagnose JSON");
+
+    assert_eq!(report["source"]["utf8ByteLength"], DEMO_BYTES);
+    assert_eq!(report["source"]["contentHash"], DEMO_SHA256);
+    assert_eq!(report["summary"]["tokens"], 35);
+    assert_eq!(report["summary"]["ansiColoredTokens"], 35);
+    assert_eq!(report["summary"]["graftStyledTokens"], 31);
+    assert_eq!(report["summary"]["lspSemanticTokens"], 31);
+    assert_eq!(report["summary"]["diagnostics"], 0);
+
+    let tokens = report["tokens"]
+        .as_array()
+        .expect("diagnostic tokens array");
+    assert!(
+        tokens.iter().all(|token| token["visualRole"] != "UNSTYLED"),
+        "beauty-shot prose must remain completely styled"
+    );
+
+    let lsp_types: BTreeSet<_> = tokens
+        .iter()
+        .filter_map(|token| token["lspTokenType"].as_str())
+        .collect();
+    assert_eq!(
+        lsp_types,
+        BTreeSet::from([
+            "adjective",
+            "adverb",
+            "class",
+            "keyword",
+            "noun",
+            "number",
+            "string",
+            "verb",
+        ])
+    );
+
+    let open_class: Vec<_> = tokens
+        .iter()
+        .filter_map(|token| Some((token["text"].as_str()?, token["openClassKind"].as_str()?)))
+        .collect();
+    assert_eq!(
+        open_class,
+        [
+            ("writes", "VERB"),
+            ("carefully", "ADVERB"),
+            ("silent", "ADJECTIVE"),
+            ("river", "NOUN"),
+            ("glows", "VERB"),
+            ("slowly", "ADVERB"),
+            ("mountain", "NOUN"),
+            ("quick", "ADJECTIVE"),
+            ("cat", "NOUN"),
+            ("connects", "VERB"),
+            ("silently", "ADVERB"),
+            ("careful", "ADJECTIVE"),
+            ("dog", "NOUN"),
+            ("quickly", "ADVERB"),
+            ("renders", "VERB"),
+            ("structural", "ADJECTIVE"),
+            ("record", "NOUN"),
+        ]
+    );
+
+    let lint = run([OsStr::new("lint"), fixture.as_os_str()]);
+    assert_eq!(lint.status.code(), Some(0));
+    assert!(stdout(&lint).is_empty(), "{}", stdout(&lint));
+    assert!(stderr(&lint).is_empty(), "{}", stderr(&lint));
 }
