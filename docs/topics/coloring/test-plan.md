@@ -65,6 +65,10 @@ Requirements:
 - **COL-22** The default CLI file path and LSP analyze the same reviewed
   Markdown prose regions; public string helpers and stdin retain historical
   Plain Text behavior because they carry no format metadata.
+- **COL-23** One canonical, readable built-in language showcase covers every
+  current presentation role, every emitted LSP semantic-token type, and the
+  supported contextual ambiguity decisions without replacing specialized
+  boundary, transport, or performance corpora.
 
 ## Cases
 
@@ -393,6 +397,17 @@ Requirements:
   `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
   *Status:* implemented.
+- **COL-23a** — *Requirement:* COL-23. *Behavior:* one committed Plain Text
+  showcase produces every current `VisualRole`, every non-null LSP token type,
+  and the reviewed noun/verb/adjective/adverb resolutions for `book`, `record`,
+  `lead`, and `fast`. The fixture is an ordinary readable example, while
+  Unicode/property, invalid-UTF-8, Markdown-region, editor-lifecycle, and
+  performance evidence retain their separate authorities. *Oracle:* exact
+  fixture byte length and SHA-256 identity; exact visual-role and LSP-token-type
+  sets; exact contextual probe tuples. *Evidence type:* checked-in text fixture
+  and real-CLI integration test. *Tracking:*
+  [#296](https://github.com/flyingrobots/colorful-language/issues/296).
+  *Status:* planned.
 
 ## Known gaps
 
