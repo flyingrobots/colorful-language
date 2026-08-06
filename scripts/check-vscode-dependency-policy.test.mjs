@@ -202,7 +202,7 @@ test("rejects the currently locked vulnerable brace-expansion major", () => {
 test("rejects a prerelease patched brace-expansion", () => {
   const input = fixture();
   input.lockfile.packages["node_modules/brace-expansion"].version =
-    "5.0.8-beta.0";
+    "5.0.9-beta.0";
   expectCode(input, "E_BRACE_EXPANSION");
 });
 

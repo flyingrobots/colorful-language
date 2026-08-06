@@ -134,9 +134,15 @@ Verification for editor adapters and the `colorful-lsp` surface.
   mutations reject each last-vulnerable release while a pinned-Node
   `npm audit --audit-level=high` exits zero on the npm-resolved graph.
   *Evidence type:* lockfile policy self-test, editor compile, and
-  network-backed advisory audit. *Tracking:*
+  network-backed advisory audit. *Evidence:*
+  `scripts/check-vscode-dependency-policy.test.mjs` tests `rejects the last
+  vulnerable brace-expansion release`, `rejects a nested vulnerable
+  brace-expansion release`, `rejects the last vulnerable fast-uri release`,
+  `rejects a nested vulnerable fast-uri release`, and `rejects a prerelease
+  patched fast-uri`; `scripts/check-vscode-dependency-policy.mjs`;
+  `editors/vscode/package-lock.json`; and the editor CI job. *Tracking:*
   [#298](https://github.com/flyingrobots/colorful-language/issues/298).
-  *Status:* planned.
+  *Status:* implemented.
 - **EDIT-16a** — *Requirement:* EDIT-16. *Behavior:* one reviewed runtime policy
   binds the extension's minimum VS Code release and host Node version to the
   exact TypeScript-compatible `@types/node` manifest and lockfile release,

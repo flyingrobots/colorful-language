@@ -5,7 +5,20 @@ import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const MINIMUM_CLIENT_VERSION = "10.1.0";
-const LAST_VULNERABLE_BRACE_EXPANSION = "5.0.7";
+const LOCKED_ADVISORY_POLICIES = [
+  {
+    advisory: "GHSA-rgw5-rvv9-x895",
+    code: "E_BRACE_EXPANSION",
+    lastVulnerableVersion: "5.0.8",
+    packageName: "brace-expansion",
+  },
+  {
+    advisory: "GHSA-7p8r-x3mc-p8w7",
+    code: "E_FAST_URI",
+    lastVulnerableVersion: "3.1.4",
+    packageName: "fast-uri",
+  },
+];
 
 export class VscodeDependencyPolicyError extends Error {
   constructor(code, message) {
@@ -59,6 +72,30 @@ function requirePackage(lockfile, path, code) {
     fail(code, `${path} is missing from editors/vscode/package-lock.json`);
   }
   return entry;
+}
+
+function validateLockedAdvisoryFloors(lockfile) {
+  for (const policy of LOCKED_ADVISORY_POLICIES) {
+    const lastVulnerable = parseVersion(
+      policy.lastVulnerableVersion,
+      policy.code,
+      `last vulnerable ${policy.packageName}`,
+    );
+    for (const [path, entry] of Object.entries(lockfile.packages ?? {})) {
+      if (
+        path.endsWith(`node_modules/${policy.packageName}`) &&
+        compareVersions(
+          parseVersion(entry.version, policy.code, `locked ${path}`),
+          lastVulnerable,
+        ) <= 0
+      ) {
+        fail(
+          policy.code,
+          `${path} ${String(entry.version)} is within ${policy.advisory}'s vulnerable <=${policy.lastVulnerableVersion} range`,
+        );
+      }
+    }
+  }
 }
 
 export function validateVscodeHostPolicy(editorPackage, runtimePolicy) {
@@ -317,30 +354,7 @@ export function validateVscodeDependencyPolicy(
   validateDependabotPolicy(dependabotPolicy);
   validateTypeScriptPolicy(tsconfig);
   validateRuntimeDocumentation(documentation, host);
-
-  const lastVulnerable = parseVersion(
-    LAST_VULNERABLE_BRACE_EXPANSION,
-    "E_BRACE_EXPANSION",
-    "last vulnerable brace-expansion",
-  );
-  for (const [path, entry] of Object.entries(lockfile.packages ?? {})) {
-    if (
-      path.endsWith("node_modules/brace-expansion") &&
-      compareVersions(
-        parseVersion(
-          entry.version,
-          "E_BRACE_EXPANSION",
-          `locked ${path}`,
-        ),
-        lastVulnerable,
-      ) <= 0
-    ) {
-      fail(
-        "E_BRACE_EXPANSION",
-        `${path} ${String(entry.version)} is within GHSA-mh99-v99m-4gvg's vulnerable <=${LAST_VULNERABLE_BRACE_EXPANSION} range`,
-      );
-    }
-  }
+  validateLockedAdvisoryFloors(lockfile);
 }
 
 function readJson(path) {
