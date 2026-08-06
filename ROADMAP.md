@@ -363,12 +363,11 @@ CLI/LSP findings agree without hiding ambiguity.
   [#235](https://github.com/flyingrobots/colorful-language/issues/235), before
   editor distribution expands the reachable surface.
   <!-- roadmap-primary: delivered #235 -->
-- **Delivered canonical language showcase:** contributors have one readable,
-  executable fixture for the complete built-in presentation vocabulary,
-  contextual ambiguity set, and lint rule pack without collapsing specialized
-  boundary or protocol corpora into a demo
+- **Active canonical language showcase:** pair an exhaustive readable
+  conformance fixture with a screenshot-ready, fully styled happy path without
+  collapsing specialized boundary or protocol corpora into a demo
   [#296](https://github.com/flyingrobots/colorful-language/issues/296).
-  <!-- roadmap-primary: delivered #296 -->
+  <!-- roadmap-primary: active #296 -->
 - **Parked metrics export:** expose the existing versioned LSP counters through
   a bounded adapter only when an operator job needs Prometheus or CLI output;
   do not add a mandatory network listener
