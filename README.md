@@ -78,12 +78,35 @@ Plain Text input. The current diagnostic report and canonical IR deliberately
 remain whole-source projections; `.md`/`.markdown` region selection applies to
 file coloring, linting, and LSP analysis.
 
-For a committed smoke sample with denser prose and deterministic POS probes, run:
+For a compact, screenshot-ready view of the complete built-in palette, run the
+full-spectrum demo:
 
 ```bash
-colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt \
-  | python3 -m json.tool
+colorful crates/colorful-cli/fixtures/colorful-demo.txt
 ```
+
+Every word in that five-line scene is styled. It uses every seed noun, verb,
+adjective, and adverb exactly once, emits all eight LSP semantic-token types,
+and produces no built-in lint findings.
+
+For exhaustive conformance, run the canonical language showcase through the
+terminal, diagnostic, IR, and lint surfaces:
+
+```bash
+colorful crates/colorful-cli/fixtures/language-showcase.txt
+colorful diagnose --json crates/colorful-cli/fixtures/language-showcase.txt \
+  | python3 -m json.tool
+colorful ir crates/colorful-cli/fixtures/language-showcase.txt \
+  | python3 -m json.tool
+colorful lint crates/colorful-cli/fixtures/language-showcase.txt
+```
+
+The showcase covers every current presentation role and LSP token type, the
+supported contextual decisions for `book`, `record`, `lead`, and `fast`, quoted
+prose, deliberate non-findings, and all four built-in lint rules. The final
+command intentionally prints four findings and exits `1`; specialized Unicode,
+invalid-UTF-8, Markdown-region, editor-lifecycle, external-analyzer, and
+performance fixtures remain their own conformance authorities.
 
 <div align="center"><img width="739" height="817" alt="A terminal running `cat README.md | colorful`: this file's own prose rendered with function words in bold magenta, proper nouns and acronyms in bold yellow, quotation marks in green, numbers in cyan, punctuation in dim gray, and unlisted content words left in the default color." src="https://github.com/user-attachments/assets/ed433423-aa53-4da1-98fc-148b26213fa1" /></div>
 

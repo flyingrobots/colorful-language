@@ -206,6 +206,22 @@ Line and column are 1-based; columns count characters. The command exits
 fails a CI gate on bad prose (I/O errors stay non-zero too). Clean input prints
 nothing.
 
+The canonical built-in language showcase
+[`crates/colorful-cli/fixtures/language-showcase.txt`](../../../crates/colorful-cli/fixtures/language-showcase.txt)
+produces one ordered example of every built-in rule: a quoted `weak-word`, an
+evidenced `passive-voice` candidate, a `length-outlier`, and a `run-on`. The
+adjacent active-voice and adjectival-complement prose remains unreported. Run
+the showcase knowing that exit status `1` is the expected finding signal:
+
+```bash
+colorful lint crates/colorful-cli/fixtures/language-showcase.txt
+```
+
+This readable fixture demonstrates the built-in rule pack; it is not the
+held-out quality corpus tracked by
+[#155](https://github.com/flyingrobots/colorful-language/issues/155), and it
+does not exercise the optional Vale adapter.
+
 Files whose final extension is `.md` or `.markdown` use the shared Markdown
 prose view: code, front matter, link destinations, and HTML blocks do not
 produce editorial findings, while link labels and ordinary prose do. Other
