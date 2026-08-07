@@ -279,10 +279,15 @@ producer/consumer boundary.
 ## Project Status
 
 **Latest published release — `v0.3.0`. Current `main` workspace version —
-`0.4.0` (unreleased).** The current source tree contains deterministic
-open-class noun/verb/adjective/adverb roles through the CLI, IR, LSP, and editor
-adapters, plus the breaking hardening work recorded under **Unreleased** in the
-changelog.
+`0.4.0`, prepared but not yet tagged.** Colorful ships deterministic open-class
+noun/verb/adjective/adverb roles through the CLI, IR, LSP, and editor adapters.
+The 0.4.0 snapshot adds the IR hardening pass — producer `PassIdentity`, the
+`colorful-projection` crate, and structured, path-aware `ValidationError`s —
+together with an attested CycloneDX bill of materials for every tagged release.
+The breaking API changes it carries are recorded under **0.4.0** in the
+changelog. Until the annotated `v0.4.0` tag exists, the
+[v0.4.0 verification witness](docs/goalposts/v0.4.0/verification.md) is the
+authority on what has and has not been published.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)
 page for downloads, the [CHANGELOG](CHANGELOG.md) for the ledger, and the full

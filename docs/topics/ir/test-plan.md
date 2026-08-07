@@ -352,7 +352,7 @@ Requirements:
   major-line transition; a forced patch audit fails. *Evidence type:* unit
   test, documentation, and semver audit. *Evidence:* `colorful-ir`
   `vocabulary::tests::public_lookup_signatures_pin_the_v04_fallible_contract`;
-  `[Unreleased]` changelog entry; public API docs in
+  `0.4.0` changelog entry; public API docs in
   `crates/colorful-ir/src/vocabulary.rs`; recorded `cargo-semver-checks 0.49.0`
   runs on 2026-07-23:
   `cargo semver-checks --package colorful-ir --baseline-rev v0.3.0` exited zero
