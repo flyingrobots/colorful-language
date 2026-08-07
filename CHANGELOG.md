@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   figure moves only when `.github/coverage-policy.json` is updated through
   review.
 
-## [0.4.0] - 2026-08-02
+## [0.4.0] - 2026-08-07
 
 ### Added
 
