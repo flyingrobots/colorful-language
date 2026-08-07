@@ -365,8 +365,8 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `scripts/roadmap-accountability-policy.mjs`,
   `scripts/roadmap-inventory-runner.mjs`,
   `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
-  `package-lock.json`. The inventory owner measures 267 lines and 6 top-level
-  helpers, the pure accountability owner measures 643 lines and 17 top-level
+  `package-lock.json`. The inventory owner measures 267 lines and 7 top-level
+  helpers, the pure accountability owner measures 640 lines and 17 top-level
   helpers, and the transport owner measures 249 lines and 1 top-level helper,
   down from 1,429 lines and 38 helpers in one checker. *Tracking:*
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
@@ -384,14 +384,15 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   malformed marker failure, and issue-state mismatch, while source-policy
   assertions reject Markdown interpretation in either the inventory owner or
   transport runner. *Evidence type:* deterministic fixture-backed Node tests
-  plus source-boundary mutation tests. *Evidence:*
-  `scripts/check-roadmap-inventory.test.mjs`,
+  plus source-boundary mutation tests. *Evidence:* `pins exact process bytes
+  across the roadmap ownership seam` and `delegates roadmap policy to bounded
+  pure owners` in `scripts/check-roadmap-inventory.test.mjs`, exercising
   `scripts/check-roadmap-inventory.mjs`,
   `scripts/roadmap-accountability-policy.mjs`, and
   `scripts/roadmap-inventory-runner.mjs`. *Tracking:*
   [#257](https://github.com/flyingrobots/colorful-language/issues/257).
   *Status:* implemented.
-- **RM-15c — Per-owner roadmap-policy budgets.** *Requirement:* RM-15.
+- **RM-15c — Per-owner roadmap-policy budgets.** *Requirements:* RM-15.
   *Behavior:* the inventory, architecture-accountability, and transport owners
   each carry a reviewed line and top-level-helper budget with meaningful
   maintenance headroom; no aggregate budget can hide one owner regrowing into
@@ -401,13 +402,16 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   policy helper across the ownership boundary fails deterministically. The
   complete pre-existing roadmap suite remains green. *Evidence type:* source
   inventory assertions, cross-owner mutation test, and the ordinary roadmap
-  regression suite. The inventory owner measures 267 lines and 6 top-level
-  helpers under a 350-line and 10-helper ceiling; the accountability owner
-  measures 643 lines and 17 top-level helpers under a 700-line and 20-helper
-  ceiling; and the transport runner measures 249 lines and 1 top-level helper
-  under a 250-line and 2-helper ceiling. *Evidence:*
-  `scripts/check-roadmap-inventory.test.mjs` and the three roadmap-policy
-  owners. *Tracking:*
+  regression suite. *Evidence:* `delegates roadmap policy to bounded pure
+  owners` in `scripts/check-roadmap-inventory.test.mjs` measures the inventory
+  owner at 267 lines and 7 top-level helpers under a 350-line and 10-helper
+  ceiling, the accountability owner at 640 lines and 17 top-level helpers under
+  a 700-line and 20-helper ceiling, and the transport runner at 249 lines and 1
+  top-level helper under a 320-line and 4-helper ceiling. It checks
+  `scripts/check-roadmap-inventory.mjs`,
+  `scripts/roadmap-accountability-policy.mjs`, and
+  `scripts/roadmap-inventory-runner.mjs`; `pins exact process bytes across the
+  roadmap ownership seam` records the preserved process contract. *Tracking:*
   [#257](https://github.com/flyingrobots/colorful-language/issues/257).
   *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.

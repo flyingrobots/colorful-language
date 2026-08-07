@@ -264,9 +264,9 @@ observe public-contract regressions before they ship.
   gates before the public distribution authority closes
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
   <!-- roadmap-primary: delivered #281 -->
-- **Roadmap follow-up triage:** keep the checker decomposition behind active
-  distribution and the cursor-complete transport idea in the scale-triggered
-  experiment backlog
+- **Roadmap follow-up triage:** retain the cursor-complete transport idea in the
+  scale-triggered experiment backlog; checker decomposition shipped through
+  [#257](https://github.com/flyingrobots/colorful-language/issues/257)
   [#260](https://github.com/flyingrobots/colorful-language/issues/260).
   <!-- roadmap-primary: delivered #260 -->
 - **Delivered process-test determinism:** replace the Vale timeout fixture's

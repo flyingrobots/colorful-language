@@ -1558,9 +1558,11 @@ test("the workflow reference pins the canonical accountability heading", () => {
 });
 
 function sourceMeasurement(source) {
+  const functionValuedBindings =
+    /^(?:export\s+)?function\s+|^(?:export\s+)?(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:(?:async\s+)?function\b|(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>)|^ {2}(?!(?:if|for|while|switch|catch|with)\b)(?:(?:static|async)\s+)*[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/gmu;
   return {
     lines: source.trimEnd().split(/\r?\n/u).length,
-    helpers: source.match(/^(?:export )?function /gmu)?.length ?? 0,
+    helpers: source.match(functionValuedBindings)?.length ?? 0,
   };
 }
 
@@ -1613,7 +1615,7 @@ function assertRoadmapPolicyOwnership({ inventory, accountability, runner }) {
   const budgets = [
     ["roadmap inventory owner", inventory, 350, 10],
     ["accountability policy owner", accountability, 700, 20],
-    ["roadmap transport runner", runner, 250, 2],
+    ["roadmap transport runner", runner, 320, 4],
   ];
   for (const [name, source, lineCeiling, helperCeiling] of budgets) {
     const measurement = sourceMeasurement(source);
@@ -1686,6 +1688,24 @@ test("delegates roadmap policy to bounded pure owners", () => {
       }),
     /inventory owner must not define parseMarkdown/u,
   );
+  const helperBudgetMutation = [
+    checker,
+    "const firstExtra = () => {};",
+    "const secondExtra = function () {};",
+    "class ExtraHelpers {",
+    "  thirdExtra() {}",
+    "  fourthExtra() {}",
+    "}",
+  ].join("\n");
+  assert.throws(
+    () =>
+      assertRoadmapPolicyOwnership({
+        inventory: helperBudgetMutation,
+        accountability: accountabilityPolicy,
+        runner,
+      }),
+    /roadmap inventory owner has 11 helpers/u,
+  );
 
   const inventoryMeasurement = sourceMeasurement(checker);
   const accountabilityMeasurement = sourceMeasurement(accountabilityPolicy);
@@ -1700,7 +1720,7 @@ test("delegates roadmap policy to bounded pure owners", () => {
     assert.match(
       reference,
       new RegExp(
-        `${inventoryMeasurement.lines}\\s+lines\\s+and\\s+${inventoryMeasurement.helpers}\\s+top-level\\s+helpers`,
+        `\\b${inventoryMeasurement.lines}\\s+lines\\s+and\\s+${inventoryMeasurement.helpers}\\s+top-level\\s+helpers\\b`,
         "u",
       ),
       `${referencePath} must publish the inventory-owner measurement`,
@@ -1708,7 +1728,7 @@ test("delegates roadmap policy to bounded pure owners", () => {
     assert.match(
       reference,
       new RegExp(
-        `${accountabilityMeasurement.lines}\\s+lines\\s+and\\s+${accountabilityMeasurement.helpers}\\s+top-level\\s+helpers`,
+        `\\b${accountabilityMeasurement.lines}\\s+lines\\s+and\\s+${accountabilityMeasurement.helpers}\\s+top-level\\s+helpers\\b`,
         "u",
       ),
       `${referencePath} must publish the accountability-owner measurement`,

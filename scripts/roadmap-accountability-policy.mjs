@@ -16,7 +16,7 @@ const ATX_H2 = /^ {0,3}##(?:[ \t]+|$)/u;
 const UNSUPPORTED_STYLED_MECHANISM_HEADER =
   /^(\*{1,2}|_{1,2}|~~)Mechanism\1$/u;
 const MARKDOWN_CHARACTER_REFERENCE =
-  /&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
+  /^&(?:#[Xx][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/u;
 const NONCANONICAL_MECHANISM_MARKUP = new Set([
   "*",
   "_",
@@ -362,15 +362,7 @@ function hasStructuralPipe(line) {
     if (line[index] !== "|") {
       continue;
     }
-    let precedingBackslashes = 0;
-    for (
-      let cursor = index - 1;
-      cursor >= 0 && line[cursor] === "\\";
-      cursor -= 1
-    ) {
-      precedingBackslashes += 1;
-    }
-    if (precedingBackslashes % 2 === 1) {
+    if (isMarkdownEscaped(line, index)) {
       continue;
     }
     const insideInlineCode = inlineCodeRanges.some(
@@ -383,6 +375,11 @@ function hasStructuralPipe(line) {
   return false;
 }
 
+/**
+ * Validates the roadmap accountability authority and returns its Markdown AST.
+ *
+ * The injected failure callback must always throw and never return.
+ */
 export function validateArchitectureAccountability(
   roadmap,
   roadmapPath,
