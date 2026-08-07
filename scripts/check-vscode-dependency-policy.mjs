@@ -18,6 +18,12 @@ const LOCKED_ADVISORY_POLICIES = [
     lastVulnerableVersion: "3.1.4",
     packageName: "fast-uri",
   },
+  {
+    advisory: "GHSA-5p4m-2wfm-xmqj",
+    code: "E_JS_YAML",
+    lastVulnerableVersion: "4.3.0",
+    packageName: "js-yaml",
+  },
 ];
 
 export class VscodeDependencyPolicyError extends Error {

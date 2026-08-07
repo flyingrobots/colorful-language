@@ -109,9 +109,10 @@ editor version are exact and lockfile-backed.
 The locked VS Code tooling graph must remain outside known high- and
 critical-severity advisory ranges. The deterministic dependency policy rejects
 every locked `brace-expansion` release below 5.0.9 and every locked `fast-uri`
-release below 3.1.5, including nested copies. Pull-request CI and release
-preparation also run the registry-backed `npm audit --audit-level=high` gate so
-new advisories cannot remain hidden behind an outdated reviewed floor.
+release below 3.1.5, plus every locked `js-yaml` release below 4.3.1, including
+nested copies. Pull-request CI and release preparation also run the
+registry-backed `npm audit --audit-level=high` gate so new advisories cannot
+remain hidden behind an outdated reviewed floor.
 
 A blocking 256-case property corpus checks the coordinate seam beneath every
 adapter. Each generated finding crosses astral code points, combining marks,

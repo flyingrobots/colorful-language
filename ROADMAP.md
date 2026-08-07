@@ -395,9 +395,10 @@ was installed, and reach the first useful editor result.
   ([#123](https://github.com/flyingrobots/colorful-language/issues/123),
   [#124](https://github.com/flyingrobots/colorful-language/issues/124),
   [#185](https://github.com/flyingrobots/colorful-language/issues/185)).
-- **Delivered VS Code advisory refresh:** raise the reviewed policy floors for the
-  newly vulnerable `brace-expansion` and `fast-uri` releases, then refresh the
-  npm-owned lockfile without changing the extension runtime surface
+- **Delivered VS Code advisory refresh:** raise the reviewed policy floors for
+  the newly vulnerable `brace-expansion`, `fast-uri`, and `js-yaml` releases,
+  then refresh the npm-owned lockfile without changing the extension runtime
+  surface
   [#298](https://github.com/flyingrobots/colorful-language/issues/298).
   <!-- roadmap-primary: delivered #298 -->
 - **Delivered extension-host declaration policy:** keep ambient Node declarations
