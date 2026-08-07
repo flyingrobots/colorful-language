@@ -254,11 +254,6 @@ observe public-contract regressions before they ship.
   evidence explicitly unavailable until real public oracles exist
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   <!-- roadmap-primary: delivered #280 -->
-- **Active v0.4.0 snapshot preparation:** promote the accumulated release
-  ledger, refresh its pre-publication witness, and align the release signposts
-  so final preflight can run from `main`
-  [#293](https://github.com/flyingrobots/colorful-language/issues/293).
-  <!-- roadmap-primary: active #293 -->
 - **Active v0.4.0 release train:** keep the reviewed packet, current phase,
   public evidence, fallout, and final closure under one versioned tracker while
   slice issues retain their architectural goalposts
