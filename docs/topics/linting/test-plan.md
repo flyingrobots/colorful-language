@@ -41,6 +41,9 @@ Requirements:
   held-out, human-oracled corpus rather than inferred from built-in fixtures.
 - **LINT-15** The public `Analyzer` port has a concise runnable example that
   reports a finding without duplicating the linting reference.
+- **LINT-16** The canonical built-in language showcase produces every built-in
+  lint rule in deterministic source order and remains explicitly distinct from
+  held-out quality evaluation and optional external-analyzer evidence.
 
 ## Cases
 
@@ -527,6 +530,18 @@ Implemented and planned cases are listed below.
   doctest. *Evidence:* `colorful-core` `Analyzer` rustdoc and
   `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* implemented.
+- **LINT-16a** — *Requirement:* LINT-16. *Behavior:* the same readable fixture
+  used for the full presentation vocabulary produces at least one `weak-word`,
+  `passive-voice`, `length-outlier`, and `run-on` finding, including quoted
+  prose and deliberate non-finding context. *Oracle:* non-zero CLI exit status;
+  exact ordered rule, severity, message, line, and column tuples; complete
+  equality with the structured in-process analyzer findings. *Evidence type:*
+  checked-in text fixture and real-CLI integration test. *Evidence:*
+  `crates/colorful-cli/fixtures/language-showcase.txt` and
+  `language_showcase::canonical_showcase_covers_the_complete_builtin_language_surface`.
+  *Tracking:*
+  [#296](https://github.com/flyingrobots/colorful-language/issues/296).
   *Status:* implemented.
 
 ## Open verification gaps

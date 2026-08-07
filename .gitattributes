@@ -5,3 +5,8 @@
 # path only; it must never be normalized to LF by `git diff --check`,
 # `.gitattributes` autocrlf handling, or any other whitespace/EOL rewrite.
 crates/colorful-cli/fixtures/lint/crlf-line-endings.txt -whitespace -text
+
+# Canonical showcase identities are byte-pinned executable evidence. Keep their
+# checkout bytes stable even when a contributor enables core.autocrlf.
+crates/colorful-cli/fixtures/colorful-demo.txt text eol=lf
+crates/colorful-cli/fixtures/language-showcase.txt text eol=lf

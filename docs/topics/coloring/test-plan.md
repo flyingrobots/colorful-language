@@ -65,6 +65,9 @@ Requirements:
 - **COL-22** The default CLI file path and LSP analyze the same reviewed
   Markdown prose regions; public string helpers and stdin retain historical
   Plain Text behavior because they carry no format metadata.
+- **COL-23** Paired canonical, readable built-in language fixtures provide an
+  exhaustive conformance authority and a screenshot-ready happy path without
+  replacing specialized boundary, transport, or performance corpora.
 
 ## Cases
 
@@ -392,6 +395,33 @@ Requirements:
   `colorful-core` `Annotator` rustdoc and
   `scripts/check-public-api-doctests.mjs`. *Tracking:*
   [#140](https://github.com/flyingrobots/colorful-language/issues/140).
+  *Status:* implemented.
+- **COL-23a** — *Requirement:* COL-23. *Behavior:* one committed Plain Text
+  showcase produces every current `VisualRole`, every non-null LSP token type,
+  and the reviewed noun/verb/adjective/adverb resolutions for `book`, `record`,
+  `lead`, and `fast`. The fixture is an ordinary readable example, while
+  Unicode/property, invalid-UTF-8, Markdown-region, editor-lifecycle, and
+  performance evidence retain their separate authorities. *Oracle:* exact
+  fixture byte length and SHA-256 identity; exact visual-role and LSP-token-type
+  sets; exact contextual probe tuples. *Evidence type:* checked-in text fixture
+  and real-CLI integration test. *Evidence:*
+  `crates/colorful-cli/fixtures/language-showcase.txt` and
+  `language_showcase::canonical_showcase_covers_the_complete_builtin_language_surface`.
+  *Tracking:*
+  [#296](https://github.com/flyingrobots/colorful-language/issues/296).
+  *Status:* implemented.
+- **COL-23b** — *Requirement:* COL-23. *Behavior:* one compact, naturally laid
+  out Plain Text demo uses every seed noun, verb, adjective, and adverb while
+  producing every emitted LSP semantic-token type, no unstyled words, and no
+  built-in lint findings. *Oracle:* exact source identity; the ANSI-colored
+  token count equals the complete token count; the emitted LSP token-type set
+  is complete; the ordered open-class tuples contain every seed word plus the
+  contextual noun; the real lint command succeeds without output. *Evidence
+  type:* checked-in text fixture and real-CLI integration test. *Evidence:*
+  `crates/colorful-cli/fixtures/colorful-demo.txt` and
+  `language_showcase::full_spectrum_demo_is_completely_styled_and_lint_clean`.
+  *Tracking:*
+  [#296](https://github.com/flyingrobots/colorful-language/issues/296).
   *Status:* implemented.
 
 ## Known gaps

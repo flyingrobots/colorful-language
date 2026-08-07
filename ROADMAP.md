@@ -254,6 +254,11 @@ observe public-contract regressions before they ship.
   evidence explicitly unavailable until real public oracles exist
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   <!-- roadmap-primary: delivered #280 -->
+- **Active v0.4.0 snapshot preparation:** promote the accumulated release
+  ledger, refresh its pre-publication witness, and align the release signposts
+  so final preflight can run from `main`
+  [#293](https://github.com/flyingrobots/colorful-language/issues/293).
+  <!-- roadmap-primary: active #293 -->
 - **Active v0.4.0 release train:** keep the reviewed packet, current phase,
   public evidence, fallout, and final closure under one versioned tracker while
   slice issues retain their architectural goalposts
@@ -370,6 +375,11 @@ CLI/LSP findings agree without hiding ambiguity.
   [#235](https://github.com/flyingrobots/colorful-language/issues/235), before
   editor distribution expands the reachable surface.
   <!-- roadmap-primary: delivered #235 -->
+- **Delivered canonical language showcase:** contributors have an exhaustive
+  readable conformance fixture and a screenshot-ready, fully styled happy path
+  without collapsing specialized boundary or protocol corpora into a demo
+  [#296](https://github.com/flyingrobots/colorful-language/issues/296).
+  <!-- roadmap-primary: delivered #296 -->
 - **Parked metrics export:** expose the existing versioned LSP counters through
   a bounded adapter only when an operator job needs Prometheus or CLI output;
   do not add a mandatory network listener
@@ -392,6 +402,12 @@ was installed, and reach the first useful editor result.
   ([#123](https://github.com/flyingrobots/colorful-language/issues/123),
   [#124](https://github.com/flyingrobots/colorful-language/issues/124),
   [#185](https://github.com/flyingrobots/colorful-language/issues/185)).
+- **Delivered VS Code advisory refresh:** raise the reviewed policy floors for
+  the newly vulnerable `brace-expansion`, `fast-uri`, and `js-yaml` releases,
+  then refresh the npm-owned lockfile without changing the extension runtime
+  surface
+  [#298](https://github.com/flyingrobots/colorful-language/issues/298).
+  <!-- roadmap-primary: delivered #298 -->
 - **Delivered extension-host declaration policy:** keep ambient Node declarations
   within the runtime major supplied by the minimum supported VS Code release,
   and stop dependency automation from proposing an incompatible major
