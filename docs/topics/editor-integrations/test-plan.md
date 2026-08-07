@@ -143,6 +143,19 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `editors/vscode/package-lock.json`; and the editor CI job. *Tracking:*
   [#298](https://github.com/flyingrobots/colorful-language/issues/298).
   *Status:* implemented.
+- **EDIT-13c** — *Requirement:* EDIT-13. *Behavior:* every locked `js-yaml`
+  release below `4.3.1`, including nested lockfile instances, is rejected after
+  the August 2026 advisory expansion. *Oracle:* deterministic lockfile-policy
+  mutations reject the last-vulnerable release and a prerelease of the patched
+  floor while a pinned-Node `npm audit --audit-level=high` exits zero on the
+  npm-resolved graph. *Evidence type:* lockfile policy self-test, editor
+  compile, and network-backed advisory audit. *Planned evidence:*
+  `scripts/check-vscode-dependency-policy.test.mjs` tests for top-level,
+  nested, and prerelease `js-yaml` entries;
+  `scripts/check-vscode-dependency-policy.mjs`;
+  `editors/vscode/package-lock.json`; and the editor CI job. *Tracking:*
+  [#298](https://github.com/flyingrobots/colorful-language/issues/298).
+  *Status:* planned.
 - **EDIT-16a** — *Requirement:* EDIT-16. *Behavior:* one reviewed runtime policy
   binds the extension's minimum VS Code release and host Node version to the
   exact TypeScript-compatible `@types/node` manifest and lockfile release,
