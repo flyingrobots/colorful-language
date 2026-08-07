@@ -190,11 +190,11 @@ observe public-contract regressions before they ship.
   roadmap's sole authority, fail-closed policy, and stable diagnostics
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
   <!-- roadmap-primary: delivered #250 -->
-- **Parked roadmap-checker decomposition:** restore meaningful maintenance
-  headroom by splitting one coherent policy owner from the checker after the
-  active distribution lane publishes its existing evidence machinery
+- **Delivered roadmap-checker decomposition:** restore meaningful maintenance
+  headroom by splitting architecture-accountability interpretation into a pure
+  policy owner with per-owner source budgets and exact process contracts
   [#257](https://github.com/flyingrobots/colorful-language/issues/257).
-  <!-- roadmap-primary: parked #257 -->
+  <!-- roadmap-primary: delivered #257 -->
 - **Delivered delivery-axis repair:** keep goalposts and versioned release trains
   independently representable before formal v0.4.0 planning begins
   [#261](https://github.com/flyingrobots/colorful-language/issues/261).
@@ -264,9 +264,9 @@ observe public-contract regressions before they ship.
   gates before the public distribution authority closes
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
   <!-- roadmap-primary: delivered #281 -->
-- **Roadmap follow-up triage:** keep the checker decomposition behind active
-  distribution and the cursor-complete transport idea in the scale-triggered
-  experiment backlog
+- **Roadmap follow-up triage:** retain the cursor-complete transport idea in the
+  scale-triggered experiment backlog; checker decomposition shipped through
+  [#257](https://github.com/flyingrobots/colorful-language/issues/257)
   [#260](https://github.com/flyingrobots/colorful-language/issues/260).
   <!-- roadmap-primary: delivered #260 -->
 - **Delivered process-test determinism:** replace the Vale timeout fixture's
