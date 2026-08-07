@@ -369,6 +369,40 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   contains no Markdown interpretation. *Tracking:*
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
   *Status:* implemented.
+- **RM-15b — Characterized roadmap-policy ownership seam.** *Requirements:*
+  RM-9, RM-14, RM-15. *Behavior:* architecture-accountability interpretation
+  and validation live behind one pure policy module, primary issue disposition
+  and reconciliation remain in the inventory owner, and
+  `roadmap-inventory-runner.mjs` remains the only file, GitHub, argument, JSON,
+  and process-output adapter. Moving the policy must preserve the existing
+  offline success bytes, stable `E_ROADMAP_*` categories, path-and-line
+  addresses, Markdown escape and comment behavior, and the live/offline
+  boundary. *Oracle:* a process-level characterization matrix records exact
+  stdout and stderr for structural success, duplicate-mechanism failure,
+  malformed marker failure, and issue-state mismatch, while source-policy
+  assertions reject Markdown interpretation in either the inventory owner or
+  transport runner. *Evidence type:* deterministic fixture-backed Node tests
+  plus source-boundary mutation tests. *Planned evidence:*
+  `scripts/check-roadmap-inventory.test.mjs`,
+  `scripts/check-roadmap-inventory.mjs`, a pure architecture-accountability
+  policy module, and `scripts/roadmap-inventory-runner.mjs`. *Tracking:*
+  [#257](https://github.com/flyingrobots/colorful-language/issues/257).
+  *Status:* planned.
+- **RM-15c — Per-owner roadmap-policy budgets.** *Requirement:* RM-15.
+  *Behavior:* the inventory, architecture-accountability, and transport owners
+  each carry a reviewed line and top-level-helper budget with meaningful
+  maintenance headroom; no aggregate budget can hide one owner regrowing into
+  a monolith. The inventory owner must import and invoke the pure policy rather
+  than retain a duplicate implementation. *Oracle:* the checked-in owners pass
+  their individual budgets, while one minimal mutation that duplicates a
+  policy helper across the ownership boundary fails deterministically. The
+  complete pre-existing roadmap suite remains green. *Evidence type:* source
+  inventory assertions, cross-owner mutation test, and the ordinary roadmap
+  regression suite. *Planned evidence:*
+  `scripts/check-roadmap-inventory.test.mjs` and the three roadmap-policy
+  owners. *Tracking:*
+  [#257](https://github.com/flyingrobots/colorful-language/issues/257).
+  *Status:* planned.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and
