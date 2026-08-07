@@ -70,6 +70,9 @@ function fixture() {
         "node_modules/fast-uri": {
           version: "3.1.5",
         },
+        "node_modules/js-yaml": {
+          version: "4.3.1",
+        },
         "node_modules/vscode-languageclient": {
           version: "10.1.0",
           engines: {
@@ -224,6 +227,26 @@ test("rejects a prerelease patched fast-uri", () => {
   const input = fixture();
   input.lockfile.packages["node_modules/fast-uri"].version = "3.1.5-beta.0";
   expectCode(input, "E_FAST_URI");
+});
+
+test("rejects the last vulnerable js-yaml release", () => {
+  const input = fixture();
+  input.lockfile.packages["node_modules/js-yaml"].version = "4.3.0";
+  expectCode(input, "E_JS_YAML");
+});
+
+test("rejects a nested vulnerable js-yaml release", () => {
+  const input = fixture();
+  input.lockfile.packages["node_modules/example/node_modules/js-yaml"] = {
+    version: "4.3.0",
+  };
+  expectCode(input, "E_JS_YAML");
+});
+
+test("rejects a prerelease patched js-yaml", () => {
+  const input = fixture();
+  input.lockfile.packages["node_modules/js-yaml"].version = "4.3.1-beta.0";
+  expectCode(input, "E_JS_YAML");
 });
 
 test("rejects an extension floor below the client floor", () => {
