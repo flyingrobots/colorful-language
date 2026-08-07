@@ -247,6 +247,12 @@ observe public-contract regressions before they ship.
   that witness, so final preflight can run from aligned `main`
   [#293](https://github.com/flyingrobots/colorful-language/issues/293).
   <!-- roadmap-primary: delivered #293 -->
+- **Delivered the post-merge v0.4.0 witness reconciliation:** bind the final
+  release-prep CI and review evidence to the merged candidate, refresh the
+  aligned-`main` scope inventory, and explicitly hold post-packet work outside
+  the release boundary before final preflight
+  [#301](https://github.com/flyingrobots/colorful-language/issues/301).
+  <!-- roadmap-primary: delivered #301 -->
 - **Delivered v0.4.0 packet admission:** derive the planned packet from current
   workspace and completed-release identity; require exact version tokens,
   uniquely labeled goalposts with observable acceptance oracles, and an
