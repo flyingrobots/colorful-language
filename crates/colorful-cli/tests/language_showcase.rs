@@ -245,6 +245,14 @@ fn full_spectrum_demo_is_completely_styled_and_lint_clean() {
     assert!(stderr(&passthrough).is_empty(), "{}", stderr(&passthrough));
     assert_eq!(stdout(&passthrough), source);
 
+    let colored = run([fixture.as_os_str()]);
+    assert_eq!(colored.status.code(), Some(0));
+    assert!(stderr(&colored).is_empty(), "{}", stderr(&colored));
+    assert!(
+        stdout(&colored).contains("\x1b["),
+        "default color output must contain ANSI styling"
+    );
+
     let diagnose = run([
         OsStr::new("diagnose"),
         OsStr::new("--json"),
