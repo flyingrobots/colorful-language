@@ -72,6 +72,15 @@ fn expected_counts<const N: usize>(pairs: [(&str, usize); N]) -> BTreeMap<String
         .collect()
 }
 
+fn lsp_legend(report: &Value) -> BTreeSet<&str> {
+    report["contracts"]["vocabulary"]["lspLegend"]
+        .as_array()
+        .expect("diagnostic LSP legend")
+        .iter()
+        .map(|value| value.as_str().expect("LSP legend member must be a string"))
+        .collect()
+}
+
 fn display_path(path: &Path) -> &str {
     path.to_str().expect("fixture path must be UTF-8")
 }
@@ -124,13 +133,22 @@ fn canonical_showcase_covers_the_complete_builtin_language_surface() {
             ("VERB", 8),
         ])
     );
+    let lsp_counts = count_strings(
+        tokens
+            .iter()
+            .map(|token| &token["lspTokenType"])
+            .filter(|value| !value.is_null()),
+    );
     assert_eq!(
-        count_strings(
-            tokens
-                .iter()
-                .map(|token| &token["lspTokenType"])
-                .filter(|value| !value.is_null()),
-        ),
+        lsp_counts
+            .keys()
+            .map(String::as_str)
+            .collect::<BTreeSet<_>>(),
+        lsp_legend(&report),
+        "canonical showcase must cover the live LSP legend"
+    );
+    assert_eq!(
+        lsp_counts,
         expected_counts([
             ("adjective", 7),
             ("adverb", 7),
@@ -282,6 +300,11 @@ fn full_spectrum_demo_is_completely_styled_and_lint_clean() {
         .iter()
         .filter_map(|token| token["lspTokenType"].as_str())
         .collect();
+    assert_eq!(
+        lsp_types,
+        lsp_legend(&report),
+        "full-spectrum demo must cover the live LSP legend"
+    );
     assert_eq!(
         lsp_types,
         BTreeSet::from([
