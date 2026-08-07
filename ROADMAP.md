@@ -190,11 +190,11 @@ observe public-contract regressions before they ship.
   roadmap's sole authority, fail-closed policy, and stable diagnostics
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
   <!-- roadmap-primary: delivered #250 -->
-- **Parked roadmap-checker decomposition:** restore meaningful maintenance
-  headroom by splitting one coherent policy owner from the checker after the
-  active distribution lane publishes its existing evidence machinery
+- **Delivered roadmap-checker decomposition:** restore meaningful maintenance
+  headroom by splitting architecture-accountability interpretation into a pure
+  policy owner with per-owner source budgets and exact process contracts
   [#257](https://github.com/flyingrobots/colorful-language/issues/257).
-  <!-- roadmap-primary: parked #257 -->
+  <!-- roadmap-primary: delivered #257 -->
 - **Delivered delivery-axis repair:** keep goalposts and versioned release trains
   independently representable before formal v0.4.0 planning begins
   [#261](https://github.com/flyingrobots/colorful-language/issues/261).

@@ -566,9 +566,18 @@ test("keeps an incomplete accountability header inside its paragraph", () => {
 });
 
 test("does not reintroduce a generic HTML block grammar", () => {
-  const checkerSource = readFileSync(script, "utf8");
-  assert.match(checkerSource, /from "mdast-util-from-markdown";/u);
-  assert.doesNotMatch(checkerSource, /GENERIC_HTML_(?:OPEN|CLOSE)_TAG/u);
+  const accountabilityPolicy = readFileSync(
+    accountabilityPolicyScript,
+    "utf8",
+  );
+  assert.match(
+    accountabilityPolicy,
+    /from "mdast-util-from-markdown";/u,
+  );
+  assert.doesNotMatch(
+    accountabilityPolicy,
+    /GENERIC_HTML_(?:OPEN|CLOSE)_TAG/u,
+  );
 });
 
 test("rejects a table hidden by an invalid backtick-fence interpretation", () => {
@@ -1563,7 +1572,7 @@ function assertRoadmapPolicyOwnership({ inventory, accountability, runner }) {
   );
   assert.match(
     inventory,
-    /validateArchitectureAccountability\(roadmap, roadmapPath, fail\)/u,
+    /validateArchitectureAccountability\(\s*roadmap,\s*roadmapPath,\s*fail,?\s*\)/u,
     "the inventory owner must invoke the accountability policy",
   );
   assert.match(
