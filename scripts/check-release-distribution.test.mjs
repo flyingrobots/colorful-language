@@ -302,6 +302,41 @@ test("accepts the complete native and editor distribution contract", () => {
   });
 });
 
+test("repository makes the GitHub Release VSIX the credential-free required channel", () => {
+  const snapshot = loadRepositorySnapshot();
+  assert.deepEqual(snapshot.policy.editors.vscode, {
+    artifact: "target/editor-smoke/colorful-language-{version}.vsix",
+    publication: {
+      authority: "github-release-asset",
+      installation: "manual-vsix",
+    },
+  });
+
+  const steps = snapshot.workflow.jobs.release.steps;
+  const stepNames = steps.map((step) => step.name).filter(Boolean);
+  assert.equal(
+    stepNames.some((name) => name.includes("Marketplace")),
+    false,
+  );
+  assert.equal(stepNames.some((name) => name.includes("Open VSX")), false);
+  assert.deepEqual(
+    steps.flatMap((step) => Object.keys(step.env ?? {})).filter(
+      (name) => name === "VSCE_PAT" || name === "OVSX_PAT",
+    ),
+    [],
+  );
+
+  const createIndex = stepNames.indexOf("Create GitHub Release");
+  const verifyIndex = stepNames.indexOf("Verify GitHub Release VSIX");
+  assert.notEqual(createIndex, -1);
+  assert.notEqual(verifyIndex, -1);
+  assert.ok(createIndex < verifyIndex);
+  assert.match(
+    releaseStep(snapshot, "Verify GitHub Release VSIX").run,
+    /node scripts\/verify-editor-publication\.mjs/u,
+  );
+});
+
 test("pins the Homebrew syntax parser to the reviewed Ruby release", () => {
   const setup = releaseStep(
     loadRepositorySnapshot(),
