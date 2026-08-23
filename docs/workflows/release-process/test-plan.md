@@ -25,9 +25,10 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-12** A release tag must build `colorful` and `colorful-lsp` for the
   reviewed native platform matrix, publish checksums, and attach signed
   provenance to the exact archives created from that tag.
-- **REL-13** One clean-install-tested VSIX must be the sole input to both VS
-  Code Marketplace and Open VSX publication, with credentials verified before
-  immutable publication and duplicate-version retries handled explicitly.
+- **REL-13** One clean-install-tested VSIX must be the sole VS Code artifact
+  attached to the GitHub Release, with checksum and provenance bound to those
+  exact bytes and public-asset verification after publication. Marketplace
+  credentials must not gate the required release path.
 - **REL-14** The Zed registry source path must carry the complete accepted
   inventory and license required by the external registry PR.
 - **REL-15** Distribution verification and rollback must name an owner, public
@@ -176,35 +177,21 @@ Verification for release preparation, tag automation, and release witnesses.
   and `requires signed checksummed native archives`. *Status:* implemented in
   workflow; hosted release evidence remains planned.
 - **REL-13a** — *Requirement:* REL-13. *Behavior:* the tag workflow runs the
-  packaged VS Code smoke once, publishes that witness's exact VSIX path to both
-  registries, isolates each registry credential to its own verification and
-  publication step, verifies both credentials before crates or editor packages
-  are published, and treats an already-present version as a rerun-safe success
-  only when both downloaded registry packages match the witness SHA-256.
-  Packaging normalizes ZIP timestamps to the immutable source commit, so
-  ambient time cannot change the VSIX bytes. *Oracle:* workflow and lockfile
-  mutations reject shared publisher credentials, a second package command,
-  different publication paths, missing credential or byte verification,
-  floating publisher tooling, absent duplicate handling, a mismatched remote
-  package, or time-dependent packaging. *Evidence type:* deterministic
+  packaged VS Code smoke once, copies that witness's exact VSIX into the
+  release asset set, writes its SHA-256 sidecar, attests it with GitHub/Sigstore
+  provenance, creates the GitHub Release, and then downloads the public asset
+  to prove its bytes equal the smoke witness. Marketplace credentials and
+  publisher commands are absent from the required tag path. Packaging
+  normalizes ZIP timestamps to the immutable source commit, so ambient time
+  cannot change the VSIX bytes. *Oracle:* workflow, profile, and lockfile
+  mutations reject a second package command, a different asset path, a missing
+  checksum or attestation, release creation that omits the asset set, public
+  verification before release creation, any required marketplace secret or
+  publisher command, floating package tooling, a mismatched public asset, or
+  time-dependent packaging. *Evidence type:* deterministic
   distribution-policy checker and mutation tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  *Evidence:* `.github/workflows/release.yml`;
-  `editors/vscode/smoke/run-packaged-smoke.mjs`;
-  `editors/vscode/package.json`; `editors/vscode/package-lock.json`;
-  `scripts/verify-editor-publication.mjs`;
-  `scripts/verify-editor-publication.test.mjs`;
-  `scripts/check-release-distribution.test.mjs`
-  `isolates each editor registry credential to its publisher step`,
-  `requires publisher credential verification before crates`,
-  `rejects credentials shared between editor publisher steps`,
-  `requires one smoke-tested VSIX for both rerun-safe publishers`, and
-  `requires published registry bytes to match the smoke-tested VSIX`, and
-  `requires exact lockfile-backed publisher tools`;
-  `scripts/check-editor-package-smoke.test.mjs`
-  `VSIX packaging is reproducible across ambient build times` and
-  `clean gates install editor dependencies before package policy`. *Status:*
-  implemented in workflow; public registry evidence remains planned.
+  *Status:* planned.
 - **REL-14a** — *Requirement:* REL-14. *Behavior:* the repository-owned
   `editors/zed` path and its staged clean-room copy carry the same accepted
   license, synchronized manifest and crate versions, lockfile, source, and
@@ -221,10 +208,11 @@ Verification for release preparation, tag automation, and release witnesses.
   submission remains planned.
 - **REL-15a** — *Requirement:* REL-15. *Behavior:* the release runbook names
   `@flyingrobots` as publication and rollback owner; gives exact verification
-  commands for GitHub attestations, registry metadata, clean installation, and
-  Zed registry status; and requires patch-forward recovery without moving a
-  public tag. Install-to-first-highlight measurements record their start/end
-  events and environment but do not enforce a wall-clock threshold.
+  commands for GitHub Release metadata, checksums, attestations, manual VSIX
+  installation and removal, and Zed source-archive status; and requires
+  patch-forward recovery without moving a public tag.
+  Install-to-first-highlight measurements record their start/end events and
+  environment but do not enforce a wall-clock threshold.
   *Oracle:* documentation/policy mutations reject a missing owner, channel,
   integrity command, rollback rule, or an observational measurement presented
   as a correctness gate. *Evidence type:* deterministic distribution-policy
@@ -240,8 +228,8 @@ Verification for release preparation, tag automation, and release witnesses.
   `keeps public byte verification after publication` and
   `downloads every release asset before integrity verification` and
   `verifies checksums and provenance for the complete release matrix`.
-  *Status:* implemented in the runbook and package witness; public rollback
-  rehearsal remains planned.
+  *Status:* planned for the revised GitHub Release channel; the package witness
+  remains implemented and public rollback rehearsal remains planned.
 - **REL-16a** — *Requirement:* REL-16. *Behavior:* after the release job
   downloads the native archive and checksum set, the generator verifies the
   Linux x86-64 and Apple Silicon formula inputs and derives one deterministic

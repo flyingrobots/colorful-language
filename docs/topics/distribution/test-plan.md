@@ -81,12 +81,17 @@ Verification for install paths and published artifacts.
   script, and release witness. *Tracking:*
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).
   *Status:* planned.
-- **DIST-7a** — *Requirement:* DIST-7. *Behavior:* signed VS Code/Open VSX and
-  Zed packages plus the reviewed platform server matrix install from public
-  destinations and can be rolled back to the previous compatible version.
-  *Oracle:* public URL resolution, integrity verification, clean-install
-  activation, binary version, and rollback result equality. *Evidence type:*
-  release-matrix witness and clean-machine process tests. *Tracking:*
+- **DIST-7a** — *Requirement:* DIST-7. *Behavior:* the attested, smoke-tested
+  VSIX, the reviewed Zed source archive, and the reviewed platform server
+  matrix publish as immutable GitHub Release assets. A clean VS Code profile
+  installs the downloaded VSIX with `code --install-extension`, activates it
+  against the compatible server, and can uninstall it or reinstall the
+  previous compatible release asset. Marketplace and editor-registry
+  publication are optional follow-up channels, not release blockers.
+  *Oracle:* exact release-asset URL resolution, checksum and provenance
+  verification, clean-install activation, binary version, and rollback result
+  equality. *Evidence type:* release-policy mutation tests, release-matrix
+  witness, and clean-machine process tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.
 - **DIST-8a** — *Requirement:* DIST-8. *Behavior:* an exact release version,

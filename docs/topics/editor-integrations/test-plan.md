@@ -22,9 +22,10 @@ Verification for editor adapters and the `colorful-lsp` surface.
   activation smoke test for Plain Text and Markdown, including theme fallback.
 - **EDIT-9** Editor adapter and server version ownership must be explicit and
   enforced by a deterministic compatibility-drift check.
-- **EDIT-10** Public editor releases must be signed, installable from real
-  registry URLs, reversible, visually demonstrable without color-only evidence,
-  and measured from installation to first highlight.
+- **EDIT-10** Public editor releases must carry verifiable provenance, install
+  from real release-asset or registry URLs, be reversible, be visually
+  demonstrable without color-only evidence, and be measured from installation
+  to first highlight.
 - **EDIT-11** The real `colorful-lsp` binary must expose a deterministic stdio
   JSON-RPC lifecycle independently of any editor adapter.
 - **EDIT-12** The shared LSP server must publish only the newest document
@@ -328,14 +329,16 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `requires policy dependencies before the checker in every release gate`;
   `.github/workflows/ci.yml`; `.github/workflows/release.yml`;
   `scripts/release-prep.sh`. *Status:* implemented.
-- **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* signed VS Code/Open VSX and
-  Zed releases plus compatible Linux x86-64, Apple Silicon, and Windows x86-64
-  server binaries publish at real URLs, install on a clean machine, and roll
-  back to the previous compatible set. One smoke-tested VSIX supplies both
-  VS Code registries; each binary archive and the VSIX carry a SHA-256 identity
-  and GitHub/Sigstore provenance. *Oracle:* registry/release URL resolution,
-  provenance and checksum verification, activation, semantic-token/diagnostic
-  output, and rollback result equality.
+- **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* one smoke-tested VSIX, the
+  reviewed Zed source archive, and compatible Linux x86-64, Apple Silicon, and
+  Windows x86-64 server binaries publish as GitHub Release assets at real URLs,
+  install on a clean machine, and roll back to the previous compatible set.
+  Each binary archive and the VSIX carry a SHA-256 identity and
+  GitHub/Sigstore provenance. VS Code Marketplace, Open VSX, and the Zed
+  registry are optional discovery channels and do not gate the release.
+  *Oracle:* release URL resolution, provenance and checksum verification,
+  manual VSIX installation, activation, semantic-token/diagnostic output, and
+  rollback result equality.
   *Evidence type:* signed release witness and clean-machine matrix. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Status:* planned.
@@ -359,11 +362,11 @@ Verification for editor adapters and the `colorful-lsp` surface.
 - **EDIT-10c** — *Requirement:* EDIT-10. *Behavior:* the public release witness
   records a reviewed theme/fallback result and the observational
   install-to-first-highlight measurement from a clean installation of the
-  published bytes, including the exact public URLs and environment. *Oracle:*
-  the public VSIX digest equals the smoke witness; expected roles and
+  GitHub Release VSIX, including the exact public asset URL and environment.
+  *Oracle:* the public VSIX digest equals the smoke witness; expected roles and
   diagnostics appear; timing event order and environment are complete.
-  *Evidence type:* public registry metadata, clean-machine visual review, and
-  release witness. *Tracking:*
+  *Evidence type:* public GitHub Release metadata, clean-machine visual review,
+  and release witness. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
   *Intended evidence:* the version-specific
   `docs/goalposts/vX.Y.Z/release.md` and
