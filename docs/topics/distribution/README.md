@@ -32,14 +32,15 @@ The tag workflow on `main` is prepared to replace that single-platform shape on
 the next deliberate release: native jobs build Linux x86-64, Apple Silicon, and
 Windows x86-64 archives, checksum each archive, and publish
 GitHub/Sigstore provenance. The same tagged workflow clean-installs one exact
-VSIX before using those bytes for VS Code Marketplace and Open VSX, and it
-packages the licensed Zed registry source. It also generates a CycloneDX
+VSIX before attaching those bytes and their checksum to the GitHub Release,
+and it packages the licensed Zed source archive. It also generates a CycloneDX
 software bill of materials from the locked dependency graph and attests it with
 the same provenance as the artifacts it describes, so a consumer can audit what
 a release contains without building it. These are release mechanics, not
-current install claims. No macOS, Windows, VS Code Marketplace, Open VSX, or Zed
-public URL is documented as available until the tagged workflow and external
-registries provide verification evidence.
+current install claims. No macOS, Windows, or v0.4.0 editor asset is documented
+as available until the tagged workflow provides a real URL and verification
+evidence. Marketplace and editor-registry listings are optional discovery
+channels, not release prerequisites.
 
 The same tag workflow generates `colorful.rb` only after downloading the
 already-built Linux x86-64 and Apple Silicon archives. The generator requires
@@ -91,8 +92,8 @@ public channel, clean-machine evidence, upgrade proof, and rollback proof; the
 canonical tracker is [#37](https://github.com/flyingrobots/colorful-language/issues/37).
 
 There are no publicly verified native macOS or Windows binary archives yet.
-Signed editor artifacts, public registry URLs, and clean-install/rollback
-evidence are tracked by
+Attested GitHub Release editor assets and clean-install/rollback evidence are
+tracked by
 [#154](https://github.com/flyingrobots/colorful-language/issues/154). Homebrew
 remains the separate operator-install slice in #37, while both lanes may reuse
 the same release assets and checksum evidence.

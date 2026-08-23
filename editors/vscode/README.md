@@ -31,12 +31,38 @@ development, install the matching server from the same checkout:
 cargo install --path crates/colorful-lsp --locked
 ```
 
-For a registry-installed extension, install the same version of
+For a release-installed extension, install the same version of
 [`colorful-lsp`](https://crates.io/crates/colorful-lsp) or use a native archive
 from the matching tag on
 [GitHub Releases](https://github.com/flyingrobots/colorful-language/releases).
 Use an archive only when that exact target and version appear in the release
 asset list; otherwise install the server with Cargo.
+
+## Install a release VSIX
+
+When a GitHub Release lists `colorful-language-X.Y.Z.vsix`, download that exact
+asset and install it by hand:
+
+```bash
+gh release download vX.Y.Z \
+  --pattern "colorful-language-X.Y.Z.vsix"
+code --install-extension colorful-language-X.Y.Z.vsix --force
+```
+
+Confirm the installed version:
+
+```bash
+code --list-extensions --show-versions
+```
+
+To remove the extension before reinstalling a previous compatible release:
+
+```bash
+code --uninstall-extension flyingrobots.colorful-language
+```
+
+The VSIX does not embed `colorful-lsp`; install the matching server first and
+keep it on `PATH`, or set `colorful.serverPath` to its absolute path.
 
 ## Settings
 

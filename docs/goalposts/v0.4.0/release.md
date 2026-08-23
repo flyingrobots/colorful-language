@@ -70,7 +70,7 @@ silent patch to an older public contract.
   [#140](https://github.com/flyingrobots/colorful-language/issues/140),
   [#147](https://github.com/flyingrobots/colorful-language/issues/147), and
   [#152](https://github.com/flyingrobots/colorful-language/issues/152)).
-- A reviewed release packet and the repository-controlled signed native,
+- A reviewed release packet and the repository-controlled attested native,
   editor, and Homebrew-formula artifact machinery, an attested CycloneDX bill
   of materials for the shipped dependency graph, followed by public
   publication and verification
@@ -89,6 +89,10 @@ silent patch to an older public contract.
 - External Zed registry acceptance may complete after the immutable source
   archive and maintainer submission exist; that timing does not change the
   tagged Colorful bytes
+  ([#154](https://github.com/flyingrobots/colorful-language/issues/154)).
+- VS Code Marketplace and Open VSX listings may be pursued as later discovery
+  channels. Publisher-account availability does not gate the GitHub Release
+  VSIX or `v0.4.0`
   ([#154](https://github.com/flyingrobots/colorful-language/issues/154)).
 
 ### Not included
@@ -144,8 +148,10 @@ not replace per-issue history.
 
 - The packet does not mean `v0.4.0` has been tagged, published, or publicly
   verified.
-- Marketplace, Open VSX, Zed registry, Homebrew tap, and platform-install URLs
-  are absent until the corresponding public bytes resolve.
+- The `v0.4.0` GitHub Release VSIX, Zed source, Homebrew formula, and native
+  platform URLs are absent until the corresponding public bytes resolve.
+- VS Code Marketplace, Open VSX, and Zed registry listings are optional
+  discovery channels, not claimed `v0.4.0` release requirements.
 - The Vale adapter is optional comparison evidence; no external process,
   network service, or ambient configuration becomes mandatory for the default
   CLI or LSP.
@@ -160,12 +166,13 @@ not replace per-issue history.
 
 ## Risks and rollback
 
-- **Partial registry publication:** the tag is immutable. Rerun the release
-  workflow only where its duplicate-byte checks prove equivalence; otherwise
-  patch forward with a new version.
-- **Editor registry mismatch:** compare downloaded public VSIX bytes with the
-  smoke-tested witness before admitting success. Do not overwrite an existing
-  version with different bytes.
+- **Partial GitHub Release publication:** the tag is immutable. If release
+  creation stops after any public side effect, compare every public asset with
+  the admitted checksums and attestations before resuming; otherwise patch
+  forward with a new version.
+- **Editor release-asset mismatch:** compare the downloaded GitHub Release VSIX
+  with the smoke-tested witness before admitting success. Do not overwrite an
+  existing version with different bytes.
 - **Native artifact defect:** retain checksums and GitHub attestations, withdraw
   claims for the affected channel, and patch forward without moving the tag.
 - **Zed acceptance delay:** the versioned source archive and submission remain
@@ -207,9 +214,10 @@ Publication and rollback owner: `@flyingrobots`.
   tag points at that reviewed commit and does not already exist.
 - The tag workflow publishes the exact admitted crates, native archives,
   checksums, attestations, VSIX, Zed source, and Homebrew formula.
-- Public verification records registry URLs, byte or checksum parity,
-  clean-machine installation, version/LSP compatibility, first-highlight
-  timing, rollback evidence, and the Zed/Homebrew follow-up state.
+- Public verification records the exact GitHub Release URLs, byte or checksum
+  parity, clean-machine installation, version/LSP compatibility,
+  first-highlight timing, VSIX removal or rollback evidence, and the optional
+  marketplace, Zed-registry, and Homebrew-tap follow-up state.
 - The release retrospective records plan-versus-actual scope and fallout
   before the release tracker closes.
 

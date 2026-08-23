@@ -17,11 +17,9 @@ deployment:
   rollback_owner: "@flyingrobots"
   credential_secrets:
     - CARGO_REGISTRY_TOKEN
-    - OVSX_PAT
-    - VSCE_PAT
   evidence:
     - bash scripts/release-prep.sh
     - node scripts/verify-editor-publication.mjs
     - npm --prefix editors/vscode run smoke:package
   create_environment_when: >-
-    a real release is scheduled and all credentials can move atomically
+    a real release is scheduled and the credential can move atomically

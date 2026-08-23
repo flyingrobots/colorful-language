@@ -191,7 +191,23 @@ Verification for release preparation, tag automation, and release witnesses.
   time-dependent packaging. *Evidence type:* deterministic
   distribution-policy checker and mutation tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  *Status:* planned.
+  *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `editors/vscode/smoke/run-packaged-smoke.mjs`;
+  `editors/vscode/package.json`; `editors/vscode/package-lock.json`;
+  `scripts/verify-editor-publication.mjs`;
+  `scripts/verify-editor-publication.test.mjs` `accepts exact bytes from the
+  public GitHub Release asset`, `rejects a GitHub Release VSIX with different
+  bytes`, and `retries bounded eventual GitHub Release propagation`;
+  `scripts/check-release-distribution.test.mjs`
+  `repository makes the GitHub Release VSIX the credential-free required
+  channel`, `rejects marketplace credentials and publisher commands`,
+  `requires one smoke-tested VSIX in the GitHub Release assets`,
+  `requires public GitHub Release bytes to match the smoke-tested VSIX`, and
+  `requires the GitHub Release to attach every reviewed asset`;
+  `scripts/check-editor-package-smoke.test.mjs` `VSIX packaging is reproducible
+  across ambient build times`. *Status:* implemented in the workflow; public
+  release evidence remains planned under
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283).
 - **REL-14a** — *Requirement:* REL-14. *Behavior:* the repository-owned
   `editors/zed` path and its staged clean-room copy carry the same accepted
   license, synchronized manifest and crate versions, lockfile, source, and
@@ -228,8 +244,9 @@ Verification for release preparation, tag automation, and release witnesses.
   `keeps public byte verification after publication` and
   `downloads every release asset before integrity verification` and
   `verifies checksums and provenance for the complete release matrix`.
-  *Status:* planned for the revised GitHub Release channel; the package witness
-  remains implemented and public rollback rehearsal remains planned.
+  *Status:* implemented in the runbook and package witness; public rollback
+  rehearsal remains planned under
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283).
 - **REL-16a** — *Requirement:* REL-16. *Behavior:* after the release job
   downloads the native archive and checksum set, the generator verifies the
   Linux x86-64 and Apple Silicon formula inputs and derives one deterministic
@@ -502,7 +519,7 @@ Verification for release preparation, tag automation, and release witnesses.
   executable profile policy.
 - GitHub Release asset recovery is still a manual inspection path when a release
   exists but assets are missing.
-- Native platform archives, editor-registry publication, and signed provenance
-  are implemented in the tag workflow but remain unverified on a public tag.
-  Zed registry submission and public distribution rollback evidence remain
-  planned in REL-12a through REL-15a.
+- Native platform archives, GitHub Release editor publication, and attested
+  provenance are implemented in the tag workflow but remain unverified on a
+  public tag. Optional Zed registry submission and public distribution rollback
+  evidence remain planned in REL-12a through REL-15a.

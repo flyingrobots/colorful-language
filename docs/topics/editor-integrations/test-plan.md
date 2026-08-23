@@ -248,9 +248,9 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `crates/colorful-lsp/tests/fixtures/editor_lifecycle_transcript.json`;
   `crates/colorful-lsp/tests/stdio_contract.rs`
   `real_server_completes_the_public_stdio_lifecycle`. *Status:* implemented.
-- **EDIT-8b** — *Requirement:* EDIT-8. *Behavior:* one VSIX is built for both
-  VS Code Marketplace and Open VSX, installed with the pinned minimum supported
-  VS Code CLI into empty user-data and extensions directories, and exercised
+- **EDIT-8b** — *Requirement:* EDIT-8. *Behavior:* one VSIX is built as the
+  sole future GitHub Release VS Code asset, installed with the pinned minimum
+  supported VS Code CLI into empty user-data and extensions directories, and exercised
   from a separate Extension Host smoke harness. The installed adapter activates
   for Plain Text and Markdown, starts the matching real `colorful-lsp`, exposes
   semantic tokens and diagnostics before and after an incremental edit, and
@@ -259,8 +259,8 @@ Verification for editor adapters and the `colorful-lsp` surface.
   persisted editor logs.
   *Oracle:* installed extension ID/version and packaged manifest equality,
   activation state, diagnostic ranges and counts, fallback-scope equality,
-  missing-server log category, and zero Extension Host status. The Open VSX
-  witness must consume the same VSIX path and digest rather than rebuilding it.
+  missing-server log category, and zero Extension Host status. The release
+  workflow must consume the same VSIX path and digest rather than rebuilding it.
   *Evidence type:* VSIX inventory test and pinned headless VS Code clean-install
   smoke test. *Tracking:*
   [#136](https://github.com/flyingrobots/colorful-language/issues/136).
@@ -331,17 +331,18 @@ Verification for editor adapters and the `colorful-lsp` surface.
   `scripts/release-prep.sh`. *Status:* implemented.
 - **EDIT-10a** — *Requirement:* EDIT-10. *Behavior:* one smoke-tested VSIX, the
   reviewed Zed source archive, and compatible Linux x86-64, Apple Silicon, and
-  Windows x86-64 server binaries publish as GitHub Release assets at real URLs,
-  install on a clean machine, and roll back to the previous compatible set.
-  Each binary archive and the VSIX carry a SHA-256 identity and
-  GitHub/Sigstore provenance. VS Code Marketplace, Open VSX, and the Zed
+  Windows x86-64 server binaries are the sole editor/server inputs to the
+  GitHub Release asset set. Each archive and the VSIX carry a SHA-256 identity
+  and GitHub/Sigstore provenance. VS Code Marketplace, Open VSX, and the Zed
   registry are optional discovery channels and do not gate the release.
-  *Oracle:* release URL resolution, provenance and checksum verification,
-  manual VSIX installation, activation, semantic-token/diagnostic output, and
-  rollback result equality.
-  *Evidence type:* signed release witness and clean-machine matrix. *Tracking:*
+  *Oracle:* release-policy mutations reject artifact, checksum, provenance,
+  publication-order, or credential-boundary drift. *Evidence type:*
+  deterministic distribution-policy checker and mutation tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
-  *Status:* planned.
+  *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`; and
+  `scripts/verify-editor-publication.test.mjs`. *Status:* implemented.
 - **EDIT-10b** — *Requirement:* EDIT-10. *Behavior:* publication evidence
   includes a text-equivalent visual demo and install-to-first-highlight timing
   without making host-dependent timing a correctness gate. *Oracle:* the demo
@@ -367,7 +368,7 @@ Verification for editor adapters and the `colorful-lsp` surface.
   diagnostics appear; timing event order and environment are complete.
   *Evidence type:* public GitHub Release metadata, clean-machine visual review,
   and release witness. *Tracking:*
-  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283).
   *Intended evidence:* the version-specific
   `docs/goalposts/vX.Y.Z/release.md` and
   `docs/goalposts/vX.Y.Z/verification.md` release packet after public
