@@ -419,9 +419,8 @@ was installed, and reach the first useful editor result.
   [#141](https://github.com/flyingrobots/colorful-language/issues/141).
   <!-- roadmap-primary: delivered #141 -->
 - **Delivered package evidence:** one scripted LSP transcript now covers Plain
-  Text and Markdown; a bundled VSIX clean-installs in pinned VS Code; the same
-  bytes are the Open VSX input; and the isolated Zed registry source builds to
-  Wasm
+  Text and Markdown; a bundled VSIX clean-installs in pinned VS Code and becomes
+  the sole future GitHub Release VSIX; and the isolated Zed source builds to Wasm
   [#136](https://github.com/flyingrobots/colorful-language/issues/136).
   <!-- roadmap-primary: delivered #136 -->
 - **Delivered pre-publication Markdown correctness:** suppress diagnostics and
@@ -429,16 +428,18 @@ was installed, and reach the first useful editor result.
   coordinate-preserving adapter shared by the CLI and LSP
   [#241](https://github.com/flyingrobots/colorful-language/issues/241).
   <!-- roadmap-primary: delivered #241 -->
-- **Active publication:** the tag workflow now encodes native Linux x86-64,
-  Apple Silicon, and Windows x86-64 archives, checksums, provenance, one
-  smoke-tested VSIX for both registries, licensed Zed source packaging, and an
-  observational first-highlight witness
-  [#245](https://github.com/flyingrobots/colorful-language/issues/245). Public
-  VS Code/Open VSX/Zed URLs, clean-machine release evidence, and rollback proof
-  remain open
-  [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+- **Delivered publication machinery:** the tag workflow now encodes native
+  Linux x86-64, Apple Silicon, and Windows x86-64 archives, checksums,
+  provenance, one smoke-tested GitHub Release VSIX, licensed Zed source
+  packaging, and an observational first-highlight witness without requiring
+  marketplace credentials
+  ([#245](https://github.com/flyingrobots/colorful-language/issues/245) and
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154)). The
+  `v0.4.0` tag and public verification remain owned by the release train
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283);
+  external editor-registry listings are optional follow-up channels.
   <!-- roadmap-primary: delivered #245 -->
-  <!-- roadmap-primary: active #154 -->
+  <!-- roadmap-primary: delivered #154 -->
 - **Delivered operator-install machinery:** generate and verify one formula from
   synchronized native CLI/LSP archives
   [#251](https://github.com/flyingrobots/colorful-language/issues/251), then

@@ -59,11 +59,7 @@ const DELIVERY_REFERENCE_PATHS = Object.freeze({
   releaseProcess: "docs/workflows/release-process/README.md",
   roadmap: "ROADMAP.md",
 });
-const DEPLOYMENT_CREDENTIALS = [
-  "CARGO_REGISTRY_TOKEN",
-  "OVSX_PAT",
-  "VSCE_PAT",
-];
+const DEPLOYMENT_CREDENTIALS = ["CARGO_REGISTRY_TOKEN"];
 const DEPLOYMENT_EVIDENCE = [
   "bash scripts/release-prep.sh",
   "node scripts/verify-editor-publication.mjs",
@@ -111,7 +107,6 @@ const DEPENDENCY_LICENSE_EXCEPTIONS = [
   "pkg:npm/@vscode/vsce-sign-linux-x64@2.0.6",
   "pkg:npm/@vscode/vsce-sign-win32-arm64@2.0.6",
   "pkg:npm/@vscode/vsce-sign-win32-x64@2.0.6",
-  "pkg:npm/ovsx@1.0.2",
   "pkg:npm/typed-rest-client@1.8.11",
   "pkg:npm/xmlbuilder@11.0.1",
 ].toSorted();

@@ -134,16 +134,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and publish GitHub/Sigstore provenance for every archive. The release job
   clean-installs one exact VSIX, records an observational
   installation-to-first-highlight witness with host/toolchain identity, reuses
-  those VSIX bytes for VS Code Marketplace and Open VSX, and packages the
-  licensed Zed registry-source tree without manufacturing a second editor
-  artifact. Exact lockfile-backed publisher tools, fail-closed credential
-  verification, commit-time-normalized reproducible VSIX bytes, duplicate-safe
-  retries followed by public-package SHA-256 parity, an accessible
+  those exact bytes as the attested GitHub Release VSIX, and packages the
+  licensed Zed source tree without manufacturing a second editor artifact.
+  Exact lockfile-backed package tooling, commit-time-normalized reproducible
+  VSIX bytes, a public-release SHA-256 parity check, an accessible
   text-equivalent visual demo, and deterministic policy mutation tests protect
-  the workflow.
-  Public marketplace, Zed registry, and new platform-install claims remain
-  withheld until a tagged release supplies real URLs, clean-machine evidence,
-  and rollback results.
+  the workflow. Marketplace publisher secrets and commands no longer gate the
+  tag path, and the unused Open VSX publisher client and license exception are
+  removed. Public GitHub Release editor, Zed-registry, and new platform-install
+  claims remain withheld until a tagged release supplies real URLs,
+  clean-machine evidence, and rollback results.
 - **Coordinate-preserving Markdown prose analysis.** The CLI `.md`/`.markdown`
   lint and ANSI file paths and LSP `markdown` language ID now share one format
   adapter outside `colorful-core`. Fenced and indented code, inline code,
@@ -164,7 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Packaged editor and LSP lifecycle evidence.** One checked-in JSON-RPC
   transcript now drives the real `colorful-lsp` binary through the complete
   open/change/tokens/diagnostics/close/shutdown lifecycle for Plain Text and
-  Markdown. CI builds one bundled VSIX for VS Code and Open VSX, installs it in
+  Markdown. CI builds one bundled VSIX for the GitHub Release, installs it in
   an isolated pinned VS Code 1.91.0 profile, exercises activation and
   incremental diagnostics, verifies theme-fallback scopes, and records a
   stable missing-server category from persisted logs. The same gate stages the

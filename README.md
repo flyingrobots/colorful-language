@@ -130,10 +130,10 @@ the exact contract):
 > [!note]
 > The integrations exist, build in CI, and have isolated pre-publication
 > package smoke evidence; they are **not yet published** as editor marketplace
-> packages. The tag workflow is prepared to publish one smoke-tested VSIX to
-> both VS Code registries and package licensed Zed source, but no current
-> reference claims those destinations before public URLs and rollback evidence
-> exist. Install from source today.
+> packages. The tag workflow is prepared to attach one smoke-tested VSIX and
+> licensed Zed source to the GitHub Release without marketplace credentials,
+> but no current reference claims those assets before public URLs and rollback
+> evidence exist. Install from source today.
 
 The real magic is the **Language Server** (`colorful-lsp`), which gives live
 coloring — and, as of Goalpost 1, live lint diagnostics — in any LSP editor:
