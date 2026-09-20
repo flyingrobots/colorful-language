@@ -124,15 +124,15 @@
     "vscode:prepublish": "npm run compile"
   },
   "dependencies": {
-    "vscode-languageclient": "^10.1.0"
+    "vscode-languageclient": "^10.1.1"
   },
   "devDependencies": {
     "@types/node": "20.19.43",
-    "@types/vscode": "^1.91.0",
+    "@types/vscode": "^1.138.0",
     "@vscode/test-electron": "3.1.0",
-    "@vscode/vsce": "3.9.2",
-    "esbuild": "0.28.1",
-    "ovsx": "1.0.2",
+    "@vscode/vsce": "4.0.0",
+    "esbuild": "0.28.2",
+    "ovsx": "1.2.0",
     "typescript": "5.9.3"
   }
 }
