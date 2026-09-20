@@ -11,9 +11,9 @@
     "mdast-util-from-markdown": "2.0.3",
     "mdast-util-gfm-table": "2.0.0",
     "mdast-util-to-string": "4.0.0",
-    "micromark-extension-gfm-table": "2.1.1",
-    "smol-toml": "1.7.1",
+    "micromark-extension-gfm-table": "2.1.2",
+    "smol-toml": "1.8.0",
     "typescript": "5.9.3",
-    "yaml": "2.9.0"
+    "yaml": "2.9.1"
   }
 }
