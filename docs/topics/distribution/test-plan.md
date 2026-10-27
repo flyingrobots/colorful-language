@@ -197,6 +197,14 @@ Verification for install paths and published artifacts.
   successful call. *Evidence type:* Node test against hand-assembled fixture
   modules. *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`. *Status:*
   planned.
+- **DIST-10f** — *Requirement:* DIST-10. *Behavior:* a document that is
+  neither a string nor a `Uint8Array`, or a unit id that is not a string, is
+  rejected with `E_ARGUMENT` before the module is entered and does not poison
+  the instance; typed statuses 1–3 (`E_INVALID_UTF8`, `E_PROJECTION`,
+  `E_SERIALIZATION`) leave the instance usable for the next document.
+  *Oracle:* error codes, then a successful call on the same instance.
+  *Evidence type:* Node test against hand-assembled fixture modules.
+  *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`. *Status:* planned.
 
 ## Open verification gaps
 
