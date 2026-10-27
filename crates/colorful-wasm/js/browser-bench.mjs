@@ -96,8 +96,11 @@ async function inPage(cases) {
     warmAnalysisMsMedian: median(warm),
     peakMemoryBytes,
     memoryAfter11RunsBytes: big.memoryBytes(),
-    // Chromium only (needs --enable-precise-memory-info); the JS string result.
-    jsHeapDeltaBytes: heap0 === null ? null : heapAfter - heap0,
+    // Chromium only (needs --enable-precise-memory-info). Total used JS heap
+    // after the first 200 KB analysis minus before it: everything allocated
+    // and not yet collected around that call, not the isolated size of the
+    // retained result string.
+    jsHeapDeltaAroundAnalysisBytes: heap0 === null ? null : heapAfter - heap0,
     hashes,
   };
 }
