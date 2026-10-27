@@ -186,8 +186,9 @@ Verification for install paths and published artifacts.
   instance — `ir`, `irBytes`, `version`, `release` and `memoryBytes` — refuses
   with the same error. *Oracle:* error code of each call. *Evidence type:* Node
   test against a hand-assembled fixture module whose `colorful_ir` executes
-  `unreachable`. *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`.
-  *Status:* planned.
+  `unreachable`. *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`
+  `a trap poisons the instance: every later call refuses with E_TRAPPED`.
+  *Status:* implemented.
 - **DIST-10e** — *Requirement:* DIST-10. *Behavior:* the loader reads the i32
   pointers and lengths the exports return as unsigned, so input and output
   buffers at or above 2 GiB work; a region outside linear memory raises
@@ -195,8 +196,11 @@ Verification for install paths and published artifacts.
   echoed bytes from buffers at exactly 2^31 in a 2 GiB + 64 KiB memory;
   `E_BOUNDS` for out-of-range input and output regions, followed by a
   successful call. *Evidence type:* Node test against hand-assembled fixture
-  modules. *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`. *Status:*
-  planned.
+  modules. *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`
+  `input and output at or above 2 GiB are read as unsigned addresses`,
+  `an input region outside linear memory is E_BOUNDS and does not poison` and
+  `an output region outside linear memory is E_BOUNDS and does not poison`.
+  *Status:* implemented.
 - **DIST-10f** — *Requirement:* DIST-10. *Behavior:* a document that is
   neither a string nor a `Uint8Array`, or a unit id that is not a string, is
   rejected with `E_ARGUMENT` before the module is entered and does not poison
@@ -204,7 +208,9 @@ Verification for install paths and published artifacts.
   `E_SERIALIZATION`) leave the instance usable for the next document.
   *Oracle:* error codes, then a successful call on the same instance.
   *Evidence type:* Node test against hand-assembled fixture modules.
-  *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`. *Status:* planned.
+  *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`
+  `arguments that are not strings or bytes are E_ARGUMENT and do not poison`
+  and `typed statuses 1-3 leave the instance usable`. *Status:* implemented.
 
 ## Open verification gaps
 
@@ -213,5 +219,9 @@ Verification for install paths and published artifacts.
 - Homebrew remains unavailable until DIST-6a lands.
 - Publicly verified native matrix and signed editor releases remain unavailable
   until DIST-7a lands.
-- The WebAssembly parity test (DIST-10a/b) and browser measurements (DIST-10c)
-  are not wired into CI; they run locally against release builds.
+- The WebAssembly parity test (DIST-10a/b), the loader fixture tests
+  (DIST-10d–f) and the browser measurements (DIST-10c) are not wired into CI;
+  they run locally. The loader tests need no build; the others run against
+  release builds.
+- The 2 GiB fixture (DIST-10e) proves the host boundary only. It does not show
+  the production allocator reaching that address.

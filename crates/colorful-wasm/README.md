@@ -32,10 +32,19 @@ colorful.ir(text, 'notes.txt'); // same bytes as `colorful ir notes.txt`
 colorful.version(); // "colorful 0.4.0\n"
 ```
 
-`irBytes` accepts a string or UTF-8 bytes and returns bytes. A failure throws
-`ColorfulWasmError` with `code` `E_INVALID_UTF8`, `E_PROJECTION` or
-`E_SERIALIZATION` and returns no output. After a trap the instance throws
-`E_TRAPPED` on every later call; create a new one.
+`irBytes` accepts a string or a `Uint8Array` of UTF-8 and returns a new
+`Uint8Array`. Every failure is a `ColorfulWasmError` and returns no IR:
+
+| `code` | Cause | Instance afterwards |
+| --- | --- | --- |
+| `E_ABI` | `instantiate` found a module whose ABI version is not 1 | not created |
+| `E_ARGUMENT` | document not a string or `Uint8Array`, or unit id not a string | usable |
+| `E_INVALID_UTF8`, `E_PROJECTION`, `E_SERIALIZATION` | typed status 1, 2 or 3 from `colorful_ir` | usable |
+| `E_BOUNDS` | an exported pointer and length fall outside linear memory | usable |
+| `E_TRAPPED` | an export trapped (Rust panic, `unreachable`, stack exhaustion) | every later call, including `memoryBytes()`, throws the same error; create a new instance |
+
+The loader reads exported pointers and lengths as unsigned 32-bit values, so
+buffers at or above 2 GiB of linear memory work.
 
 Strings are encoded with `TextEncoder`, which replaces lone UTF-16 surrogates
 with U+FFFD; pass bytes when the exact input bytes matter.
