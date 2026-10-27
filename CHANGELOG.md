@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Experimental WebAssembly build of `colorful ir` (unpublished).** The new
+  `colorful-wasm` crate compiles the production analysis stack to
+  `wasm32-unknown-unknown` and returns the exact `colorful ir` stdout bytes
+  through a plain C ABI and a dependency-free JavaScript loader, proven
+  byte-identical to the native CLI by `crates/colorful-wasm/js/parity.test.mjs`.
+  Its `#[no_mangle]` exports are the first registered source-policy exception
+  (ADR-0007). The CLI is unchanged.
+
 ### Changed
 
 - **Coverage floor carried forward from 0.4.0.** The versioned coverage policy

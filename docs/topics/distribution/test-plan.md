@@ -160,7 +160,8 @@ Verification for install paths and published artifacts.
   `colorful ir FILE` for a file unit id; and identical to `colorful --version`.
   *Oracle:* `Buffer.compare` of CLI stdout and module output equals 0.
   *Evidence type:* Node integration test against the release CLI and module.
-  *Evidence:* `crates/colorful-wasm/js/parity.test.mjs`. *Status:* planned.
+  *Evidence:* `crates/colorful-wasm/js/parity.test.mjs`. *Status:*
+  implemented (local; not in CI).
 - **DIST-10b** — *Requirement:* DIST-10. *Behavior:* invalid UTF-8 input makes
   the CLI exit non-zero with no stdout and makes the module raise
   `ColorfulWasmError` `E_INVALID_UTF8` with the CLI's message and no result; a
@@ -168,7 +169,7 @@ Verification for install paths and published artifacts.
   code and message prefix. *Evidence type:* Node integration test and Rust unit
   tests. *Evidence:* `crates/colorful-wasm/js/parity.test.mjs`
   `invalid UTF-8 fails the same way, with no output`;
-  `crates/colorful-wasm/src/lib.rs` tests. *Status:* planned.
+  `crates/colorful-wasm/src/lib.rs` tests. *Status:* implemented.
 - **DIST-10c** — *Requirement:* DIST-10. *Behavior:* the same parity holds in
   browser engines loading the module through `fetch` and
   `WebAssembly.instantiateStreaming`, and the compressed size, instantiate time,

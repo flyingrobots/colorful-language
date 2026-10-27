@@ -72,6 +72,9 @@ not pose as the current reference.
 - [ADR-0006](design/0006-editor-adapter-versioning.md) — editor adapters share
   the workspace release version and accept only the same pre-1.0
   `colorful-lsp` minor line.
+- [ADR-0007](design/0007-wasm-c-abi-exports.md) — an experimental
+  `colorful-wasm` module reproduces `colorful ir` bytes through a plain C ABI,
+  under a reviewed `#[no_mangle]` source-policy exception.
 
 ## Audits
 

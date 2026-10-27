@@ -50,7 +50,10 @@ implementation without a compiler error.
 
 ## Exception process
 
-No exception is currently approved. Exceptions are registered in
+One exception is registered: `crates/colorful-wasm/src/lib.rs`, whose
+C-ABI exports need `#[no_mangle]`
+([ADR-0007](../../design/0007-wasm-c-abi-exports.md)). Exceptions are
+registered in
 [`exceptions.tsv`](exceptions.tsv) as an exact crate-root path and a
 `docs/design/*.md` record separated by one tab.
 

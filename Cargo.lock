@@ -295,6 +295,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "colorful-wasm"
+version = "0.4.0"
+dependencies = [
+ "colorful-ir",
+ "colorful-lexicon",
+ "colorful-parse",
+ "colorful-projection",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

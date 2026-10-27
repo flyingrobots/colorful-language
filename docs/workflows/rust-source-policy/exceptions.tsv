@@ -1,4 +1,5 @@
 # crate-root<TAB>design-record
 #
 # An exception must name an inventoried production crate root and an existing
-# Markdown record below docs/design/. No exceptions are currently approved.
+# Markdown record below docs/design/.
+crates/colorful-wasm/src/lib.rs	docs/design/0007-wasm-c-abi-exports.md
