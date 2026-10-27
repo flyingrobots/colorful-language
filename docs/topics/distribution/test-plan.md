@@ -178,7 +178,9 @@ Verification for install paths and published artifacts.
   stdout for every case; measurements are reported, not gated. *Evidence type:*
   Playwright measurement script. *Evidence:*
   `crates/colorful-wasm/js/browser-bench.mjs`, `crates/colorful-wasm/js/bench.mjs`.
-  *Status:* planned.
+  *Status:* implemented for Node and Chromium; WebKit and Firefox run only
+  where Playwright's browser binaries are installed and are otherwise reported
+  as unavailable.
 
 ## Open verification gaps
 
