@@ -14,7 +14,10 @@ import { ColorfulWasmError, instantiate } from './colorful-wasm.mjs';
 
 const PAGE = 65536;
 const I32 = 0x7f;
-const OP = { end: 0x0b, unreachable: 0x00, i32Const: 0x41, localGet: 0x20, globalGet: 0x23, globalSet: 0x24 };
+const OP = {
+  end: 0x0b, unreachable: 0x00, i32Const: 0x41, localGet: 0x20, globalGet: 0x23, globalSet: 0x24,
+  i32Add: 0x6a, i32Sub: 0x6b, i32Load8U: 0x2d,
+};
 
 function uleb(n) {
   const out = [];
@@ -49,9 +52,12 @@ const i32 = (addr) => [OP.i32Const, ...sleb(addr | 0)];
 /**
  * A fixture module: `pages` of memory; `colorful_input` returns `inputPtr` and
  * records the length; `colorful_output_ptr` returns `outputPtr` (default: the
- * input address) and `colorful_output_len` the recorded length.
+ * input address) and `colorful_output_len` the recorded length. With
+ * `statusFromDocument`, `colorful_ir` returns the first document byte minus
+ * ASCII '0', so a document "2…" yields status 2.
  */
-function fixture({ pages = 1, inputPtr = 0, outputPtr = inputPtr, irTraps = false } = {}) {
+function fixture({ pages = 1, inputPtr = 0, outputPtr = inputPtr, irTraps = false, statusFromDocument = false } = {}) {
+  const firstDocumentByte = [OP.localGet, 0, ...i32(inputPtr), OP.i32Add, OP.i32Load8U, 0, 0, OP.i32Const, 0x30, OP.i32Sub];
   const types = [
     [0x60, ...vec([]), ...vec([I32])], // 0: () -> i32
     [0x60, ...vec([I32]), ...vec([I32])], // 1: (i32) -> i32
@@ -60,7 +66,7 @@ function fixture({ pages = 1, inputPtr = 0, outputPtr = inputPtr, irTraps = fals
   const fns = [
     ['colorful_abi_version', 0, [OP.i32Const, 1]],
     ['colorful_input', 1, [OP.localGet, 0, OP.globalSet, 0, ...i32(inputPtr)]],
-    ['colorful_ir', 1, irTraps ? [OP.unreachable] : [OP.i32Const, 0]],
+    ['colorful_ir', 1, irTraps ? [OP.unreachable] : statusFromDocument ? firstDocumentByte : [OP.i32Const, 0]],
     ['colorful_version', 0, [OP.i32Const, 0]],
     ['colorful_output_ptr', 0, i32(outputPtr)],
     ['colorful_output_len', 0, [OP.globalGet, 0]],
@@ -128,5 +134,28 @@ test('a trap poisons the instance: every later call refuses with E_TRAPPED', asy
     ['memoryBytes', () => colorful.memoryBytes()],
   ]) {
     assert.throws(call, (err) => err instanceof ColorfulWasmError && err.code === 'E_TRAPPED', label);
+  }
+});
+
+test('arguments that are not strings or bytes are E_ARGUMENT and do not poison', async () => {
+  const colorful = await instantiate(fixture());
+  const isArgument = (err) => err instanceof ColorfulWasmError && err.code === 'E_ARGUMENT';
+  for (const document of [null, undefined, 42, {}, ['a'], new ArrayBuffer(1)]) {
+    assert.throws(() => colorful.irBytes(document), isArgument, String(document));
+    assert.throws(() => colorful.ir(document), isArgument, String(document));
+  }
+  for (const unitId of [null, 7, new Uint8Array(1)]) {
+    assert.throws(() => colorful.ir('doc', unitId), isArgument, String(unitId));
+  }
+  assert.equal(colorful.ir('doc'), 'stdindoc', 'the instance stays usable');
+  assert.equal(colorful.ir(new Uint8Array([0x61]), 'u'), 'ua');
+});
+
+test('typed statuses 1-3 leave the instance usable', async () => {
+  const colorful = await instantiate(fixture({ statusFromDocument: true }));
+  for (const [status, code] of [['1', 'E_INVALID_UTF8'], ['2', 'E_PROJECTION'], ['3', 'E_SERIALIZATION'], ['9', 'E_STATUS_9']]) {
+    assert.throws(() => colorful.ir(`${status}bad`, 'u'), (err) => err instanceof ColorfulWasmError && err.code === code
+      && err.message.includes(`u${status}bad`));
+    assert.equal(colorful.ir('0ok', 'u'), 'u0ok', `usable after ${code}`);
   }
 });
