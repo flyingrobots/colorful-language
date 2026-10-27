@@ -164,9 +164,9 @@ Verification for install paths and published artifacts.
   implemented (local; not in CI).
 - **DIST-10b** — *Requirement:* DIST-10. *Behavior:* invalid UTF-8 input makes
   the CLI exit non-zero with no stdout and makes the module raise
-  `ColorfulWasmError` `E_INVALID_UTF8` with the CLI's message and no result; a
-  trap poisons the loader instance. *Oracle:* exit status, empty stdout, error
-  code and message prefix. *Evidence type:* Node integration test and Rust unit
+  `ColorfulWasmError` `E_INVALID_UTF8` with the CLI's message and no result.
+  Trap handling is DIST-10d. *Oracle:* exit status, empty stdout, error code
+  and message prefix. *Evidence type:* Node integration test and Rust unit
   tests. *Evidence:* `crates/colorful-wasm/js/parity.test.mjs`
   `invalid UTF-8 fails the same way, with no output`;
   `crates/colorful-wasm/src/lib.rs` tests. *Status:* implemented.
@@ -181,6 +181,22 @@ Verification for install paths and published artifacts.
   *Status:* implemented for Node, Chromium and WebKit; Firefox runs only where
   Playwright's browser binary is installed and is otherwise reported as
   unavailable.
+- **DIST-10d** — *Requirement:* DIST-10. *Behavior:* when an export traps
+  (`unreachable`), the loader raises `E_TRAPPED`, and every later call on that
+  instance — `ir`, `irBytes`, `version`, `release` and `memoryBytes` — refuses
+  with the same error. *Oracle:* error code of each call. *Evidence type:* Node
+  test against a hand-assembled fixture module whose `colorful_ir` executes
+  `unreachable`. *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`.
+  *Status:* planned.
+- **DIST-10e** — *Requirement:* DIST-10. *Behavior:* the loader reads the i32
+  pointers and lengths the exports return as unsigned, so input and output
+  buffers at or above 2 GiB work; a region outside linear memory raises
+  `E_BOUNDS` before any view is made and leaves the instance usable. *Oracle:*
+  echoed bytes from buffers at exactly 2^31 in a 2 GiB + 64 KiB memory;
+  `E_BOUNDS` for out-of-range input and output regions, followed by a
+  successful call. *Evidence type:* Node test against hand-assembled fixture
+  modules. *Evidence:* `crates/colorful-wasm/js/loader.test.mjs`. *Status:*
+  planned.
 
 ## Open verification gaps
 
