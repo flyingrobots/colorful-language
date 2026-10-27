@@ -5,7 +5,9 @@ unsafe code and where to verify that boundary.
 
 ## Current behavior
 
-Every first-party production target reported by Cargo declares:
+Every first-party production target reported by Cargo declares the following,
+unless its root is listed in [`exceptions.tsv`](exceptions.tsv) (see
+[Exception process](#exception-process)):
 
 ```rust
 #![forbid(unsafe_code)]
@@ -50,10 +52,13 @@ implementation without a compiler error.
 
 ## Exception process
 
-One exception is registered: `crates/colorful-wasm/src/lib.rs`, whose
-C-ABI exports need `#[no_mangle]`
-([ADR-0007](../../design/0007-wasm-c-abi-exports.md)). Exceptions are
-registered in
+One exception is registered and **pending architecture review**:
+`crates/colorful-wasm/src/lib.rs`, which declares `#![deny(unsafe_code)]`
+and allows it only in the module whose C-ABI exports need `#[no_mangle]`
+([ADR-0007](../../design/0007-wasm-c-abi-exports.md), status Proposed). The
+checker validates registration and the design record, not approval: a
+registered exception is approved only when its ADR records the architecture
+decision. Exceptions are registered in
 [`exceptions.tsv`](exceptions.tsv) as an exact crate-root path and a
 `docs/design/*.md` record separated by one tab.
 

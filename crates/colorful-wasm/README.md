@@ -7,7 +7,8 @@ using the same parser, annotator, projection and serializer as the CLI. It has
 no imports and runs in browsers, Node and other WebAssembly hosts.
 
 The design and its `#[no_mangle]` source-policy exception are recorded in
-[ADR-0007](../../docs/design/0007-wasm-c-abi-exports.md).
+[ADR-0007](../../docs/design/0007-wasm-c-abi-exports.md). The exception is
+registered and pending architecture review; registration is not approval.
 
 ## Build
 

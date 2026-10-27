@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through a plain C ABI and a dependency-free JavaScript loader, proven
   byte-identical to the native CLI by `crates/colorful-wasm/js/parity.test.mjs`.
   Its `#[no_mangle]` exports are the first registered source-policy exception
-  (ADR-0007). The CLI is unchanged.
+  (ADR-0007, Proposed), pending architecture review. The CLI is unchanged.
 
 ### Changed
 

@@ -1,6 +1,8 @@
 # ADR-0007: Export the IR analysis to WebAssembly through a plain C ABI
 
-- Status: Proposed (experimental spike, needs architecture review)
+- Status: Proposed (experimental spike). The source-policy exception below is
+  registered in `exceptions.tsv` and pending architecture review; registration
+  is not approval.
 - Date: 2026-10-27
 
 ## Context
