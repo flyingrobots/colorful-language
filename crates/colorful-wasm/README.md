@@ -34,7 +34,8 @@ colorful.version(); // "colorful 0.4.0\n"
 ```
 
 `irBytes` accepts a string or a `Uint8Array` of UTF-8 and returns a new
-`Uint8Array`. Every failure is a `ColorfulWasmError` and returns no IR:
+`Uint8Array`. Every failure is a `ColorfulWasmError` and returns no IR (for
+instantiation failures from the engine, see below):
 
 | `code` | Cause | Instance afterwards |
 | --- | --- | --- |
@@ -46,6 +47,17 @@ colorful.version(); // "colorful 0.4.0\n"
 
 The loader reads exported pointers and lengths as unsigned 32-bit values, so
 buffers at or above 2 GiB of linear memory work.
+
+`instantiate` rejects before any of these with the engine's own
+`WebAssembly.CompileError` or `LinkError` for a malformed module, a
+`TypeError` from `instantiateStreaming` when a `Response` is not served as
+`application/wasm`, or `E_ABI`.
+
+Results are copies: the loader copies each result out of linear memory before
+returning it, so later calls never change bytes a caller holds. `release()`
+frees the module's buffers and the instance stays usable. Hosts that call the
+C ABI directly (not through this loader) must follow the pointer-lifetime rules
+in [ADR-0007](../../docs/design/0007-wasm-c-abi-exports.md#calling-contract).
 
 Strings are encoded with `TextEncoder`, which replaces lone UTF-16 surrogates
 with U+FFFD; pass bytes when the exact input bytes matter.

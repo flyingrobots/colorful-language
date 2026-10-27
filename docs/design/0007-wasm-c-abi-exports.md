@@ -43,6 +43,47 @@ The module has no imports. A dependency-free ES module,
 non-zero statuses into typed `ColorfulWasmError`s; after a trap it refuses
 further calls instead of trusting a module in an unknown state.
 
+### Calling contract
+
+The module is single-threaded and not reentrant: a host makes one call at a
+time.
+
+- **Units.** Every length, including `unit_len`, is a count of bytes. Pointers
+  are unsigned 32-bit linear-memory addresses; JavaScript receives them as
+  signed `i32` results and must read them with `>>> 0`, because addresses at
+  or above 2 GiB arrive negative.
+- **Call sequence.** `colorful_input(len)` → write exactly `len` bytes
+  (`unit_id ‖ document`, both UTF-8) at the returned address →
+  `colorful_ir(unit_len)` → read `colorful_output_len()` bytes at
+  `colorful_output_ptr()`.
+- **Split.** The first `unit_len` bytes are the unit id. A `unit_len` larger
+  than the input is clamped to the input length, so the whole input becomes
+  the unit id and the document is empty. Invalid UTF-8 in either part returns
+  status 1.
+- **Input lifetime.** `colorful_input` discards the previous input and
+  returns a new address (zeroed, possibly different). That address stays valid
+  until the next `colorful_input` or `colorful_release`. `colorful_ir` reads
+  the input and does not change it.
+- **Output lifetime.** `colorful_ir` and `colorful_version` replace the
+  output; `colorful_release` empties it. The output address is valid only until
+  the next of those calls. `colorful_input` does not touch the output.
+- **Memory growth.** Any call may grow linear memory. Addresses stay valid,
+  but a JavaScript `ArrayBuffer` view taken before the call may be detached:
+  take views after the call that returned the address, and copy the bytes out
+  before the next call. The bundled loader does both; every `Uint8Array` it
+  returns is a copy the caller owns.
+- **Release and reuse.** `colorful_release` frees both buffers to the
+  allocator. The instance remains usable. Linear memory never shrinks: pages
+  grown for a large document stay reserved until the instance is dropped.
+- **Failures.** Status 0 means the output holds the complete `colorful ir`
+  stdout bytes. Statuses 1, 2 and 3 (invalid UTF-8, projection,
+  serialization) mean the output holds a UTF-8 message and no IR; the instance
+  stays usable. A trap leaves module state undefined; hosts must discard the
+  instance. These differ from initialization failures, which happen before any
+  status exists: the engine rejects compilation or instantiation
+  (`CompileError`, `LinkError`), or `colorful_abi_version()` returns a version
+  the host does not support (the loader raises `E_ABI`).
+
 Why not `wasm-bindgen`: the interface is one string in and one string out, so
 generated glue adds a crate dependency, a CLI tool whose version must match the
 crate exactly, and a generated JavaScript file that must be rebuilt per
