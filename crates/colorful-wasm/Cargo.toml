@@ -1,0 +1,21 @@
+[package]
+name = "colorful-wasm"
+description = "Experimental WebAssembly build of the colorful.syntax/v1 IR analysis (`colorful ir`) for browsers and Node."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["prose", "ir", "english", "wasm"]
+categories = ["text-processing", "wasm"]
+publish = false
+
+[lib]
+# cdylib is the .wasm module; rlib keeps the safe core testable natively.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+colorful-ir = { workspace = true }
+colorful-lexicon = { workspace = true }
+colorful-parse = { workspace = true }
+colorful-projection = { workspace = true }

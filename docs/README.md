@@ -72,6 +72,10 @@ not pose as the current reference.
 - [ADR-0006](design/0006-editor-adapter-versioning.md) — editor adapters share
   the workspace release version and accept only the same pre-1.0
   `colorful-lsp` minor line.
+- [ADR-0007](design/0007-wasm-c-abi-exports.md) — an experimental
+  `colorful-wasm` module reproduces `colorful ir` bytes through a plain C ABI,
+  under a `#[no_mangle]` source-policy exception that is registered and
+  pending architecture review (Proposed).
 
 ## Audits
 
@@ -125,7 +129,7 @@ each page's own status note before trusting a specific finding.
   Rust dependency policy, actionable intake, ownership, dependency review, and
   CodeQL.
 - [Rust source policy](workflows/rust-source-policy/README.md) — first-party
-  unsafe-code declarations, Cargo-target inventory, and reviewed exceptions.
+  unsafe-code declarations, Cargo-target inventory, and registered exceptions.
 
 ## Releases
 
