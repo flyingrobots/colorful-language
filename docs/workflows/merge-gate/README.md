@@ -19,18 +19,8 @@ active and requires:
   collaborator, if a non-zero approval count is required. The count is `0`
   while ownership is solo, so this adds no review today;
 - protection against branch deletion and non-fast-forward updates;
-- the following successful GitHub Actions checks:
-  - `Docs & whitespace`;
-  - `Rust (fmt, clippy, test)`;
-  - `Rust coverage`;
-  - `Cargo package witness`;
-  - `IR cross-language round-trip witness`;
-  - `Editor integrations (compile)`;
-  - `Rust dependency policy`;
-  - `Dependency review`;
-  - `CodeQL (rust)`;
-  - `CodeQL (javascript-typescript)`; and
-  - `Workflow security`.
+- every required GitHub Actions check named in the manifest to pass. The
+  manifest is the list; this reference does not repeat it.
 
 Each required check is pinned to GitHub Actions application `15368`. Strict
 freshness is enabled, so GitHub requires the pull request to be tested with the
@@ -41,7 +31,7 @@ GitHub also reports a pre-existing classic branch-protection layer that requires
 the `CodeRabbit` status from application `347564`. That layer is not part of
 ruleset `17949589`, is not applied by the manifest, and was not changed by this
 workflow. GitHub combines both layers, so the effective normal merge path
-requires the eleven ruleset contexts and the classic CodeRabbit context.
+requires every ruleset check and the classic CodeRabbit context.
 
 The existing repository-role bypass actor remains actor `5` in `always` mode.
 It is a recovery capability, not the normal merge path. Changing that actor or
@@ -121,7 +111,7 @@ node scripts/check-main-ruleset.mjs
 ```
 
 Inspect the pull request's required checks and merge state before merging. A
-normal merge requires all eleven ruleset contexts and every coexisting classic
+normal merge requires every ruleset check and every coexisting classic
 requirement to pass, and it must not use the repository role's bypass.
 
 ## Rename or retire a required context
@@ -140,7 +130,7 @@ For a planned rename:
    jobs in place during this ruleset-migration pull request.
 5. Review the complete live-ruleset snapshot and manifest diff.
 6. Apply the manifest with the command above.
-7. Run the live checker and wait for all eleven required contexts on the migration
+7. Run the live checker and wait for every required check on the migration
    pull request.
 8. Merge the ruleset-migration pull request normally.
 9. Remove the old compatibility job in a separate pull request after the new

@@ -8,10 +8,8 @@ Canonical issue:
 
 ## Requirements
 
-- **MG-1** The active default-branch ruleset must require the nine authoritative
-  CI contexts for documentation, Rust, package publication, IR interoperability,
-  editor compilation, dependency policy, dependency review, and two-language
-  CodeQL.
+- **MG-1** The active default-branch ruleset must require the CI checks named
+  in the source-controlled manifest; the manifest, not prose, is the list.
 - **MG-2** Each required context must come from the GitHub Actions application,
   and pull requests must be tested against the latest default-branch state.
 - **MG-3** Adding required checks must preserve the existing deletion,
