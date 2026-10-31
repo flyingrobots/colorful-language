@@ -102,7 +102,11 @@ Canonical issue:
   checker self-test rejects a manifest that omits the parameter or sets it to
   anything but `true`, and the privileged live checker reports manifest parity.
   *Evidence type:* deterministic checker self-test, source-controlled manifest,
-  and privileged live API check. *Evidence:* planned. *Status:* planned.
+  and privileged live API check. *Evidence:*
+  `.github/rulesets/mainline.json` and the "records the unattributed-change
+  approval GitHub reports" and "rejects drift in the unattributed-change
+  approval" tests in `scripts/check-main-ruleset.test.mjs`. *Status:*
+  implemented.
 
 ## Ruleset change audit
 

@@ -15,6 +15,9 @@ active and requires:
 - commits with verified signatures;
 - pull requests merged with merge commits only;
 - resolution of every review thread;
+- one more approving review when Copilot opens a pull request without a human
+  collaborator, if a non-zero approval count is required. The count is `0`
+  while ownership is solo, so this adds no review today;
 - protection against branch deletion and non-fast-forward updates;
 - the following successful GitHub Actions checks:
   - `Docs & whitespace`;
