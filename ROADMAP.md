@@ -498,12 +498,16 @@ mistaking an idea for a committed milestone or an already validated user need.
   [#174](https://github.com/flyingrobots/colorful-language/issues/174).
 - Build a zero-install WASM playground from the pure analysis stack
   [#175](https://github.com/flyingrobots/colorful-language/issues/175).
+- Build `colorful ir` to WebAssembly with byte-identical CLI output, the first
+  step toward that playground and the intended lead for v0.5.0 once v0.4.0 is
+  tagged
+  [#326](https://github.com/flyingrobots/colorful-language/issues/326).
 - Emit deterministic SARIF for CI-native lint findings
   [#188](https://github.com/flyingrobots/colorful-language/issues/188).
 - Make live roadmap reconciliation cursor-complete if repository scale turns
   the current fail-closed issue ceiling into an operational limit
   [#258](https://github.com/flyingrobots/colorful-language/issues/258).
-  <!-- roadmap-primary: parked #172 #173 #174 #175 #188 #258 -->
+  <!-- roadmap-primary: parked #172 #173 #174 #175 #326 #188 #258 -->
 
 **Promotion rule:** move an experiment into M0–M4 only when a current user job,
 dependency boundary, and executable proof justify its place. Parking preserves
