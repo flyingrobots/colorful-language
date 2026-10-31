@@ -38,6 +38,21 @@ test("accepts the exact governed ruleset contract", () => {
   assert.doesNotThrow(() => validateRuleset(liveShape()));
 });
 
+test("records the unattributed-change approval GitHub reports", () => {
+  assert.equal(
+    rule(loadManifest(), "pull_request").parameters
+      .require_extra_approval_for_unattributed_changes,
+    true,
+  );
+});
+
+test("rejects drift in the unattributed-change approval", () => {
+  const actual = liveShape();
+  delete rule(actual, "pull_request").parameters
+    .require_extra_approval_for_unattributed_changes;
+  expectCode(actual, "E_RULESET_PULL_REQUEST");
+});
+
 test("rejects a missing required-status-check rule", () => {
   const actual = liveShape();
   actual.rules = actual.rules.filter(
