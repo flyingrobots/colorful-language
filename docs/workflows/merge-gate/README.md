@@ -146,8 +146,8 @@ For an unplanned missing context:
    manifest.
 4. Update the workflow, manifest, and reference on a branch.
 5. Apply only the reviewed manifest, then run the live checker.
-6. Require the replacement context and the other eight checks to pass before a
-   normal merge.
+6. Require the replacement context and every other required check to pass
+   before a normal merge.
 
 If the branch cannot produce either the old or replacement context, stop and
 obtain explicit owner approval before using the existing bypass. Do not change
