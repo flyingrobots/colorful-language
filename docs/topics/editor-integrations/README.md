@@ -53,8 +53,8 @@ The source integrations build in CI. The editor gate also builds one bundled
 VSIX, installs those exact bytes into an isolated VS Code 1.91.0 profile, and
 exercises Plain Text, Markdown, incremental diagnostics, theme-fallback
 metadata, and a persisted `colorful/server-not-found` failure category. The
-same VSIX digest is the future Open VSX input; CI does not manufacture a second
-artifact. Zed's registry-source inventory is staged with its lockfile and
+same VSIX is the tag workflow's future GitHub Release asset; CI does not
+manufacture a second artifact. Zed's source inventory is staged with its lockfile and
 license, then compiled to Wasm from an isolated directory. Zed host activation
 uses the exact manual oracle in the [test plan](test-plan.md) because Zed does
 not expose a headless dev-extension install command.
@@ -67,8 +67,8 @@ and server versions. The measurement is diagnostic evidence, not a correctness
 threshold: host load and editor startup are deliberately excluded from the
 deterministic merge gate.
 
-These artifacts are test witnesses only. They are not yet published to editor
-marketplaces or registries.
+These artifacts are test witnesses only. They are not yet published as GitHub
+Release assets or through optional editor discovery channels.
 
 From the repository root, install the matching server from the same checkout:
 
@@ -76,8 +76,8 @@ From the repository root, install the matching server from the same checkout:
 cargo install --path crates/colorful-lsp --locked
 ```
 
-Do not substitute an unreleased registry version. Public registry installation
-guidance belongs with the publication evidence tracked by
+Do not substitute an unreleased server version. Public VSIX installation
+guidance belongs with the GitHub Release evidence tracked by
 [#154](https://github.com/flyingrobots/colorful-language/issues/154).
 
 ## Version compatibility
@@ -189,8 +189,9 @@ source extension README carries the current rule block that maps `noun`, `verb`,
 Editor adapters must not duplicate parser, lexicon, annotator, lint, or IR logic.
 They should call the language server and let `colorful-lsp` own behavior.
 
-Marketplace publication, theme packages, and editor-specific settings UX are
-separate delivery slices. They must not be documented as current behavior until
-they exist in committed code and have evidence.
+Marketplace publication is an optional discovery-channel slice, not a release
+prerequisite. Theme packages and editor-specific settings UX are also separate
+delivery slices. They must not be documented as current behavior until they
+exist in committed code and have evidence.
 
 See the [test plan](test-plan.md) for the cases that pin this behavior.

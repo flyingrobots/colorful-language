@@ -23,7 +23,7 @@ boring facts automation can check:
 - the eight crates published to crates.io;
 - native Linux x86-64, Apple Silicon, and Windows x86-64 server/CLI
   distribution targets;
-- the one-smoke-tested-VSIX policy for VS Code Marketplace and Open VSX;
+- the one-smoke-tested-VSIX policy for the GitHub Release asset;
 - GitHub/Sigstore provenance, Zed registry-source packaging, and the named
   publication/rollback owner;
 - release signposts such as `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
@@ -97,10 +97,9 @@ that passed release prep.
 | `docs/goalposts/vX.Y.Z/verification.md` | Witness: commands, results, tag/commit SHAs, workflow URL, registry evidence, release URL. |
 | `CHANGELOG.md` | Historical ledger of externally meaningful change. |
 | Git tag `vX.Y.Z` | Immutable public source anchor. |
-| GitHub Release | Public release surface for checksummed native archives, the exact smoke-tested VSIX, and Zed registry source. |
+| GitHub Release | Public release surface for checksummed native archives, the exact smoke-tested VSIX, and Zed source. |
 | Homebrew formula | Attested GitHub Release asset derived from the exact Linux x86-64 and Apple Silicon archives; not a public tap claim. |
 | GitHub attestations | Sigstore-backed provenance for every native archive, the Homebrew formula, the VSIX, and the Zed source archive. |
-| Editor registry records | Public VS Code Marketplace, Open VSX, and Zed extension entries for the synchronized version. |
 | Retrospective | Plan-versus-actual record, fallout issues, next recommendation. |
 
 `README.md` may link to durable release surfaces, but it must not become a
@@ -164,13 +163,13 @@ Publication happens from the tag. In this repo, pushing `vX.Y.Z` triggers
 `main`, and completes the release-profile, editor-compatibility, Rust, build,
 and package-witness admission gates before any provenance-producing native job
 starts. It then builds and attests the native matrix, clean-installs one VSIX,
-publishes those exact VSIX bytes to both editor registries, publishes crates,
-and creates the GitHub Release. The workflow also packages and attests the
-exact Zed registry-source tree; submission to
+copies those exact VSIX bytes into the attested release assets, publishes
+crates, creates the GitHub Release, and verifies the public VSIX digest. The
+workflow also packages and attests the exact Zed source tree; submission to
 `zed-industries/extensions` remains a maintainer pull request because that
-registry owns publication. The workflow derives and attests `colorful.rb` from
-the verified native archives; public tap publication remains a separate
-maintainer-owned channel.
+registry owns optional discovery-channel publication. The workflow derives and
+attests `colorful.rb` from the verified native archives; public tap publication
+remains a separate maintainer-owned channel.
 
 ### verified
 
@@ -565,8 +564,7 @@ Manual actor required: yes, for the public tag push
 Targets:
 - crates.io
 - GitHub Releases
-- VS Code Marketplace
-- Open VSX
+Optional follow-up:
 - zed-industries/extensions
 ```
 
@@ -654,11 +652,10 @@ do not add a Homebrew install claim until that public evidence exists.
 
 The release job runs the packaged editor smoke once. That smoke builds,
 clean-installs, and exercises one exact VSIX, then stages and compiles the Zed
-registry source. The workflow publishes the smoke witness's VSIX bytes to VS
-Code Marketplace and Open VSX with duplicate-version retries treated as a
-verification path. It attaches the VSIX and Zed source archive plus checksums to
-the GitHub Release and publishes provenance for both. It does not build a
-second marketplace artifact.
+source. The workflow attaches the smoke witness's exact VSIX and the Zed source
+archive plus checksums to the GitHub Release, publishes provenance for both,
+and downloads the public VSIX to prove byte equality. It does not require a
+marketplace account or build a second editor artifact.
 
 The crates.io publish step is rerun-safe for already-published crate versions:
 it checks the crates.io registry index before each crate and continues when that
@@ -689,28 +686,25 @@ versions are immutable; a bad published version is fixed by patching forward.
 
 Publication and rollback owner: `@flyingrobots`.
 
-The tag workflow fails before any crate or editor package is published unless
-both editor identities authenticate. After publication or a duplicate-version
-skip, it downloads that exact version from both registries and requires each
-SHA-256 digest to equal the smoke-tested VSIX before crates are published:
+The required VS Code channel is the versioned `.vsix` attached to the GitHub
+Release. The package smoke clean-installs that exact file before the workflow
+copies it into `dist/`, writes its SHA-256 sidecar, and attests the release
+asset. After creating the release, the workflow downloads the public asset and
+requires its digest to equal the smoke witness.
 
-- `VSCE_PAT` is a repository secret with publish rights for the
-  `flyingrobots` VS Code publisher. Microsoft Entra authentication can replace
-  this secret only through a separately reviewed workflow change.
-- `OVSX_PAT` is a repository secret with publish rights for the
-  `flyingrobots` Open VSX namespace.
+No `VSCE_PAT`, `OVSX_PAT`, Microsoft publisher identity, or Open VSX namespace
+is a release prerequisite. VS Code Marketplace and Open VSX may be added later
+as separately reviewed discovery channels, but their accounts, credentials,
+availability, and package URLs must not gate this release path. The pinned
+`@vscode/vsce` dependency remains a package builder only.
 
-Validate the identities with the exact lockfile-backed tools before tagging:
-
-```bash
-npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots
-npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
-```
-
-Zed publication is not token-driven from this repository. The owner submits a
-pull request to `zed-industries/extensions` that adds this repository as a
-submodule and selects `path = "editors/zed"`. The selected directory carries
-its own byte-identical `LICENSE`, manifest, lockfile, source, and README.
+The required Zed artifact is
+`colorful-language-vX.Y.Z-zed-source.tar.gz` on the GitHub Release. An optional
+registry listing remains owner-submitted: a pull request to
+`zed-industries/extensions` adds this repository as a submodule and selects
+`path = "editors/zed"`. The selected directory carries its own byte-identical
+`LICENSE`, manifest, lockfile, source, and README. External registry acceptance
+does not block the tagged release.
 
 ## Post-publication verification
 
@@ -749,11 +743,10 @@ cargo info colorful-cli@X.Y.Z
 cargo install colorful-cli --version X.Y.Z --locked
 colorful --version
 colorful diagnose --json crates/colorful-cli/fixtures/editor-smoke-prose.txt
-npm --prefix editors/vscode exec -- vsce show \
-  flyingrobots.colorful-language --json
-npm --prefix editors/vscode exec -- ovsx get \
-  flyingrobots.colorful-language --versionRange X.Y.Z --metadata
-gh api repos/zed-industries/extensions/contents/extensions/colorful-language
+code --install-extension colorful-language-X.Y.Z.vsix --force
+code --list-extensions --show-versions
+code --uninstall-extension flyingrobots.colorful-language
+tar -tzf colorful-language-vX.Y.Z-zed-source.tar.gz
 ```
 
 Download every release archive and its sidecar, recompute SHA-256, and run
@@ -764,8 +757,11 @@ server does not expose a CLI version flag. Syntax-check and attest
 channel exists. Download the release VSIX, verify its attestation, install it
 into an isolated VS Code profile, and rerun the packaged Plain Text, Markdown,
 diagnostics, semantic-token, incremental-edit, shutdown, and missing-server
-oracles. Zed is verified only after the external registry entry resolves and a
-clean Zed profile activates the synchronized extension/server pair.
+oracles. Record manual removal and, when a previous compatible VSIX exists,
+reinstallation of that previous release asset. Verify the Zed source archive's
+inventory and isolated Wasm build from the release bytes; a clean Zed profile
+and external registry URL are optional follow-up evidence only after that
+listing resolves.
 
 The packaged editor witness records an
 `installation-to-first-highlight` measurement from immediately before isolated
@@ -790,25 +786,26 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
 - crates.io evidence;
 - install / CLI / import smoke evidence;
 - native archive checksums and `gh attestation verify` results;
-- `vsce show`, `ovsx get`, and `zed-industries/extensions` evidence;
+- the exact GitHub Release VSIX URL, digest, manual install, and removal result;
+- the Zed source-archive URL, digest, and optional external-registry state;
 - clean-machine editor activation and observational timing;
 - rollback rehearsal against the previous compatible set;
 - known omissions or follow-up issues.
 
 ## Failure handling
 
-- **Tag exists, no registry published:** Do not move the tag. Fix the workflow
-  or credentials and rerun publication for the same tag.
+- **Tag exists, no GitHub Release published:** Do not move the tag. Fix the
+  workflow and rerun publication for the same tag.
 - **Some crates published, another failed:** Do not move the tag. Fix the
   failing path and rerun. Already-published crates should be verified, not
   republished with different contents.
-- **Editor publication partially succeeded:** Do not move the tag or rebuild
-  the VSIX. If public bytes differ from the smoke-tested digest, stop: immutable
-  version identity has been violated and requires a patch release plus incident
-  documentation. Otherwise repair credentials or permissions and rerun the
-  same tag so `--skip-duplicate` preserves the verified bytes.
-- **Zed submission failed review:** keep the GitHub Release and editor registry
-  records intact, correct the source extension on `main`, and patch forward.
+- **Editor release verification failed:** Do not move the tag, rebuild the
+  VSIX, or replace the public asset with different bytes. If the GitHub Release
+  VSIX differs from the smoke-tested digest, mark the release affected and cut
+  a patch release plus incident documentation. If the bytes match, record the
+  verification and continue the clean-install and removal witness.
+- **Zed submission failed review:** keep the GitHub Release records intact,
+  correct the source extension on `main`, and patch forward.
   Do not retarget the external submodule to unreviewed or moving source.
 - **GitHub Release failed:** Do not move the tag. Rerun release creation or fix
   the workflow for the same tag.

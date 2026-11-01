@@ -225,7 +225,7 @@ jobs:
       - name: Install repository policy dependencies
         run: npm ci
 
-      - name: Install editor publication dependencies
+      - name: Install editor packaging dependencies
         run: npm --prefix editors/vscode ci
 
       - name: Download native archives
@@ -283,39 +283,10 @@ jobs:
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: |
-            target/editor-smoke/*.vsix
+            dist/*.vsix
             dist/*zed-source.tar.gz
             dist/colorful.rb
             dist/*sbom.cdx.json
-
-      - name: Verify and publish VS Marketplace extension
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          set -euo pipefail
-          npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots
-          version="${GITHUB_REF_NAME#v}"
-          vsix="target/editor-smoke/colorful-language-${version}.vsix"
-          npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate --no-dependencies --no-yarn
-
-      - name: Verify and publish Open VSX extension
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: |
-          set -euo pipefail
-          npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots
-          version="${GITHUB_REF_NAME#v}"
-          vsix="target/editor-smoke/colorful-language-${version}.vsix"
-          npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate --no-dependencies
-
-      - name: Verify published editor bytes
-        run: |
-          set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          vsix="target/editor-smoke/colorful-language-${version}.vsix"
-          node scripts/verify-editor-publication.mjs \
-            --vsix "$vsix" \
-            --version "$version"
 
       # Publish in dependency order. `cargo publish` waits for each crate to land
       # in the index before returning, so dependents resolve. Cargo requires
@@ -371,3 +342,12 @@ jobs:
               --generate-notes \
               dist/*
           fi
+
+      - name: Verify GitHub Release VSIX
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          vsix="target/editor-smoke/colorful-language-${version}.vsix"
+          node scripts/verify-editor-publication.mjs \
+            --vsix "$vsix" \
+            --version "$version"

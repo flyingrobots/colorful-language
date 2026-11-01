@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 
 const PUBLISHER = "flyingrobots";
 const EXTENSION = "colorful-language";
-const MAX_METADATA_BYTES = 1024 * 1024;
 const MAX_VSIX_BYTES = 32 * 1024 * 1024;
 const DEFAULT_ATTEMPTS = 60;
 const RETRY_DELAY_MS = 15_000;
@@ -114,64 +113,12 @@ async function fetchAvailable(
   );
 }
 
-export function marketplacePackageUrl(version) {
+export function githubReleaseVsixUrl(version) {
   requireVersion(version);
   return (
-    "https://marketplace.visualstudio.com/_apis/public/gallery/" +
-    `publishers/${PUBLISHER}/vsextensions/${EXTENSION}/${version}/vspackage`
+    `https://github.com/${PUBLISHER}/${EXTENSION}/releases/download/` +
+    `v${version}/${EXTENSION}-${version}.vsix`
   );
-}
-
-export function openVsxMetadataUrl(version) {
-  requireVersion(version);
-  return `https://open-vsx.org/api/${PUBLISHER}/${EXTENSION}/${version}`;
-}
-
-function openVsxDownloadUrl(metadata, version) {
-  let parsed;
-  try {
-    parsed = JSON.parse(metadata.toString("utf8"));
-  } catch (error) {
-    reject(
-      "E_EDITOR_PUBLICATION_METADATA",
-      `Open VSX metadata is not JSON: ${error.message}`,
-    );
-  }
-  if (
-    parsed?.namespace !== PUBLISHER ||
-    parsed?.name !== EXTENSION ||
-    parsed?.version !== version ||
-    typeof parsed?.files?.download !== "string"
-  ) {
-    reject(
-      "E_EDITOR_PUBLICATION_METADATA",
-      "Open VSX metadata does not identify the requested extension version",
-    );
-  }
-
-  let download;
-  try {
-    download = new URL(parsed.files.download);
-  } catch {
-    reject(
-      "E_EDITOR_PUBLICATION_METADATA",
-      "Open VSX download URL is invalid",
-    );
-  }
-  const expectedPrefix =
-    `/api/${PUBLISHER}/${EXTENSION}/${version}/file/`;
-  if (
-    download.protocol !== "https:" ||
-    download.hostname !== "open-vsx.org" ||
-    !download.pathname.startsWith(expectedPrefix) ||
-    !download.pathname.endsWith(".vsix")
-  ) {
-    reject(
-      "E_EDITOR_PUBLICATION_METADATA",
-      "Open VSX download URL is outside the requested registry version",
-    );
-  }
-  return download.href;
 }
 
 function localVsix(path) {
@@ -220,39 +167,22 @@ export async function verifyEditorPublication({
   }
   const expectedDigest = sha256(localVsix(vsixPath));
 
-  const marketplace = await fetchAvailable(
-    marketplacePackageUrl(version),
+  const releaseAsset = await fetchAvailable(
+    githubReleaseVsixUrl(version),
     {
       attempts,
-      context: "Visual Studio Marketplace package",
+      context: "GitHub Release VSIX",
       fetchImpl,
       maximum: MAX_VSIX_BYTES,
       sleep,
     },
   );
-  assertDigest("visual-studio-marketplace", marketplace, expectedDigest);
-
-  const metadata = await fetchAvailable(openVsxMetadataUrl(version), {
-    attempts,
-    context: "Open VSX metadata",
-    fetchImpl,
-    maximum: MAX_METADATA_BYTES,
-    sleep,
-  });
-  const openVsxUrl = openVsxDownloadUrl(metadata, version);
-  const openVsx = await fetchAvailable(openVsxUrl, {
-    attempts,
-    context: "Open VSX package",
-    fetchImpl,
-    maximum: MAX_VSIX_BYTES,
-    sleep,
-  });
-  assertDigest("open-vsx", openVsx, expectedDigest);
+  assertDigest("github-release", releaseAsset, expectedDigest);
 
   return {
     extension: `${PUBLISHER}.${EXTENSION}@${version}`,
     sha256: expectedDigest,
-    channels: ["visual-studio-marketplace", "open-vsx"],
+    channels: ["github-release"],
   };
 }
 

@@ -81,13 +81,36 @@ Verification for install paths and published artifacts.
   script, and release witness. *Tracking:*
   [#37](https://github.com/flyingrobots/colorful-language/issues/37).
   *Status:* planned.
-- **DIST-7a** — *Requirement:* DIST-7. *Behavior:* signed VS Code/Open VSX and
-  Zed packages plus the reviewed platform server matrix install from public
-  destinations and can be rolled back to the previous compatible version.
-  *Oracle:* public URL resolution, integrity verification, clean-install
-  activation, binary version, and rollback result equality. *Evidence type:*
-  release-matrix witness and clean-machine process tests. *Tracking:*
+- **DIST-7a** — *Requirement:* DIST-7. *Behavior:* the tag workflow promotes the
+  exact smoke-tested VSIX, reviewed Zed source archive, and reviewed platform
+  server matrix into the attested GitHub Release asset set. Marketplace
+  credentials and publisher commands cannot enter the required tag path.
+  *Oracle:* policy mutations reject a rebuilt or misdirected VSIX, missing
+  checksum or attestation, narrowed asset upload, verification before release
+  creation, or any marketplace secret or publisher command. *Evidence type:*
+  deterministic release-policy mutation tests. *Tracking:*
   [#154](https://github.com/flyingrobots/colorful-language/issues/154).
+  *Evidence:* `.continuum/release.yml`; `.github/workflows/release.yml`;
+  `scripts/check-release-distribution.mjs`;
+  `scripts/check-release-distribution.test.mjs`
+  `repository makes the GitHub Release VSIX the credential-free required
+  channel`, `rejects marketplace credentials and publisher commands`,
+  `requires one smoke-tested VSIX in the GitHub Release assets`, and
+  `requires the GitHub Release to attach every reviewed asset`;
+  `scripts/verify-editor-publication.mjs`;
+  `scripts/verify-editor-publication.test.mjs`.
+  *Status:* implemented.
+- **DIST-7b** — *Requirement:* DIST-7. *Behavior:* the public GitHub Release
+  URLs resolve and match the admitted checksums and provenance; a clean VS Code
+  profile installs the downloaded VSIX with `code --install-extension`,
+  activates it against the compatible server, and can uninstall it or
+  reinstall the previous compatible release asset. Marketplace and
+  editor-registry publication remain optional follow-up channels. *Oracle:*
+  exact release-asset URL resolution, checksum and provenance verification,
+  clean-install activation, binary version, and rollback result equality.
+  *Evidence type:* release-matrix witness and clean-machine process tests.
+  *Tracking:*
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283).
   *Status:* planned.
 - **DIST-8a** — *Requirement:* DIST-8. *Behavior:* an exact release version,
   Linux x86-64 and Apple Silicon archive URLs, and their SHA-256 sidecars

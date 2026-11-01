@@ -13,26 +13,12 @@ import test from "node:test";
 
 import {
   EditorPublicationError,
-  marketplacePackageUrl,
-  openVsxMetadataUrl,
+  githubReleaseVsixUrl,
   verifyEditorPublication,
 } from "./verify-editor-publication.mjs";
 
 const VERSION = "0.4.0";
 const PACKAGE = Buffer.from("exact-vsix-bytes");
-const OPEN_VSX_DOWNLOAD =
-  "https://open-vsx.org/api/flyingrobots/colorful-language/0.4.0/file/flyingrobots.colorful-language-0.4.0.vsix";
-
-function metadata(download = OPEN_VSX_DOWNLOAD) {
-  return Buffer.from(
-    JSON.stringify({
-      namespace: "flyingrobots",
-      name: "colorful-language",
-      version: VERSION,
-      files: { download },
-    }),
-  );
-}
 
 function response(body, status = 200) {
   return new Response(body, { status });
@@ -49,21 +35,12 @@ async function withVsix(run) {
   }
 }
 
-test("accepts exact bytes from both public registries", async () => {
+test("accepts exact bytes from the public GitHub Release asset", async () => {
   await withVsix(async (vsixPath) => {
     const requested = [];
     const fetchImpl = async (url) => {
       requested.push(String(url));
-      if (url === marketplacePackageUrl(VERSION)) {
-        return response(PACKAGE);
-      }
-      if (url === openVsxMetadataUrl(VERSION)) {
-        return response(metadata());
-      }
-      if (url === OPEN_VSX_DOWNLOAD) {
-        return response(PACKAGE);
-      }
-      throw new Error(`unexpected URL ${url}`);
+      return response(PACKAGE);
     };
 
     const result = await verifyEditorPublication({
@@ -73,23 +50,21 @@ test("accepts exact bytes from both public registries", async () => {
       sleep: async () => {},
     });
     assert.equal(result.extension, "flyingrobots.colorful-language@0.4.0");
-    assert.deepEqual(result.channels, [
-      "visual-studio-marketplace",
-      "open-vsx",
-    ]);
+    assert.deepEqual(result.channels, ["github-release"]);
     assert.equal(result.sha256.length, 64);
-    assert.deepEqual(requested, [
-      marketplacePackageUrl(VERSION),
-      openVsxMetadataUrl(VERSION),
-      OPEN_VSX_DOWNLOAD,
-    ]);
+    assert.deepEqual(requested, [githubReleaseVsixUrl(VERSION)]);
+    assert.equal(
+      requested[0],
+      "https://github.com/flyingrobots/colorful-language/releases/download/" +
+        "v0.4.0/colorful-language-0.4.0.vsix",
+    );
   });
 });
 
-test("hashes decoded VSIX bytes from a gzip-encoded Marketplace response", async () => {
+test("hashes decoded VSIX bytes from an encoded release response", async () => {
   const compressed = gzipSync(PACKAGE);
   const server = createServer((request, responseStream) => {
-    assert.equal(request.url, "/marketplace.vsix");
+    assert.equal(request.url, "/colorful-language-0.4.0.vsix");
     responseStream.writeHead(200, {
       "content-encoding": "gzip",
       "content-length": String(compressed.byteLength),
@@ -105,27 +80,17 @@ test("hashes decoded VSIX bytes from a gzip-encoded Marketplace response", async
     assert.notEqual(address, null);
     assert.equal(typeof address, "object");
     await withVsix(async (vsixPath) => {
-      const fetchImpl = async (url) => {
-        if (url === marketplacePackageUrl(VERSION)) {
-          return fetch(
-            `http://127.0.0.1:${String(address.port)}/marketplace.vsix`,
-          );
-        }
-        if (url === openVsxMetadataUrl(VERSION)) {
-          return response(metadata());
-        }
-        return response(PACKAGE);
-      };
       const result = await verifyEditorPublication({
         vsixPath,
         version: VERSION,
-        fetchImpl,
+        fetchImpl: async () =>
+          fetch(
+            `http://127.0.0.1:${String(address.port)}/` +
+              "colorful-language-0.4.0.vsix",
+          ),
         sleep: async () => {},
       });
-      assert.deepEqual(result.channels, [
-        "visual-studio-marketplace",
-        "open-vsx",
-      ]);
+      assert.deepEqual(result.channels, ["github-release"]);
     });
   } finally {
     await new Promise((resolveClose, rejectClose) =>
@@ -136,7 +101,7 @@ test("hashes decoded VSIX bytes from a gzip-encoded Marketplace response", async
   }
 });
 
-test("rejects a pre-existing Marketplace version with different bytes", async () => {
+test("rejects a GitHub Release VSIX with different bytes", async () => {
   await withVsix(async (vsixPath) => {
     await assert.rejects(
       verifyEditorPublication({
@@ -148,26 +113,18 @@ test("rejects a pre-existing Marketplace version with different bytes", async ()
       (error) =>
         error instanceof EditorPublicationError &&
         error.code === "E_EDITOR_PUBLICATION_DIGEST" &&
-        /visual-studio-marketplace/u.test(error.message),
+        /github-release/u.test(error.message),
     );
   });
 });
 
-test("retries bounded eventual publication without accepting another status", async () => {
+test("retries bounded eventual GitHub Release propagation", async () => {
   await withVsix(async (vsixPath) => {
     const sleeps = [];
-    let marketplaceAttempts = 0;
-    const fetchImpl = async (url) => {
-      if (url === marketplacePackageUrl(VERSION)) {
-        marketplaceAttempts += 1;
-        return marketplaceAttempts === 1
-          ? response("pending", 404)
-          : response(PACKAGE);
-      }
-      if (url === openVsxMetadataUrl(VERSION)) {
-        return response(metadata());
-      }
-      return response(PACKAGE);
+    let attempts = 0;
+    const fetchImpl = async () => {
+      attempts += 1;
+      return attempts === 1 ? response("pending", 404) : response(PACKAGE);
     };
 
     await verifyEditorPublication({
@@ -177,26 +134,18 @@ test("retries bounded eventual publication without accepting another status", as
       fetchImpl,
       sleep: async (milliseconds) => sleeps.push(milliseconds),
     });
-    assert.equal(marketplaceAttempts, 2);
+    assert.equal(attempts, 2);
     assert.deepEqual(sleeps, [15_000]);
   });
 });
 
-test("default retry budget covers delayed Marketplace propagation", async () => {
+test("default retry budget covers delayed GitHub Release propagation", async () => {
   await withVsix(async (vsixPath) => {
     const sleeps = [];
-    let marketplaceAttempts = 0;
-    const fetchImpl = async (url) => {
-      if (url === marketplacePackageUrl(VERSION)) {
-        marketplaceAttempts += 1;
-        return marketplaceAttempts < 60
-          ? response("pending", 404)
-          : response(PACKAGE);
-      }
-      if (url === openVsxMetadataUrl(VERSION)) {
-        return response(metadata());
-      }
-      return response(PACKAGE);
+    let attempts = 0;
+    const fetchImpl = async () => {
+      attempts += 1;
+      return attempts < 60 ? response("pending", 404) : response(PACKAGE);
     };
 
     await verifyEditorPublication({
@@ -205,7 +154,7 @@ test("default retry budget covers delayed Marketplace propagation", async () => 
       fetchImpl,
       sleep: async (milliseconds) => sleeps.push(milliseconds),
     });
-    assert.equal(marketplaceAttempts, 60);
+    assert.equal(attempts, 60);
     assert.equal(sleeps.length, 59);
     assert.equal(sleeps.every((milliseconds) => milliseconds === 15_000), true);
   });
@@ -233,35 +182,31 @@ test("reports the actual attempt count for a non-retryable response", async () =
   });
 });
 
-test("rejects and cancels an oversized registry response", async () => {
+test("rejects and cancels an oversized release asset", async () => {
   await withVsix(async (vsixPath) => {
     let cancelled = false;
-    const oversizedMetadata = new Response(
+    const oversized = new Response(
       new ReadableStream({
         start(controller) {
-          controller.enqueue(new Uint8Array(1024 * 1024 + 1));
+          controller.enqueue(new Uint8Array(32 * 1024 * 1024 + 1));
         },
         cancel() {
           cancelled = true;
         },
       }),
     );
-    const fetchImpl = async (url) =>
-      url === marketplacePackageUrl(VERSION)
-        ? response(PACKAGE)
-        : oversizedMetadata;
 
     await assert.rejects(
       verifyEditorPublication({
         vsixPath,
         version: VERSION,
-        fetchImpl,
+        fetchImpl: async () => oversized,
         sleep: async () => {},
       }),
       (error) =>
         error instanceof EditorPublicationError &&
         error.code === "E_EDITOR_PUBLICATION_FETCH" &&
-        /response exceeds 1048576 bytes/u.test(error.message),
+        /response exceeds 33554432 bytes/u.test(error.message),
     );
     assert.equal(cancelled, true);
   });
@@ -286,34 +231,12 @@ test("rejects missing and empty local VSIX inputs", async () => {
         (error) =>
           error instanceof EditorPublicationError &&
           error.code === "E_EDITOR_PUBLICATION_INPUT",
-        `${vsixPath} must fail before registry access`,
+        `${vsixPath} must fail before release access`,
       );
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-});
-
-test("rejects Open VSX metadata that redirects outside the requested version", async () => {
-  await withVsix(async (vsixPath) => {
-    const fetchImpl = async (url) => {
-      if (url === marketplacePackageUrl(VERSION)) {
-        return response(PACKAGE);
-      }
-      return response(metadata("https://example.com/untrusted.vsix"));
-    };
-    await assert.rejects(
-      verifyEditorPublication({
-        vsixPath,
-        version: VERSION,
-        fetchImpl,
-        sleep: async () => {},
-      }),
-      (error) =>
-        error instanceof EditorPublicationError &&
-        error.code === "E_EDITOR_PUBLICATION_METADATA",
-    );
-  });
 });
 
 test("rejects malformed publication-verifier CLI arguments", () => {

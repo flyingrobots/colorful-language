@@ -168,13 +168,9 @@ distribution:
   editors:
     vscode:
       artifact: target/editor-smoke/colorful-language-{version}.vsix
-      registries:
-        - visual-studio-marketplace
-        - open-vsx
-      credential_secrets:
-        - VSCE_PAT
-        - OVSX_PAT
-      duplicate_policy: skip-existing-version
+      publication:
+        authority: github-release-asset
+        installation: manual-vsix
     zed:
       source_path: editors/zed
       registry: zed-industries/extensions
