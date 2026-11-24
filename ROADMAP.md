@@ -251,6 +251,10 @@ observe public-contract regressions before they ship.
   with the exact pins, the lockfile, and the pinned-release self-test moving
   together
   [#336](https://github.com/flyingrobots/colorful-language/issues/336).
+- **Delivered the reviewed setup-ruby pin:** the release workflow,
+  `EXPECTED_FORMULA_RUBY`, and the release-distribution self-test move together
+  to `ruby/setup-ruby` v1.335.0
+  [#337](https://github.com/flyingrobots/colorful-language/issues/337).
 - **Delivered the v0.4.0 snapshot preparation:** promote the accumulated
   `Unreleased` ledger into a dated `0.4.0` section, de-tense entries that
   described shipped work as still queued, refresh the pre-publication witness
