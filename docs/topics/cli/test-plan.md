@@ -11,6 +11,10 @@ Requirements:
   logic.
 - **CLI-3** The module split preserves command output bytes, exit statuses,
   error behavior, `NO_COLOR`, canonical IR, and CLI/LSP coordinate parity.
+- **CLI-4** The infallible `colorize` compatibility wrapper stays fail-closed
+  (returns the unchanged source on a classification failure) and keeps its
+  public signature; a debug build additionally reports the discarded
+  `ClassificationError` on standard error, and a release build stays silent.
 
 ## Cases
 
@@ -43,6 +47,17 @@ Requirements:
   *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
   *Status:* implemented.
+
+- **CLI-4a** — *Requirement:* CLI-4. *Behavior:* when classification fails,
+  the wrapper returns the unchanged source in every build, writes the discarded
+  error to its diagnostic sink in a debug build, and writes nothing in a release
+  build; a successful result passes through silently; the public signature is
+  `fn(&str, bool) -> String`. *Oracle:* exact returned string and exact bytes
+  written to an injected sink, using a deliberately malformed test parser to
+  force the failure. *Evidence type:* deterministic unit test, run in both the
+  debug and release profiles. *Evidence:* planned. *Tracking:*
+  [#224](https://github.com/flyingrobots/colorful-language/issues/224).
+  *Status:* planned.
 
 ## Known gaps / risks
 
