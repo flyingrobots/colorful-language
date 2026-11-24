@@ -70,7 +70,9 @@ fn decode_hex(hex: &str) -> Result<Vec<u8>, String> {
         return Err("hex input must contain an even number of digits".to_owned());
     }
     hex.as_bytes()
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|digits| {
             let pair = std::str::from_utf8(digits)
                 .map_err(|error| format!("hex input was not ASCII: {error}"))?;
