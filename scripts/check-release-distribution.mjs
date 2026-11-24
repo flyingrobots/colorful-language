@@ -37,12 +37,10 @@ export const EXPECTED_PLATFORMS = Object.freeze([
 export const EXPECTED_EDITOR_POLICY = Object.freeze({
   vscode: Object.freeze({
     artifact: "target/editor-smoke/colorful-language-{version}.vsix",
-    registries: Object.freeze([
-      "visual-studio-marketplace",
-      "open-vsx",
-    ]),
-    credential_secrets: Object.freeze(["VSCE_PAT", "OVSX_PAT"]),
-    duplicate_policy: "skip-existing-version",
+    publication: Object.freeze({
+      authority: "github-release-asset",
+      installation: "manual-vsix",
+    }),
   }),
   zed: Object.freeze({
     source_path: "editors/zed",
@@ -71,9 +69,8 @@ export const EXPECTED_HOMEBREW_POLICY = Object.freeze({
     tracking_issue: 37,
   }),
 });
-export const EXPECTED_PUBLISHER_TOOLS = Object.freeze({
+export const EXPECTED_PACKAGE_TOOLS = Object.freeze({
   "@vscode/vsce": "3.9.2",
-  ovsx: "1.0.2",
 });
 export const EXPECTED_FORMULA_RUBY = Object.freeze({
   uses:
@@ -125,11 +122,9 @@ const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
   "Generate Homebrew formula",
   "Build and smoke editor packages",
   "Attest Homebrew and editor artifacts",
-  "Verify and publish VS Marketplace extension",
-  "Verify and publish Open VSX extension",
-  "Verify published editor bytes",
   "Publish to crates.io",
   "Create GitHub Release",
+  "Verify GitHub Release VSIX",
 ]);
 const REVIEWED_HOMEBREW_COMMANDS = Object.freeze([
   "set -euo pipefail",
@@ -473,49 +468,40 @@ function validateReleaseJob(job) {
     );
   }
 
-  const marketplace = requiredStep(
-    steps,
-    "Verify and publish VS Marketplace extension",
-    context,
-  );
-  const openVsx = requiredStep(
-    steps,
-    "Verify and publish Open VSX extension",
-    context,
-  );
-  if (
-    !isDeepStrictEqual(marketplace.env, {
-      VSCE_PAT: "${{ secrets.VSCE_PAT }}",
-    })
-  ) {
-    throw new Error(
-      `${context} must isolate the VS Marketplace publisher secret`,
-    );
-  }
-  if (
-    !isDeepStrictEqual(openVsx.env, {
-      OVSX_PAT: "${{ secrets.OVSX_PAT }}",
-    })
-  ) {
-    throw new Error(`${context} must isolate the Open VSX publisher secret`);
-  }
-  const marketplaceSource = String(marketplace.run ?? "");
-  const openVsxSource = String(openVsx.run ?? "");
-
   const packageStep = requiredStep(
     steps,
     "Build and smoke editor packages",
     context,
   );
   const packageSource = String(packageStep.run ?? "");
+  const vsixAssignment =
+    'vsix="target/editor-smoke/colorful-language-${version}.vsix"';
   if (
     !packageSource.includes("npm --prefix editors/vscode run smoke:package") ||
+    !packageSource.includes(vsixAssignment) ||
+    !packageSource.includes('cp "$vsix" dist/') ||
+    !packageSource.includes(
+      'sha256sum "$(basename "$vsix")" > "$(basename "$vsix").sha256"',
+    ) ||
     !packageSource.includes("target/editor-smoke/zed-source") ||
     packageSource.includes("package:vsix")
   ) {
     throw new Error(
-      `${context} must package editors once through the clean-install smoke`,
+      `${context} must promote one clean-install-smoked VSIX and checksum into the release assets`,
     );
+  }
+
+  for (const step of steps) {
+    const envNames = Object.keys(step?.env ?? {});
+    const source = String(step?.run ?? "");
+    if (
+      envNames.some((name) => name === "VSCE_PAT" || name === "OVSX_PAT") ||
+      /(?:^|\s)(?:vsce|ovsx)\s+(?:verify-pat|publish)(?:\s|$)/u.test(source)
+    ) {
+      throw new Error(
+        `${context} must not require marketplace credentials or publisher commands`,
+      );
+    }
   }
 
   const attest = requiredStep(
@@ -529,7 +515,7 @@ function validateReleaseJob(job) {
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
   if (
-    !attested.includes("target/editor-smoke/*.vsix") ||
+    !attested.includes("dist/*.vsix") ||
     !attested.includes("dist/*zed-source.tar.gz") ||
     !attested.includes("dist/colorful.rb") ||
     !attested.includes(EXPECTED_SBOM_ASSET)
@@ -539,52 +525,21 @@ function validateReleaseJob(job) {
     );
   }
 
-  const vsixAssignment =
-    'vsix="target/editor-smoke/colorful-language-${version}.vsix"';
-  for (const [source, command] of [
-    [marketplaceSource, "vsce"],
-    [openVsxSource, "ovsx"],
-  ]) {
-    if (
-      !source.includes(`${command} verify-pat`) ||
-      !source.includes(vsixAssignment)
-    ) {
-      throw new Error(
-        `${context} must verify credentials and select the smoke-tested VSIX for ${command}`,
-      );
-    }
-    const commandLine = source
-      .split(/\r?\n/u)
-      .find((line) => line.includes(`${command} publish`));
-    if (
-      commandLine === undefined ||
-      !commandLine.includes('--packagePath "$vsix"') ||
-      !commandLine.includes("--skip-duplicate")
-    ) {
-      throw new Error(
-        `${context} must publish the exact VSIX rerun-safely with ${command}`,
-      );
-    }
-  }
-
-  const verify = requiredStep(
-    steps,
-    "Verify published editor bytes",
-    context,
-  );
+  const verify = requiredStep(steps, "Verify GitHub Release VSIX", context);
   const verifySource = String(verify.run ?? "");
   if (
     !verifySource.includes("node scripts/verify-editor-publication.mjs") ||
+    !verifySource.includes(vsixAssignment) ||
     !verifySource.includes('--vsix "$vsix"') ||
     !verifySource.includes('--version "$version"')
   ) {
     throw new Error(
-      `${context} must verify published editor bytes against the smoke-tested VSIX`,
+      `${context} must verify the public GitHub Release VSIX against the smoke witness`,
     );
   }
 
   const release = requiredStep(steps, "Create GitHub Release", context);
-  if (!String(release.run ?? "").includes("dist/*")) {
+  if (!/(?:^|\s)dist\/\*(?:\s|$)/u.test(String(release.run ?? ""))) {
     throw new Error(`${context} must attach every reviewed distribution asset`);
   }
   requireStepOrder(steps, REVIEWED_RELEASE_STEP_ORDER, context);
@@ -598,10 +553,11 @@ function validateDocumentation(documentation) {
   const requiredRunbookText = [
     "Publication and rollback owner: `@flyingrobots`",
     "gh release download vX.Y.Z",
+    "gh release view vX.Y.Z",
     "gh attestation verify",
-    "vsce show",
-    "ovsx get",
-    "zed-industries/extensions",
+    "code --install-extension",
+    "code --uninstall-extension flyingrobots.colorful-language",
+    "colorful-language-vX.Y.Z-zed-source.tar.gz",
     "Do not move the tag",
     "observational",
   ];
@@ -691,9 +647,9 @@ export function validateReleaseDistribution(snapshot) {
     );
   }
   if (
-    !isDeepStrictEqual(snapshot.publisherTools, EXPECTED_PUBLISHER_TOOLS)
+    !isDeepStrictEqual(snapshot.packageTools, EXPECTED_PACKAGE_TOOLS)
   ) {
-    throw new Error("editor publisher tools must be exact and lockfile-backed");
+    throw new Error("editor package tools must be exact and lockfile-backed");
   }
   if (snapshot.zedLicense !== snapshot.repositoryLicense) {
     throw new Error(
@@ -734,7 +690,7 @@ export function validateReleaseDistribution(snapshot) {
     owner: policy.owner,
     platformCount: policy.binaries.length,
     homebrewPlatformCount: policy.homebrew.platforms.length,
-    editorRegistryCount: policy.editors.vscode.registries.length + 1,
+    editorArtifactCount: Object.keys(policy.editors).length,
   };
 }
 
@@ -789,8 +745,8 @@ export function loadRepositorySnapshot(root = ROOT) {
   const packageLock = JSON.parse(read("editors/vscode/package-lock.json"));
   const ciWorkflow = parseYaml(read(".github/workflows/ci.yml"));
   const releaseWorkflow = parseYaml(read(".github/workflows/release.yml"));
-  const toolNames = Object.keys(EXPECTED_PUBLISHER_TOOLS);
-  const publisherTools = Object.fromEntries(
+  const toolNames = Object.keys(EXPECTED_PACKAGE_TOOLS);
+  const packageTools = Object.fromEntries(
     toolNames.map((name) => {
       const declared = packageJson.devDependencies?.[name];
       const lockedRoot = packageLock.packages?.[""]?.devDependencies?.[name];
@@ -806,7 +762,7 @@ export function loadRepositorySnapshot(root = ROOT) {
     policy: parseRepositoryProfile(read(".continuum/release.yml")),
     releaseArtifacts: parseReleaseArtifacts(read(".continuum/release.yml")),
     workflow: releaseWorkflow,
-    publisherTools,
+    packageTools,
     repositoryLicense: read("LICENSE"),
     zedLicense: readOptional("editors/zed/LICENSE"),
     gates: {
@@ -830,7 +786,7 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
   try {
     const result = validateReleaseDistribution(loadRepositorySnapshot());
     process.stdout.write(
-      `check-release-distribution passed: ${result.platformCount} native platforms, ${result.homebrewPlatformCount} Homebrew platforms, ${result.editorRegistryCount} editor registries\n`,
+      `check-release-distribution passed: ${result.platformCount} native platforms, ${result.homebrewPlatformCount} Homebrew platforms, ${result.editorArtifactCount} editor artifact classes\n`,
     );
   } catch (error) {
     process.stderr.write(`check-release-distribution: ${error.message}\n`);

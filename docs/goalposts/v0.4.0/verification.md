@@ -29,7 +29,7 @@ after its command or public oracle has been observed.
 | Pull-request CI | Required CI and security check rollup | The historical packet-admission rollup passed on [PR #282](https://github.com/flyingrobots/colorful-language/pull/282). The final release-prep [PR #294](https://github.com/flyingrobots/colorful-language/pull/294) head `384d49279a8f78903c0ff9713a411ae02dcd7548` passed its complete hosted rollup on 2026-08-07: the latest result for each of 18 distinct checks was successful before merge as `4b9529b0ce44bc5b74ec0dfeac8565b5276bfb08`. Superseded cancelled runs were excluded by taking the latest result per check name. |
 | Review | CodeRabbit exact-head review plus zero unresolved GraphQL threads | Pass on 2026-08-07 for release-prep [PR #294](https://github.com/flyingrobots/colorful-language/pull/294) head `384d49279a8f78903c0ff9713a411ae02dcd7548`: the CodeRabbit check completed successfully under the documented rate-limit disposition, and a cursor-complete GraphQL audit found zero unresolved threads across all six review threads. |
 | Release tracker | `[release] v0.4.0`, created from the reviewed packet after merge | [#283](https://github.com/flyingrobots/colorful-language/issues/283) created on the Product Maturity goalpost from the reviewed packet. |
-| Final preflight | `bash scripts/release-preflight.sh v0.4.0` on clean, aligned `main` | Release scope is disposed as of 2026-08-07: 28 of 30 scoped slices are closed, with [#154](https://github.com/flyingrobots/colorful-language/issues/154) and [#37](https://github.com/flyingrobots/colorful-language/issues/37) inherently post-tag, and release-prep PR #294 merged as `4b9529b0ce44bc5b74ec0dfeac8565b5276bfb08`. PR #300 is explicitly excluded and held after the v0.4.0 boundary. The preflight executes from clean, aligned `main` only after [#301](https://github.com/flyingrobots/colorful-language/issues/301) lands. Its result is not yet recorded; no tag or publication is authorized by this witness. |
+| Final preflight | `bash scripts/release-preflight.sh v0.4.0` on clean, aligned `main` | The 2026-08-07 snapshot had 28 of 30 scoped slices closed, with [#154](https://github.com/flyingrobots/colorful-language/issues/154) and [#37](https://github.com/flyingrobots/colorful-language/issues/37) still open, and release-prep PR #294 merged as `4b9529b0ce44bc5b74ec0dfeac8565b5276bfb08`. The #154 acceptance path is now the credential-free GitHub Release VSIX implemented by draft [PR #307](https://github.com/flyingrobots/colorful-language/pull/307); the release tracker owns the still-unavailable public URL and clean-install witness after that PR lands. PR #300 remains explicitly excluded and held after the v0.4.0 boundary. The preflight executes from clean, aligned `main` only after the revised #154 implementation lands. Its result is not yet recorded; no tag or publication is authorized by this witness. |
 
 ## Publication evidence
 
@@ -45,9 +45,8 @@ side effects.
 | Publish workflow | GitHub Actions run URL and final conclusion | Not available. |
 | crates.io | All eight `cargo info <crate>@0.4.0` registry oracles | Not available. |
 | Native archives | Three archive URLs, SHA-256 sidecars, and GitHub attestation verification | Not available. |
-| VS Code Marketplace | Public version URL and downloaded VSIX SHA-256 parity | Not available. |
-| Open VSX | Public version URL and downloaded VSIX SHA-256 parity | Not available. |
-| Zed | Versioned source archive, attestation, and registry pull request | Not available. |
+| VS Code VSIX | GitHub Release asset URL, SHA-256 sidecar, attestation, and downloaded-byte parity with the smoke witness | Not available. |
+| Zed | Versioned GitHub Release source archive and attestation; optional registry pull-request state | Not available. |
 | Homebrew formula | Attested GitHub Release formula asset | Not available. |
 | Software bill of materials | Two CycloneDX assets, one per shipped binary, with JSON well-formedness and GitHub attestation verification | Not available. |
 | GitHub Release | Release URL and full asset inventory | Not available. |
@@ -61,9 +60,11 @@ commands, host/toolchain identity, timestamps, public URLs, and results for:
 
 - clean-machine CLI and LSP installation on every supported native platform;
 - `colorful --version`, CLI input contracts, and the real LSP transcript;
-- VS Code Marketplace and Open VSX clean installation, activation, semantic
-  tokens, diagnostics, theme fallback, and install-to-first-highlight timing;
-- Zed registry installation when the external submission is accepted;
+- manual GitHub Release VSIX installation, activation, semantic tokens,
+  diagnostics, theme fallback, install-to-first-highlight timing, removal, and
+  previous-compatible-asset reinstall when one exists;
+- Zed source-archive inventory and isolated build, plus registry installation
+  only when an external submission is accepted;
 - Homebrew install, upgrade, and rollback after a public tap exists;
 - checksum, provenance, and public-package byte verification;
 - one bounded rollback or patch-forward rehearsal per release channel.

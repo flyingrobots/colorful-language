@@ -31,10 +31,10 @@ the maintained README at
 `https://github.com/flyingrobots/colorful-language#readme`.
 
 No GitHub deployment environment exists. `@flyingrobots` owns release
-execution, custody of `CARGO_REGISTRY_TOKEN`, `VSCE_PAT`, and `OVSX_PAT`, and
-rollback decisions. Create a protected `release` environment only when a real
-release is scheduled and all three credentials can move atomically; do not
-create an empty environment before that threshold.
+execution, custody of `CARGO_REGISTRY_TOKEN`, and rollback decisions. Create a
+protected `release` environment only when a real release is scheduled and that
+credential can move atomically; do not create an empty environment before that
+threshold.
 
 Credential and release-evidence inventories are unordered exact sets.
 Reordering is harmless; missing, unexpected, or duplicate entries fail the
@@ -47,7 +47,8 @@ bash scripts/release-prep.sh
 npm --prefix editors/vscode run smoke:package
 ```
 
-After editor publication, verify the exact local package bytes:
+After GitHub Release publication, verify the exact local package bytes against
+the public VSIX asset:
 
 ```bash
 node scripts/verify-editor-publication.mjs \
@@ -55,9 +56,9 @@ node scripts/verify-editor-publication.mjs \
   --version X.Y.Z
 ```
 
-Rollback ownership includes stopping the tag workflow, removing or unpublishing
-the affected registry version where the registry permits it, marking the GitHub
-release affected, and following the tested recovery commands in
+Rollback ownership includes stopping the tag workflow, marking the GitHub
+Release affected, uninstalling the VSIX where needed, and following the tested
+recovery commands in
 [`docs/RELEASING.md`](../../RELEASING.md). A release witness records the actor,
 environment, exact artifact digests, public URLs, and recovery outcome.
 
@@ -145,9 +146,9 @@ and manual recovery:
   The lock-backed editor package toolchain adds the permissive Artistic 2.0,
   BSD 2-Clause, BSD 3-Clause, CC BY 3.0, CC0 1.0, and Python 2.0 SPDX licenses.
   Exact-version package exceptions cover `@azu/style-format`'s WTFPL license,
-  the VSCE signing runtime's installation-and-use terms, the Open VSX
-  publisher's EPL 2.0 license, and the scanner's composite-license
-  classifications for `typed-rest-client` and `xmlbuilder`. These are
+  the VSCE signing runtime's installation-and-use terms and the scanner's
+  composite-license classifications for `typed-rest-client` and `xmlbuilder`.
+  These are
   development-only dependencies: the VSIX package command uses
   `--no-dependencies`, and `.vscodeignore` excludes `node_modules`. A
   replacement release does not inherit an exception. A dependency whose
@@ -173,9 +174,9 @@ security job or step.
 The workflow-security job grants only `contents: read` and disables checkout
 credential persistence. Its versioned policy fixes the analyzer identity,
 offline workflow-only invocation, finding thresholds, and exception metadata.
-Three exceptions allow `CARGO_REGISTRY_TOKEN`, `VSCE_PAT`, and `OVSX_PAT` only
-at their named crates.io or editor-publication steps while a protected release
-environment remains unconfigured. The repository profile assigns credential,
+One exception allows `CARGO_REGISTRY_TOKEN` only at its named crates.io
+publication step while a protected release environment remains unconfigured.
+The repository profile assigns credential,
 release, and rollback ownership to `@flyingrobots`. Each exception names its
 owner, rationale, and removal trigger, and each selector may occur once across
 all workflows. Changing a secret location, broadening an exception path,
@@ -338,6 +339,21 @@ as the `rust-coverage` artifact for 14 days. The machine report is checked
 against [`.github/coverage-policy.json`](../../../.github/coverage-policy.json)
 by [`check-coverage-policy.mjs`](../../../scripts/check-coverage-policy.mjs)
 before the required job can pass.
+
+The same checker renders one ratchet delta table from the validated policy and
+LLVM report: a row for the workspace and for each monitored transport file, in
+policy order, with current covered/total lines, current percentage, measured
+baseline, signed percentage-point delta from that baseline, floor, uncovered
+lines, uncovered-line ceiling, and signed uncovered delta from the ceiling. A
+regressed row reads `FAIL` with the same error category the checker exits on,
+and the verdict line names the first failing surface. Every run prints the
+table on standard output; when `GITHUB_STEP_SUMMARY` is set, as in the required
+`Rust coverage` job, the checker also appends the identical rows as Markdown to
+the job summary. The table holds no timestamps, so the same report renders the
+same bytes locally and in CI. It is advisory presentation only: the error
+categories, standard error message, and exit status are the validator's, and a
+job summary that cannot be written produces a note on standard error without
+changing the verdict. The JSON and HTML artifact remains the detailed evidence.
 
 The current workspace baseline was measured at source commit
 `b3522acb71775f9cd5a05b4579163252aba96352` with the pinned command above:

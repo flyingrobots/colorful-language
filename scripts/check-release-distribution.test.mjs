@@ -9,7 +9,7 @@ import {
   EXPECTED_OWNER,
   EXPECTED_PLATFORMS,
   EXPECTED_PROVENANCE,
-  EXPECTED_PUBLISHER_TOOLS,
+  EXPECTED_PACKAGE_TOOLS,
   EXPECTED_SBOM_ARTIFACT,
   EXPECTED_SBOM_TOOL,
   HOMEBREW_SELF_TEST_COMMAND,
@@ -43,7 +43,7 @@ function validSnapshot() {
       editors: structuredClone(EXPECTED_EDITOR_POLICY),
       homebrew: structuredClone(EXPECTED_HOMEBREW_POLICY),
     },
-    publisherTools: structuredClone(EXPECTED_PUBLISHER_TOOLS),
+    packageTools: structuredClone(EXPECTED_PACKAGE_TOOLS),
     releaseArtifacts: [structuredClone(EXPECTED_SBOM_ARTIFACT)],
     repositoryLicense: "license\n",
     zedLicense: "license\n",
@@ -184,6 +184,10 @@ function validSnapshot() {
               name: "Build and smoke editor packages",
               run:
                 "npm --prefix editors/vscode run smoke:package\n" +
+                smokeVsix +
+                'cp "$vsix" dist/\n' +
+                '(cd dist && sha256sum "$(basename "$vsix")" > ' +
+                '"$(basename "$vsix").sha256")\n' +
                 "tar -czf dist/colorful-zed-source.tar.gz " +
                 "target/editor-smoke/zed-source\n",
             },
@@ -192,42 +196,23 @@ function validSnapshot() {
               uses: `actions/attest@${ACTION_SHA}`,
               with: {
                 "subject-path":
-                "target/editor-smoke/*.vsix\n" +
+                "dist/*.vsix\n" +
                 "dist/*zed-source.tar.gz\n" +
                 "dist/colorful.rb\n" +
                 "dist/*sbom.cdx.json",
               },
             },
-            {
-              name: "Verify and publish VS Marketplace extension",
-              env: {
-                VSCE_PAT: "${{ secrets.VSCE_PAT }}",
-              },
-              run:
-                "npm --prefix editors/vscode exec -- vsce verify-pat flyingrobots\n" +
-                smokeVsix +
-                'npm --prefix editors/vscode exec -- vsce publish --packagePath "$vsix" --skip-duplicate\n',
-            },
-            {
-              name: "Verify and publish Open VSX extension",
-              env: {
-                OVSX_PAT: "${{ secrets.OVSX_PAT }}",
-              },
-              run:
-                "npm --prefix editors/vscode exec -- ovsx verify-pat flyingrobots\n" +
-                smokeVsix +
-                'npm --prefix editors/vscode exec -- ovsx publish --packagePath "$vsix" --skip-duplicate\n',
-            },
-            {
-              name: "Verify published editor bytes",
-              run:
-                "node scripts/verify-editor-publication.mjs " +
-                '--vsix "$vsix" --version "$version"',
-            },
             { name: "Publish to crates.io", run: "cargo publish" },
             {
               name: "Create GitHub Release",
               run: "gh release create \"$GITHUB_REF_NAME\" dist/*",
+            },
+            {
+              name: "Verify GitHub Release VSIX",
+              run:
+                smokeVsix +
+                "node scripts/verify-editor-publication.mjs " +
+                '--vsix "$vsix" --version "$version"',
             },
           ],
         },
@@ -270,10 +255,11 @@ function validSnapshot() {
       runbook: [
         "Publication and rollback owner: `@flyingrobots`",
         "gh release download vX.Y.Z",
+        "gh release view vX.Y.Z",
         "gh attestation verify",
-        "vsce show",
-        "ovsx get",
-        "zed-industries/extensions",
+        "code --install-extension colorful-language-X.Y.Z.vsix --force",
+        "code --uninstall-extension flyingrobots.colorful-language",
+        "colorful-language-vX.Y.Z-zed-source.tar.gz",
         "Do not move the tag",
         "observational",
         "## Post-publication verification",
@@ -298,8 +284,43 @@ test("accepts the complete native and editor distribution contract", () => {
     owner: EXPECTED_OWNER,
     platformCount: 3,
     homebrewPlatformCount: 2,
-    editorRegistryCount: 3,
+    editorArtifactCount: 2,
   });
+});
+
+test("repository makes the GitHub Release VSIX the credential-free required channel", () => {
+  const snapshot = loadRepositorySnapshot();
+  assert.deepEqual(snapshot.policy.editors.vscode, {
+    artifact: "target/editor-smoke/colorful-language-{version}.vsix",
+    publication: {
+      authority: "github-release-asset",
+      installation: "manual-vsix",
+    },
+  });
+
+  const steps = snapshot.workflow.jobs.release.steps;
+  const stepNames = steps.map((step) => step.name).filter(Boolean);
+  assert.equal(
+    stepNames.some((name) => name.includes("Marketplace")),
+    false,
+  );
+  assert.equal(stepNames.some((name) => name.includes("Open VSX")), false);
+  assert.deepEqual(
+    steps.flatMap((step) => Object.keys(step.env ?? {})).filter(
+      (name) => name === "VSCE_PAT" || name === "OVSX_PAT",
+    ),
+    [],
+  );
+
+  const createIndex = stepNames.indexOf("Create GitHub Release");
+  const verifyIndex = stepNames.indexOf("Verify GitHub Release VSIX");
+  assert.notEqual(createIndex, -1);
+  assert.notEqual(verifyIndex, -1);
+  assert.ok(createIndex < verifyIndex);
+  assert.match(
+    releaseStep(snapshot, "Verify GitHub Release VSIX").run,
+    /node scripts\/verify-editor-publication\.mjs/u,
+  );
 });
 
 test("pins the Homebrew syntax parser to the reviewed Ruby release", () => {
@@ -346,22 +367,28 @@ test("rejects Homebrew syntax parser runtime drift", () => {
   }
 });
 
-test("isolates each editor registry credential to its publisher step", () => {
-  const snapshot = loadRepositorySnapshot();
-  const publisherEnvironments = snapshot.workflow.jobs.release.steps
-    .filter((step) => step.name?.startsWith("Verify and publish "))
-    .map((step) => [step.name, step.env]);
-
-  assert.deepEqual(publisherEnvironments, [
-    [
-      "Verify and publish VS Marketplace extension",
-      { VSCE_PAT: "${{ secrets.VSCE_PAT }}" },
-    ],
-    [
-      "Verify and publish Open VSX extension",
-      { OVSX_PAT: "${{ secrets.OVSX_PAT }}" },
-    ],
-  ]);
+test("rejects marketplace credentials and publisher commands", () => {
+  for (const mutate of [
+    (step) => {
+      step.env = { VSCE_PAT: "${{ secrets.VSCE_PAT }}" };
+    },
+    (step) => {
+      step.env = { OVSX_PAT: "${{ secrets.OVSX_PAT }}" };
+    },
+    (step) => {
+      step.run += "\nvsce publish --packagePath extension.vsix";
+    },
+    (step) => {
+      step.run += "\novsx verify-pat flyingrobots";
+    },
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(releaseStep(snapshot, "Publish to crates.io"));
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /must not require marketplace credentials or publisher commands/u,
+    );
+  }
 });
 
 test("rejects every platform inventory mutation", () => {
@@ -504,11 +531,9 @@ test("binds native dispatch and release side effects to the reviewed topology", 
     "Generate Homebrew formula",
     "Build and smoke editor packages",
     "Attest Homebrew and editor artifacts",
-    "Verify and publish VS Marketplace extension",
-    "Verify and publish Open VSX extension",
-    "Verify published editor bytes",
     "Publish to crates.io",
     "Create GitHub Release",
+    "Verify GitHub Release VSIX",
   ];
   for (let index = 0; index < reviewedOrder.length - 1; index += 1) {
     const snapshot = validSnapshot();
@@ -710,106 +735,84 @@ test("rejects non-Cargo replacement of Homebrew formula inputs", () => {
   }
 });
 
-test("requires publisher credential verification before crates", () => {
-  for (const name of [
-    "Verify and publish VS Marketplace extension",
-    "Verify and publish Open VSX extension",
+test("requires one smoke-tested VSIX in the GitHub Release assets", () => {
+  for (const mutation of [
+    "rebuild",
+    "different-path",
+    "missing-copy",
+    "missing-checksum",
   ]) {
     const snapshot = validSnapshot();
-    const steps = snapshot.workflow.jobs.release.steps;
-    const publishIndex = steps.findIndex((step) => step.name === name);
-    const [publish] = steps.splice(publishIndex, 1);
-    const cratesIndex = steps.findIndex(
-      (step) => step.name === "Publish to crates.io",
+    const packageStep = releaseStep(
+      snapshot,
+      "Build and smoke editor packages",
     );
-    steps.splice(cratesIndex + 1, 0, publish);
-    assert.throws(
-      () => validateReleaseDistribution(snapshot),
-      /must preserve the reviewed release step order/u,
-      `${name} may not run after immutable publication`,
-    );
-  }
-});
-
-test("rejects credentials shared between editor publisher steps", () => {
-  for (const [name, selector, expected] of [
-    [
-      "Verify and publish VS Marketplace extension",
-      "OVSX_PAT",
-      /isolate the VS Marketplace publisher secret/u,
-    ],
-    [
-      "Verify and publish Open VSX extension",
-      "VSCE_PAT",
-      /isolate the Open VSX publisher secret/u,
-    ],
-  ]) {
-    const snapshot = validSnapshot();
-    releaseStep(snapshot, name).env[selector] =
-      `\${{ secrets.${selector} }}`;
-    assert.throws(
-      () => validateReleaseDistribution(snapshot),
-      expected,
-      `${selector} may not be exposed to ${name}`,
-    );
-  }
-});
-
-test("requires one smoke-tested VSIX for both rerun-safe publishers", () => {
-  for (const [mutation, expected] of [
-    ["rebuild", /must package editors once/u],
-    ["different-path", /publish the exact VSIX rerun-safely with ovsx/u],
-    ["no-skip", /publish the exact VSIX rerun-safely with vsce/u],
-  ]) {
-    const snapshot = validSnapshot();
     if (mutation === "rebuild") {
-      releaseStep(snapshot, "Build and smoke editor packages").run +=
-        "\nnpm run package:vsix";
+      packageStep.run += "\nnpm run package:vsix";
     } else if (mutation === "different-path") {
-      const publish = releaseStep(
-        snapshot,
-        "Verify and publish Open VSX extension",
+      packageStep.run = packageStep.run.replace(
+        'vsix="target/editor-smoke/colorful-language-${version}.vsix"',
+        'vsix="target/editor-smoke/other.vsix"',
       );
-      publish.run = publish.run.replace(
-        'ovsx publish --packagePath "$vsix"',
-        "ovsx publish other.vsix",
+    } else if (mutation === "missing-copy") {
+      packageStep.run = packageStep.run.replace(
+        'cp "$vsix" dist/',
+        "cp other.vsix dist/",
       );
     } else {
-      const publish = releaseStep(
-        snapshot,
-        "Verify and publish VS Marketplace extension",
+      packageStep.run = packageStep.run.replace(
+        'sha256sum "$(basename "$vsix")" > ' +
+          '"$(basename "$vsix").sha256"',
+        "sha256sum other.vsix > other.vsix.sha256",
       );
-      publish.run = publish.run.replaceAll(" --skip-duplicate", "");
     }
     assert.throws(
       () => validateReleaseDistribution(snapshot),
-      expected,
+      /must promote one clean-install-smoked VSIX and checksum/u,
       `${mutation} mutation must reach its specific invariant`,
     );
   }
 });
 
-test("requires published registry bytes to match the smoke-tested VSIX", () => {
-  for (const mutation of ["missing", "after-crates"]) {
+test("requires public GitHub Release bytes to match the smoke-tested VSIX", () => {
+  for (const mutation of ["missing", "before-release", "wrong-input"]) {
     const snapshot = validSnapshot();
     const steps = snapshot.workflow.jobs.release.steps;
     const verificationIndex = steps.findIndex(
-      (step) => step.name === "Verify published editor bytes",
+      (step) => step.name === "Verify GitHub Release VSIX",
     );
     const [verification] = steps.splice(verificationIndex, 1);
-    if (mutation === "after-crates") {
-      const cratesIndex = steps.findIndex(
-        (step) => step.name === "Publish to crates.io",
+    if (mutation === "before-release") {
+      const releaseIndex = steps.findIndex(
+        (step) => step.name === "Create GitHub Release",
       );
-      steps.splice(cratesIndex + 1, 0, verification);
+      steps.splice(releaseIndex, 0, verification);
+    } else if (mutation === "wrong-input") {
+      verification.run = verification.run.replace(
+        '--vsix "$vsix"',
+        "--vsix other.vsix",
+      );
+      steps.push(verification);
     }
     assert.throws(
       () => validateReleaseDistribution(snapshot),
       mutation === "missing"
-        ? /exactly one 'Verify published editor bytes' step/u
-        : /must preserve the reviewed release step order/u,
+        ? /exactly one 'Verify GitHub Release VSIX' step/u
+        : mutation === "before-release"
+          ? /must preserve the reviewed release step order/u
+          : /must verify the public GitHub Release VSIX/u,
     );
   }
+});
+
+test("requires the GitHub Release to attach every reviewed asset", () => {
+  const snapshot = validSnapshot();
+  const release = releaseStep(snapshot, "Create GitHub Release");
+  release.run = release.run.replace("dist/*", "dist/*.tar.gz");
+  assert.throws(
+    () => validateReleaseDistribution(snapshot),
+    /must attach every reviewed distribution asset/u,
+  );
 });
 
 test("requires deterministic publication verification in local and hosted gates", () => {
@@ -878,9 +881,9 @@ test("finds hosted gates through parsed workflow steps", () => {
   assert.doesNotThrow(() => validateReleaseDistribution(snapshot));
 });
 
-test("requires exact lockfile-backed publisher tools", () => {
+test("requires exact lockfile-backed editor package tools", () => {
   const snapshot = validSnapshot();
-  snapshot.publisherTools.ovsx = "^1.0.2";
+  snapshot.packageTools["@vscode/vsce"] = "^3.9.2";
   assert.throws(
     () => validateReleaseDistribution(snapshot),
     /exact and lockfile-backed/u,
@@ -947,9 +950,8 @@ test("downloads every release asset before integrity verification", () => {
   const snapshot = validSnapshot();
   snapshot.documentation.runbook =
     snapshot.documentation.runbook.replace(
-      "gh release download vX.Y.Z\ngh attestation verify",
-      'gh release download vX.Y.Z --pattern "*.vsix"\n' +
-        "gh attestation verify",
+      "gh release download vX.Y.Z",
+      'gh release download vX.Y.Z --pattern "*.vsix"',
     );
   assert.throws(
     () => validateReleaseDistribution(snapshot),
@@ -1105,6 +1107,6 @@ test("the checked-in repository satisfies the distribution policy", () => {
     owner: EXPECTED_OWNER,
     platformCount: 3,
     homebrewPlatformCount: 2,
-    editorRegistryCount: 3,
+    editorArtifactCount: 2,
   });
 });
