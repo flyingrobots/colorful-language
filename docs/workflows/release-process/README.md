@@ -145,9 +145,9 @@ The prep gate runs the deterministic distribution policy and mutation suite.
 That policy pins the three native host/target pairs, requires checksums and
 GitHub/Sigstore provenance, derives one Homebrew formula from the verified
 Linux x86-64 and Apple Silicon archives without rebuilding them, requires one
-clean-install-tested VSIX for both editor registries, isolates each registry
-credential to its publisher step, verifies those credentials before immutable
-publication, and keeps observational startup timing outside correctness gates.
+clean-install-tested VSIX as the required GitHub Release editor asset, rejects
+marketplace credentials and publisher commands from the required tag path, and
+keeps observational startup timing outside correctness gates.
 The tag workflow reruns its profile, editor compatibility, Rust, release-build,
 and package-witness guards in `validate-release`; native jobs cannot build,
 attest, or upload artifacts until that read-only admission job passes.
@@ -178,9 +178,10 @@ Windows x86-64, then publish checksummed archives with GitHub/Sigstore
 provenance. The release job verifies the downloaded Linux and Apple Silicon
 archive bytes against their sidecars, generates and syntax-checks the
 `colorful.rb` release formula with the workflow-pinned Ruby 3.4.10 runtime,
-clean-installs one exact VSIX, publishes those bytes to VS Code Marketplace and
-Open VSX, packages the byte-validated Zed source tree, publishes crates in
-dependency order, and attaches every reviewed asset to the GitHub Release.
+clean-installs one exact VSIX, copies those bytes and their checksum into the
+release asset set, packages the byte-validated Zed source tree, publishes
+crates in dependency order, attaches every reviewed asset to the GitHub
+Release, and then downloads the public VSIX to prove byte equality.
 
 The generated formula is an attested GitHub Release asset, not a public tap.
 The release profile records that boundary explicitly; public Homebrew
@@ -189,22 +190,20 @@ installation, upgrade, and rollback evidence remains tracked by #37.
 Zed registry publication remains an owner-submitted pull request to
 `zed-industries/extensions`; the release workflow supplies the versioned,
 licensed source archive and provenance but cannot merge into the external
-registry. Current-reference marketplace URLs remain absent until the public
-entries resolve.
+registry. The GitHub Release asset is the required VS Code distribution
+channel; VS Code Marketplace, Open VSX, and the Zed registry are optional
+discovery channels whose accounts or acceptance cannot block the tag workflow.
 
 The crates.io publish step skips crate versions that are already available in
 the crates.io registry index, so rerunning the workflow after a partial publish
 can continue without moving the tag. The release job timeout is sized for the
 aggregate index-readiness polling window across all eight crates.
 
-Editor publication is also rerun-safe: both publishers receive the exact
-smoke-tested VSIX with duplicate-version handling enabled. VSIX packaging
-normalizes archive timestamps to the immutable source commit time, so rerunning
-the same tag reproduces the same package bytes. The workflow then downloads the
-exact public version from both registries and requires both SHA-256 digests to
-match the smoke witness before publishing crates. Credential checks run before
-crates or editor packages are published, so a missing publisher identity fails
-closed before the workflow creates a partial multi-registry release.
+VSIX packaging normalizes archive timestamps to the immutable source commit
+time, so rerunning the same tag reproduces the same package bytes. The workflow
+attests the `dist/` copy that becomes the release asset, creates the GitHub
+Release without marketplace secrets, and then downloads the public URL. The
+public digest must match the smoke witness before the tag workflow is green.
 
 PR CI and release preparation derive internal normal, build, and dev
 dependencies from `cargo metadata`, require the release profile and tag
