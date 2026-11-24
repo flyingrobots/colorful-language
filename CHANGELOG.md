@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baseline in force for work in progress; it is not a new measurement, and the
   figure moves only when `.github/coverage-policy.json` is updated through
   review.
+- **Reviewed roadmap parser releases
+  ([#336](https://github.com/flyingrobots/colorful-language/issues/336)).**
+  The roadmap inventory gate takes `mdast-util-from-markdown` 2.1.0 and
+  `micromark-extension-gfm-table` 2.1.2, the two root-node group updates that
+  [#334](https://github.com/flyingrobots/colorful-language/issues/334) held
+  at 2.0.3 and 2.1.1. Both releases only add listener hooks and performance
+  refactors, keep the same runtime dependencies and MIT license, and parse
+  `ROADMAP.md` and the roadmap fixtures to the identical inventory. The exact
+  pins in `package.json`, `package-lock.json`, and the pinned-release
+  self-test moved together.
 - **Queued dependency updates carried in one reviewed change
   ([#334](https://github.com/flyingrobots/colorful-language/issues/334)).**
   The root Cargo workspace takes `serde` 1.0.229, `serde_json` 1.0.154, `sha2`

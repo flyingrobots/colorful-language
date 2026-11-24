@@ -382,12 +382,14 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `ROADMAP.md` and from every existing roadmap fixture is identical before and
   after the bump. *Evidence type:* exact-pin dependency policy, fixture-backed
   characterization suite, and a recorded before/after inventory comparison.
-  *Evidence:* `scripts/check-roadmap-inventory.test.mjs`, `package.json`,
-  `package-lock.json`, and the pull request that closes
-  [#336](https://github.com/flyingrobots/colorful-language/issues/336).
+  *Evidence:* the `delegates roadmap Markdown structure to exact-pinned
+  maintained tooling` test and the rest of
+  `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
+  `package-lock.json`; the before/after inventory comparison is recorded in
+  [pull request #349](https://github.com/flyingrobots/colorful-language/pull/349).
   *Tracking:*
   [#336](https://github.com/flyingrobots/colorful-language/issues/336).
-  *Status:* planned.
+  *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and
