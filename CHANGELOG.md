@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Bounded roadmap-policy ownership.** Architecture-accountability Markdown
+  interpretation and diagnostics now live in one pure policy module, while the
+  inventory owner retains primary-marker and issue-state reconciliation and the
+  transport runner retains files, GitHub, arguments, JSON, and success output.
+  Exact process contracts preserve success and failure bytes across the seam;
+  per-owner line and helper ceilings plus a cross-owner mutation reject renewed
+  monolith growth or duplicated policy.
 - **Coverage floor carried forward from 0.4.0.** The versioned coverage policy
   in `.github/coverage-policy.json` is unchanged across the release boundary:
   exact uncovered-line ceilings ratchet the 94.00% measured baseline recorded
