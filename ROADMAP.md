@@ -246,6 +246,11 @@ observe public-contract regressions before they ship.
   Dependabot updates with the sibling lockfile edits Dependabot cannot make
   [#334](https://github.com/flyingrobots/colorful-language/issues/334).
   <!-- roadmap-primary: delivered #334 -->
+- **Delivered reviewed roadmap parser pins:** the roadmap inventory gate adopts
+  `mdast-util-from-markdown` 2.1.0 and `micromark-extension-gfm-table` 2.1.2,
+  with the exact pins, the lockfile, and the pinned-release self-test moving
+  together
+  [#336](https://github.com/flyingrobots/colorful-language/issues/336).
 - **Delivered the v0.4.0 snapshot preparation:** promote the accumulated
   `Unreleased` ledger into a dated `0.4.0` section, de-tense entries that
   described shipped work as still queued, refresh the pre-publication witness
