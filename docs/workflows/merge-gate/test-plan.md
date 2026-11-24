@@ -8,10 +8,8 @@ Canonical issue:
 
 ## Requirements
 
-- **MG-1** The active default-branch ruleset must require the nine authoritative
-  CI contexts for documentation, Rust, package publication, IR interoperability,
-  editor compilation, dependency policy, dependency review, and two-language
-  CodeQL.
+- **MG-1** The active default-branch ruleset must require the CI checks named
+  in the source-controlled manifest; the manifest, not prose, is the list.
 - **MG-2** Each required context must come from the GitHub Actions application,
   and pull requests must be tested against the latest default-branch state.
 - **MG-3** Adding required checks must preserve the existing deletion,
@@ -26,6 +24,9 @@ Canonical issue:
   categories and a source-controlled desired-state manifest.
 - **MG-7** A security job that rejects dependency or static-analysis failures
   must be a required status check rather than an advisory signal.
+- **MG-8** The manifest must state every pull-request parameter GitHub reports
+  for the live rule, including parameters GitHub introduces with a server-side
+  default, so a new default cannot change the governed policy without review.
 
 ## Cases
 
@@ -89,6 +90,21 @@ Canonical issue:
   `.github/rulesets/mainline.json`,
   `scripts/check-main-ruleset.test.mjs`, and
   `scripts/check-main-ruleset.mjs`. *Status:* implemented.
+- **MG-5a** — *Requirements:* MG-6, MG-8. *Behavior:* the `mainline` manifest
+  records `require_extra_approval_for_unattributed_changes: true` on its
+  pull-request rule, matching the value GitHub now reports for ruleset
+  `17949589` without any ruleset edit since 2026-07-28. GitHub documents the
+  parameter as requiring one more approval when Copilot opens a pull request
+  without a human collaborator and a non-zero approval count is required; with
+  the solo-ownership count of `0`, it adds no review today. *Oracle:* the
+  checker self-test rejects a manifest that omits the parameter or sets it to
+  anything but `true`, and the privileged live checker reports manifest parity.
+  *Evidence type:* deterministic checker self-test, source-controlled manifest,
+  and privileged live API check. *Evidence:*
+  `.github/rulesets/mainline.json` and the "records the unattributed-change
+  approval GitHub reports" and "rejects drift in the unattributed-change
+  approval" tests in `scripts/check-main-ruleset.test.mjs`. *Status:*
+  implemented.
 
 ## Ruleset change audit
 
