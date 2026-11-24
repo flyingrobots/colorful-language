@@ -133,7 +133,10 @@ assert_reviewed_lockfile() {
 }
 
 echo "Checking extracted package workspace..."
-cargo generate-lockfile --manifest-path "$pkgroot/Cargo.toml"
+# Seed the reviewed lockfile instead of resolving a fresh one. `--locked`
+# accepts its entries for workspace members that are not packaged and rejects
+# any packaged dependency the reviewed graph does not already contain.
+cp "$root/Cargo.lock" "$pkgroot/Cargo.lock"
 assert_reviewed_lockfile "before the locked check"
 cargo check --manifest-path "$pkgroot/Cargo.toml" --workspace --all-targets --locked
 cargo test --manifest-path "$pkgroot/Cargo.toml" \
