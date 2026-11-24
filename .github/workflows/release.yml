@@ -88,6 +88,13 @@ jobs:
       - name: Self-test Homebrew formula generation
         run: node --test scripts/generate-homebrew-formula.test.mjs
 
+      # The cross-stage benchmark report asserts on `cargo metadata --locked
+      # --offline`, in the workspace tests and again in the package witness. It
+      # resolves the whole graph including target-gated crates a Linux build
+      # never downloads on its own.
+      - name: Cache the whole locked dependency graph
+        run: cargo fetch --locked
+
       - name: Validate Rust formatting
         run: cargo fmt --all -- --check
 

@@ -49,6 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   advisory compatibility lane also runs `cargo fetch --locked` before its
   tests, as the primary Rust jobs do, so the locked-offline metadata assertion
   can resolve target-gated crates there.
+- **Release admission caches the whole locked graph.** The tag workflow's
+  `validate-release` job ran the same locked-offline metadata assertion with no
+  prior `cargo fetch --locked`, the step sequence that failed in the advisory
+  stable lane. It now fetches the locked graph before formatting, lints, tests,
+  the release build, and the package witness.
 
 ### Security
 
