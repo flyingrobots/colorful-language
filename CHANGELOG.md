@@ -24,6 +24,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baseline in force for work in progress; it is not a new measurement, and the
   figure moves only when `.github/coverage-policy.json` is updated through
   review.
+- **Queued dependency updates carried in one reviewed change
+  ([#334](https://github.com/flyingrobots/colorful-language/issues/334)).**
+  The root Cargo workspace takes `serde` 1.0.229, `serde_json` 1.0.154, `sha2`
+  0.11.1, and `toml` 1.1.8. The root Node evidence tooling takes `smol-toml`
+  1.9.1 and `yaml` 2.9.1. The workflows take `actions/setup-node` 7.1.0,
+  `actions/upload-artifact` 7.0.2, `actions/download-artifact` 8.0.2,
+  `actions/attest` 4.2.2, `github/codeql-action` 4.39.1,
+  `taiki-e/install-action` 2.88.0, `DavidAnson/markdownlint-cli2-action`
+  25.0.0, and a newer `Swatinem/rust-cache` v2 commit, each still pinned to a
+  full commit SHA. Three proposed updates are held at their reviewed pins
+  because a first-party self-test names the exact release:
+  `ruby/setup-ruby` stays at v1.321.0, and `mdast-util-from-markdown` and
+  `micromark-extension-gfm-table` stay at 2.0.3 and 2.1.1.
+
+### Fixed
+
+- **The package witness checks the reviewed dependency graph
+  ([#334](https://github.com/flyingrobots/colorful-language/issues/334)).**
+  `scripts/package-witness.sh` used to resolve a fresh lockfile for the
+  extracted package workspace, so the packaged crates were checked against the
+  newest compatible registry releases instead of the reviewed `Cargo.lock`.
+  Once a target-gated crate published a newer release, the packaged
+  `cross_stage_benchmark_report` test could no longer run
+  `cargo metadata --locked --offline` against the cached graph. The witness now
+  seeds the extracted workspace with the root `Cargo.lock` and fails if that
+  lockfile is not byte-identical before and after the locked check and test.
+- **Current Rust stable builds warning-free again.** The validator parity
+  helper in `colorful-ir` decodes hex with `as_chunks`, which satisfies the
+  `clippy::chunks_exact_to_as_chunks` lint introduced in Rust 1.100.0. The
+  advisory compatibility lane also runs `cargo fetch --locked` before its
+  tests, as the primary Rust jobs do, so the locked-offline metadata assertion
+  can resolve target-gated crates there.
+- **Release admission caches the whole locked graph.** The tag workflow's
+  `validate-release` job ran the same locked-offline metadata assertion with no
+  prior `cargo fetch --locked`, the step sequence that failed in the advisory
+  stable lane. It now fetches the locked graph before formatting, lints, tests,
+  the release build, and the package witness.
+
+### Security
+
+- **Rust advisory remediation
+  ([RUSTSEC-2026-0386](https://rustsec.org/advisories/RUSTSEC-2026-0386),
+  [RUSTSEC-2026-0414](https://rustsec.org/advisories/RUSTSEC-2026-0414),
+  [RUSTSEC-2026-0433](https://rustsec.org/advisories/RUSTSEC-2026-0433),
+  [RUSTSEC-2026-0486](https://rustsec.org/advisories/RUSTSEC-2026-0486), and
+  [RUSTSEC-2026-0592](https://rustsec.org/advisories/RUSTSEC-2026-0592)).**
+  `tokio` moves from 1.53.1 to 1.54.1, the exact `pulldown-cmark` pin moves
+  from 0.13.4 to 0.13.6, `rustix` moves from 1.1.4 to 1.1.6, and `url` moves
+  from 2.5.8 to 2.5.9 in every Cargo workspace that locks them. The fuzz
+  lockfile is resynchronized in the same change. No advisory is ignored. The
+  parser does not enable `ENABLE_WIKILINKS`, the option both `pulldown-cmark`
+  advisories require. `colorful ir` output is byte-identical before and after
+  the parser upgrade for all 73 Markdown files tracked at `401f8c1`, read by
+  repository-relative path from the repository root.
+- **VS Code tooling advisory remediation
+  ([GHSA-xcx6-jx8p-x3h5](https://github.com/advisories/GHSA-xcx6-jx8p-x3h5),
+  [GHSA-q2hr-2g5m-vwhr](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr),
+  [GHSA-qhr7-859c-m2p7](https://github.com/advisories/GHSA-qhr7-859c-m2p7),
+  and
+  [GHSA-6j4f-fj2g-mc7p](https://github.com/advisories/GHSA-6j4f-fj2g-mc7p)).**
+  The `editors/vscode` lockfile resolves `@azure/msal-node` 7.2.3 through
+  `@azure/identity` 4.14.1, `brace-expansion` 5.1.0, and `qs` 6.17.1, so
+  `npm audit --audit-level=high` passes again. The packaging graph also takes
+  `fast-uri` 3.1.9, `js-yaml` 4.3.2, `markdown-it` 14.3.3, `follow-redirects`
+  1.16.2, and `undici` 7.30.1. Moderate findings for
+  `minimatch` and `glob` remain because no patched release exists inside the
+  ranges that `vscode-languageclient` 10 and `@vscode/vsce` 3 accept.
 
 ## [0.4.0] - 2026-08-07
 

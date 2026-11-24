@@ -240,6 +240,12 @@ observe public-contract regressions before they ship.
   [#291](https://github.com/flyingrobots/colorful-language/issues/291), before
   the v0.4.0 packet freezes the shipping graph.
   <!-- roadmap-primary: delivered #291 -->
+- **Delivered merge-gate restoration:** clear the locked RustSec and VS Code
+  tooling advisories, make the package witness resolve the reviewed
+  `Cargo.lock`, restore the advisory stable-Rust lane, and carry the queued
+  Dependabot updates with the sibling lockfile edits Dependabot cannot make
+  [#334](https://github.com/flyingrobots/colorful-language/issues/334).
+  <!-- roadmap-primary: delivered #334 -->
 - **Delivered the v0.4.0 snapshot preparation:** promote the accumulated
   `Unreleased` ledger into a dated `0.4.0` section, de-tense entries that
   described shipped work as still queued, refresh the pre-publication witness
