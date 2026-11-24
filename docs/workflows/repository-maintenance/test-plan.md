@@ -426,6 +426,41 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `30395535174`'s `rust-coverage` artifact. *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
   *Status:* implemented.
+- **RM-10e — Deterministic coverage delta summary.** *Requirement:* RM-10.
+  *Behavior:* the existing coverage policy checker renders one table for the
+  workspace and every monitored transport file, in policy order, with current
+  covered/total lines, current percentage, measured baseline, signed percentage
+  delta, floor, uncovered lines, uncovered-line ceiling, and signed uncovered
+  delta. The same rows render as stable Markdown for `$GITHUB_STEP_SUMMARY` and
+  as a plain stdout table for local runs, with no wall-clock data. *Oracle:* a
+  golden Markdown and plain-text rendering of the fixture policy and report;
+  rendering the same report twice, or with its file records reordered, is
+  byte-identical. *Evidence type:* golden rendering tests. *Tracking:*
+  [#210](https://github.com/flyingrobots/colorful-language/issues/210).
+  *Status:* planned.
+- **RM-10f — Summary fields cannot disappear or disagree.** *Requirement:*
+  RM-10. *Behavior:* every policy field and monitored path reaches both
+  renderings, and every delta is derived from the validated policy and LLVM
+  report rather than a second parser or baseline. *Oracle:* structural tests
+  require exactly one row per policy surface, each path exactly once, the
+  policy's baseline, floor, and ceiling values in that row, and deltas equal to
+  the report minus the policy; adding or removing a monitored file adds or
+  removes exactly its row. *Evidence type:* structural rendering tests.
+  *Tracking:*
+  [#210](https://github.com/flyingrobots/colorful-language/issues/210).
+  *Status:* planned.
+- **RM-10g — Summary is advisory, not a second gate.** *Requirement:* RM-10.
+  *Behavior:* a regression is marked on its surface with the existing machine
+  error category, while the checker's thrown category, stderr message, and
+  exit status stay those of the validator. *Oracle:* for each floor, ratchet,
+  and missing-file mutation, the summary's failing row and verdict name the
+  same category the validator throws; the command exits 0 on the reviewed
+  report and 1 on a regression, appends the Markdown summary only when
+  `GITHUB_STEP_SUMMARY` is set, and prints the plain table either way.
+  *Evidence type:* rendering mutation tests and command-level tests.
+  *Tracking:*
+  [#210](https://github.com/flyingrobots/colorful-language/issues/210).
+  *Status:* planned.
 - **RM-11a — Explicit workspace doctest evidence.** *Requirement:* RM-11.
   *Behavior:* the normal Rust CI job runs
   `cargo test --doc --workspace --locked` as a visible, unconditional, blocking
