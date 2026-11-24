@@ -340,6 +340,21 @@ against [`.github/coverage-policy.json`](../../../.github/coverage-policy.json)
 by [`check-coverage-policy.mjs`](../../../scripts/check-coverage-policy.mjs)
 before the required job can pass.
 
+The same checker renders one ratchet delta table from the validated policy and
+LLVM report: a row for the workspace and for each monitored transport file, in
+policy order, with current covered/total lines, current percentage, measured
+baseline, signed percentage-point delta from that baseline, floor, uncovered
+lines, uncovered-line ceiling, and signed uncovered delta from the ceiling. A
+regressed row reads `FAIL` with the same error category the checker exits on,
+and the verdict line names the first failing surface. Every run prints the
+table on standard output; when `GITHUB_STEP_SUMMARY` is set, as in the required
+`Rust coverage` job, the checker also appends the identical rows as Markdown to
+the job summary. The table holds no timestamps, so the same report renders the
+same bytes locally and in CI. It is advisory presentation only: the error
+categories, standard error message, and exit status are the validator's, and a
+job summary that cannot be written produces a note on standard error without
+changing the verdict. The JSON and HTML artifact remains the detailed evidence.
+
 The current workspace baseline was measured at source commit
 `b3522acb71775f9cd5a05b4579163252aba96352` with the pinned command above:
 
