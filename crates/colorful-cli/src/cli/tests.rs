@@ -559,3 +559,86 @@ fn count_field(
     }
     counts
 }
+
+/// A parser that violates the span invariant: its only word ends past the end
+/// of the source, so validation fails with `SpanOutOfBounds`.
+struct OutOfBoundsParser;
+
+impl colorful_core::Parser for OutOfBoundsParser {
+    fn parse(&self, text: &str) -> colorful_core::Tree {
+        let span = colorful_core::Span {
+            start: 0,
+            end: text.len() + 1,
+        };
+        colorful_core::Tree::document(vec![colorful_core::Node::Sentence {
+            span,
+            parts: vec![colorful_core::Node::Word { span }],
+        }])
+    }
+}
+
+struct NoTokens;
+
+impl colorful_core::Annotator for NoTokens {
+    fn annotate(&self, _source: &str, _tree: &colorful_core::Tree) -> Vec<colorful_core::Token> {
+        Vec::new()
+    }
+}
+
+fn forced_classification_failure(
+    source: &str,
+) -> Result<String, colorful_core::ClassificationError> {
+    colorful_core::ValidatedClassification::from_ports(source, &OutOfBoundsParser, &NoTokens)
+        .map(|_| unreachable!("the malformed parser must fail validation"))
+}
+
+#[test]
+fn colorize_compat_wrapper_keeps_its_public_signature() {
+    let _: fn(&str, bool) -> String = colorize;
+}
+
+#[test]
+fn colorize_fallback_returns_unchanged_source_on_forced_classification_failure() {
+    let source = "The cat sat.";
+    let failure = forced_classification_failure(source);
+    assert!(failure.is_err(), "the forced failure must be a real error");
+
+    let mut sink = Vec::new();
+    assert_eq!(fall_back_to_source(failure, source, &mut sink), source);
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn colorize_fallback_reports_the_discarded_error_in_debug_builds() {
+    let source = "The cat sat.";
+    let failure = forced_classification_failure(source);
+    let error = failure.clone().unwrap_err();
+
+    let mut sink = Vec::new();
+    let _ = fall_back_to_source(failure, source, &mut sink);
+
+    let written = String::from_utf8(sink).expect("UTF-8 diagnostic");
+    assert!(
+        written.contains(&error.to_string()),
+        "diagnostic must carry the discarded error: {written:?}"
+    );
+    assert!(written.ends_with('\n'), "one line per report: {written:?}");
+    assert_eq!(written.lines().count(), 1, "{written:?}");
+}
+
+#[cfg(not(debug_assertions))]
+#[test]
+fn colorize_fallback_stays_silent_in_release_builds() {
+    let source = "The cat sat.";
+    let mut sink = Vec::new();
+    let _ = fall_back_to_source(forced_classification_failure(source), source, &mut sink);
+    assert!(sink.is_empty(), "{sink:?}");
+}
+
+#[test]
+fn colorize_fallback_passes_a_successful_result_through_silently() {
+    let mut sink = Vec::new();
+    let got = fall_back_to_source(Ok("colored".to_string()), "plain", &mut sink);
+    assert_eq!(got, "colored");
+    assert!(sink.is_empty(), "{sink:?}");
+}

@@ -41,7 +41,17 @@ pub(super) fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassL
 /// error.
 #[must_use]
 pub fn colorize(source: &str, color: bool) -> String {
-    try_colorize(source, color).unwrap_or_else(|_| source.to_string())
+    fall_back_to_source(try_colorize(source, color), source, &mut io::stderr())
+}
+
+/// Unwrap a colorize result, failing closed to the unchanged `source`.
+pub(super) fn fall_back_to_source<W: Write>(
+    result: Result<String, ClassificationError>,
+    source: &str,
+    diagnostics: &mut W,
+) -> String {
+    let _ = diagnostics;
+    result.unwrap_or_else(|_| source.to_string())
 }
 
 /// Render `source` with ANSI color after validating built-in adapter output.
