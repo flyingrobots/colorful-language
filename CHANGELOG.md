@@ -47,8 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   25.0.0, and a newer `Swatinem/rust-cache` v2 commit, each still pinned to a
   full commit SHA. Three proposed updates are held at their reviewed pins
   because a first-party self-test names the exact release:
-  `ruby/setup-ruby` stays at v1.321.0, and `mdast-util-from-markdown` and
+  `ruby/setup-ruby` stays at v1.321.0 here (raised separately below), and
+  `mdast-util-from-markdown` and
   `micromark-extension-gfm-table` stay at 2.0.3 and 2.1.1.
+- **Reviewed `ruby/setup-ruby` pin raised to v1.335.0
+  ([#337](https://github.com/flyingrobots/colorful-language/issues/337)).**
+  The release workflow, `EXPECTED_FORMULA_RUBY`, and the release-distribution
+  self-test move together to commit `7f797815d8adceb1c412e7abefdd1ab4abc47a5f`;
+  the Homebrew syntax runtime stays on Ruby 3.4.10, which that release still
+  provides. The step runs only in the tag workflow, so pull-request CI cannot
+  exercise it.
 
 ### Fixed
 

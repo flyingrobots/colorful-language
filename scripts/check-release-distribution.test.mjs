@@ -336,7 +336,7 @@ test("pins the Homebrew syntax parser to the reviewed Ruby release", () => {
     },
     {
       uses:
-        "ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b",
+        "ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f",
       version: "3.4.10",
     },
   );
