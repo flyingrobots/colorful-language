@@ -236,3 +236,21 @@ bounded property/fuzz evidence tracked by
   `scripts/check-release-distribution.test.mjs`
   `pins the Homebrew syntax parser to the reviewed Ruby release` and
   `rejects Homebrew syntax parser runtime drift`. *Status:* implemented.
+- **ETC-9b** — *Requirement:* ETC-11. *Behavior:* the reviewed Homebrew
+  syntax runtime moves from `ruby/setup-ruby` v1.321.0 to v1.335.0, commit
+  `7f797815d8adceb1c412e7abefdd1ab4abc47a5f`, with the Ruby version still
+  `3.4.10`; the policy constant, the self-test expectation, and the release
+  workflow pin move together. *Oracle:* the release-distribution policy
+  self-test `pins the Homebrew syntax parser to the reviewed Ruby release`
+  and `the checked-in repository satisfies the distribution policy` pass only
+  when the workflow carries the new full commit. *Evidence type:* release
+  workflow, deterministic policy checker, and its self-test, plus the upstream
+  release review (every release from v1.322.0 to v1.335.0 adds Ruby or
+  toolchain version data or fixes Windows and rubygems handling; Ruby 3.4.10
+  remains in that release's version table). The `ruby/setup-ruby` step runs
+  only in the tag workflow, so pull-request CI cannot exercise it.
+  *Tracking:*
+  [#337](https://github.com/flyingrobots/colorful-language/issues/337).
+  *Evidence:* `.github/workflows/release.yml`,
+  `scripts/check-release-distribution.mjs`, and
+  `scripts/check-release-distribution.test.mjs`. *Status:* planned.
