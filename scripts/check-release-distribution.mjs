@@ -74,7 +74,7 @@ export const EXPECTED_PACKAGE_TOOLS = Object.freeze({
 });
 export const EXPECTED_FORMULA_RUBY = Object.freeze({
   uses:
-    "ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b",
+    "ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f",
   with: Object.freeze({
     "ruby-version": "3.4.10",
   }),
