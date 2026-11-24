@@ -170,11 +170,11 @@ observe public-contract regressions before they ship.
   [#207](https://github.com/flyingrobots/colorful-language/issues/207) after
   the public-API and workflow-security gates.
   <!-- roadmap-primary: delivered #207 -->
-- **Parked coverage presentation:** render the existing coverage policy and
+- **Delivered coverage presentation:** render the existing coverage policy and
   report as one deterministic local and hosted delta summary
   [#210](https://github.com/flyingrobots/colorful-language/issues/210) without
   creating a second coverage gate.
-  <!-- roadmap-primary: parked #210 -->
+  <!-- roadmap-primary: delivered #210 -->
 - **Delivered public-rustdoc hygiene:** replace public API links to private
   lexicon tables with stable public-facing documentation and make
   warning-denying package rustdoc a hosted and local release-preparation gate
