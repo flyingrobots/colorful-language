@@ -1644,10 +1644,10 @@ test("delegates roadmap policy to bounded pure owners", () => {
     readFileSync(new URL("../package.json", import.meta.url), "utf8"),
   );
   const expectedParserPins = {
-    "mdast-util-from-markdown": "2.0.3",
+    "mdast-util-from-markdown": "2.1.0",
     "mdast-util-gfm-table": "2.0.0",
     "mdast-util-to-string": "4.0.0",
-    "micromark-extension-gfm-table": "2.1.1",
+    "micromark-extension-gfm-table": "2.1.2",
   };
 
   for (const [packageName, version] of Object.entries(expectedParserPins)) {

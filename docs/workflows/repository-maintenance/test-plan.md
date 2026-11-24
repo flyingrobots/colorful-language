@@ -414,6 +414,32 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   roadmap ownership seam` records the preserved process contract. *Tracking:*
   [#257](https://github.com/flyingrobots/colorful-language/issues/257).
   *Status:* implemented.
+- **RM-15d — Reviewed parser pin advance.** *Requirements:* RM-4, RM-15.
+  *Behavior:* raising an exact roadmap parser pin is one coordinated change in
+  which `package.json`, `package-lock.json`, and the pinned-release expectation
+  in the roadmap inventory self-test move together, after the new releases'
+  notes, source diff, transitive dependencies, and licenses were reviewed.
+  `mdast-util-from-markdown` advances from 2.0.3 to 2.1.0 and
+  `micromark-extension-gfm-table` from 2.1.1 to 2.1.2. *Oracle:* the pinned
+  expectation names the new releases and fails while `package.json` still holds
+  the old pins; with the pins advanced, the existing roadmap characterization
+  and regression tests pass unchanged, so the checker's exact process bytes,
+  `E_ROADMAP_*` categories, and path-and-line addresses are the same under the
+  new parser releases. *Evidence type:* exact-pin dependency policy and
+  fixture-backed characterization suite. *Evidence:* in
+  `scripts/check-roadmap-inventory.test.mjs`, `delegates roadmap policy to
+  bounded pure owners` (the pinned-tooling test, whose pinned values moved with
+  this change), `pins exact process bytes across the roadmap ownership seam`
+  (exact stdout, stderr, and exit status), `reports identical failure addresses
+  for LF and CRLF roadmaps`, `rejects duplicate primary homes`, `rejects a
+  second architecture-accountability mechanism table`, `ignores accountability
+  tables inside raw HTML blocks`, `escaped comment syntax cannot hide a
+  duplicate accountability table`, and `accepts canonical leading-pipe rows
+  without trailing pipes`, run with `package.json` and `package-lock.json`
+  holding the new pins.
+  *Tracking:*
+  [#336](https://github.com/flyingrobots/colorful-language/issues/336).
+  *Status:* implemented.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and
