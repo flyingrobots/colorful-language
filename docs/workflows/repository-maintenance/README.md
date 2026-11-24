@@ -269,12 +269,24 @@ Colorful-specific policy below:
   non-comment HTML exclusions plus Markdown backslash parity, so escaped
   `\<!--` text cannot hide a second table.
 
-`scripts/check-roadmap-inventory.mjs` now owns 899 lines and 23 top-level
-helpers, down from 1,429 lines and 38 helpers.
-`scripts/roadmap-inventory-runner.mjs` owns only argument parsing, bounded
-GitHub transport, JSON loading, and process output; it contains no Markdown
-interpretation. A source-policy regression keeps the parser-owning checker
-below 900 lines and 24 helpers and forbids the retired parser helper signatures.
+The roadmap policy has three explicit owners. The inventory owner in
+`scripts/check-roadmap-inventory.mjs` measures 267 lines and 7 top-level
+helpers; it owns primary markers, issue normalization, and issue-state
+reconciliation. The pure accountability owner in
+`scripts/roadmap-accountability-policy.mjs` measures 640 lines and 17 top-level
+helpers; it owns maintained Markdown interpretation and the mechanism-table
+policy. `scripts/roadmap-inventory-runner.mjs` measures 249 lines and 1
+top-level helper; it owns argument parsing, bounded GitHub transport, JSON
+loading, and success output and contains no Markdown interpretation. This is
+down from 1,429 lines and 38 helpers in one checker.
+
+Source-policy regressions enforce separate ceilings of 350 lines and 10 helpers
+for inventory, 700 lines and 20 helpers for accountability, and 320 lines and 4
+helpers for transport. They also reject a duplicated accountability helper in
+the inventory owner, Markdown interpretation outside the accountability owner,
+transport inside that pure policy, and the retired parser helper signatures.
+The process contract pins exact output for structural success, duplicate
+mechanisms, malformed primary markers, and issue-state mismatch.
 
 Run the deterministic structure and fixture gates without network access:
 

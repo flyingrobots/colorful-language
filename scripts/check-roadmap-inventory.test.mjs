@@ -24,6 +24,9 @@ const fixtureRoot = new URL("./fixtures/roadmap-inventory/", import.meta.url);
 const script = fileURLToPath(
   new URL("./check-roadmap-inventory.mjs", import.meta.url),
 );
+const accountabilityPolicyScript = fileURLToPath(
+  new URL("./roadmap-accountability-policy.mjs", import.meta.url),
+);
 const roadmap = readFileSync(new URL("roadmap.md", fixtureRoot), "utf8");
 const issues = JSON.parse(
   readFileSync(new URL("issues.json", fixtureRoot), "utf8"),
@@ -55,6 +58,27 @@ function expectCategory(category, mutation, options = {}) {
       return true;
     },
   );
+}
+
+function runFixtureProcess({
+  roadmapSource = roadmap,
+  issueSnapshot = issues,
+} = {}) {
+  const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-contract-"));
+  const roadmapPath = join(root, "ROADMAP.md");
+  const issuePath = join(root, "issues.json");
+  writeFileSync(roadmapPath, roadmapSource, "utf8");
+  writeFileSync(issuePath, JSON.stringify(issueSnapshot), "utf8");
+  return {
+    roadmapPath,
+    issuePath,
+    result: spawnSync(
+      process.execPath,
+      [script, "--roadmap", roadmapPath, "--issues", issuePath],
+      { encoding: "utf8", timeout: 5_000 },
+    ),
+    remove: () => rmSync(root, { recursive: true, force: true }),
+  };
 }
 
 test("accepts one primary home for every open non-epic slice", () => {
@@ -145,42 +169,89 @@ test("rejects duplicate primary homes", () => {
   );
 });
 
-test("rejects a duplicate architecture-accountability mechanism by line", () => {
+test("pins exact process bytes across the roadmap ownership seam", () => {
   const mechanismRow =
     "| Parser ports | Substitute deterministic adapters. |";
   const duplicated = roadmap.replace(
     mechanismRow,
     `${mechanismRow}\n${mechanismRow}`,
   );
-  const shiftedDuplicated = `Fixture shift control.\n\n${duplicated}`;
-  const firstMechanismLine =
-    shiftedDuplicated.split("\n").indexOf(mechanismRow) + 1;
-  const duplicateMechanismLine = firstMechanismLine + 1;
-  const root = mkdtempSync(join(tmpdir(), "colorful-roadmap-policy-"));
-  const roadmapPath = join(root, "ROADMAP.md");
-  try {
-    writeFileSync(roadmapPath, shiftedDuplicated, "utf8");
-    const result = spawnSync(
-      process.execPath,
-      [
-        script,
-        "--roadmap",
-        roadmapPath,
-        "--issues",
-        fileURLToPath(new URL("issues.json", fixtureRoot)),
-      ],
-      { encoding: "utf8", timeout: 5_000 },
-    );
+  const malformedMarker = roadmap.replace(
+    "roadmap-primary: active #101",
+    "roadmap-primary: someday #101",
+  );
+  const mismatchedIssues = issues.map((issue) =>
+    issue.number === 101 ? { ...issue, state: "CLOSED" } : issue,
+  );
+  const cases = [
+    {
+      name: "structural success",
+      expectedStatus: 0,
+      expectedStdout:
+        "check-roadmap-inventory: 2 open slices and 3 primary markers agree\n",
+      expectedStderr: () => "",
+    },
+    {
+      name: "duplicate accountability mechanism",
+      roadmapSource: duplicated,
+      expectedStatus: 1,
+      expectedStdout: "",
+      expectedStderr: ({ roadmapPath }) => {
+        const firstLine = duplicated.split("\n").indexOf(mechanismRow) + 1;
+        return `E_ROADMAP_DUPLICATE_MECHANISM: ${roadmapPath}:${firstLine + 1}: architecture-accountability mechanism "Parser ports" already appears at ${roadmapPath}:${firstLine}\n`;
+      },
+    },
+    {
+      name: "malformed primary marker",
+      roadmapSource: malformedMarker,
+      expectedStatus: 1,
+      expectedStdout: "",
+      expectedStderr: ({ roadmapPath }) => {
+        const line =
+          malformedMarker
+            .split("\n")
+            .findIndex((sourceLine) => sourceLine.includes("someday #101")) +
+          1;
+        return `E_ROADMAP_INVALID_MARKER: ${roadmapPath}:${line}: expected "<active|parked|delivered> #NN [#NN ...]", found "someday #101"\n`;
+      },
+    },
+    {
+      name: "issue state mismatch",
+      issueSnapshot: mismatchedIssues,
+      expectedStatus: 1,
+      expectedStdout: "",
+      expectedStderr: ({ roadmapPath }) => {
+        const line =
+          roadmap
+            .split("\n")
+            .findIndex((sourceLine) => sourceLine.includes("active #101")) + 1;
+        return `E_ROADMAP_CLOSED_ACTIVE: ${roadmapPath}:${line}: closed issue #101 is marked active; use delivered\n`;
+      },
+    },
+  ];
 
-    assert.equal(result.error, undefined);
-    assert.equal(result.status, 1);
-    assert.equal(result.stdout, "");
-    assert.equal(
-      result.stderr,
-      `E_ROADMAP_DUPLICATE_MECHANISM: ${roadmapPath}:${duplicateMechanismLine}: architecture-accountability mechanism "Parser ports" already appears at ${roadmapPath}:${firstMechanismLine}\n`,
-    );
-  } finally {
-    rmSync(root, { recursive: true, force: true });
+  for (const scenario of cases) {
+    const invocation = runFixtureProcess(scenario);
+    try {
+      assert.equal(invocation.result.error, undefined, scenario.name);
+      assert.equal(
+        invocation.result.status,
+        scenario.expectedStatus,
+        scenario.name,
+      );
+      assert.equal(
+        invocation.result.stdout,
+        scenario.expectedStdout,
+        scenario.name,
+      );
+      assert.equal(
+        invocation.result.stderr,
+        scenario.expectedStderr(invocation),
+        scenario.name,
+      );
+    } finally {
+      invocation.remove();
+    }
   }
 });
 
@@ -495,9 +566,18 @@ test("keeps an incomplete accountability header inside its paragraph", () => {
 });
 
 test("does not reintroduce a generic HTML block grammar", () => {
-  const checkerSource = readFileSync(script, "utf8");
-  assert.match(checkerSource, /from "mdast-util-from-markdown";/u);
-  assert.doesNotMatch(checkerSource, /GENERIC_HTML_(?:OPEN|CLOSE)_TAG/u);
+  const accountabilityPolicy = readFileSync(
+    accountabilityPolicyScript,
+    "utf8",
+  );
+  assert.match(
+    accountabilityPolicy,
+    /from "mdast-util-from-markdown";/u,
+  );
+  assert.doesNotMatch(
+    accountabilityPolicy,
+    /GENERIC_HTML_(?:OPEN|CLOSE)_TAG/u,
+  );
 });
 
 test("rejects a table hidden by an invalid backtick-fence interpretation", () => {
@@ -1442,15 +1522,21 @@ test("fails closed when the live issue listing reaches its ceiling", () => {
 });
 
 test("defines the canonical accountability heading in one source location", () => {
-  const checker = readFileSync(
-    new URL("./check-roadmap-inventory.mjs", import.meta.url),
+  const checker = readFileSync(script, "utf8");
+  const accountabilityPolicy = readFileSync(
+    accountabilityPolicyScript,
     "utf8",
   );
 
   assert.equal(
-    [...checker.matchAll(/## Architecture accountability/gu)].length,
+    [checker, accountabilityPolicy].reduce(
+      (count, source) =>
+        count + [...source.matchAll(/## Architecture accountability/gu)].length,
+      0,
+    ),
     1,
   );
+  assert.doesNotMatch(checker, /## Architecture accountability/u);
 });
 
 test("the workflow reference pins the canonical accountability heading", () => {
@@ -1471,8 +1557,85 @@ test("the workflow reference pins the canonical accountability heading", () => {
   );
 });
 
-test("delegates roadmap Markdown structure to exact-pinned maintained tooling", () => {
+function sourceMeasurement(source) {
+  const functionValuedBindings =
+    /^(?:export\s+)?function\s+|^(?:export\s+)?(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:(?:async\s+)?function\b|(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>)|^ {2}(?!(?:if|for|while|switch|catch|with)\b)(?:(?:static|async)\s+)*[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/gmu;
+  return {
+    lines: source.trimEnd().split(/\r?\n/u).length,
+    helpers: source.match(functionValuedBindings)?.length ?? 0,
+  };
+}
+
+function assertRoadmapPolicyOwnership({ inventory, accountability, runner }) {
+  assert.match(
+    inventory,
+    /import\s+\{\s*validateArchitectureAccountability\s*\}\s+from\s+"\.\/roadmap-accountability-policy\.mjs";/u,
+    "the inventory owner must import the accountability policy",
+  );
+  assert.match(
+    inventory,
+    /validateArchitectureAccountability\(\s*roadmap,\s*roadmapPath,\s*fail,?\s*\)/u,
+    "the inventory owner must invoke the accountability policy",
+  );
+  assert.match(
+    accountability,
+    /from "mdast-util-from-markdown";/u,
+    "the accountability owner must delegate block interpretation to mdast",
+  );
+  assert.doesNotMatch(
+    inventory,
+    /(?:mdast|micromark|fromMarkdown|gfmTable)/u,
+    "the inventory owner must not interpret Markdown",
+  );
+  assert.doesNotMatch(
+    runner,
+    /(?:fromMarkdown|mdast|micromark)/u,
+    "the transport runner must not acquire Markdown interpretation",
+  );
+  assert.doesNotMatch(
+    accountability,
+    /(?:node:|process\.|readFile|writeFile|execFile|spawnSync)/u,
+    "the pure accountability policy must not acquire transport",
+  );
+
+  for (const policyHelper of [
+    "accountabilityHeaderKind",
+    "canonicalMechanismIdentity",
+    "markdownCommentRanges",
+    "parseMarkdown",
+    "validateArchitectureAccountability",
+  ]) {
+    assert.doesNotMatch(
+      inventory,
+      new RegExp(`function ${policyHelper}\\(`, "u"),
+      `the inventory owner must not define ${policyHelper}`,
+    );
+  }
+
+  const budgets = [
+    ["roadmap inventory owner", inventory, 350, 10],
+    ["accountability policy owner", accountability, 700, 20],
+    ["roadmap transport runner", runner, 320, 4],
+  ];
+  for (const [name, source, lineCeiling, helperCeiling] of budgets) {
+    const measurement = sourceMeasurement(source);
+    assert.ok(
+      measurement.lines <= lineCeiling,
+      `${name} has ${measurement.lines} lines; reviewed ceiling is ${lineCeiling}`,
+    );
+    assert.ok(
+      measurement.helpers <= helperCeiling,
+      `${name} has ${measurement.helpers} helpers; reviewed ceiling is ${helperCeiling}`,
+    );
+  }
+}
+
+test("delegates roadmap policy to bounded pure owners", () => {
   const checker = readFileSync(script, "utf8");
+  const accountabilityPolicy = readFileSync(
+    accountabilityPolicyScript,
+    "utf8",
+  );
   const runner = readFileSync(
     new URL("./roadmap-inventory-runner.mjs", import.meta.url),
     "utf8",
@@ -1494,11 +1657,6 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
       `${packageName} must be an exact direct development dependency`,
     );
   }
-  assert.match(
-    checker,
-    /from "mdast-util-from-markdown";/u,
-    "the checker must delegate block interpretation to mdast",
-  );
   for (const bespokeParserHelper of [
     "findExactBacktickRun",
     "keepsMarkdownParagraphOpen",
@@ -1510,37 +1668,47 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
     "stripClosedInlineHtmlComments",
   ]) {
     assert.doesNotMatch(
-      checker,
+      accountabilityPolicy,
       new RegExp(`function ${bespokeParserHelper}\\(`, "u"),
       `${bespokeParserHelper} must not recreate maintained Markdown parsing`,
     );
   }
 
-  const sourceLines = checker.trimEnd().split(/\r?\n/u).length;
-  const topLevelHelpers =
-    checker.match(/^(?:export )?function /gmu)?.length ?? 0;
-  assert.ok(
-    sourceLines <= 900,
-    `roadmap checker has ${sourceLines} lines; reviewed ceiling is 900`,
-  );
-  assert.ok(
-    topLevelHelpers <= 24,
-    `roadmap checker has ${topLevelHelpers} helpers; reviewed ceiling is 24`,
-  );
-  assert.doesNotMatch(
+  assertRoadmapPolicyOwnership({
+    inventory: checker,
+    accountability: accountabilityPolicy,
     runner,
-    /(?:fromMarkdown|mdast|micromark)/u,
-    "the transport runner must not acquire Markdown interpretation",
+  });
+  assert.throws(
+    () =>
+      assertRoadmapPolicyOwnership({
+        inventory: `${checker}\nfunction parseMarkdown(source) { return source; }\n`,
+        accountability: accountabilityPolicy,
+        runner,
+      }),
+    /inventory owner must not define parseMarkdown/u,
   );
-  const runnerLines = runner.match(/\n/gu)?.length ?? 0;
-  assert.ok(
-    runnerLines <= 250,
-    `roadmap transport runner has ${runnerLines} lines; reviewed ceiling is 250`,
+  const helperBudgetMutation = [
+    checker,
+    "const firstExtra = () => {};",
+    "const secondExtra = function () {};",
+    "class ExtraHelpers {",
+    "  thirdExtra() {}",
+    "  fourthExtra() {}",
+    "}",
+  ].join("\n");
+  assert.throws(
+    () =>
+      assertRoadmapPolicyOwnership({
+        inventory: helperBudgetMutation,
+        accountability: accountabilityPolicy,
+        runner,
+      }),
+    /roadmap inventory owner has 11 helpers/u,
   );
-  const expectedMeasurement = new RegExp(
-    `${sourceLines}\\s+lines\\s+and\\s+${topLevelHelpers}\\s+top-level\\s+helpers`,
-    "u",
-  );
+
+  const inventoryMeasurement = sourceMeasurement(checker);
+  const accountabilityMeasurement = sourceMeasurement(accountabilityPolicy);
   for (const referencePath of [
     "../docs/workflows/repository-maintenance/README.md",
     "../docs/workflows/repository-maintenance/test-plan.md",
@@ -1551,8 +1719,19 @@ test("delegates roadmap Markdown structure to exact-pinned maintained tooling", 
     );
     assert.match(
       reference,
-      expectedMeasurement,
-      `${referencePath} must publish the source-policy measurement`,
+      new RegExp(
+        `\\b${inventoryMeasurement.lines}\\s+lines\\s+and\\s+${inventoryMeasurement.helpers}\\s+top-level\\s+helpers\\b`,
+        "u",
+      ),
+      `${referencePath} must publish the inventory-owner measurement`,
+    );
+    assert.match(
+      reference,
+      new RegExp(
+        `\\b${accountabilityMeasurement.lines}\\s+lines\\s+and\\s+${accountabilityMeasurement.helpers}\\s+top-level\\s+helpers\\b`,
+        "u",
+      ),
+      `${referencePath} must publish the accountability-owner measurement`,
     );
     assert.match(
       reference,
