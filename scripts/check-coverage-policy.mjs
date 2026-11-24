@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -390,57 +390,7 @@ function reportRelativePath(filename, workspaceRoot) {
   return relativePath;
 }
 
-export function validateCoveragePolicy(
-  policy,
-  report,
-  { workspaceRoot = repositoryRoot } = {},
-) {
-  const checked = checkedPolicy(policy);
-  requireObject(report, "E_COVERAGE_REPORT", "coverage report");
-  if (report.type !== "llvm.coverage.json.export") {
-    reject(
-      "E_COVERAGE_REPORT",
-      "coverage report.type",
-      "expected llvm.coverage.json.export",
-    );
-  }
-  if (!Array.isArray(report.data) || report.data.length !== 1) {
-    reject(
-      "E_COVERAGE_REPORT",
-      "coverage report.data",
-      "expected exactly one export record",
-    );
-  }
-  const data = requireObject(
-    report.data[0],
-    "E_COVERAGE_REPORT",
-    "coverage report.data[0]",
-  );
-  const totals = requireObject(
-    data.totals,
-    "E_COVERAGE_REPORT",
-    "coverage report.data[0].totals",
-  );
-  const workspaceLines = checkedLines(
-    totals.lines,
-    "E_COVERAGE_REPORT",
-    "coverage report.data[0].totals.lines",
-  );
-  if (workspaceLines.percent < checked.workspace.minimumPercent) {
-    reject(
-      "E_COVERAGE_WORKSPACE_FLOOR",
-      "coverage report.data[0].totals.lines",
-      `${workspaceLines.percent}% is below ${checked.workspace.minimumPercent}%`,
-    );
-  }
-  if (workspaceLines.uncovered > checked.workspace.maximumUncovered) {
-    reject(
-      "E_COVERAGE_WORKSPACE_RATCHET",
-      "coverage report.data[0].totals.lines",
-      `${workspaceLines.uncovered} uncovered lines exceeds ${checked.workspace.maximumUncovered}`,
-    );
-  }
-
+function reportFileLines(data, workspaceRoot) {
   if (!Array.isArray(data.files)) {
     reject(
       "E_COVERAGE_REPORT",
@@ -477,38 +427,325 @@ export function validateCoveragePolicy(
       ),
     );
   }
+  return reportFiles;
+}
 
+function surfaceViolations(surface, lines, baseline, codes) {
+  const violations = [];
+  if (lines.percent < baseline.minimumPercent) {
+    violations.push({
+      surface,
+      error: new CoveragePolicyError(
+        codes.floor,
+        codes.path,
+        `${lines.percent}% is below ${baseline.minimumPercent}%`,
+      ),
+    });
+  }
+  if (lines.uncovered > baseline.maximumUncovered) {
+    violations.push({
+      surface,
+      error: new CoveragePolicyError(
+        codes.ratchet,
+        codes.path,
+        `${lines.uncovered} uncovered lines exceeds ${baseline.maximumUncovered}`,
+      ),
+    });
+  }
+  return violations;
+}
+
+/**
+ * Measures the LLVM report against the validated policy without deciding the
+ * verdict. Malformed inputs still throw; floor, ratchet, and missing-file
+ * findings are collected in the order the validator has always reported them,
+ * so the first violation is exactly the error `validateCoveragePolicy` throws.
+ */
+export function evaluateCoveragePolicy(
+  policy,
+  report,
+  { workspaceRoot = repositoryRoot } = {},
+) {
+  const checked = checkedPolicy(policy);
+  requireObject(report, "E_COVERAGE_REPORT", "coverage report");
+  if (report.type !== "llvm.coverage.json.export") {
+    reject(
+      "E_COVERAGE_REPORT",
+      "coverage report.type",
+      "expected llvm.coverage.json.export",
+    );
+  }
+  if (!Array.isArray(report.data) || report.data.length !== 1) {
+    reject(
+      "E_COVERAGE_REPORT",
+      "coverage report.data",
+      "expected exactly one export record",
+    );
+  }
+  const data = requireObject(
+    report.data[0],
+    "E_COVERAGE_REPORT",
+    "coverage report.data[0]",
+  );
+  const totals = requireObject(
+    data.totals,
+    "E_COVERAGE_REPORT",
+    "coverage report.data[0].totals",
+  );
+  const workspaceLines = checkedLines(
+    totals.lines,
+    "E_COVERAGE_REPORT",
+    "coverage report.data[0].totals.lines",
+  );
+  // Floor before ratchet, workspace before files: the validator's order.
+  const violations = surfaceViolations(
+    "Workspace",
+    workspaceLines,
+    checked.workspace,
+    {
+      floor: "E_COVERAGE_WORKSPACE_FLOOR",
+      ratchet: "E_COVERAGE_WORKSPACE_RATCHET",
+      path: "coverage report.data[0].totals.lines",
+    },
+  );
+
+  let reportFiles;
+  try {
+    reportFiles = reportFileLines(data, workspaceRoot);
+  } catch (error) {
+    // The validator rejected a workspace regression before reading file
+    // records, so that category keeps precedence over a malformed record.
+    if (violations.length > 0 && error instanceof CoveragePolicyError) {
+      throw violations[0].error;
+    }
+    throw error;
+  }
+
+  const surfaces = [
+    {
+      surface: "Workspace",
+      path: undefined,
+      lines: workspaceLines,
+      baseline: checked.workspace,
+      codes: violations.map(({ error }) => error.code),
+    },
+  ];
   const transport = [];
   for (const [path, floor] of checked.files) {
     const lines = reportFiles.get(path);
+    let fileViolations;
     if (lines === undefined) {
-      reject(
-        "E_COVERAGE_FILE_MISSING",
+      fileViolations = [
+        {
+          surface: path,
+          error: new CoveragePolicyError(
+            "E_COVERAGE_FILE_MISSING",
+            path,
+            "monitored transport source is absent from the report",
+          ),
+        },
+      ];
+    } else {
+      fileViolations = surfaceViolations(path, lines, floor, {
+        floor: "E_COVERAGE_FILE_FLOOR",
+        ratchet: "E_COVERAGE_FILE_RATCHET",
         path,
-        "monitored transport source is absent from the report",
-      );
+      });
+      transport.push({ path, ...lines });
     }
-    if (lines.percent < floor.minimumPercent) {
-      reject(
-        "E_COVERAGE_FILE_FLOOR",
-        path,
-        `${lines.percent}% is below ${floor.minimumPercent}%`,
-      );
-    }
-    if (lines.uncovered > floor.maximumUncovered) {
-      reject(
-        "E_COVERAGE_FILE_RATCHET",
-        path,
-        `${lines.uncovered} uncovered lines exceeds ${floor.maximumUncovered}`,
-      );
-    }
-    transport.push({ path, ...lines });
+    violations.push(...fileViolations);
+    surfaces.push({
+      surface: path,
+      path,
+      lines,
+      baseline: floor,
+      codes: fileViolations.map(({ error }) => error.code),
+    });
   }
 
   return {
     workspace: workspaceLines,
     transport,
+    surfaces,
+    violations: violations.map(({ surface, error }) => ({
+      surface,
+      code: error.code,
+      error,
+    })),
   };
+}
+
+export function validateCoveragePolicy(
+  policy,
+  report,
+  { workspaceRoot = repositoryRoot } = {},
+) {
+  const evaluation = evaluateCoveragePolicy(policy, report, { workspaceRoot });
+  if (evaluation.violations.length > 0) {
+    throw evaluation.violations[0].error;
+  }
+  return {
+    workspace: evaluation.workspace,
+    transport: evaluation.transport,
+  };
+}
+
+const SUMMARY_TITLE = "Rust coverage ratchet";
+const SUMMARY_PASS_SENTENCE =
+  "Every surface is within its floor and uncovered-line ceiling.";
+const SUMMARY_NOTE =
+  "Advisory: the check-coverage-policy exit status is the gate. " +
+  "Δ coverage is current minus measured baseline; " +
+  "Δ uncovered is current minus ceiling.";
+const SUMMARY_COLUMNS = [
+  { header: "Surface", align: "left" },
+  { header: "Covered / total", align: "right" },
+  { header: "Coverage", align: "right" },
+  { header: "Baseline", align: "right" },
+  { header: "Δ coverage", align: "right" },
+  { header: "Floor", align: "right" },
+  { header: "Uncovered", align: "right" },
+  { header: "Ceiling", align: "right" },
+  { header: "Δ uncovered", align: "right" },
+  { header: "Status", align: "left" },
+];
+
+function formatSignedPercentPoints(value) {
+  const magnitude = Math.abs(value).toFixed(2);
+  if (magnitude === "0.00") {
+    return "0.00 pp";
+  }
+  return `${value > 0 ? "+" : "-"}${magnitude} pp`;
+}
+
+function formatSignedCount(value) {
+  if (value === 0) {
+    return "0";
+  }
+  return `${value > 0 ? "+" : "-"}${formatCount(Math.abs(value))}`;
+}
+
+// One set of cells feeds both renderings, so Markdown and plain output cannot
+// disagree about a value. `code` marks cells that Markdown shows as code.
+function summaryCells({ surface, path, lines, baseline, codes }) {
+  const present = lines !== undefined;
+  return [
+    { text: surface, code: path !== undefined },
+    {
+      text: present
+        ? `${formatCount(lines.covered)} / ${formatCount(lines.count)}`
+        : "missing",
+    },
+    { text: present ? `${formatPercent(lines.percent)}%` : "missing" },
+    { text: `${formatPercent(baseline.percent)}%` },
+    {
+      text: present
+        ? formatSignedPercentPoints(lines.percent - baseline.percent)
+        : "n/a",
+    },
+    { text: `${formatPercent(baseline.minimumPercent)}%` },
+    { text: present ? formatCount(lines.uncovered) : "missing" },
+    { text: formatCount(baseline.maximumUncovered) },
+    {
+      text: present
+        ? formatSignedCount(lines.uncovered - baseline.maximumUncovered)
+        : "n/a",
+    },
+    { status: codes },
+  ];
+}
+
+function markdownCell(cell) {
+  if (cell.status !== undefined) {
+    return cell.status.length === 0
+      ? "pass"
+      : ["**FAIL**", ...cell.status.map((code) => `\`${code}\``)].join(" ");
+  }
+  return cell.code ? `\`${cell.text}\`` : cell.text;
+}
+
+function plainCell(cell) {
+  if (cell.status !== undefined) {
+    return cell.status.length === 0
+      ? "pass"
+      : ["FAIL", ...cell.status].join(" ");
+  }
+  return cell.text;
+}
+
+function renderMarkdownSummary(evaluation, rows) {
+  const first = evaluation.violations[0];
+  const verdict =
+    first === undefined
+      ? `Verdict: **pass**. ${SUMMARY_PASS_SENTENCE}`
+      : `Verdict: **FAIL** \`${first.code}\` on ${
+          first.surface === "Workspace" ? "Workspace" : `\`${first.surface}\``
+        }.`;
+  const tableRow = (cells) => `| ${cells.join(" | ")} |`;
+  return [
+    `### ${SUMMARY_TITLE}`,
+    "",
+    verdict,
+    "",
+    tableRow(SUMMARY_COLUMNS.map((column) => column.header)),
+    tableRow(
+      SUMMARY_COLUMNS.map((column) =>
+        column.align === "right" ? "---:" : "---",
+      ),
+    ),
+    ...rows.map((cells) => tableRow(cells.map(markdownCell))),
+    "",
+    SUMMARY_NOTE,
+    "",
+  ].join("\n");
+}
+
+function renderPlainSummary(evaluation, rows) {
+  const first = evaluation.violations[0];
+  const verdict =
+    first === undefined
+      ? `${SUMMARY_TITLE} verdict: pass. ${SUMMARY_PASS_SENTENCE}`
+      : `${SUMMARY_TITLE} verdict: FAIL ${first.code} on ${first.surface}.`;
+  const table = [
+    SUMMARY_COLUMNS.map((column) => column.header),
+    ...rows.map((cells) => cells.map(plainCell)),
+  ];
+  const widths = SUMMARY_COLUMNS.map((_, index) =>
+    Math.max(...table.map((cells) => cells[index].length)),
+  );
+  const line = (cells) =>
+    cells
+      .map((cell, index) =>
+        SUMMARY_COLUMNS[index].align === "right"
+          ? cell.padStart(widths[index])
+          : cell.padEnd(widths[index]),
+      )
+      .join("  ")
+      .trimEnd();
+  return [
+    verdict,
+    "",
+    ...table.map(line),
+    "",
+    SUMMARY_NOTE,
+    "",
+  ].join("\n");
+}
+
+/**
+ * Renders an evaluation from `evaluateCoveragePolicy` as one deterministic
+ * table: `markdown` for `$GITHUB_STEP_SUMMARY`, `text` for local stdout. The
+ * summary is presentation only; it never changes the validator's verdict.
+ */
+export function renderCoverageSummary(evaluation, { format = "text" } = {}) {
+  const rows = evaluation.surfaces.map(summaryCells);
+  if (format === "markdown") {
+    return renderMarkdownSummary(evaluation, rows);
+  }
+  if (format === "text") {
+    return renderPlainSummary(evaluation, rows);
+  }
+  throw new TypeError(`unknown coverage summary format ${format}`);
 }
 
 function normalizedCommand(command) {
@@ -798,7 +1035,23 @@ function readText(path, description) {
   }
 }
 
-export function run(args = process.argv.slice(2)) {
+function appendStepSummary(markdown, env) {
+  const path = env.GITHUB_STEP_SUMMARY;
+  if (typeof path !== "string" || path === "") {
+    return;
+  }
+  try {
+    appendFileSync(path, markdown, "utf8");
+  } catch (error) {
+    // The summary is advisory presentation: failing to publish it must not
+    // become a second gate or change the validator's exit status.
+    process.stderr.write(
+      `check-coverage-policy: could not append the advisory step summary: ${error.message}\n`,
+    );
+  }
+}
+
+export function run(args = process.argv.slice(2), { env = process.env } = {}) {
   const options = parseArguments(args);
   const policy = readJson(options.policyPath, "coverage policy");
   const report = readJson(options.reportPath, "coverage report");
@@ -812,9 +1065,21 @@ export function run(args = process.argv.slice(2)) {
   validateCoverageWorkflow(workflow, policy);
   validateCoverageRuleset(ruleset);
   validateCoverageReference(reference, policy);
-  const result = validateCoveragePolicy(policy, report, {
+  const evaluation = evaluateCoveragePolicy(policy, report, {
     workspaceRoot: repositoryRoot,
   });
+  process.stdout.write(renderCoverageSummary(evaluation, { format: "text" }));
+  appendStepSummary(
+    renderCoverageSummary(evaluation, { format: "markdown" }),
+    env,
+  );
+  if (evaluation.violations.length > 0) {
+    throw evaluation.violations[0].error;
+  }
+  const result = {
+    workspace: evaluation.workspace,
+    transport: evaluation.transport,
+  };
   process.stdout.write(
     [
       "check-coverage-policy passed:",
@@ -823,11 +1088,6 @@ export function run(args = process.argv.slice(2)) {
       `with ${result.workspace.uncovered} uncovered`,
     ].join(" ") + "\n",
   );
-  for (const file of result.transport) {
-    process.stdout.write(
-      `  ${file.path}: ${file.covered}/${file.count} (${file.percent.toFixed(2)}%)\n`,
-    );
-  }
   return result;
 }
 

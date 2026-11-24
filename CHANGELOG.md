@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Coverage ratchet delta summary.** The coverage policy checker now renders
+  one deterministic table for the workspace and every monitored transport
+  file: current covered/total lines, measured baseline, floor, uncovered-line
+  ceiling, and signed deltas, with each regressed row marked by the same error
+  category the gate exits on. It prints a plain table on standard output and,
+  in the required `Rust coverage` job, appends the same rows as Markdown to the
+  GitHub job summary. The summary is advisory presentation over the existing
+  validator; error categories, exit status, and the JSON and HTML artifact are
+  unchanged.
+
 ### Changed
 
 - **Coverage floor carried forward from 0.4.0.** The versioned coverage policy

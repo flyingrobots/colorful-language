@@ -1109,3 +1109,21 @@ test("an unwritable step summary cannot change the gate's verdict", () => {
     /^check-coverage-policy: could not append the advisory step summary: /u,
   );
 });
+
+test("a workspace regression keeps precedence over malformed file records", () => {
+  expectPolicyError(
+    "E_COVERAGE_WORKSPACE_FLOOR",
+    () => {},
+    (candidate) => {
+      candidate.data[0].totals.lines = lineSummary(1_000, 919);
+      candidate.data[0].files[0].summary.lines.covered = Number.NaN;
+    },
+  );
+  expectPolicyError(
+    "E_COVERAGE_REPORT",
+    () => {},
+    (candidate) => {
+      candidate.data[0].files[0].summary.lines.covered = Number.NaN;
+    },
+  );
+});
