@@ -28,6 +28,10 @@ jobs:
           components: rustfmt, clippy
           targets: wasm32-wasip1
       - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
+      # The cross-stage benchmark report asserts on `cargo metadata --locked
+      # --offline`, which resolves the whole graph including target-gated
+      # crates a Linux build never downloads on its own.
+      - run: cargo fetch --locked
       - run: cargo fmt --all -- --check
       - run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - run: cargo test --all --locked

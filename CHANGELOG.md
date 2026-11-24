@@ -45,7 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lockfile is not byte-identical before and after the locked check and test.
 - **Current Rust stable builds warning-free again.** The validator parity
   helper in `colorful-ir` decodes hex with `as_chunks`, which satisfies the
-  `clippy::chunks_exact_to_as_chunks` lint introduced in Rust 1.100.0.
+  `clippy::chunks_exact_to_as_chunks` lint introduced in Rust 1.100.0. The
+  advisory compatibility lane also runs `cargo fetch --locked` before its
+  tests, as the primary Rust jobs do, so the locked-offline metadata assertion
+  can resolve target-gated crates there.
 
 ### Security
 
