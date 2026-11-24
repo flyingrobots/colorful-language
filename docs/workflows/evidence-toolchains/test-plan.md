@@ -253,4 +253,6 @@ bounded property/fuzz evidence tracked by
   [#337](https://github.com/flyingrobots/colorful-language/issues/337).
   *Evidence:* `.github/workflows/release.yml`,
   `scripts/check-release-distribution.mjs`, and
-  `scripts/check-release-distribution.test.mjs`. *Status:* planned.
+  `scripts/check-release-distribution.test.mjs` `pins the Homebrew syntax
+  parser to the reviewed Ruby release` and `the checked-in repository satisfies
+  the distribution policy`. *Status:* implemented.
