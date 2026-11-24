@@ -35,6 +35,19 @@ Verification for install paths and published artifacts.
   checked with Cargo. *Oracle:* script exits zero. *Evidence:*
   `scripts/package-witness.sh`; CI `Cargo package witness` job. *Status:*
   implemented.
+- **DIST-1b** — *Requirement:* DIST-1. *Behavior:* the extracted package
+  workspace resolves the reviewed root `Cargo.lock`, not a fresh resolution of
+  the newest compatible registry releases, so the packaged crates are checked
+  and tested against the dependency graph that `cargo fetch --locked` cached
+  and that the dependency policy reviewed. *Oracle:* the extracted workspace's
+  `Cargo.lock` is byte-identical to the root `Cargo.lock` before the locked
+  check and again after the locked check and test, and the packaged
+  `cross_stage_benchmark_report` test's `cargo metadata --locked --offline`
+  succeeds. *Evidence type:* package witness script assertion and packaged
+  integration test. *Planned evidence:* a lockfile-identity assertion in
+  `scripts/package-witness.sh`; CI `Cargo package witness` job. *Tracking:*
+  [#334](https://github.com/flyingrobots/colorful-language/issues/334).
+  *Status:* planned.
 - **DIST-2a** — *Requirement:* DIST-2. *Behavior:* crates publish in dependency
   order after a `v*` tag on `main`; the release profile and workflow agree, and
   every internal normal, build, or dev dependency precedes its dependent.
