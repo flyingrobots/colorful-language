@@ -505,8 +505,9 @@ mistaking an idea for a committed milestone or an already validated user need.
   [#258](https://github.com/flyingrobots/colorful-language/issues/258).
   <!-- roadmap-primary: parked #172 #173 #174 #175 #188 #258 -->
 - **Delivered spike toward #175:** build `colorful ir` to WebAssembly with
-  bytes identical to the native CLI, and measure its size, startup, latency
-  and memory in Node, Chromium and WebKit
+  bytes identical to the native CLI, the first step toward that playground,
+  and measure its size, startup, latency and memory in Node, Chromium and
+  WebKit
   [#326](https://github.com/flyingrobots/colorful-language/issues/326).
   <!-- roadmap-primary: delivered #326 -->
 
