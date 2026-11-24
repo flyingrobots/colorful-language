@@ -247,6 +247,12 @@ observe public-contract regressions before they ship.
   that witness, so final preflight can run from aligned `main`
   [#293](https://github.com/flyingrobots/colorful-language/issues/293).
   <!-- roadmap-primary: delivered #293 -->
+- **Delivered the post-merge v0.4.0 witness reconciliation:** bind the final
+  release-prep CI and review evidence to the merged candidate, refresh the
+  aligned-`main` scope inventory, and explicitly hold post-packet work outside
+  the release boundary before final preflight
+  [#301](https://github.com/flyingrobots/colorful-language/issues/301).
+  <!-- roadmap-primary: delivered #301 -->
 - **Delivered v0.4.0 packet admission:** derive the planned packet from current
   workspace and completed-release identity; require exact version tokens,
   uniquely labeled goalposts with observable acceptance oracles, and an
@@ -492,12 +498,16 @@ mistaking an idea for a committed milestone or an already validated user need.
   [#174](https://github.com/flyingrobots/colorful-language/issues/174).
 - Build a zero-install WASM playground from the pure analysis stack
   [#175](https://github.com/flyingrobots/colorful-language/issues/175).
+- Build `colorful ir` to WebAssembly with byte-identical CLI output, the first
+  step toward that playground and the intended lead for v0.5.0 once v0.4.0 is
+  tagged
+  [#326](https://github.com/flyingrobots/colorful-language/issues/326).
 - Emit deterministic SARIF for CI-native lint findings
   [#188](https://github.com/flyingrobots/colorful-language/issues/188).
 - Make live roadmap reconciliation cursor-complete if repository scale turns
   the current fail-closed issue ceiling into an operational limit
   [#258](https://github.com/flyingrobots/colorful-language/issues/258).
-  <!-- roadmap-primary: parked #172 #173 #174 #175 #188 #258 -->
+  <!-- roadmap-primary: parked #172 #173 #174 #175 #326 #188 #258 -->
 
 **Promotion rule:** move an experiment into M0–M4 only when a current user job,
 dependency boundary, and executable proof justify its place. Parking preserves
