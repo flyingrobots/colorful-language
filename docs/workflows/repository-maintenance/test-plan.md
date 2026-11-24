@@ -422,16 +422,21 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   `mdast-util-from-markdown` advances from 2.0.3 to 2.1.0 and
   `micromark-extension-gfm-table` from 2.1.1 to 2.1.2. *Oracle:* the pinned
   expectation names the new releases and fails while `package.json` still holds
-  the old pins; with the pins advanced, the whole roadmap inventory suite
-  passes unchanged, and the roadmap inventory parsed from the checked-in
-  `ROADMAP.md` and from every existing roadmap fixture is identical before and
-  after the bump. *Evidence type:* exact-pin dependency policy, fixture-backed
-  characterization suite, and a recorded before/after inventory comparison.
-  *Evidence:* the `delegates roadmap Markdown structure to exact-pinned
-  maintained tooling` test and the rest of
-  `scripts/check-roadmap-inventory.test.mjs`, `package.json`, and
-  `package-lock.json`; the before/after inventory comparison is recorded in
-  [pull request #349](https://github.com/flyingrobots/colorful-language/pull/349).
+  the old pins; with the pins advanced, the existing roadmap characterization
+  and regression tests pass unchanged, so the checker's exact process bytes,
+  `E_ROADMAP_*` categories, and path-and-line addresses are the same under the
+  new parser releases. *Evidence type:* exact-pin dependency policy and
+  fixture-backed characterization suite. *Evidence:* in
+  `scripts/check-roadmap-inventory.test.mjs`, `delegates roadmap policy to
+  bounded pure owners` (the pinned-tooling test, whose pinned values moved with
+  this change), `pins exact process bytes across the roadmap ownership seam`
+  (exact stdout, stderr, and exit status), `reports identical failure addresses
+  for LF and CRLF roadmaps`, `rejects duplicate primary homes`, `rejects a
+  second architecture-accountability mechanism table`, `ignores accountability
+  tables inside raw HTML blocks`, `escaped comment syntax cannot hide a
+  duplicate accountability table`, and `accepts canonical leading-pipe rows
+  without trailing pipes`, run with `package.json` and `package-lock.json`
+  holding the new pins.
   *Tracking:*
   [#336](https://github.com/flyingrobots/colorful-language/issues/336).
   *Status:* implemented.
