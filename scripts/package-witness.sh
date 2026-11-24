@@ -121,10 +121,23 @@ done
   done
 } > "$pkgroot/Cargo.toml"
 
+# The packaged crates must be checked against the dependency graph the
+# repository reviewed, so the extracted workspace's lockfile has to stay
+# byte-identical to the root Cargo.lock.
+assert_reviewed_lockfile() {
+  if ! cmp -s "$root/Cargo.lock" "$pkgroot/Cargo.lock"; then
+    printf 'extracted package workspace lockfile differs from the reviewed Cargo.lock (%s)\n' "$1" >&2
+    printf 'the package witness must resolve the reviewed dependency graph\n' >&2
+    exit 1
+  fi
+}
+
 echo "Checking extracted package workspace..."
 cargo generate-lockfile --manifest-path "$pkgroot/Cargo.toml"
+assert_reviewed_lockfile "before the locked check"
 cargo check --manifest-path "$pkgroot/Cargo.toml" --workspace --all-targets --locked
 cargo test --manifest-path "$pkgroot/Cargo.toml" \
   -p colorful-cli --test cross_stage_benchmark_report --locked
+assert_reviewed_lockfile "after the locked check and test"
 
 echo "PACKAGE WITNESS PASSED"
