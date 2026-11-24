@@ -369,6 +369,25 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   contains no Markdown interpretation. *Tracking:*
   [#250](https://github.com/flyingrobots/colorful-language/issues/250).
   *Status:* implemented.
+- **RM-15b — Reviewed parser pin advance.** *Requirements:* RM-4, RM-15.
+  *Behavior:* raising an exact roadmap parser pin is one coordinated change in
+  which `package.json`, `package-lock.json`, and the pinned-release expectation
+  in the roadmap inventory self-test move together, after the new releases'
+  notes, source diff, transitive dependencies, and licenses were reviewed.
+  `mdast-util-from-markdown` advances from 2.0.3 to 2.1.0 and
+  `micromark-extension-gfm-table` from 2.1.1 to 2.1.2. *Oracle:* the pinned
+  expectation names the new releases and fails while `package.json` still holds
+  the old pins; with the pins advanced, the whole roadmap inventory suite
+  passes unchanged, and the roadmap inventory parsed from the checked-in
+  `ROADMAP.md` and from every existing roadmap fixture is identical before and
+  after the bump. *Evidence type:* exact-pin dependency policy, fixture-backed
+  characterization suite, and a recorded before/after inventory comparison.
+  *Evidence:* `scripts/check-roadmap-inventory.test.mjs`, `package.json`,
+  `package-lock.json`, and the pull request that closes
+  [#336](https://github.com/flyingrobots/colorful-language/issues/336).
+  *Tracking:*
+  [#336](https://github.com/flyingrobots/colorful-language/issues/336).
+  *Status:* planned.
 - **RM-10a — Pinned workspace coverage report.** *Requirement:* RM-10.
   *Behavior:* one exact `cargo-llvm-cov` release instruments the workspace with
   all features and all targets, emits HTML plus machine-readable JSON, and
