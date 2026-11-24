@@ -40,14 +40,14 @@ Requirements:
   remain unchanged, and the current real-binary, golden, unit, and seeded
   property suites pass after the split. *Oracle:* exact output/status assertions
   and property oracles in the current suites. *Evidence type:* characterization
-  and public-contract tests. *Evidence:* `colorful-cli`'s 29 unit tests;
+  and public-contract tests. *Evidence:* `colorful-cli`'s 29 unit tests that
+  predate CLI-4a;
   `crates/colorful-cli/tests/binary_contract.rs`;
   `crates/colorful-cli/tests/lint_golden_fixtures.rs`;
   `crates/colorful-cli/tests/property_boundaries.rs`.
   *Tracking:*
   [#223](https://github.com/flyingrobots/colorful-language/issues/223).
   *Status:* implemented.
-
 - **CLI-4a** — *Requirement:* CLI-4. *Behavior:* when classification fails,
   the wrapper returns the unchanged source in every build, writes the discarded
   error to its diagnostic sink in a debug build, and writes nothing in a release
@@ -55,9 +55,16 @@ Requirements:
   `fn(&str, bool) -> String`. *Oracle:* exact returned string and exact bytes
   written to an injected sink, using a deliberately malformed test parser to
   force the failure. *Evidence type:* deterministic unit test, run in both the
-  debug and release profiles. *Evidence:* planned. *Tracking:*
+  debug and release profiles. *Evidence:*
+  `crates/colorful-cli/src/cli/tests.rs`
+  `colorize_compat_wrapper_keeps_its_public_signature`,
+  `colorize_fallback_returns_unchanged_source_on_forced_classification_failure`,
+  `colorize_fallback_reports_the_discarded_error_in_debug_builds` (debug
+  profile), `colorize_fallback_stays_silent_in_release_builds` (release
+  profile: `cargo test -p colorful-cli --locked --release`), and
+  `colorize_fallback_passes_a_successful_result_through_silently`. *Tracking:*
   [#224](https://github.com/flyingrobots/colorful-language/issues/224).
-  *Status:* planned.
+  *Status:* implemented.
 
 ## Known gaps / risks
 

@@ -38,20 +38,35 @@ pub(super) fn default_annotator() -> ContextualOpenClassAnnotator<SeedOpenClassL
 /// The built-in parser and annotator are validated before their spans are
 /// sliced. If that invariant ever regresses, this compatibility wrapper fails
 /// closed to the unchanged source; use [`try_colorize`] to receive the typed
-/// error.
+/// error. A debug build (`debug_assertions`) also writes the discarded error to
+/// standard error before falling back; a release build stays silent.
 #[must_use]
 pub fn colorize(source: &str, color: bool) -> String {
     fall_back_to_source(try_colorize(source, color), source, &mut io::stderr())
 }
 
 /// Unwrap a colorize result, failing closed to the unchanged `source`.
+///
+/// In a debug build the discarded error is first written to `diagnostics`; a
+/// release build never writes.
 pub(super) fn fall_back_to_source<W: Write>(
     result: Result<String, ClassificationError>,
     source: &str,
     diagnostics: &mut W,
 ) -> String {
-    let _ = diagnostics;
-    result.unwrap_or_else(|_| source.to_string())
+    match result {
+        Ok(rendered) => rendered,
+        Err(error) => {
+            #[cfg(debug_assertions)]
+            let _ = writeln!(
+                diagnostics,
+                "colorize: discarded classification error, returning source unchanged: {error}"
+            );
+            #[cfg(not(debug_assertions))]
+            let _ = (&error, diagnostics);
+            source.to_string()
+        }
+    }
 }
 
 /// Render `source` with ANSI color after validating built-in adapter output.

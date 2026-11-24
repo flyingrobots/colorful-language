@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`colorize()` reports a discarded classification failure in debug builds.**
+  The compatibility wrapper still fails closed to the unchanged source and keeps
+  its signature, but a build with `debug_assertions` now writes the discarded
+  `ClassificationError` to standard error first. Release builds stay silent;
+  `try_colorize()` remains the way to receive the typed error
+  ([#224](https://github.com/flyingrobots/colorful-language/issues/224)).
+
 - **Coverage floor carried forward from 0.4.0.** The versioned coverage policy
   in `.github/coverage-policy.json` is unchanged across the release boundary:
   exact uncovered-line ceilings ratchet the 94.00% measured baseline recorded

@@ -154,11 +154,11 @@ observe public-contract regressions before they ship.
   [#223](https://github.com/flyingrobots/colorful-language/issues/223), between
   the wire-generation policy and generated portable admission.
   <!-- roadmap-primary: delivered #223 -->
-- **Parked compatibility diagnostics:** decide how total compatibility wrappers
-  expose classification failures without adding hidden stderr side effects to
-  library calls
+- **Delivered compatibility diagnostics:** the total `colorize()` wrapper
+  reports the classification failure it discards on standard error in debug
+  builds only, keeping release behavior and its signature unchanged
   [#224](https://github.com/flyingrobots/colorful-language/issues/224).
-  <!-- roadmap-primary: parked #224 -->
+  <!-- roadmap-primary: delivered #224 -->
 - **Delivered release provenance:** generate a CycloneDX bill of materials from
   the locked dependency graph and attest it with the same provenance as the
   artifacts it describes, now that the distribution and signing authorities

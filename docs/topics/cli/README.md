@@ -43,7 +43,11 @@ The `colorful-cli` crate exposes the process dispatcher and pure helpers used by
 tests, benchmarks, and the fuzzing workspace:
 
 - `run` dispatches process arguments and returns the intended exit status;
-- `colorize` and `try_colorize` render ANSI output;
+- `colorize` and `try_colorize` render ANSI output. `colorize` is the
+  infallible wrapper: if classification validation fails it returns the
+  unchanged source, and a debug build also writes the discarded
+  `ClassificationError` to standard error (release builds stay silent). Use
+  `try_colorize` to receive the typed error;
 - `decide_color` applies the `--no-color` and `NO_COLOR` rule;
 - `lint_report` renders deterministic compiler-style findings;
 - `line_col` maps UTF-8 byte offsets to one-based human positions.
