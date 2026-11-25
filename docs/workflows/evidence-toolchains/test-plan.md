@@ -218,7 +218,12 @@ bounded property/fuzz evidence tracked by
   unexpected extra exclusion. *Evidence type:* executable policy checker and
   mutation test. *Tracking:*
   [#352](https://github.com/flyingrobots/colorful-language/issues/352).
-  *Status:* planned.
+  *Evidence:* `.github/dependabot.yml`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `rejects automatic
+  VS Code host declaration updates`, `rejects an unexpected extra VS Code
+  exclusion`, and `the checked-in update and workflow policy passes`.
+  *Status:* implemented.
 - **ETC-8a** — *Requirement:* ETC-10. *Behavior:* the workspace lockfile pins
   the property-test dependency, the standalone fuzz workspace lockfile pins the
   fuzz runtime, and one repository script owns the exact 32-byte seed,
