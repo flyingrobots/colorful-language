@@ -527,11 +527,13 @@ Implemented and planned cases are listed below.
   a failed process returns `ValeErrorKind::ProcessFailure`, as before. No
   artifact the warm-up leaves behind is read by another test. *Evidence type:*
   deterministic integration test, repeated locally on a host where a new
-  script is slow to launch and on hosted Linux reruns. *Evidence:* to be
-  recorded when the change lands. *Tracking:*
+  script is slow to launch and on hosted Linux reruns. *Evidence:* `colorful-vale`
+  `vale_adapter::timeout_and_process_failure_are_distinct` through
+  `FakeVale::warm_up`, which calls `ValeAnalyzer::discover` and writes no
+  file. *Tracking:*
   [#365](https://github.com/flyingrobots/colorful-language/issues/365) and
   [#367](https://github.com/flyingrobots/colorful-language/issues/367).
-  *Status:* planned.
+  *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
   corpora spanning the documented prose categories. *Oracle:* preregistered
