@@ -146,7 +146,7 @@ Dependabot checks six independent weekly dependency sources from
 | `zed-cargo` | Standalone Zed Cargo workspace and lockfile | Zed-only revert |
 | `fuzz-cargo` | Direct standalone fuzz-runtime dependencies and fuzz lockfile | Fuzz-runtime-only revert |
 | `root-node` | Root evidence tooling except TypeScript | Evidence-tooling revert |
-| `vscode` | VS Code packages except TypeScript and the host-pinned `@types/node` release | Editor-adapter revert |
+| `vscode` | VS Code packages except TypeScript, the host-pinned `@types/node` release, and `@types/vscode` | Editor-adapter revert |
 
 For the `github-actions` group, the checked-in workflow family is the action
 pin authority.
@@ -239,7 +239,12 @@ same reviewed pull request. Both npm update sources explicitly ignore
 cross-graph exact-version invariant. The VS Code source also ignores every
 `@types/node` update because the exact declaration release and minimum-host API
 compile are one extension-host compatibility policy. Any declaration update
-requires a coordinated policy and package-smoke change. A Dependabot lockfile
+requires a coordinated policy and package-smoke change. The VS Code source
+likewise ignores every `@types/vscode` update: the extension's `engines.vscode`
+floor is 1.91 and `vsce` refuses to package an extension whose `@types/vscode`
+is newer than its engine, so a newer declaration fails the whole `vscode`
+group. Raise the engine floor and the declaration together, in a reviewed
+runtime-support change, rather than through Dependabot. A Dependabot lockfile
 update must not silently move that pin.
 
 Run the update-policy evidence directly with:
