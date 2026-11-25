@@ -18,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   figure moves only when `.github/coverage-policy.json` is updated through
   review.
 
+### Fixed
+
+- **Release packet check admits a tagged, unpublished release.** The packet
+  check rejected every tag workflow run, because the tagged commit's witness
+  declares `pre-publication` while the workflow checks it with the tag
+  present. The check now admits `pre-publication` on the exact commit the
+  annotated target tag resolves to and still rejects it on any later commit.
+  A new witness phase, `tagged`, between `pre-publication` and `published`,
+  records that the annotated tag exists while publication evidence is
+  unavailable; the check admits it only while that annotated tag resolves
+  from the checked history, and the phase order still forbids regression.
+  The v0.4.0 witness now declares `tagged` and records that the v0.4.0 tag
+  workflow failed at packet admission and published nothing
+  ([#370](https://github.com/flyingrobots/colorful-language/issues/370)).
+
 ## [0.4.0] - 2026-11-24
 
 ### Added

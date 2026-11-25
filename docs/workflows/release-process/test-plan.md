@@ -46,7 +46,8 @@ Verification for release preparation, tag automation, and release witnesses.
   verification witness must distinguish pre-publication proof from public
   release evidence that does not yet exist.
 - **REL-19** A release witness must advance monotonically through
-  pre-publication, published, verified, and retrospected evidence states; each
+  pre-publication, tagged, published, verified, and retrospected evidence
+  states; each
   phase must carry the minimum immutable identity and completed-or-unavailable
   section shape required at that point.
 
@@ -533,6 +534,64 @@ Verification for release preparation, tag automation, and release witnesses.
   `requires a completed predecessor retrospective`, and
   `keeps historical v0.1.0 through v0.3.0 witnesses readable`. *Status:*
   implemented.
+- **REL-19e: Pre-publication admitted on the tagged commit.** *Requirement:*
+  REL-19. *Behavior:* when the annotated target tag resolves to exactly the
+  commit being checked (`HEAD`), a witness that still declares
+  `Release phase: pre-publication` with an unavailable target tag is admitted.
+  This is the state the tag workflow validates: the witness was written before
+  the tag existed, and the tag points at that commit. *Oracle:* a temporary
+  repository whose annotated `v0.4.0` tag points at `HEAD`, with the canonical
+  pre-publication witness, loads and validates as `pre-publication`. *Evidence
+  type:* temporary-repository release-packet policy test. *Tracking:*
+  [#370](https://github.com/flyingrobots/colorful-language/issues/370).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `accepts pre-publication
+  on the commit the annotated target tag resolves to`. *Status:* implemented.
+- **REL-19f: Pre-publication rejected after the tag.** *Requirement:* REL-19.
+  *Behavior:* when the annotated target tag resolves to an earlier commit than
+  the one being checked, a witness that still declares `pre-publication` is
+  rejected, so the rule is not satisfied merely because the tag is an ancestor.
+  *Oracle:* a temporary repository with one commit after the annotated
+  `v0.4.0` tag and the canonical pre-publication witness fails with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* temporary-repository
+  release-packet policy test. *Tracking:*
+  [#370](https://github.com/flyingrobots/colorful-language/issues/370).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `rejects pre-publication
+  on a commit after the annotated target tag`. *Status:* implemented.
+- **REL-19g: Tagged phase before publication.** *Requirement:* REL-19.
+  *Behavior:* the witness can declare `Release phase: tagged`, between
+  `pre-publication` and `published`: the annotated target tag is available and
+  publication, public verification, and retrospective evidence are all
+  unavailable. The check admits that phase only while the annotated target tag
+  resolves from the checked history. *Oracle:* a temporary repository with a
+  commit after the annotated `v0.4.0` tag and a tagged witness is admitted as
+  `tagged`; the same witness fails with `E_RELEASE_PACKET_EVIDENCE` when the
+  target tag is absent while the predecessor tag is present, lightweight, or
+  not reachable from `HEAD`; a shallow clone fetched without tags fails closed
+  earlier with `E_RELEASE_PACKET_IDENTITY`, because no predecessor tag
+  resolves; a tagged witness that declares the target tag
+  unavailable, or that claims completed publication evidence, fails with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* temporary-repository and
+  snapshot release-packet policy tests. *Tracking:*
+  [#370](https://github.com/flyingrobots/colorful-language/issues/370).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `accepts the tagged
+  phase while the annotated target tag resolves`, `rejects the tagged phase
+  when the annotated target tag does not resolve`, and `rejects a tagged
+  witness with an unavailable tag or completed publication`;
+  `docs/goalposts/v0.4.0/verification.md`; and `scripts/check-release-packet.test.mjs`
+  `the checked-in v0.4.0 release packet satisfies the policy`. *Status:*
+  implemented.
+- **REL-19h: No regression through the tagged phase.** *Requirement:* REL-19.
+  *Behavior:* the phase order is pre-publication, tagged, published, verified,
+  retrospected; a witness cannot move from `tagged` back to `pre-publication`
+  or from `published` back to `tagged`, while moving forward through `tagged`
+  is admitted. *Oracle:* branch-base phase `tagged` with current phase
+  `pre-publication`, and branch-base phase `published` with current phase
+  `tagged`, each fail with `E_RELEASE_PACKET_EVIDENCE`; branch-base
+  `pre-publication` to `tagged` and `tagged` to `published` pass. *Evidence
+  type:* deterministic witness phase-order test. *Tracking:*
+  [#370](https://github.com/flyingrobots/colorful-language/issues/370).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `rejects regression
+  through the tagged phase`. *Status:* implemented.
 
 ## Open verification gaps
 
