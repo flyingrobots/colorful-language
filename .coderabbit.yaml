@@ -1,34 +1,37 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 #
-# CodeRabbit configuration. This file exists for one reason: the review bot must
-# never apply the `slice` label. `scripts/check-roadmap-inventory.mjs` treats
-# `slice` as authoritative, so a wrongly applied label turns the live roadmap
-# check red on every open pull request. Only a maintainer applies `slice`.
+# CodeRabbit configuration. This file exists for one reason: the review bot
+# should never apply the `slice` label. `scripts/check-roadmap-inventory.mjs`
+# treats `slice` as authoritative, so a wrongly applied label turns the live
+# roadmap check red on every open pull request. Only a maintainer applies
+# `slice`.
 #
-# With `labeling_instructions` set, CodeRabbit suggests only the labels listed
-# here. `slice` and `epic` are deliberately absent. See
+# CodeRabbit's documentation says that when `labeling_instructions` is set, the
+# bot suggests only the labels listed here. `slice` and `epic` are deliberately
+# absent. A local test checks that this file parses and omits both; whether the
+# bot honours it is checked on the hosted repository and recorded on #371. See
 # docs/workflows/repository-maintenance/README.md ("Roadmap inventory").
 issue_enrichment:
   labeling:
     auto_apply_labels: true
     labeling_instructions:
-      - label: bug
-        instructions: Something is not working: a defect, crash, or incorrect behavior.
-      - label: documentation
-        instructions: Documentation updates, additions, or corrections.
-      - label: enhancement
-        instructions: A new feature or request for improved behavior.
-      - label: dependencies
-        instructions: A dependency update or a dependency-related problem.
-      - label: area:core
-        instructions: The core crate.
-      - label: area:lexicon
-        instructions: The lexicon.
-      - label: area:parse
-        instructions: Parsing.
-      - label: area:cli
-        instructions: The command-line interface.
-      - label: area:lsp
-        instructions: The language server.
-      - label: area:lint
-        instructions: Prose-linting rules and the Analyzer port.
+      - label: "bug"
+        instructions: "Something is not working: a defect, crash, or incorrect behavior."
+      - label: "documentation"
+        instructions: "Documentation updates, additions, or corrections."
+      - label: "enhancement"
+        instructions: "A new feature or request for improved behavior."
+      - label: "dependencies"
+        instructions: "A dependency update or a dependency-related problem."
+      - label: "area:core"
+        instructions: "The core crate."
+      - label: "area:lexicon"
+        instructions: "The lexicon."
+      - label: "area:parse"
+        instructions: "Parsing."
+      - label: "area:cli"
+        instructions: "The command-line interface."
+      - label: "area:lsp"
+        instructions: "The language server."
+      - label: "area:lint"
+        instructions: "Prose-linting rules and the Analyzer port."
