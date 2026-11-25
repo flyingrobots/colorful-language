@@ -50,6 +50,10 @@ Verification for release preparation, tag automation, and release witnesses.
   states; each
   phase must carry the minimum immutable identity and completed-or-unavailable
   section shape required at that point.
+- **REL-20** A maintainer can run the release workflow by hand on `main` as a
+  dry run that executes admission, the native builds, packaging, and the
+  checks on the assembled artifact set, and reaches no step with an outside
+  effect, while a tag run still reaches every publication step.
 
 ## Cases
 
@@ -592,6 +596,93 @@ Verification for release preparation, tag automation, and release witnesses.
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   *Evidence:* `scripts/check-release-packet.test.mjs` `rejects regression
   through the tagged phase`. *Status:* implemented.
+- **REL-20a: Manual dry-run trigger.** *Requirement:* REL-20. *Behavior:* the
+  release workflow triggers on a pushed `v*` tag and on `workflow_dispatch`
+  with no inputs, so the dry run is selected by the event and no free-form
+  input that a tag run could also carry; workflow-level permissions stay
+  empty. *Oracle:* removing the manual trigger, adding a dispatch input,
+  adding another trigger, widening the tag filter, or granting workflow-level
+  permissions fails the distribution policy. *Evidence type:* deterministic
+  distribution-policy mutation test. *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Evidence:* `scripts/check-release-distribution.test.mjs` `triggers on a
+  version tag push and an input-free manual dry run`. *Status:* planned.
+- **REL-20b: Outside effects unreachable in a dry run.** *Requirement:* REL-20.
+  *Behavior:* exactly the steps with an effect outside the run, `Attest native
+  archive`, `Attest Homebrew and editor artifacts`, `Publish to crates.io`,
+  `Create GitHub Release`, and `Verify GitHub Release VSIX`, carry the
+  condition `github.event_name == 'push'`, which is false for a manual run.
+  *Oracle:* removing the condition from any of those steps, or replacing it
+  with an input-based, inverted, or always-true expression, fails the
+  distribution policy. *Evidence type:* deterministic distribution-policy
+  mutation test. *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Evidence:* `scripts/check-release-distribution.test.mjs` `keeps every
+  outside-effect step unreachable in a dry run`. *Status:* planned.
+- **REL-20c: Publication reachable on a tag run.** *Requirement:* REL-20.
+  *Behavior:* no job carries a condition and the publication steps carry no
+  condition other than the event guard, which is true for a tag push, so the
+  dry-run mode cannot switch publication off for a real release. *Oracle:* a
+  job-level condition, a publication condition that also requires a dispatch
+  input or excludes `push`, or a constant false condition fails the
+  distribution policy. *Evidence type:* deterministic distribution-policy
+  mutation test. *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Evidence:* `scripts/check-release-distribution.test.mjs` `keeps every
+  publication step reachable on a tag run`. *Status:* planned.
+- **REL-20d: Dry run executes admission, builds, and packaging.**
+  *Requirement:* REL-20. *Behavior:* every step outside the outside-effect set
+  runs unconditionally in all three jobs: admission validation, the three
+  native builds and their run-artifact uploads, SBOM generation, Homebrew
+  formula generation and syntax check, and editor packaging and smoke.
+  *Oracle:* adding any condition to one of those steps fails the distribution
+  policy. *Evidence type:* deterministic distribution-policy mutation test.
+  *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Evidence:* `scripts/check-release-distribution.test.mjs` `runs admission,
+  native builds, and packaging in a dry run`. *Status:* planned.
+- **REL-20e: No secret or token reaches a dry-run step.** *Requirement:*
+  REL-20. *Behavior:* only outside-effect steps read a repository secret or
+  the job token, and each job's permission grant is exactly the reviewed set,
+  so the manual trigger adds no permission or secret. *Oracle:* passing
+  `secrets.*` or `github.token` to a step a dry run reaches, or adding a
+  permission to any job, fails the distribution policy. *Evidence type:*
+  deterministic distribution-policy mutation test. *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Evidence:* `scripts/check-release-distribution.test.mjs` `passes no secret
+  or job token to a step a dry run reaches`. *Status:* planned.
+- **REL-20f: Dry run refused outside `main`.** *Requirement:* REL-20.
+  *Behavior:* admission refuses a manual run whose ref is not
+  `refs/heads/main`, and verifies that the dispatched commit is an ancestor of
+  `origin/main`, while a tag run keeps its tag ancestry check. *Oracle:*
+  removing the ref refusal or the dispatched-commit ancestry check fails the
+  distribution policy. *Evidence type:* deterministic distribution-policy
+  mutation test. *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Evidence:* `scripts/check-release-distribution.test.mjs` `refuses a dry
+  run outside main`. *Status:* planned.
+- **REL-20g: Release tag derivation.** *Requirement:* REL-20. *Behavior:* a
+  tag run takes its release tag from `GITHUB_REF_NAME` and still requires the
+  workspace version, changelog section, and packet to match it; a dry run
+  derives `v` plus the workspace version from `Cargo.toml`. Admission
+  publishes that release tag as a job output, and the native and release jobs
+  name every artifact a dry run builds from it instead of `GITHUB_REF_NAME`.
+  *Oracle:* deriving a tag run's version from the workspace, dropping the
+  version comparison, or naming a dry-run artifact from `GITHUB_REF_NAME`
+  fails the distribution policy. *Evidence type:* deterministic
+  distribution-policy mutation test. *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Evidence:* `scripts/check-release-distribution.test.mjs` `derives the
+  release tag from the tag on a tag run and from the workspace on a dry run`
+  and `names dry-run artifacts from the admitted release tag`. *Status:*
+  planned.
+- **REL-20h: Hosted dry run on `main`.** *Requirement:* REL-20. *Behavior:*
+  after merge, one manual run of the release workflow on `main` completes or
+  fails at a named step, and publishes nothing. *Oracle:* the run link, its
+  result, and the first failing step, if any, are recorded on the tracking
+  issue. *Evidence type:* hosted workflow run. *Tracking:*
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  *Status:* planned.
 
 ## Open verification gaps
 
