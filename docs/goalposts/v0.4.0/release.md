@@ -61,15 +61,20 @@ silent patch to an older public contract.
   [#143](https://github.com/flyingrobots/colorful-language/issues/143), and
   [#157](https://github.com/flyingrobots/colorful-language/issues/157)).
 - Reproducible property, fuzz, mutation, benchmark, doctest, coverage, and
-  repository-maintenance evidence
+  repository-maintenance evidence, including the coverage delta summary, the
+  bounded roadmap-policy owner, and the restored merge gate with its reviewed
+  dependency and advisory updates
   ([#81](https://github.com/flyingrobots/colorful-language/issues/81),
   [#82](https://github.com/flyingrobots/colorful-language/issues/82),
   [#134](https://github.com/flyingrobots/colorful-language/issues/134),
   [#135](https://github.com/flyingrobots/colorful-language/issues/135),
   [#137](https://github.com/flyingrobots/colorful-language/issues/137),
   [#140](https://github.com/flyingrobots/colorful-language/issues/140),
-  [#147](https://github.com/flyingrobots/colorful-language/issues/147), and
-  [#152](https://github.com/flyingrobots/colorful-language/issues/152)).
+  [#147](https://github.com/flyingrobots/colorful-language/issues/147),
+  [#152](https://github.com/flyingrobots/colorful-language/issues/152),
+  [#210](https://github.com/flyingrobots/colorful-language/issues/210),
+  [#257](https://github.com/flyingrobots/colorful-language/issues/257), and
+  [#334](https://github.com/flyingrobots/colorful-language/issues/334)).
 - A reviewed release packet and the repository-controlled attested native,
   editor, and Homebrew-formula artifact machinery, an attested CycloneDX bill
   of materials for the shipped dependency graph, followed by public
@@ -136,7 +141,7 @@ silent patch to an older public contract.
 | Boundary integrity | [#126](https://github.com/flyingrobots/colorful-language/issues/126), [#142](https://github.com/flyingrobots/colorful-language/issues/142), [#144](https://github.com/flyingrobots/colorful-language/issues/144), [#145](https://github.com/flyingrobots/colorful-language/issues/145), [#148](https://github.com/flyingrobots/colorful-language/issues/148), [#156](https://github.com/flyingrobots/colorful-language/issues/156) |
 | Responsive analysis and editors | [#121](https://github.com/flyingrobots/colorful-language/issues/121), [#122](https://github.com/flyingrobots/colorful-language/issues/122), [#136](https://github.com/flyingrobots/colorful-language/issues/136), [#141](https://github.com/flyingrobots/colorful-language/issues/141), [#241](https://github.com/flyingrobots/colorful-language/issues/241) |
 | Findings and analyzers | [#138](https://github.com/flyingrobots/colorful-language/issues/138), [#139](https://github.com/flyingrobots/colorful-language/issues/139), [#143](https://github.com/flyingrobots/colorful-language/issues/143), [#157](https://github.com/flyingrobots/colorful-language/issues/157) |
-| Reproducible evidence | [#81](https://github.com/flyingrobots/colorful-language/issues/81), [#82](https://github.com/flyingrobots/colorful-language/issues/82), [#134](https://github.com/flyingrobots/colorful-language/issues/134), [#135](https://github.com/flyingrobots/colorful-language/issues/135), [#137](https://github.com/flyingrobots/colorful-language/issues/137), [#140](https://github.com/flyingrobots/colorful-language/issues/140), [#147](https://github.com/flyingrobots/colorful-language/issues/147), [#152](https://github.com/flyingrobots/colorful-language/issues/152) |
+| Reproducible evidence | [#81](https://github.com/flyingrobots/colorful-language/issues/81), [#82](https://github.com/flyingrobots/colorful-language/issues/82), [#134](https://github.com/flyingrobots/colorful-language/issues/134), [#135](https://github.com/flyingrobots/colorful-language/issues/135), [#137](https://github.com/flyingrobots/colorful-language/issues/137), [#140](https://github.com/flyingrobots/colorful-language/issues/140), [#147](https://github.com/flyingrobots/colorful-language/issues/147), [#152](https://github.com/flyingrobots/colorful-language/issues/152), [#210](https://github.com/flyingrobots/colorful-language/issues/210), [#257](https://github.com/flyingrobots/colorful-language/issues/257), [#334](https://github.com/flyingrobots/colorful-language/issues/334) |
 | Release preparation and publication | [#280](https://github.com/flyingrobots/colorful-language/issues/280), [#281](https://github.com/flyingrobots/colorful-language/issues/281), [#245](https://github.com/flyingrobots/colorful-language/issues/245), [#251](https://github.com/flyingrobots/colorful-language/issues/251), [#227](https://github.com/flyingrobots/colorful-language/issues/227), [#154](https://github.com/flyingrobots/colorful-language/issues/154), [#37](https://github.com/flyingrobots/colorful-language/issues/37) |
 | Explicitly excluded evidence phases | [#155](https://github.com/flyingrobots/colorful-language/issues/155), [#158](https://github.com/flyingrobots/colorful-language/issues/158), [#13](https://github.com/flyingrobots/colorful-language/issues/13), [#14](https://github.com/flyingrobots/colorful-language/issues/14) |
 
@@ -148,6 +153,17 @@ not replace per-issue history.
 
 - The packet does not mean `v0.4.0` has been tagged, published, or publicly
   verified.
+- The packet does not mean final preflight has passed. It must pass from
+  clean, aligned `main` on the exact commit to be tagged; the witness records
+  the latest attempt and its result.
+- Dependency updates opened after the scope was reconciled on 2026-11-24,
+  Dependabot pull requests
+  [#354](https://github.com/flyingrobots/colorful-language/pull/354) through
+  [#358](https://github.com/flyingrobots/colorful-language/pull/358), are not
+  part of `v0.4.0` and are held until after the tag.
+- The coverage delta summary is advisory presentation over the existing
+  coverage gate; it does not change that gate's error categories, exit status,
+  or measured baseline.
 - The `v0.4.0` GitHub Release VSIX, Zed source, Homebrew formula, and native
   platform URLs are absent until the corresponding public bytes resolve.
 - VS Code Marketplace, Open VSX, and Zed registry listings are optional
