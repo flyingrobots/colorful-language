@@ -458,7 +458,14 @@ Verification for release preparation, tag automation, and release witnesses.
   packet. *Evidence type:* release-packet policy checks plus documentation
   review. *Tracking:*
   [#359](https://github.com/flyingrobots/colorful-language/issues/359).
-  *Status:* planned.
+  *Evidence:* `CHANGELOG.md` holds 119 top-level entries before and after the
+  move, with 12 under `Unreleased` and 80 under `0.4.0` before, and 1 and 91
+  after; `scripts/check-coverage-policy.test.mjs`
+  `unreleased coverage note matches the machine policy`;
+  `scripts/check-release-packet.test.mjs`
+  `the checked-in v0.4.0 release packet satisfies the policy`;
+  `docs/goalposts/v0.4.0/release.md`; and
+  `docs/goalposts/v0.4.0/verification.md`. *Status:* implemented.
 - **REL-19a — Supported release-phase matrix.** *Requirement:* REL-19.
   *Behavior:* one canonical witness fixture for each supported phase carries
   exactly the completed and unavailable section states admitted at that point.
