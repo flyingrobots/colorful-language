@@ -56,6 +56,7 @@ const EXPECTED_SOURCES = new Map([
           dependencyName: "@types/node",
           updateTypes: [],
         },
+        { dependencyName: "@types/vscode", updateTypes: [] },
         { dependencyName: "typescript", updateTypes: [] },
       ],
     },

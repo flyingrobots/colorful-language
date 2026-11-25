@@ -80,6 +80,7 @@ updates:
     ignore:
       - dependency-name: typescript
       - dependency-name: "@types/node"
+      - dependency-name: "@types/vscode"
     groups:
       vscode:
         patterns:
@@ -592,6 +593,30 @@ test("rejects automatic VS Code Node declaration updates", () => {
     update.ignore = update.ignore.filter(
       (rule) => rule["dependency-name"] !== "@types/node",
     );
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects automatic VS Code host declaration updates", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    update.ignore = update.ignore.filter(
+      (rule) => rule["dependency-name"] !== "@types/vscode",
+    );
+  }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
+});
+
+test("rejects an unexpected extra VS Code exclusion", () => {
+  expectCode(({ dependabot }) => {
+    const update = dependabot.updates.find(
+      (candidate) =>
+        candidate["package-ecosystem"] === "npm" &&
+        candidate.directory === "/editors/vscode",
+    );
+    update.ignore.push({ "dependency-name": "esbuild" });
   }, "E_DEPENDABOT_MANUAL_DEPENDENCY");
 });
 
