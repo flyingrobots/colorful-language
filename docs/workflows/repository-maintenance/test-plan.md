@@ -88,6 +88,11 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   workflow companions. Author identity and changed paths must come from GitHub
   metadata, not branch names, titles, or body text. Every admitted pull
   request must continue to reject closing keywords in commit messages.
+- **RM-17 - Review bot never owns the `slice` label.** The roadmap check treats
+  the `slice` label as authoritative, so only a maintainer may apply it. The
+  review bot's issue auto-labelling must choose only from a reviewed list of
+  labels that excludes `slice`, and that list must live in a versioned
+  repository file rather than in an account setting.
 
 ## Cases
 
@@ -626,6 +631,21 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   commands. *Tracking:*
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
   *Status:* implemented.
+- **RM-17a - Bot issue labelling excludes `slice`.** *Requirement:* RM-17.
+  *Behavior:* `.coderabbit.yaml` turns on CodeRabbit issue auto-labelling with
+  an explicit `labeling_instructions` list, so the bot suggests only the listed
+  labels, and the list does not contain `slice`. *Oracle:* a test issue whose
+  body describes a small deliverable, filed after the file is on `main` and
+  edited once, shows no `labeled` event for `slice` by `coderabbitai[bot]` in
+  `gh api repos/flyingrobots/colorful-language/issues/<N>/events` at least 15
+  minutes after creation and at least 15 minutes after the edit. *Evidence
+  type:* hosted observed check (the bot is an external oracle); no local
+  deterministic test exists because only CodeRabbit reads the file. *Evidence:*
+  `.coderabbit.yaml`; the observed-check result is recorded on
+  [#371](https://github.com/flyingrobots/colorful-language/issues/371).
+  *Tracking:*
+  [#371](https://github.com/flyingrobots/colorful-language/issues/371).
+  *Status:* planned.
 
 ## Hosted evidence boundary
 
