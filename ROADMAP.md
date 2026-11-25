@@ -305,6 +305,13 @@ observe public-contract regressions before they ship.
   retrospective evidence actually observed
   [#345](https://github.com/flyingrobots/colorful-language/issues/345).
   <!-- roadmap-primary: delivered #345 -->
+- **Delivered tag-time packet admission:** admit `pre-publication` on the
+  exact commit the annotated target tag resolves to, reject it on any later
+  commit, and add a `tagged` witness phase for a tag that exists before
+  publication completes; the v0.4.0 witness records its failed tag workflow
+  and that nothing was published
+  [#370](https://github.com/flyingrobots/colorful-language/issues/370).
+  <!-- roadmap-primary: delivered #370 -->
 - **Delivered release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes

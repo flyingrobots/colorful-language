@@ -19,10 +19,15 @@ const ISSUE_URL =
   /^https:\/\/github\.com\/flyingrobots\/colorful-language\/issues\/(?<number>[1-9]\d*)$/u;
 const RELEASE_PHASES = Object.freeze([
   "pre-publication",
+  "tagged",
   "published",
   "verified",
   "retrospected",
 ]);
+const RELEASE_PHASE_GLOBAL = new RegExp(
+  `Release phase:\\s*(${RELEASE_PHASES.join("|")})\\b`,
+  "giu",
+);
 const SCOPE_BUCKETS = Object.freeze([
   "Must ship",
   "May slip",
@@ -147,6 +152,26 @@ function targetTagCommit(root, version, publicTags, verificationPath) {
   }
 }
 
+function checkedCommit(root, verificationPath) {
+  try {
+    return execFileSync(
+      "git",
+      ["rev-parse", "--verify", "HEAD^{commit}"],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    ).trim();
+  } catch (error) {
+    reject(
+      "E_RELEASE_PACKET_IO",
+      verificationPath,
+      `cannot resolve the checked commit: ${error.code ?? error.message}`,
+    );
+  }
+}
+
 function baselineReleasePhase(root, verificationPath) {
   try {
     execFileSync(
@@ -260,11 +285,7 @@ function baselineReleasePhase(root, verificationPath) {
   const phases =
     status === undefined
       ? []
-      : [
-          ...sectionText(status).matchAll(
-            /Release phase:\s*(pre-publication|published|verified|retrospected)\b/giu,
-          ),
-        ];
+      : [...sectionText(status).matchAll(RELEASE_PHASE_GLOBAL)];
   if (phases.length !== 1) {
     reject(
       "E_RELEASE_PACKET_EVIDENCE",
@@ -1102,11 +1123,7 @@ function validateVerificationDocument(snapshot) {
       `section 'Status' must name annotated target tag ${expectedTargetTag} exactly once`,
     );
   }
-  const phaseMatches = [
-    ...statusText.matchAll(
-      /Release phase:\s*(pre-publication|published|verified|retrospected)\b/giu,
-    ),
-  ];
+  const phaseMatches = [...statusText.matchAll(RELEASE_PHASE_GLOBAL)];
   if (phaseMatches.length !== 1) {
     reject(
       "E_RELEASE_PACKET_EVIDENCE",
@@ -1116,11 +1133,22 @@ function validateVerificationDocument(snapshot) {
   }
   const phase = phaseMatches[0][1].toLowerCase();
   const phaseIndex = RELEASE_PHASES.indexOf(phase);
-  if (phaseIndex === 0 && snapshot.targetCommit !== undefined) {
+  if (
+    phaseIndex === 0 &&
+    snapshot.targetCommit !== undefined &&
+    snapshot.targetCommit !== snapshot.headCommit
+  ) {
     reject(
       "E_RELEASE_PACKET_EVIDENCE",
       snapshot.verificationPath,
-      `release phase ${phase} cannot be pre-publication while ${expectedTargetTag} already resolves to ${snapshot.targetCommit}`,
+      `release phase ${phase} is admitted only on the commit ${expectedTargetTag} resolves to; ${expectedTargetTag} already resolves to ${snapshot.targetCommit}, not to the commit being checked`,
+    );
+  }
+  if (phase === "tagged" && snapshot.targetCommit === undefined) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      snapshot.verificationPath,
+      `release phase ${phase} requires annotated tag ${expectedTargetTag} to resolve from HEAD`,
     );
   }
   if (snapshot.previousPhase !== undefined) {
@@ -1154,7 +1182,7 @@ function validateVerificationDocument(snapshot) {
     {
       name: "Publication evidence",
       section: publication,
-      completedFrom: 1,
+      completedFrom: RELEASE_PHASES.indexOf("published"),
       validate: () =>
         requirePublicationEvidence(
           publication,
@@ -1167,7 +1195,7 @@ function validateVerificationDocument(snapshot) {
     {
       name: "Public verification",
       section: publicVerification,
-      completedFrom: 2,
+      completedFrom: RELEASE_PHASES.indexOf("verified"),
       validate: () =>
         requirePublicVerificationEvidence(
           publicVerification,
@@ -1178,7 +1206,7 @@ function validateVerificationDocument(snapshot) {
     {
       name: "Retrospective",
       section: retrospective,
-      completedFrom: 3,
+      completedFrom: RELEASE_PHASES.indexOf("retrospected"),
       validate: () =>
         requireRetrospectiveEvidence(
           retrospective,
@@ -1479,11 +1507,17 @@ export function loadRepositorySnapshot(
   const releasePath = `docs/goalposts/v${version}/release.md`;
   const verificationPath =
     `docs/goalposts/v${version}/verification.md`;
+  const previousPhase = baselineReleasePhase(root, verificationPath);
+  const targetCommit = targetTagCommit(root, version, publicTags);
   return {
     version,
     previousTag: previous.tag,
-    previousPhase: baselineReleasePhase(root, verificationPath),
-    targetCommit: targetTagCommit(root, version, publicTags),
+    previousPhase,
+    targetCommit,
+    headCommit:
+      targetCommit === undefined
+        ? undefined
+        : checkedCommit(root, verificationPath),
     releasePath,
     release: readRequiredFile(root, releasePath),
     verificationPath,

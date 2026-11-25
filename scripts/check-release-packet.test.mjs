@@ -1252,6 +1252,250 @@ test("ignores release tags that are not reachable from HEAD", (t) => {
   assert.equal(loadRepositorySnapshot(root).previousTag, "v0.3.0");
 });
 
+function taggedVerification(source) {
+  return source
+    .replace("Release phase: pre-publication.", "Release phase: tagged.")
+    .replace(
+      "Annotated v0.4.0 tag: not available.",
+      "Annotated v0.4.0 tag: available.",
+    );
+}
+
+function taggedSnapshot() {
+  const snapshot = validSnapshot();
+  snapshot.targetCommit = TARGET_COMMIT;
+  snapshot.verification = taggedVerification(snapshot.verification);
+  return snapshot;
+}
+
+function assertPolicyRejection(action, code, pattern) {
+  assert.throws(
+    action,
+    (error) =>
+      error instanceof ReleasePacketPolicyError &&
+      error.code === code &&
+      pattern.test(error.message),
+  );
+}
+
+function releaseRepository(t) {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeRepositorySnapshot(root);
+  git(root, "init", "-b", "main");
+  git(root, "config", "user.email", "release-packet@example.invalid");
+  git(root, "config", "user.name", "Release Packet Test");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "previous release");
+  git(root, "tag", "--no-sign", "v0.3.0");
+  writeFileSync(join(root, "release-target.txt"), "release target\n");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "release target");
+  return { root, targetCommit: gitOutput(root, "rev-parse", "HEAD") };
+}
+
+function annotateTargetTag(root, commit = "HEAD") {
+  git(
+    root,
+    "tag",
+    "--no-sign",
+    "-a",
+    "v0.4.0",
+    commit,
+    "-m",
+    "release: v0.4.0",
+  );
+}
+
+function commitWitness(root, verification, message) {
+  writeFileSync(join(root, VERIFICATION_PATH), verification);
+  git(root, "add", ".");
+  git(root, "commit", "--allow-empty", "-m", message);
+}
+
+test("accepts pre-publication on the commit the annotated target tag resolves to", (t) => {
+  const { root, targetCommit } = releaseRepository(t);
+  annotateTargetTag(root);
+
+  const loaded = loadRepositorySnapshot(root);
+  assert.equal(loaded.targetCommit, targetCommit);
+  assert.equal(validateReleasePacket(loaded).phase, "pre-publication");
+});
+
+test("rejects pre-publication on a commit after the annotated target tag", (t) => {
+  const { root, targetCommit } = releaseRepository(t);
+  annotateTargetTag(root);
+  writeFileSync(join(root, "after-tag.txt"), "after the tag\n");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "after the tag");
+
+  assertPolicyRejection(
+    () => validateReleasePacket(loadRepositorySnapshot(root)),
+    "E_RELEASE_PACKET_EVIDENCE",
+    new RegExp(`already resolves to ${targetCommit}`, "u"),
+  );
+});
+
+test("accepts the tagged phase while the annotated target tag resolves", (t) => {
+  const { root, targetCommit } = releaseRepository(t);
+  annotateTargetTag(root);
+  commitWitness(
+    root,
+    taggedVerification(validSnapshot().verification),
+    "record the tag",
+  );
+
+  const loaded = loadRepositorySnapshot(root);
+  assert.equal(loaded.targetCommit, targetCommit);
+  assert.equal(validateReleasePacket(loaded).phase, "tagged");
+  assert.equal(validateReleasePacket(taggedSnapshot()).phase, "tagged");
+});
+
+test("rejects the tagged phase when the annotated target tag does not resolve", (t) => {
+  const tagged = taggedVerification(validSnapshot().verification);
+  const unresolved = /requires annotated tag v0\.4\.0 to resolve/u;
+
+  const absent = releaseRepository(t);
+  commitWitness(absent.root, tagged, "claim an absent tag");
+  assertPolicyRejection(
+    () => validateReleasePacket(loadRepositorySnapshot(absent.root)),
+    "E_RELEASE_PACKET_EVIDENCE",
+    unresolved,
+  );
+
+  const lightweight = releaseRepository(t);
+  git(lightweight.root, "tag", "--no-sign", "v0.4.0");
+  commitWitness(lightweight.root, tagged, "claim a lightweight tag");
+  assertPolicyRejection(
+    () => validateReleasePacket(loadRepositorySnapshot(lightweight.root)),
+    "E_RELEASE_PACKET_EVIDENCE",
+    unresolved,
+  );
+
+  const unreachable = releaseRepository(t);
+  git(unreachable.root, "switch", "-c", "abandoned-release");
+  writeFileSync(join(unreachable.root, "abandoned.txt"), "not merged\n");
+  git(unreachable.root, "add", ".");
+  git(unreachable.root, "commit", "-m", "abandoned");
+  annotateTargetTag(unreachable.root);
+  git(unreachable.root, "switch", "main");
+  assert.equal(
+    validateReleasePacket(loadRepositorySnapshot(unreachable.root)).phase,
+    "pre-publication",
+  );
+  commitWitness(unreachable.root, tagged, "claim an unreachable tag");
+  assertPolicyRejection(
+    () => validateReleasePacket(loadRepositorySnapshot(unreachable.root)),
+    "E_RELEASE_PACKET_EVIDENCE",
+    unresolved,
+  );
+
+  const source = releaseRepository(t);
+  annotateTargetTag(source.root);
+  commitWitness(source.root, tagged, "record the tag");
+  const shallow = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(shallow, { recursive: true }));
+  git(
+    shallow,
+    "clone",
+    "--quiet",
+    "--depth",
+    "1",
+    "--no-tags",
+    `file://${source.root}`,
+    ".",
+  );
+  assertPolicyRejection(
+    () => validateReleasePacket(loadRepositorySnapshot(shallow)),
+    "E_RELEASE_PACKET_IDENTITY",
+    /no public release tag precedes 0\.4\.0/u,
+  );
+  assertPolicyRejection(
+    () =>
+      validateReleasePacket(
+        loadRepositorySnapshot(shallow, { publicTags: ["v0.3.0"] }),
+      ),
+    "E_RELEASE_PACKET_EVIDENCE",
+    unresolved,
+  );
+});
+
+test("rejects a tagged witness with an unavailable tag or completed publication", () => {
+  assertPolicyRejection(
+    () => {
+      const snapshot = taggedSnapshot();
+      snapshot.verification = snapshot.verification.replace(
+        "Annotated v0.4.0 tag: available.",
+        "Annotated v0.4.0 tag: not available.",
+      );
+      validateReleasePacket(snapshot);
+    },
+    "E_RELEASE_PACKET_EVIDENCE",
+    /keep annotated target tag v0\.4\.0 available during the tagged phase/u,
+  );
+  assertPolicyRejection(
+    () => {
+      const snapshot = taggedSnapshot();
+      snapshot.verification = replaceLevelTwoSection(
+        snapshot.verification,
+        "Publication evidence",
+        sectionBody(
+          snapshotForPhase("published").verification,
+          "Publication evidence",
+        ),
+      );
+      validateReleasePacket(snapshot);
+    },
+    "E_RELEASE_PACKET_EVIDENCE",
+    /'Publication evidence' must declare exactly one unavailable evidence state/u,
+  );
+});
+
+test("rejects regression through the tagged phase", (t) => {
+  const regression = /cannot regress from branch-base phase/u;
+  const backToPrePublication = validSnapshot();
+  backToPrePublication.previousPhase = "tagged";
+  assertPolicyRejection(
+    () => validateReleasePacket(backToPrePublication),
+    "E_RELEASE_PACKET_EVIDENCE",
+    regression,
+  );
+  const backToTagged = taggedSnapshot();
+  backToTagged.previousPhase = "published";
+  assertPolicyRejection(
+    () => validateReleasePacket(backToTagged),
+    "E_RELEASE_PACKET_EVIDENCE",
+    regression,
+  );
+
+  const forwardToTagged = taggedSnapshot();
+  forwardToTagged.previousPhase = "pre-publication";
+  assert.equal(validateReleasePacket(forwardToTagged).phase, "tagged");
+  const forwardToPublished = snapshotForPhase("published");
+  forwardToPublished.previousPhase = "tagged";
+  assert.equal(validateReleasePacket(forwardToPublished).phase, "published");
+
+  const { root } = releaseRepository(t);
+  annotateTargetTag(root);
+  commitWitness(
+    root,
+    taggedVerification(validSnapshot().verification),
+    "record the tag",
+  );
+  git(
+    root,
+    "update-ref",
+    "refs/remotes/origin/main",
+    gitOutput(root, "rev-parse", "HEAD"),
+  );
+  writeFileSync(join(root, "later.txt"), "later work on main\n");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "later work");
+  const loaded = loadRepositorySnapshot(root);
+  assert.equal(loaded.previousPhase, "tagged");
+  assert.equal(validateReleasePacket(loaded).phase, "tagged");
+});
+
 test("the checked-in v0.4.0 release packet satisfies the policy", () => {
   assert.doesNotThrow(() => validateReleasePacket(loadRepositorySnapshot()));
 });

@@ -196,16 +196,24 @@ The active `docs/goalposts/vX.Y.Z/verification.md` witness declares exactly one
 phase under `## Status`:
 
 ```text
-Release phase: pre-publication | published | verified | retrospected
+Release phase: pre-publication | tagged | published | verified | retrospected
 ```
 
 The annotated target tag is unavailable or pending only during
-`pre-publication`; every later phase requires it to be available. The three
-staged evidence sections each declare exactly one structured state:
+`pre-publication`; every later phase requires it to be available.
+`pre-publication` is admitted while the target tag does not resolve, and on the
+exact commit the annotated target tag resolves to, which is the commit the tag
+workflow validates. On any later commit, a resolving target tag rejects
+`pre-publication`, so the witness must declare `tagged`. `tagged` means the
+annotated tag exists and publication has not completed: the check admits it
+only while the annotated target tag resolves from the checked history, and
+rejects it when that tag is absent, lightweight, or not reachable from `HEAD`.
+The three staged evidence sections each declare exactly one structured state:
 
 | Phase | `Publication evidence` | `Public verification` | `Retrospective` |
 | --- | --- | --- | --- |
 | `pre-publication` | unavailable | unavailable | unavailable |
+| `tagged` | unavailable | unavailable | unavailable |
 | `published` | completed | unavailable | unavailable |
 | `verified` | completed | completed | unavailable |
 | `retrospected` | completed | completed | completed |
@@ -589,6 +597,15 @@ git push origin vX.Y.Z
 The pushed tag triggers publication. The tag must point at the exact `main`
 commit that passed preflight.
 
+The tag workflow checks out that commit, whose witness still declares
+`Release phase: pre-publication`, and runs the packet check with the tag
+present. The check admits `pre-publication` there because the annotated tag
+resolves to exactly the commit being checked. Every later commit on `main`
+must carry a witness in the `tagged` phase or beyond: change the phase to
+`tagged` and the status line to `Annotated vX.Y.Z tag: available.`, and keep
+the three staged evidence sections unavailable until publication completes.
+See [Witness phase transitions](#witness-phase-transitions).
+
 ## Publication
 
 Publishing must happen from the tag. The release workflow must not publish from
@@ -795,7 +812,10 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
 ## Failure handling
 
 - **Tag exists, no GitHub Release published:** Do not move the tag. Fix the
-  workflow and rerun publication for the same tag.
+  workflow and rerun publication for the same tag. Until publication
+  completes, the witness on `main` stays in the `tagged` phase with its
+  publication evidence unavailable; the packet check rejects
+  `pre-publication` on any commit after the tagged one.
 - **Some crates published, another failed:** Do not move the tag. Fix the
   failing path and rerun. Already-published crates should be verified, not
   republished with different contents.
