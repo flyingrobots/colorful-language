@@ -18,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   figure moves only when `.github/coverage-policy.json` is updated through
   review.
 
+### Added
+
+- **Release workflow dry run.** A manual `workflow_dispatch` run of the release
+  workflow on `main` now runs admission, the three native builds, SBOM
+  generation, Homebrew formula generation, and editor packaging and smoke
+  without publishing anything. The event selects the mode; there is no dispatch
+  input. Attestation, crates.io publication, GitHub Release creation, and the
+  public VSIX check run only on a pushed tag. A dry run derives its release tag
+  from the workspace version and is refused outside `main`; a tag run still
+  takes its version from the tag and must match the workspace, changelog, and
+  packet. The distribution policy rejects a dry-run condition that could switch
+  publication off on a tag run, and any secret or job token on a step a dry run
+  reaches. Final preflight is now followed by a green dry run before a release
+  tag ([#374](https://github.com/flyingrobots/colorful-language/issues/374)).
+
 ### Fixed
 
 - **Release packet check admits a tagged, unpublished release.** The packet

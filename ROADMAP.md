@@ -312,6 +312,11 @@ observe public-contract regressions before they ship.
   and that nothing was published
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   <!-- roadmap-primary: delivered #370 -->
+- **Delivered the release workflow dry run:** a manual run of the release
+  workflow on `main` exercises admission, the native builds, and packaging
+  without publishing, so final preflight is followed by a green dry run before
+  the v0.4.1 tag
+  [#374](https://github.com/flyingrobots/colorful-language/issues/374).
 - **Delivered release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
