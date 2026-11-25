@@ -207,6 +207,7 @@ bounded property/fuzz evidence tracked by
   `scripts/check-dependency-update-policy.mjs`,
   `scripts/check-dependency-update-policy.test.mjs`, the `docs` job in
   `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*
+  implemented.
 - **ETC-7b** — *Requirement:* ETC-9. *Behavior:* the VS Code Dependabot source
   ignores every `@types/vscode` update, because the extension's
   `engines.vscode` floor is 1.91 and `vsce` refuses to package an extension
@@ -218,7 +219,6 @@ bounded property/fuzz evidence tracked by
   mutation test. *Tracking:*
   [#352](https://github.com/flyingrobots/colorful-language/issues/352).
   *Status:* planned.
-  implemented.
 - **ETC-8a** — *Requirement:* ETC-10. *Behavior:* the workspace lockfile pins
   the property-test dependency, the standalone fuzz workspace lockfile pins the
   fuzz runtime, and one repository script owns the exact 32-byte seed,
