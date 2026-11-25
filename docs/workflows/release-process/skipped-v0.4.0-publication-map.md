@@ -176,6 +176,17 @@ The release profile check itself never compares the profile with a version; it
 checks required profile text and the `Cargo.lock` crate versions
 (`scripts/release-profile-check.sh:38-58`, `:99-138`).
 
+**Preflight.** `scripts/release-preflight.sh v0.4.1` requires a clean `main`
+aligned with `origin/main` (`:23-35`), no local or remote `v0.4.1` tag
+(`:37-43`), workspace version 0.4.1 (`:45-56`), a `## [0.4.1]` changelog
+heading (`:58`), and both v0.4.1 packet files (`:59-60`), then runs
+`scripts/release-prep.sh` (`:62`). None of these reads the `v0.4.0` tag, its
+witness, or crates.io. The predecessor rule reaches preflight only through the
+packet self-test and check inside release prep
+(`scripts/release-prep.sh:26-27`). The profile's registry oracle,
+`cargo info {crate}@{version}` (`.continuum/release.yml:93`), names only the
+target version.
+
 **Wire and contract identities.** No contract, vocabulary, or IR artifact
 embeds `0.4.0`. The `colorful.syntax/v1` compatibility manifest names a
 workspace generation `workspace-v0.4.0` with `sourceCommit: null`
