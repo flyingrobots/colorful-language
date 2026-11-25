@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { parse as parseYaml } from "yaml";
+
 import {
   RepositoryMaintenanceError,
   repositoryCandidate,
@@ -1189,6 +1191,25 @@ test("rejects missing release-preparation closure-contract fixtures", () => {
       "",
     );
   }, "E_CLOSURE_WIRING");
+});
+
+test("RM-17a: .coderabbit.yaml is well formed and its label list omits slice and epic", () => {
+  const config = parseYaml(
+    readFileSync(new URL("../.coderabbit.yaml", import.meta.url), "utf8"),
+  );
+  const labeling = config?.issue_enrichment?.labeling;
+  assert.equal(labeling?.auto_apply_labels, true);
+  const entries = labeling?.labeling_instructions;
+  assert.ok(Array.isArray(entries) && entries.length > 0);
+  for (const entry of entries) {
+    for (const key of ["label", "instructions"]) {
+      assert.equal(typeof entry?.[key], "string", `${key} must be a string`);
+      assert.notEqual(entry[key].trim(), "", `${key} must not be empty`);
+    }
+  }
+  const labels = entries.map(({ label }) => label.toLowerCase());
+  assert.ok(!labels.includes("slice"), "slice must not be listed");
+  assert.ok(!labels.includes("epic"), "epic must not be listed");
 });
 
 test("the repository satisfies the maintenance policy", () => {
