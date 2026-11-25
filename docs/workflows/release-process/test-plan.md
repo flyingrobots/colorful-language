@@ -46,7 +46,8 @@ Verification for release preparation, tag automation, and release witnesses.
   verification witness must distinguish pre-publication proof from public
   release evidence that does not yet exist.
 - **REL-19** A release witness must advance monotonically through
-  pre-publication, published, verified, and retrospected evidence states; each
+  pre-publication, tagged, published, verified, and retrospected evidence
+  states; each
   phase must carry the minimum immutable identity and completed-or-unavailable
   section shape required at that point.
 
@@ -544,7 +545,7 @@ Verification for release preparation, tag automation, and release witnesses.
   type:* temporary-repository release-packet policy test. *Tracking:*
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   *Evidence:* `scripts/check-release-packet.test.mjs` `accepts pre-publication
-  on the commit the annotated target tag resolves to`. *Status:* planned.
+  on the commit the annotated target tag resolves to`. *Status:* implemented.
 - **REL-19f: Pre-publication rejected after the tag.** *Requirement:* REL-19.
   *Behavior:* when the annotated target tag resolves to an earlier commit than
   the one being checked, a witness that still declares `pre-publication` is
@@ -555,7 +556,7 @@ Verification for release preparation, tag automation, and release witnesses.
   release-packet policy test. *Tracking:*
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   *Evidence:* `scripts/check-release-packet.test.mjs` `rejects pre-publication
-  on a commit after the annotated target tag`. *Status:* planned.
+  on a commit after the annotated target tag`. *Status:* implemented.
 - **REL-19g: Tagged phase before publication.** *Requirement:* REL-19.
   *Behavior:* the witness can declare `Release phase: tagged`, between
   `pre-publication` and `published`: the annotated target tag is available and
@@ -573,7 +574,10 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence:* `scripts/check-release-packet.test.mjs` `accepts the tagged
   phase while the annotated target tag resolves`, `rejects the tagged phase
   when the annotated target tag does not resolve`, and `rejects a tagged
-  witness with an unavailable tag or completed publication`. *Status:* planned.
+  witness with an unavailable tag or completed publication`;
+  `docs/goalposts/v0.4.0/verification.md`; and `scripts/check-release-packet.test.mjs`
+  `the checked-in v0.4.0 release packet satisfies the policy`. *Status:*
+  implemented.
 - **REL-19h: No regression through the tagged phase.** *Requirement:* REL-19.
   *Behavior:* the phase order is pre-publication, tagged, published, verified,
   retrospected; a witness cannot move from `tagged` back to `pre-publication`
@@ -585,7 +589,7 @@ Verification for release preparation, tag automation, and release witnesses.
   type:* deterministic witness phase-order test. *Tracking:*
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   *Evidence:* `scripts/check-release-packet.test.mjs` `rejects regression
-  through the tagged phase`. *Status:* planned.
+  through the tagged phase`. *Status:* implemented.
 
 ## Open verification gaps
 

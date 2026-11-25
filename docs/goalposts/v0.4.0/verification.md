@@ -7,13 +7,25 @@ after its command or public oracle has been observed.
 
 - Target version: `0.4.0`
 - Previous public tag: `v0.3.0`
-- Release phase: pre-publication.
+- Release phase: tagged.
 - Packet-planning issue:
   [#280](https://github.com/flyingrobots/colorful-language/issues/280)
 - Publication authorities:
   [#154](https://github.com/flyingrobots/colorful-language/issues/154) and
   [#37](https://github.com/flyingrobots/colorful-language/issues/37)
-- Annotated `v0.4.0` tag: not available.
+- Annotated `v0.4.0` tag: available. Tag object
+  `ed2fd33febf5486ac0f5e0e100e328560b6c2f34` resolves to commit
+  `bc17f09d6dec7a5fd7418a26c8f5d7066795583f`. It was pushed on 2026-11-24
+  (Pacific time) on the owner's authorization
+  ([#345](https://github.com/flyingrobots/colorful-language/issues/345)).
+- Tag workflow: publish workflow run
+  [45537925550](https://github.com/flyingrobots/colorful-language/actions/runs/45537925550)
+  failed in the `Validate release admission` job at the step
+  `Self-test release packet policy`, because the packet check then rejected a
+  pre-publication witness on the tagged commit
+  ([#370](https://github.com/flyingrobots/colorful-language/issues/370)). The
+  native-binary and build-and-publish jobs were skipped. No crate, archive,
+  VSIX, or GitHub Release was published for `v0.4.0`.
 
 ## Pre-publication evidence
 
