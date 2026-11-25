@@ -259,6 +259,11 @@ observe public-contract regressions before they ship.
   proposing `@types/vscode` updates above the `engines.vscode` floor, with the
   policy checker and its self-test moving together
   [#352](https://github.com/flyingrobots/colorful-language/issues/352).
+- **Delivered the Vale timeout test warm-up:** the timeout test pays the
+  first-launch cost of its fake script in setup, so a slow first launch cannot
+  fail its discovery step, with production deadlines and the test's assertions
+  unchanged
+  [#365](https://github.com/flyingrobots/colorful-language/issues/365).
 - **Delivered the v0.4.0 snapshot preparation:** promote the accumulated
   `Unreleased` ledger into a dated `0.4.0` section, de-tense entries that
   described shipped work as still queued, refresh the pre-publication witness

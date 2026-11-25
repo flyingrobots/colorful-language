@@ -171,6 +171,43 @@ cat > 'input.txt'
     fn config(&self) -> ValeConfig {
         ValeConfig::new(&self.executable, &self.configuration)
     }
+
+    /// Runs the fake script once with `--version` and waits for it to exit.
+    ///
+    /// WHY: the first launch of a newly written executable is slow on macOS
+    /// (measured 130 to 580 ms, against about 4.5 ms on a repeat launch). A
+    /// test that discovers under a very short timeout would otherwise pay that
+    /// cost inside `ValeAnalyzer::discover` and fail before reaching the
+    /// behavior it checks. The `--version` path writes no file, so no other
+    /// test's recorded arguments, captured input, marker, or worker PID are
+    /// affected. The generous bound makes a broken fixture fail with a clear
+    /// message instead of hanging.
+    fn warm_up(&self) {
+        const WARM_UP_BOUND: Duration = Duration::from_secs(30);
+        let mut child = Command::new(&self.executable)
+            .arg("--version")
+            .current_dir(&self.root)
+            .env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("spawn fake Vale warm-up");
+        let started = Instant::now();
+        loop {
+            if let Some(status) = child.try_wait().expect("poll fake Vale warm-up") {
+                assert!(status.success(), "fake Vale warm-up failed: {status}");
+                return;
+            }
+            if started.elapsed() > WARM_UP_BOUND {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("fake Vale warm-up exceeded {WARM_UP_BOUND:?}");
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+    }
 }
 
 impl Drop for FakeVale {
@@ -416,6 +453,7 @@ wait"#,
 #[test]
 fn timeout_and_process_failure_are_distinct() {
     let timeout = FakeVale::new("3.14.2", "while :; do :; done");
+    timeout.warm_up();
     let analyzer = ValeAnalyzer::discover(timeout.config().with_timeout(Duration::from_millis(50)))
         .expect("discover timeout fixture");
     assert_eq!(
