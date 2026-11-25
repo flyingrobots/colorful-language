@@ -272,6 +272,13 @@ observe public-contract regressions before they ship.
   the release boundary before final preflight
   [#301](https://github.com/flyingrobots/colorful-language/issues/301).
   <!-- roadmap-primary: delivered #301 -->
+- **Delivered the pre-tag v0.4.0 packet reconciliation:** move the entries
+  that merged after the 0.4.0 stamp into the dated 0.4.0 ledger, retake the
+  witness scope inventory against current `main`, admit the work that merged
+  instead of holding it, and record the failed 2026-11-24 final preflight
+  without authorizing a tag
+  [#359](https://github.com/flyingrobots/colorful-language/issues/359).
+  <!-- roadmap-primary: delivered #359 -->
 - **Delivered v0.4.0 packet admission:** derive the planned packet from current
   workspace and completed-release identity; require exact version tokens,
   uniquely labeled goalposts with observable acceptance oracles, and an
@@ -284,6 +291,12 @@ observe public-contract regressions before they ship.
   slice issues retain their architectural goalposts
   [#283](https://github.com/flyingrobots/colorful-language/issues/283).
   <!-- roadmap-primary: active #283 -->
+- **Active v0.4.0 tag and publication evidence:** once final preflight passes
+  from clean, aligned `main`, the owner pushes the annotated `v0.4.0` tag, and
+  the witness records only the publication, public verification, and
+  retrospective evidence actually observed
+  [#345](https://github.com/flyingrobots/colorful-language/issues/345).
+  <!-- roadmap-primary: active #345 -->
 - **Delivered release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
