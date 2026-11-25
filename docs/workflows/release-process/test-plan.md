@@ -565,8 +565,10 @@ Verification for release preparation, tag automation, and release witnesses.
   resolves from the checked history. *Oracle:* a temporary repository with a
   commit after the annotated `v0.4.0` tag and a tagged witness is admitted as
   `tagged`; the same witness fails with `E_RELEASE_PACKET_EVIDENCE` when the
-  target tag is absent (as in a checkout without tags), lightweight, or not
-  reachable from `HEAD`; a tagged witness that declares the target tag
+  target tag is absent while the predecessor tag is present, lightweight, or
+  not reachable from `HEAD`; a shallow clone fetched without tags fails closed
+  earlier with `E_RELEASE_PACKET_IDENTITY`, because no predecessor tag
+  resolves; a tagged witness that declares the target tag
   unavailable, or that claims completed publication evidence, fails with
   `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* temporary-repository and
   snapshot release-packet policy tests. *Tracking:*
