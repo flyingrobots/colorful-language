@@ -236,14 +236,18 @@ The accepted dispositions are:
 - `parked` for an explicit experiment or backlog disposition; and
 - `delivered` for a retained primary reference to a closed slice.
 
-Only a maintainer applies the `slice` label. The review bot, CodeRabbit, labels
-new issues from the `issue_enrichment.labeling` section of `.coderabbit.yaml`.
-That file turns on auto-labelling with an explicit `labeling_instructions` list,
-so the bot suggests only the listed labels, and the list omits `slice` (and
-`epic`). Any other label that is not in the list is no longer suggested by the
-bot either. Add a label to the list only after checking that a wrong application
-cannot fail a repository gate. If the bot still applies `slice`, remove the
-label by hand and reopen the investigation on the issue that tracks it.
+Only a maintainer applies the `slice` label. The review bot, CodeRabbit, has an
+issue auto-labelling feature configured by the `issue_enrichment.labeling`
+section of `.coderabbit.yaml`. That file sets `auto_apply_labels: true` and an
+explicit `labeling_instructions` list that omits `slice` and `epic`. A
+repository test checks that the file parses and that the list omits both
+labels. CodeRabbit's documentation says that with such a list the bot suggests
+only the listed labels; whether the bot honours the file is a hosted check
+recorded on
+[#371](https://github.com/flyingrobots/colorful-language/issues/371), not
+something this repository can prove. Add a label to the list only after
+checking that a wrong application cannot fail a repository gate. If the bot
+applies `slice` anyway, remove the label by hand and report it on that issue.
 
 Ordinary issue links remain non-owning cross-references, so historical and epic
 links do not inflate the inventory. Do not delete completed roadmap history:

@@ -90,7 +90,7 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   request must continue to reject closing keywords in commit messages.
 - **RM-17 - Review bot never owns the `slice` label.** The roadmap check treats
   the `slice` label as authoritative, so only a maintainer may apply it. The
-  review bot's issue auto-labelling must choose only from a reviewed list of
+  review bot's issue auto-labelling must be configured with a reviewed list of
   labels that excludes `slice`, and that list must live in a versioned
   repository file rather than in an account setting.
 
@@ -631,21 +631,31 @@ Repository metadata, Discussion intake, and deployment ownership are tracked in
   commands. *Tracking:*
   [#153](https://github.com/flyingrobots/colorful-language/issues/153).
   *Status:* implemented.
-- **RM-17a - Bot issue labelling excludes `slice`.** *Requirement:* RM-17.
+- **RM-17a - Bot label allowlist omits `slice`.** *Requirement:* RM-17.
   *Behavior:* `.coderabbit.yaml` turns on CodeRabbit issue auto-labelling with
-  an explicit `labeling_instructions` list, so the bot suggests only the listed
-  labels, and the list does not contain `slice`. *Oracle:* a test issue whose
-  body describes a small deliverable, filed after the file is on `main` and
-  edited once, shows no `labeled` event for `slice` by `coderabbitai[bot]` in
+  an explicit `labeling_instructions` list that does not contain `slice` or
+  `epic`. CodeRabbit's documentation says the bot then suggests only the listed
+  labels; that behavior belongs to the hosted bot and is not proven by the file
+  alone. *Oracle, local:* the file parses with the root `yaml` dependency,
+  `issue_enrichment.labeling.auto_apply_labels` is `true`, the list is
+  non-empty, every entry has a non-empty string `label` and `instructions`, and
+  no label equals `slice` or `epic` case-insensitively. *Oracle, hosted:* a test
+  issue whose body describes a small deliverable, filed after the file is on
+  `main` and edited once, shows no `labeled` event for `slice` by
+  `coderabbitai[bot]` in
   `gh api repos/flyingrobots/colorful-language/issues/<N>/events` at least 15
   minutes after creation and at least 15 minutes after the edit. *Evidence
-  type:* hosted observed check (the bot is an external oracle); no local
-  deterministic test exists because only CodeRabbit reads the file. *Evidence:*
-  `.coderabbit.yaml`; the observed-check result is recorded on
+  type:* deterministic configuration test for the local oracle; hosted observed
+  check for the bot behavior, because the bot is an external oracle.
+  *Evidence:* local, `.coderabbit.yaml` and the test named `RM-17a:
+  .coderabbit.yaml is well formed and its label list omits slice and epic` in
+  `scripts/check-repository-maintenance.test.mjs`; hosted, the observed-check
+  result recorded on
   [#371](https://github.com/flyingrobots/colorful-language/issues/371).
   *Tracking:*
   [#371](https://github.com/flyingrobots/colorful-language/issues/371).
-  *Status:* planned.
+  *Status:* local oracle implemented; hosted oracle planned, pending until the
+  observed check runs after merge.
 
 ## Hosted evidence boundary
 
