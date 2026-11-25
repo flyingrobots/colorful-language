@@ -67,6 +67,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the Homebrew syntax runtime stays on Ruby 3.4.10, which that release still
   provides. The step runs only in the tag workflow, so pull-request CI cannot
   exercise it.
+- **Dependabot no longer proposes `@types/vscode`
+  ([#352](https://github.com/flyingrobots/colorful-language/issues/352)).**
+  The `/editors/vscode` npm source ignores every `@types/vscode` update beside
+  `typescript` and `@types/node`. The extension's `engines.vscode` floor is
+  1.91 and `vsce` refuses to package an extension whose `@types/vscode` is
+  newer than its engine, so the proposed 1.144.0 failed the whole `vscode`
+  group. The dependency-update policy checker and its self-test expect the new
+  exclusion and reject a repository without it. The engine floor, the
+  declaration range, and every lockfile are unchanged.
 
 ### Fixed
 

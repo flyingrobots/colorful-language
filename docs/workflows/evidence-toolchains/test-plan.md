@@ -208,6 +208,22 @@ bounded property/fuzz evidence tracked by
   `scripts/check-dependency-update-policy.test.mjs`, the `docs` job in
   `.github/workflows/ci.yml`, and `scripts/release-prep.sh`. *Status:*
   implemented.
+- **ETC-7b** — *Requirement:* ETC-9. *Behavior:* the VS Code Dependabot source
+  ignores every `@types/vscode` update, because the extension's
+  `engines.vscode` floor is 1.91 and `vsce` refuses to package an extension
+  whose `@types/vscode` is newer than its engine. *Oracle:* the dependency
+  update policy checker expects the `@types/vscode` all-update exclusion beside
+  `typescript` and `@types/node`, accepts the reviewed configuration, rejects
+  the repository when that exclusion is absent, and still rejects an
+  unexpected extra exclusion. *Evidence type:* executable policy checker and
+  mutation test. *Tracking:*
+  [#352](https://github.com/flyingrobots/colorful-language/issues/352).
+  *Evidence:* `.github/dependabot.yml`;
+  `scripts/check-dependency-update-policy.mjs`;
+  `scripts/check-dependency-update-policy.test.mjs` tests `rejects automatic
+  VS Code host declaration updates`, `rejects an unexpected extra VS Code
+  exclusion`, and `the checked-in update and workflow policy passes`.
+  *Status:* implemented.
 - **ETC-8a** — *Requirement:* ETC-10. *Behavior:* the workspace lockfile pins
   the property-test dependency, the standalone fuzz workspace lockfile pins the
   fuzz runtime, and one repository script owns the exact 32-byte seed,
