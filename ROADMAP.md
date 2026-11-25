@@ -310,6 +310,10 @@ observe public-contract regressions before they ship.
   gates before the public distribution authority closes
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
   <!-- roadmap-primary: delivered #281 -->
+- **Review bot slice-label guard:** keep CodeRabbit from applying the `slice`
+  label to new issues by configuring its issue labelling in `.coderabbit.yaml`,
+  because the roadmap check treats that label as authoritative
+  [#371](https://github.com/flyingrobots/colorful-language/issues/371).
 - **Roadmap follow-up triage:** retain the cursor-complete transport idea in the
   scale-triggered experiment backlog; checker decomposition shipped through
   [#257](https://github.com/flyingrobots/colorful-language/issues/257)

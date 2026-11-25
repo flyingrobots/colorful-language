@@ -566,6 +566,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Review bot no longer labels issues as slices
+  ([#371](https://github.com/flyingrobots/colorful-language/issues/371)).**
+  A new `.coderabbit.yaml` turns on CodeRabbit issue auto-labelling with an
+  explicit label list that omits `slice` and `epic`, so a wrongly applied label
+  no longer turns the live roadmap check red. Labels outside the list are no
+  longer suggested by the bot. The result of the hosted observed check is
+  recorded on the issue.
 - **Bounded roadmap-policy ownership.** Architecture-accountability Markdown
   interpretation and diagnostics now live in one pure policy module, while the
   inventory owner retains primary-marker and issue-state reconciliation and the
