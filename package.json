@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "mdast-util-from-markdown": "2.1.0",
-    "mdast-util-gfm-table": "2.0.0",
+    "mdast-util-gfm-table": "2.0.1",
     "mdast-util-to-string": "4.0.0",
     "micromark-extension-gfm-table": "2.1.2",
     "smol-toml": "1.9.1",
