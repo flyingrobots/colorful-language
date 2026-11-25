@@ -758,6 +758,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The Vale timeout test survives a slow first launch
+  ([#365](https://github.com/flyingrobots/colorful-language/issues/365)).**
+  `timeout_and_process_failure_are_distinct` now runs its newly written fake
+  script once with `--version` in setup, so the slow first launch of a new
+  executable on macOS (130 to 580 ms, against about 4.5 ms on a repeat) no
+  longer turns its 50 ms discovery step into a false timeout. Production
+  deadlines, the test's assertions, and `colorful-vale` itself are unchanged.
 - **The package witness checks the reviewed dependency graph
   ([#334](https://github.com/flyingrobots/colorful-language/issues/334)).**
   `scripts/package-witness.sh` used to resolve a fresh lockfile for the
