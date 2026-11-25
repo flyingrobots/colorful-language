@@ -299,12 +299,12 @@ observe public-contract regressions before they ship.
   slice issues retain their architectural goalposts
   [#283](https://github.com/flyingrobots/colorful-language/issues/283).
   <!-- roadmap-primary: active #283 -->
-- **Active v0.4.0 tag and publication evidence:** once final preflight passes
-  from clean, aligned `main`, the owner pushes the annotated `v0.4.0` tag, and
+- **Delivered the v0.4.0 tag:** after final preflight passed from clean,
+  aligned `main`, the owner pushed the annotated `v0.4.0` tag at that commit;
   the witness records only the publication, public verification, and
   retrospective evidence actually observed
   [#345](https://github.com/flyingrobots/colorful-language/issues/345).
-  <!-- roadmap-primary: active #345 -->
+  <!-- roadmap-primary: delivered #345 -->
 - **Delivered release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
