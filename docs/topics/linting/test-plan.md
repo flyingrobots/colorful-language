@@ -515,20 +515,24 @@ Implemented and planned cases are listed below.
   [#240](https://github.com/flyingrobots/colorful-language/issues/240).
   *Status:* implemented.
 - **LINT-13v** — *Requirement:* LINT-13. *Behavior:* the timeout test pays the
-  first-launch cost of its newly written fake script in setup, so a slow first
-  launch of a new executable cannot turn the test's own discovery step into a
-  false timeout. Production deadlines, the 50 ms analysis timeout, and the
-  test's assertions are unchanged. *Oracle:* a warm-up `--version` run of the
-  fake script completes under its own generous bound before discovery runs
-  under the 50 ms configuration; the analysis then returns
-  `ValeErrorKind::Timeout` and a failed process returns
-  `ValeErrorKind::ProcessFailure`, as before. No artifact the warm-up leaves
-  behind is read by another test. *Evidence type:* deterministic integration
-  test, repeated on a host where a new script is slow to launch. *Evidence:*
-  `colorful-vale` `vale_adapter::timeout_and_process_failure_are_distinct`
-  through `FakeVale::warm_up`, which runs only the `--version` path and writes
-  no file. *Tracking:*
-  [#365](https://github.com/flyingrobots/colorful-language/issues/365).
+  first-launch cost of its newly written fake script in setup, through the
+  adapter's own startup path, so a slow first launch of a new executable
+  cannot turn the test's own discovery step into a false timeout and the
+  warm-up itself cannot fail on a briefly busy executable on Linux.
+  Production deadlines, the 50 ms analysis timeout, and the test's assertions
+  are unchanged. *Oracle:* the warm-up runs the `--version` probe through
+  `ValeAnalyzer::discover` under the default 5 second timeout, which uses the
+  startup retry of LINT-13s, and must succeed before discovery runs under the
+  50 ms configuration; the analysis then returns `ValeErrorKind::Timeout` and
+  a failed process returns `ValeErrorKind::ProcessFailure`, as before. No
+  artifact the warm-up leaves behind is read by another test. *Evidence type:*
+  deterministic integration test, repeated locally on a host where a new
+  script is slow to launch and on hosted Linux reruns. *Evidence:* `colorful-vale`
+  `vale_adapter::timeout_and_process_failure_are_distinct` through
+  `FakeVale::warm_up`, which calls `ValeAnalyzer::discover` and writes no
+  file. *Tracking:*
+  [#365](https://github.com/flyingrobots/colorful-language/issues/365) and
+  [#367](https://github.com/flyingrobots/colorful-language/issues/367).
   *Status:* implemented.
 - **LINT-14a** — *Requirement:* LINT-14. *Behavior:* pinned Colorful and
   comparison-tool versions run against blinded development and held-out English
