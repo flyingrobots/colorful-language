@@ -264,6 +264,7 @@ observe public-contract regressions before they ship.
   fail its discovery step, with production deadlines and the test's assertions
   unchanged
   [#365](https://github.com/flyingrobots/colorful-language/issues/365).
+  <!-- roadmap-primary: delivered #365 -->
 - **Delivered the v0.4.0 snapshot preparation:** promote the accumulated
   `Unreleased` ledger into a dated `0.4.0` section, de-tense entries that
   described shipped work as still queued, refresh the pre-publication witness
