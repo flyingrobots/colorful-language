@@ -60,22 +60,29 @@ non-issue URL as its observable oracle. Inline and reference-style issue links
 share one exhaustive slice inventory; non-claims and rollback posture are also
 required. A workspace version behind the latest reachable public tag is
 rejected instead of being treated as a new release.
-Before publication, the verification witness must name the exact target,
+Before the tag, the verification witness must name the exact target,
 previous tag, and unavailable target tag; leave registry, public-install, and
 retrospective sections with exactly one explicit unavailable or pending
 `Evidence state:`; and contain no completed claim hidden in ordinary prose,
 commit identifiers, literal code or HTML blocks, or inline or reference-style
 link destinations.
-After publication, the same witness advances through a fail-closed phase
-matrix:
+The same witness advances through a fail-closed phase matrix:
 
 | Release phase | Target tag | Publication | Public verification | Retrospective |
 | --- | --- | --- | --- | --- |
 | `pre-publication` | unavailable | unavailable | unavailable | unavailable |
+| `tagged` | available | unavailable | unavailable | unavailable |
 | `published` | available | completed | unavailable | unavailable |
 | `verified` | available | completed | completed | unavailable |
 | `retrospected` | available | completed | completed | completed |
 
+`pre-publication` is admitted while the target tag does not resolve and on
+the exact commit the annotated target tag resolves to, which is the commit the
+tag workflow validates. On any later commit a resolving target tag rejects
+`pre-publication`. `tagged` records that the annotated tag exists and
+publication has not completed; it is admitted only while the annotated target
+tag resolves from the checked history, so an absent, lightweight, or
+unreachable tag rejects it.
 A completed publication records the full commit behind the annotated target
 tag, one immutable GitHub Actions run URL, and the exact GitHub Release tag URL.
 Completed public verification records dated passed verification and rollback or
