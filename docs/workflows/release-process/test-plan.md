@@ -553,7 +553,11 @@ Verification for release preparation, tag automation, and release witnesses.
   `RELEASE PREP PASSED`. *Evidence type:* release-preparation gate run plus
   lockfile diff review. *Tracking:*
   [#388](https://github.com/flyingrobots/colorful-language/issues/388).
-  *Status:* planned.
+  *Evidence:* the `Version sources` and `Unified release preparation` rows of
+  `docs/goalposts/v0.4.1/verification.md`;
+  `scripts/check-coverage-policy.test.mjs`
+  `unreleased coverage note matches the machine policy`; and `CHANGELOG.md`.
+  *Status:* implemented.
 - **REL-19a — Supported release-phase matrix.** *Requirement:* REL-19.
   *Behavior:* one canonical witness fixture for each supported phase carries
   exactly the completed and unavailable section states admitted at that point.
