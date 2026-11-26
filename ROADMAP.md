@@ -345,6 +345,12 @@ observe public-contract regressions before they ship.
   a completed release; the terminal phase for an abandoned tag is
   [#387](https://github.com/flyingrobots/colorful-language/issues/387)
   [#383](https://github.com/flyingrobots/colorful-language/issues/383).
+- **Abandoned witness phase:** a tagged witness whose publication was abandoned
+  moves to the terminal `abandoned` phase, with publication and public
+  verification not applicable, a completed retrospective, and a forward
+  version; the predecessor rule accepts it, and the v0.4.0 witness is there
+  with `v0.4.1` as its forward version
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
 - **Roadmap follow-up triage:** retain the cursor-complete transport idea in the
   scale-triggered experiment backlog; checker decomposition shipped through
   [#257](https://github.com/flyingrobots/colorful-language/issues/257)

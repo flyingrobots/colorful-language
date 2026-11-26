@@ -763,7 +763,11 @@ Verification for release preparation, tag automation, and release witnesses.
   rejection gone. *Evidence type:* live repository check plus a recorded
   throwaway-clone experiment. *Tracking:*
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
-  *Status:* planned.
+  *Evidence:* `docs/goalposts/v0.4.0/verification.md`;
+  `scripts/check-release-packet.test.mjs` `the checked-in v0.4.0 release
+  packet satisfies the policy`; and the throwaway-clone experiment recorded on
+  [PR #393](https://github.com/flyingrobots/colorful-language/pull/393#issuecomment-7184935813).
+  *Status:* implemented.
 - **REL-20a: Manual dry-run trigger.** *Requirement:* REL-20. *Behavior:* the
   release workflow triggers on a pushed `v*` tag and on `workflow_dispatch`
   with no inputs, so the dry run is selected by the event and no free-form
