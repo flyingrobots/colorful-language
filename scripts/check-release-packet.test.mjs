@@ -1505,10 +1505,10 @@ function successorSnapshot() {
   snapshot.releasePath = "docs/goalposts/v0.4.1/release.md";
   snapshot.verificationPath = "docs/goalposts/v0.4.1/verification.md";
   snapshot.release = snapshot.release
-    .replace("v0.4.0 — Release Packet", "v0.4.1 — Release Packet")
+    .replace("# colorful-language v0.4.0", "# colorful-language v0.4.1")
     .replace("Release 0.4.0 after v0.3.0", "Release 0.4.1 after v0.4.0");
   snapshot.verification = snapshot.verification
-    .replace("v0.4.0 — Verification Witness", "v0.4.1 — Verification Witness")
+    .replace("# colorful-language v0.4.0", "# colorful-language v0.4.1")
     .replace("Target version: 0.4.0", "Target version: 0.4.1")
     .replace("Previous public tag: v0.3.0", "Previous public tag: v0.4.0")
     .replace("Annotated v0.4.0 tag:", "Annotated v0.4.1 tag:");
