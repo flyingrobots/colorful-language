@@ -592,6 +592,15 @@ Verification for release preparation, tag automation, and release witnesses.
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   *Evidence:* `scripts/check-release-packet.test.mjs` `rejects regression
   through the tagged phase`. *Status:* implemented.
+- **REL-19i: Documentation spine states the tagged, unpublished v0.4.0.**
+  *Requirement:* REL-19. *Behavior:* the v0.4.0 entry in `docs/README.md` links
+  the release packet and the witness and says the release is tagged and not
+  published, so a reader is not told the tag is missing. *Oracle:* the entry
+  contains the phrase `is tagged and has not been published`, which replaces
+  the phrase `not yet tagged or published`.
+  *Evidence type:* documentation spine test. *Tracking:*
+  [#386](https://github.com/flyingrobots/colorful-language/issues/386).
+  *Status:* planned.
 
 ## Open verification gaps
 
