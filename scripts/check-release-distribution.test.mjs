@@ -1479,6 +1479,53 @@ test("rejects credentials inherited by dry-run steps from workflow or job scope"
   }
 });
 
+test("keeps the default checkout token unpersisted and passes no token input to a dry-run step", () => {
+  for (const job of ["binary-artifacts", "release"]) {
+    for (const checkoutWith of [
+      {},
+      { "persist-credentials": true },
+      { "persist-credentials": "false" },
+    ]) {
+      const snapshot = validSnapshot();
+      snapshot.workflow.jobs[job].steps.unshift({
+        uses: `actions/checkout@${ACTION_SHA}`,
+        with: checkoutWith,
+      });
+      assert.throws(
+        () => validateReleaseDistribution(snapshot),
+        /must check out with persist-credentials: false/u,
+        `${job} checkout with ${JSON.stringify(checkoutWith)} must be rejected`,
+      );
+    }
+  }
+
+  for (const [job, name, key, value] of [
+    ["release", "Download native archives", "github-token", "${{ env.PAT }}"],
+    ["release", "Install SBOM tool", "token", "${{ vars.TOOL_TOKEN }}"],
+    ["release", "Install SBOM tool", "mirror-token", "literal-token"],
+    ["binary-artifacts", "Upload native archive", "Token", "${{ env.T }}"],
+    ["release", "Download native archives", "ssh-key", "${{ env.KEY }}"],
+  ]) {
+    const snapshot = validSnapshot();
+    const step = jobStep(snapshot, job, name);
+    step.with = { ...step.with, [key]: value };
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /reaches a dry run and must not pass a token or key input explicitly/u,
+      `${job} '${name}' with ${key} must be rejected`,
+    );
+  }
+
+  const { workflow } = loadRepositorySnapshot();
+  for (const [job, definition] of Object.entries(workflow.jobs)) {
+    const checkouts = definition.steps.filter((step) =>
+      String(step.uses ?? "").startsWith("actions/checkout@"),
+    );
+    assert.equal(checkouts.length, 1, `${job} must check out once`);
+    assert.equal(checkouts[0].with?.["persist-credentials"], false);
+  }
+});
+
 test("refuses a dry run outside main", () => {
   for (const [mutation, expected] of [
     ["drop-refusal", /must refuse a dry run outside refs\/heads\/main/u],
