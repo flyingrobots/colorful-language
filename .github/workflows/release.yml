@@ -144,7 +144,9 @@ jobs:
     env:
       RELEASE_TAG: ${{ needs.validate-release.outputs.release-tag }}
     # GitHub Actions cannot vary job permissions by event, so a dry run holds
-    # the same grant; the only step that uses it is tag-only.
+    # the same grant. Only the tag-only attestation step needs the write
+    # grants, but checkout still receives the job token through its default
+    # input, and any step can request an OIDC token while id-token is write.
     permissions:
       contents: read # Read the immutable tagged source.
       id-token: write # Request the short-lived Sigstore signing identity.
@@ -239,7 +241,10 @@ jobs:
     env:
       RELEASE_TAG: ${{ needs.validate-release.outputs.release-tag }}
     # GitHub Actions cannot vary job permissions by event, so a dry run holds
-    # the same grant; every step that uses it is tag-only.
+    # the same grant. Only tag-only steps need the write grants, but checkout,
+    # setup-node, and setup-ruby still receive the job token through their
+    # default inputs, and any step can request an OIDC token while id-token is
+    # write.
     permissions:
       contents: write # Create the GitHub release after all evidence passes.
       id-token: write # Request the short-lived Sigstore signing identity.

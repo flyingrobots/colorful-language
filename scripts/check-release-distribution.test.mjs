@@ -1313,7 +1313,7 @@ test("runs admission, native builds, and packaging in a dry run", () => {
   }
 });
 
-test("passes no secret or job token to a step a dry run reaches", () => {
+test("passes no secret or explicit job token to a step a dry run reaches", () => {
   for (const [job, name, mutate] of [
     [
       "release",

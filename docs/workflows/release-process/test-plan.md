@@ -642,26 +642,33 @@ Verification for release preparation, tag automation, and release witnesses.
   [#374](https://github.com/flyingrobots/colorful-language/issues/374).
   *Evidence:* `scripts/check-release-distribution.test.mjs` `runs admission,
   native builds, and packaging in a dry run`. *Status:* implemented.
-- **REL-20e: No secret or token reaches a dry-run step.** *Requirement:*
-  REL-20. *Behavior:* only outside-effect steps read a repository secret or
-  the job token, and each job's permission grant is exactly the reviewed set,
-  so the manual trigger adds no permission or secret. GitHub Actions job
+- **REL-20e: No secret and no explicit job token on a dry-run step.**
+  *Requirement:* REL-20. *Behavior:* no repository secret reaches a step a dry
+  run can run, and no dry-run step is passed the job token explicitly; only
+  outside-effect steps do either. A credential counts in any expression form:
+  dot or bracket access with either quote, any letter case, a computed index,
+  or the whole `secrets` or `github` context, and the workflow-level and
+  job-level fields every step inherits, such as `env` and `defaults`, carry
+  none. Every `actions/checkout` sets `persist-credentials: false`, and no
+  dry-run step sets a token, SSH-key, or password input. Each job's permission
+  grant is exactly the reviewed set, so the manual trigger adds no permission
+  or secret. Not covered by this case: `actions/checkout`,
+  `actions/setup-node`, and `ruby/setup-ruby` still receive the job token
+  through their default inputs on a dry run, and GitHub Actions job
   permissions cannot vary by event, so a dry run's native and release jobs
-  still hold their reviewed grants; the steps that use them are tag-only.
-  *Oracle:* passing `secrets.*` or `github.token` to a step a dry run reaches,
-  or adding a permission to any job, fails the distribution policy.
-  *Evidence type:* deterministic distribution-policy mutation test.
-  *Tracking:*
+  still hold their reviewed write grants. *Oracle:* passing a secret or the
+  job token in any of those forms to a step a dry run reaches or to an
+  inherited scope, a checkout that persists or omits its credential setting,
+  an explicit token or key input on a dry-run step, or adding a permission to
+  any job fails the distribution policy. *Evidence type:* deterministic
+  distribution-policy mutation test. *Tracking:*
   [#374](https://github.com/flyingrobots/colorful-language/issues/374).
-  A credential counts in any expression form: dot or bracket access with either
-  quote, any letter case, a computed index, or the whole `secrets` or `github`
-  context. The workflow-level and job-level fields every step inherits, such
-  as `env` and `defaults`, carry no credential either.
   *Evidence:* `scripts/check-release-distribution.test.mjs` `passes no secret
-  or job token to a step a dry run reaches`, `rejects bracket-form and
-  whole-context credentials on a dry-run step`, and `rejects credentials
-  inherited by dry-run steps from workflow or job scope`. *Status:*
-  implemented.
+  or explicit job token to a step a dry run reaches`, `rejects bracket-form
+  and whole-context credentials on a dry-run step`, `rejects credentials
+  inherited by dry-run steps from workflow or job scope`, and `keeps the
+  default checkout token unpersisted and passes no token input to a dry-run
+  step`. *Status:* implemented.
 - **REL-20f: Dry run refused outside `main`.** *Requirement:* REL-20.
   *Behavior:* admission refuses a manual run whose ref is not
   `refs/heads/main`, and verifies that the dispatched commit is an ancestor of

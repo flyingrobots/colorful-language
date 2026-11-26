@@ -190,9 +190,14 @@ Admission refuses a dry run on any ref other than `main`, derives the release
 tag from the workspace version instead of a pushed tag, and passes it to the
 later jobs as `RELEASE_TAG`, which names every artifact. The distribution
 policy pins the triggers, the guard on exactly those steps, unconditional jobs
-and other steps, exact job permission grants, and the absence of any secret or
-job token on a step a dry run reaches. The runbook lists what a dry run does
-not cover.
+and other steps, and exact job permission grants. No repository secret
+reaches a step a dry run can run, and no dry-run step is passed the job token
+explicitly. `actions/checkout`, `actions/setup-node`, and `ruby/setup-ruby`
+still receive the job token through their default inputs, to fetch the
+repository and download toolchains; every checkout sets
+`persist-credentials: false`. A dry run's native and release jobs still hold
+their reviewed write grants, because job permissions cannot vary by event.
+The runbook lists what a dry run does not cover.
 
 The tag run of the release workflow runs when a `v*` tag is pushed. It verifies
 the profile, verifies that release metadata matches the tag, verifies that the

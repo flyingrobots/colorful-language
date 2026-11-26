@@ -675,11 +675,36 @@ not cover:
   target tag resolving to the commit being checked;
 - the tag run's own checkout of the tag ref and its concurrency group.
 
+No repository secret reaches a step a dry run can run, and no dry-run step is
+passed the job token explicitly. The distribution policy enforces both in
+every expression form, including bracket access and the whole `secrets` or
+`github` context, and in the workflow-level and job-level `env` and
+`defaults` that every step inherits.
+
+The job token still reaches three actions a dry run runs, through inputs
+whose default is `github.token`. Read from each action's `action.yml` at the
+pinned commit:
+
+| Action a dry run reaches | Default job-token use |
+| --- | --- |
+| `actions/checkout` | `token` defaults to `github.token` and fetches the repository. Every checkout sets `persist-credentials: false`, so the token is not left in the git configuration; the policy requires that setting. |
+| `actions/setup-node` | `token` defaults to `github.token` on github.com and is used to download Node.js distributions. |
+| `ruby/setup-ruby` | `token` defaults to `github.token` on github.com and is used to download Ruby release assets. |
+| `dtolnay/rust-toolchain` | No token input and no `github.token` reference. |
+| `taiki-e/install-action` | Passes `github.token` only when `fallback` is `cargo-binstall`; the workflow pins `fallback: none`, which the policy requires. |
+| `actions/upload-artifact` | No token input. |
+| `actions/download-artifact` | `github-token` has no default and is needed only for another repository or run; this workflow does not set it. |
+
+Neither artifact action takes the job token by default. The policy rejects any
+token, SSH-key, or password input set explicitly on a dry-run step.
+
 GitHub Actions cannot vary a job's permissions by event, so a dry run's
 native and release jobs still hold their reviewed `contents`, `id-token`, and
-`attestations` grants. Every step that reads a secret or the job token is
-tag-only, and the distribution policy rejects a secret or token on any step a
-dry run reaches.
+`attestations` write grants, as the permissions comments in the workflow
+say. The steps that need those grants are tag-only, but every step in those
+jobs runs with the grant in place: the job token the three actions above
+receive carries it, and with `id-token: write` any step in the job can
+request a GitHub OIDC token. The policy cannot narrow that inside one job.
 
 ## Publication
 

@@ -135,6 +135,7 @@ const TAG_ONLY_STEPS = Object.freeze({
 });
 const CREDENTIAL_REFERENCE = /secrets\.|github\.token/u;
 const EXPRESSION = /\$\{\{([\s\S]*?)\}\}/gu;
+const TOKEN_LIKE_INPUT = /token|ssh-key|password/iu;
 const REF_NAME_REFERENCE = /GITHUB_REF_NAME|github\.ref_name/u;
 const RELEASE_TAG_OUTPUT = "${{ steps.release-metadata.outputs.release_tag }}";
 const RELEASE_TAG_ENV = "${{ needs.validate-release.outputs.release-tag }}";
@@ -819,10 +820,30 @@ function validateDryRunInputs(workflow) {
       if (tagOnly) {
         continue;
       }
+      // actions/checkout fetches with the job token through its default
+      // `token` input; persist-credentials: false keeps it out of the git
+      // configuration that later dry-run steps can read.
+      if (
+        String(step?.uses ?? "").startsWith("actions/checkout@") &&
+        step?.with?.["persist-credentials"] !== false
+      ) {
+        throw new Error(
+          `${context} must check out with persist-credentials: false`,
+        );
+      }
       const body = JSON.stringify({ ...step, name: undefined });
       if (readsCredential({ ...step, name: undefined })) {
         throw new Error(
           `${context} step '${label}' reaches a dry run and must not read a secret or the job token`,
+        );
+      }
+      if (
+        Object.keys(step?.with ?? {}).some((input) =>
+          TOKEN_LIKE_INPUT.test(input),
+        )
+      ) {
+        throw new Error(
+          `${context} step '${label}' reaches a dry run and must not pass a token or key input explicitly`,
         );
       }
       // Admission reads the pushed tag on a tag run by design; every later
