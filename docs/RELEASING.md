@@ -256,8 +256,12 @@ ordering, skipped evidence, later-phase claims, stale unavailable placeholders,
 incomplete identities, or a phase below the available `origin/main` merge-base
 witness fail with `E_RELEASE_PACKET_EVIDENCE`. This active state machine does
 not rewrite historical packets: v0.1.0 through v0.3.0 remain readable in their
-original shapes, and only the immediate predecessor's completed retrospective
-is required when admitting a new train. A clone without an `origin/main`
+original shapes, and when one of them is the immediate predecessor only its
+completed retrospective is required when admitting a new train. A later
+immediate predecessor's witness must pass this state machine for its own
+version, previous public tag, and annotated tag commit, and must be at
+`retrospected`; a predecessor witness at any earlier phase, or one whose
+evidence contradicts its phase, fails with `E_RELEASE_PACKET_EVIDENCE`. A clone without an `origin/main`
 remote-tracking ref, or a new packet absent from that ref, has no comparison
 baseline. If the ref and packet exist, failure to resolve their merge base or
 read the witness is `E_RELEASE_PACKET_IO`; regression protection never silently

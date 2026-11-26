@@ -50,9 +50,14 @@ Each release also has a packet under `docs/goalposts/vX.Y.Z/`:
   release URLs.
 
 The workspace version selects the packet, and fetched release tags reachable
-from the current history select the previous public release. The predecessor
-must have a non-empty retrospective with one explicit completed status before a
-new train is admitted. CI, release preparation, and tag admission fail closed
+from the current history select the previous public release. A predecessor
+from v0.1.0 through v0.3.0 must have a non-empty retrospective with one
+explicit completed status before a new train is admitted. A later predecessor
+witness must pass the same phase matrix as a current witness, checked against
+its own version, its own previous public tag, and the commit its annotated tag
+resolves to, and must be at `retrospected`, the only phase that admits a
+successor; a contradictory witness or any earlier phase fails with
+`E_RELEASE_PACKET_EVIDENCE`. CI, release preparation, and tag admission fail closed
 unless both versions have corresponding packets, the planned packet contains a
 concrete thesis and an exact target/previous-tag decision, every scope bucket is
 non-empty, and two to five uniquely labeled goalposts are defined. Each
@@ -96,8 +101,8 @@ later branch cannot rewrite the file backward to an earlier phase. A missing
 remote-tracking ref or a packet absent from that base is portable baseline
 absence; once the ref and packet exist, merge-base and witness-read failures
 fail closed. Historical v0.1.0 through v0.3.0 witnesses remain readable in their
-original shapes, while the immediate predecessor retains its narrower
-completed-retrospective admission check.
+original shapes; when one of them is the immediate predecessor it keeps the
+narrower completed-retrospective admission check.
 The packet parser registers the exact-pinned GFM table grammar, so tables are
 validated as rows and cells rather than accidental paragraph text.
 

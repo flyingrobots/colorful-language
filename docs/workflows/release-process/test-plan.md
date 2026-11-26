@@ -648,6 +648,34 @@ Verification for release preparation, tag automation, and release witnesses.
   [#386](https://github.com/flyingrobots/colorful-language/issues/386).
   *Evidence:* `scripts/check-release-packet.test.mjs` `documentation spine
   links the planned packet and witness`. *Status:* implemented.
+- **REL-19k: Predecessor witness judged by the phase rules.** *Requirement:*
+  REL-19. *Behavior:* when a new train is admitted, an immediate predecessor
+  newer than v0.3.0 is validated by the same phase rules as a current witness,
+  with its own version, its own previous public tag, and the commit its
+  annotated tag resolves to, and is admitted only at a phase the predecessor
+  phase list names. That list holds only `retrospected` today; the terminal
+  phase for an abandoned tag joins it in
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  Historical predecessors from v0.1.0 through v0.3.0 keep the narrower
+  completed-retrospective check. *Oracle:* in a temporary repository with
+  annotated `v0.3.0` and `v0.4.0` tags and the workspace at 0.4.1, a v0.4.0
+  predecessor witness at `tagged` whose Retrospective section declares
+  `Evidence state: unavailable.` and also contains
+  `Retrospective status: completed.` fails packet loading with
+  `E_RELEASE_PACKET_EVIDENCE` and the unavailable-state contradiction message;
+  a consistent `tagged` or `verified` predecessor fails with
+  `E_RELEASE_PACKET_EVIDENCE` because its phase is not in the predecessor
+  phase list; a consistent `retrospected` predecessor is admitted and the
+  v0.4.1 packet validates; a phase-machine predecessor with no earlier public
+  tag fails with `E_RELEASE_PACKET_IDENTITY`. *Evidence type:*
+  temporary-repository release-history mutation test. *Tracking:*
+  [#383](https://github.com/flyingrobots/colorful-language/issues/383).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs` `rejects a predecessor witness that
+  contradicts its own phase`, `admits a predecessor witness only at a
+  predecessor phase`, `requires an earlier public tag behind a phase-machine
+  predecessor`, and `requires a completed predecessor retrospective`.
+  *Status:* implemented.
 - **REL-20a: Manual dry-run trigger.** *Requirement:* REL-20. *Behavior:* the
   release workflow triggers on a pushed `v*` tag and on `workflow_dispatch`
   with no inputs, so the dry run is selected by the event and no free-form
