@@ -36,6 +36,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the terminal state tracked in
   [#387](https://github.com/flyingrobots/colorful-language/issues/387) lands.
 
+### Added
+
+- **Release workflow dry run.** A manual `workflow_dispatch` run of the release
+  workflow on `main` now runs admission, the three native builds, SBOM
+  generation, Homebrew formula generation, and editor packaging and smoke
+  without publishing anything. The event selects the mode; there is no dispatch
+  input. Attestation, crates.io publication, GitHub Release creation, and the
+  public VSIX check run only on a pushed tag. A dry run derives its release tag
+  from the workspace version and is refused outside `main`; a tag run still
+  takes its version from the tag and must match the workspace, changelog, and
+  packet. The distribution policy rejects a dry-run condition that could switch
+  publication off on a tag run, any repository secret on a step a dry run
+  reaches, and any job token passed to such a step explicitly. The job token
+  still reaches `actions/checkout`, `actions/setup-node`, and
+  `ruby/setup-ruby` through their default inputs on a dry run, checkout does
+  not persist it, and a dry run's jobs still hold their reviewed write grants.
+  Final preflight is now followed by a green dry run before a release tag
+  ([#374](https://github.com/flyingrobots/colorful-language/issues/374)).
+
 ### Fixed
 
 - **Current references say v0.4.0 is tagged and unpublished

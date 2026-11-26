@@ -30,11 +30,68 @@ const ADMISSION_COMMANDS = Object.freeze([
   "cargo build --release --locked",
   "bash scripts/package-witness.sh",
 ]);
+// The dry-run contract is restated here rather than imported, so the policy
+// tests stay an independent specification of the workflow shape.
+const DRY_RUN_GUARD = "github.event_name == 'push'";
+const TAG_ONLY_STEPS = Object.freeze({
+  "binary-artifacts": Object.freeze(["Attest native archive"]),
+  release: Object.freeze([
+    "Attest Homebrew and editor artifacts",
+    "Publish to crates.io",
+    "Create GitHub Release",
+    "Verify GitHub Release VSIX",
+  ]),
+});
+const RELEASE_TAG_ENV = "${{ needs.validate-release.outputs.release-tag }}";
+const DRY_RUN_REFUSAL =
+  'if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && ' +
+  '[ "$GITHUB_REF" != "refs/heads/main" ]; then';
+const METADATA_RUN = [
+  "set -euo pipefail",
+  "workspace_version=0.4.0",
+  DRY_RUN_REFUSAL,
+  '  echo "A release dry run runs only on main; refusing $GITHUB_REF."',
+  "  exit 1",
+  "fi",
+  'case "$GITHUB_EVENT_NAME" in',
+  '  push) release_tag="$GITHUB_REF_NAME" ;;',
+  '  workflow_dispatch) release_tag="v${workspace_version}" ;;',
+  '  *) echo "Unsupported release event $GITHUB_EVENT_NAME."; exit 1 ;;',
+  "esac",
+  'version="${release_tag#v}"',
+  'if [ "$workspace_version" != "$version" ]; then',
+  '  echo "Workspace version $workspace_version does not match tag $version."',
+  "  exit 1",
+  "fi",
+  'grep -F "## [$version]" CHANGELOG.md',
+  'test -f "docs/goalposts/${release_tag}/release.md"',
+  'test -f "docs/goalposts/${release_tag}/verification.md"',
+  'echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"',
+  "",
+].join("\n");
+const ANCESTRY_RUN = [
+  "set -euo pipefail",
+  "git fetch -q origin main",
+  'if [ "$GITHUB_EVENT_NAME" = "push" ]; then',
+  '  release_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"',
+  "else",
+  '  release_commit="$(git rev-parse "${GITHUB_SHA}^{commit}")"',
+  "fi",
+  'if ! git merge-base --is-ancestor "$release_commit" origin/main; then',
+  '  echo "$GITHUB_REF at $release_commit is not on origin/main."',
+  "  exit 1",
+  "fi",
+  "",
+].join("\n");
+
+function smokeVsix(tagVariable) {
+  return (
+    `version="\${${tagVariable}#v}"\n` +
+    'vsix="target/editor-smoke/colorful-language-${version}.vsix"\n'
+  );
+}
 
 function validSnapshot() {
-  const smokeVsix =
-    'version="${GITHUB_REF_NAME#v}"\n' +
-    'vsix="target/editor-smoke/colorful-language-${version}.vsix"\n';
   return {
     policy: {
       owner: EXPECTED_OWNER,
@@ -48,10 +105,19 @@ function validSnapshot() {
     repositoryLicense: "license\n",
     zedLicense: "license\n",
     workflow: {
+      on: {
+        push: { tags: ["v*"] },
+        workflow_dispatch: null,
+      },
+      permissions: {},
       jobs: {
         "validate-release": {
           "runs-on": "ubuntu-24.04",
           permissions: { contents: "read" },
+          outputs: {
+            "release-tag":
+              "${{ steps.release-metadata.outputs.release_tag }}",
+          },
           steps: [
             {
               uses: `actions/checkout@${ACTION_SHA}`,
@@ -62,19 +128,12 @@ function validSnapshot() {
             },
             {
               name: "Verify release metadata",
-              run:
-                'version="${GITHUB_REF_NAME#v}"\n' +
-                "workspace_version=0.4.0\n" +
-                'grep -F "## [$version]" CHANGELOG.md\n' +
-                'test -f "docs/goalposts/${GITHUB_REF_NAME}/release.md"\n' +
-                'test -f "docs/goalposts/${GITHUB_REF_NAME}/verification.md"\n',
+              id: "release-metadata",
+              run: METADATA_RUN,
             },
             {
               name: "Verify the tag is on main",
-              run:
-                "git fetch -q origin main\n" +
-                'git rev-parse "${GITHUB_REF_NAME}^{commit}"\n' +
-                "git merge-base --is-ancestor tag origin/main\n",
+              run: ANCESTRY_RUN,
             },
             ...ADMISSION_COMMANDS.map((run) => ({ run })),
           ],
@@ -82,6 +141,7 @@ function validSnapshot() {
         "binary-artifacts": {
           "runs-on": "${{ matrix.runner }}",
           needs: "validate-release",
+          env: { RELEASE_TAG: RELEASE_TAG_ENV },
           permissions: {
             contents: "read",
             "id-token": "write",
@@ -112,6 +172,7 @@ function validSnapshot() {
             },
             {
               name: "Attest native archive",
+              if: DRY_RUN_GUARD,
               uses: `actions/attest@${ACTION_SHA}`,
               with: { "subject-path": "dist/*.tar.gz" },
             },
@@ -129,6 +190,7 @@ function validSnapshot() {
         release: {
           "runs-on": "ubuntu-24.04",
           needs: ["validate-release", "binary-artifacts"],
+          env: { RELEASE_TAG: RELEASE_TAG_ENV },
           permissions: {
             contents: "write",
             "id-token": "write",
@@ -164,17 +226,17 @@ function validSnapshot() {
                 "--manifest-path crates/colorful-lsp/Cargo.toml " +
                 "--override-filename sbom\n" +
                 "cp crates/colorful-cli/sbom.json " +
-                '"dist/colorful-language-${GITHUB_REF_NAME}' +
+                '"dist/colorful-language-${RELEASE_TAG}' +
                 '-colorful-sbom.cdx.json"\n' +
                 "cp crates/colorful-lsp/sbom.json " +
-                '"dist/colorful-language-${GITHUB_REF_NAME}' +
+                '"dist/colorful-language-${RELEASE_TAG}' +
                 '-colorful-lsp-sbom.cdx.json"\n',
             },
             {
               name: "Generate Homebrew formula",
               run:
                 "set -euo pipefail\n" +
-                'version="${GITHUB_REF_NAME#v}"\n' +
+                'version="${RELEASE_TAG#v}"\n' +
                 "node scripts/generate-homebrew-formula.mjs " +
                 '--version "$version" --dist-dir dist ' +
                 "> dist/colorful.rb\n" +
@@ -184,7 +246,7 @@ function validSnapshot() {
               name: "Build and smoke editor packages",
               run:
                 "npm --prefix editors/vscode run smoke:package\n" +
-                smokeVsix +
+                smokeVsix("RELEASE_TAG") +
                 'cp "$vsix" dist/\n' +
                 '(cd dist && sha256sum "$(basename "$vsix")" > ' +
                 '"$(basename "$vsix").sha256")\n' +
@@ -193,6 +255,7 @@ function validSnapshot() {
             },
             {
               name: "Attest Homebrew and editor artifacts",
+              if: DRY_RUN_GUARD,
               uses: `actions/attest@${ACTION_SHA}`,
               with: {
                 "subject-path":
@@ -202,15 +265,25 @@ function validSnapshot() {
                 "dist/*sbom.cdx.json",
               },
             },
-            { name: "Publish to crates.io", run: "cargo publish" },
+            {
+              name: "Publish to crates.io",
+              if: DRY_RUN_GUARD,
+              env: {
+                CARGO_REGISTRY_TOKEN: "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+              },
+              run: "cargo publish",
+            },
             {
               name: "Create GitHub Release",
+              if: DRY_RUN_GUARD,
+              env: { GH_TOKEN: "${{ github.token }}" },
               run: "gh release create \"$GITHUB_REF_NAME\" dist/*",
             },
             {
               name: "Verify GitHub Release VSIX",
+              if: DRY_RUN_GUARD,
               run:
-                smokeVsix +
+                smokeVsix("GITHUB_REF_NAME") +
                 "node scripts/verify-editor-publication.mjs " +
                 '--vsix "$vsix" --version "$version"',
             },
@@ -276,6 +349,22 @@ function validSnapshot() {
 function releaseStep(snapshot, name) {
   return snapshot.workflow.jobs.release.steps.find(
     (step) => step.name === name,
+  );
+}
+
+function jobStep(snapshot, job, name) {
+  return snapshot.workflow.jobs[job].steps.find((step) => step.name === name);
+}
+
+function stepLabel(step) {
+  return step.name ?? step.uses ?? step.run;
+}
+
+function dryRunReachableSteps(snapshot) {
+  return Object.entries(snapshot.workflow.jobs).flatMap(([job, definition]) =>
+    definition.steps
+      .map((step, index) => ({ job, index, step }))
+      .filter(({ step }) => !(TAG_ONLY_STEPS[job] ?? []).includes(step.name)),
   );
 }
 
@@ -1100,6 +1189,513 @@ test("attests the SBOM alongside the formula and editor artifacts", () => {
     () => validateReleaseDistribution(snapshot),
     /must attest the formula, VSIX, Zed source archive, and SBOM/u,
   );
+});
+
+test("triggers on a version tag push and an input-free manual dry run", () => {
+  for (const mutate of [
+    (workflow) => {
+      delete workflow.on.workflow_dispatch;
+    },
+    (workflow) => {
+      workflow.on.workflow_dispatch = {
+        inputs: { "dry-run": { type: "boolean", default: true } },
+      };
+    },
+    (workflow) => {
+      workflow.on.pull_request = null;
+    },
+    (workflow) => {
+      workflow.on.push.tags = ["*"];
+    },
+    (workflow) => {
+      workflow.on.push.branches = ["main"];
+    },
+    (workflow) => {
+      delete workflow.on;
+    },
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(snapshot.workflow);
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /must trigger on a pushed v\* tag and an input-free workflow_dispatch/u,
+    );
+  }
+
+  for (const permissions of [{ contents: "read" }, undefined, "write-all"]) {
+    const snapshot = validSnapshot();
+    snapshot.workflow.permissions = permissions;
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /must grant nothing at workflow level/u,
+    );
+  }
+});
+
+test("keeps every outside-effect step unreachable in a dry run", () => {
+  for (const [job, names] of Object.entries(TAG_ONLY_STEPS)) {
+    for (const name of names) {
+      for (const condition of [
+        undefined,
+        "always()",
+        "${{ inputs.dry-run != 'true' }}",
+        "github.event_name != 'pull_request'",
+        "true",
+        "success()",
+      ]) {
+        const snapshot = validSnapshot();
+        const step = jobStep(snapshot, job, name);
+        if (condition === undefined) {
+          delete step.if;
+        } else {
+          step.if = condition;
+        }
+        assert.throws(
+          () => validateReleaseDistribution(snapshot),
+          /must run only on a tag push/u,
+          `${job} '${name}' with if: ${condition} must be rejected`,
+        );
+      }
+    }
+  }
+});
+
+test("keeps every publication step reachable on a tag run", () => {
+  for (const job of ["validate-release", "binary-artifacts", "release"]) {
+    for (const condition of [
+      "github.event_name == 'workflow_dispatch'",
+      DRY_RUN_GUARD,
+      "false",
+    ]) {
+      const snapshot = validSnapshot();
+      snapshot.workflow.jobs[job].if = condition;
+      assert.throws(
+        () => validateReleaseDistribution(snapshot),
+        /must not carry a job condition/u,
+        `job ${job} with if: ${condition} must be rejected`,
+      );
+    }
+  }
+
+  for (const [job, names] of Object.entries(TAG_ONLY_STEPS)) {
+    for (const name of names) {
+      for (const condition of [
+        "github.event_name == 'workflow_dispatch'",
+        "github.event_name == 'push' && inputs.publish == 'true'",
+        "github.event_name == 'push' && github.ref == 'refs/heads/main'",
+        "false",
+      ]) {
+        const snapshot = validSnapshot();
+        jobStep(snapshot, job, name).if = condition;
+        assert.throws(
+          () => validateReleaseDistribution(snapshot),
+          /must run only on a tag push/u,
+          `${job} '${name}' with if: ${condition} must be rejected`,
+        );
+      }
+    }
+  }
+});
+
+test("runs admission, native builds, and packaging in a dry run", () => {
+  const reachable = dryRunReachableSteps(validSnapshot());
+  assert.ok(reachable.length > 0);
+  for (const { job, index, step } of reachable) {
+    for (const condition of [DRY_RUN_GUARD, "always()"]) {
+      const snapshot = validSnapshot();
+      snapshot.workflow.jobs[job].steps[index].if = condition;
+      assert.throws(
+        () => validateReleaseDistribution(snapshot),
+        /must run on tag runs and dry runs alike/u,
+        `${job} '${stepLabel(step)}' with if: ${condition} must be rejected`,
+      );
+    }
+  }
+});
+
+test("passes no secret or explicit job token to a step a dry run reaches", () => {
+  for (const [job, name, mutate] of [
+    [
+      "release",
+      "Generate SBOM",
+      (step) => {
+        step.env = { GH_TOKEN: "${{ github.token }}" };
+      },
+    ],
+    [
+      "binary-artifacts",
+      "Build native binaries",
+      (step) => {
+        step.env.CARGO_REGISTRY_TOKEN =
+          "${{ secrets.CARGO_REGISTRY_TOKEN }}";
+      },
+    ],
+    [
+      "validate-release",
+      "Verify release metadata",
+      (step) => {
+        step.run += 'echo "${{ secrets.GITHUB_TOKEN }}"\n';
+      },
+    ],
+    [
+      "release",
+      "Download native archives",
+      (step) => {
+        step.with["github-token"] = "${{ secrets.RELEASE_PAT }}";
+      },
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(jobStep(snapshot, job, name));
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /reaches a dry run and must not read a secret or the job token/u,
+      `${job} '${name}' must not receive a credential`,
+    );
+  }
+
+  for (const [job, permission, expected] of [
+    [
+      "validate-release",
+      "actions",
+      /must have read-only contents permission/u,
+    ],
+    [
+      "binary-artifacts",
+      "packages",
+      /must grant read contents and write provenance/u,
+    ],
+    [
+      "release",
+      "packages",
+      /must publish releases and signed provenance/u,
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    snapshot.workflow.jobs[job].permissions[permission] = "write";
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${job} must not gain ${permission}: write`,
+    );
+  }
+});
+
+test("rejects bracket-form and whole-context credentials on a dry-run step", () => {
+  for (const expression of [
+    "${{ secrets['CARGO_REGISTRY_TOKEN'] }}",
+    '${{ secrets["CARGO_REGISTRY_TOKEN"] }}',
+    "${{ secrets [ 'CARGO_REGISTRY_TOKEN' ] }}",
+    "${{ toJSON(secrets) }}",
+    "${{ secrets }}",
+    "${{ SECRETS.CARGO_REGISTRY_TOKEN }}",
+    "${{ github['token'] }}",
+    '${{ github["token"] }}',
+    "${{ github [ 'token' ] }}",
+    "${{ github.TOKEN }}",
+    "${{ github . token }}",
+    "${{ toJSON(github) }}",
+    "${{ github[format('{0}', 'token')] }}",
+  ]) {
+    const snapshot = validSnapshot();
+    jobStep(snapshot, "release", "Generate SBOM").env = {
+      CARGO_REGISTRY_TOKEN: expression,
+    };
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /reaches a dry run and must not read a secret or the job token/u,
+      `${expression} must not reach a dry-run step`,
+    );
+  }
+
+  const ordinaryContexts = validSnapshot();
+  jobStep(ordinaryContexts, "release", "Generate SBOM").env = {
+    REPOSITORY: "${{ github.repository }}",
+    SHA: "${{ github['sha'] }}",
+  };
+  assert.doesNotThrow(() => validateReleaseDistribution(ordinaryContexts));
+});
+
+test("rejects credentials inherited by dry-run steps from workflow or job scope", () => {
+  for (const [scope, mutate] of [
+    [
+      "workflow env",
+      (workflow) => {
+        workflow.env = {
+          CARGO_REGISTRY_TOKEN: "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+        };
+      },
+    ],
+    [
+      "workflow env, job token",
+      (workflow) => {
+        workflow.env = { GH_TOKEN: "${{ github['token'] }}" };
+      },
+    ],
+    [
+      "workflow defaults",
+      (workflow) => {
+        workflow.defaults = {
+          run: { "working-directory": "${{ secrets.WORKDIR }}" },
+        };
+      },
+    ],
+    ...["validate-release", "binary-artifacts", "release"].flatMap((job) => [
+      [
+        `${job} env`,
+        (workflow) => {
+          workflow.jobs[job].env = {
+            ...workflow.jobs[job].env,
+            CARGO_REGISTRY_TOKEN: "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+          };
+        },
+      ],
+      [
+        `${job} env, job token`,
+        (workflow) => {
+          workflow.jobs[job].env = {
+            ...workflow.jobs[job].env,
+            GH_TOKEN: "${{ github.token }}",
+          };
+        },
+      ],
+      [
+        `${job} defaults`,
+        (workflow) => {
+          workflow.jobs[job].defaults = {
+            run: { shell: "bash", "working-directory": "${{ secrets.DIR }}" },
+          };
+        },
+      ],
+    ]),
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(snapshot.workflow);
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /passes a secret or the job token to every step, including dry-run steps/u,
+      `${scope} must not carry a credential`,
+    );
+  }
+});
+
+test("keeps the default checkout token unpersisted and passes no token input to a dry-run step", () => {
+  for (const job of ["binary-artifacts", "release"]) {
+    for (const checkoutWith of [
+      {},
+      { "persist-credentials": true },
+      { "persist-credentials": "false" },
+    ]) {
+      const snapshot = validSnapshot();
+      snapshot.workflow.jobs[job].steps.unshift({
+        uses: `actions/checkout@${ACTION_SHA}`,
+        with: checkoutWith,
+      });
+      assert.throws(
+        () => validateReleaseDistribution(snapshot),
+        /must check out with persist-credentials: false/u,
+        `${job} checkout with ${JSON.stringify(checkoutWith)} must be rejected`,
+      );
+    }
+  }
+
+  for (const [job, name, key, value] of [
+    ["release", "Download native archives", "github-token", "${{ env.PAT }}"],
+    ["release", "Install SBOM tool", "token", "${{ vars.TOOL_TOKEN }}"],
+    ["release", "Install SBOM tool", "mirror-token", "literal-token"],
+    ["binary-artifacts", "Upload native archive", "Token", "${{ env.T }}"],
+    ["release", "Download native archives", "ssh-key", "${{ env.KEY }}"],
+  ]) {
+    const snapshot = validSnapshot();
+    const step = jobStep(snapshot, job, name);
+    step.with = { ...step.with, [key]: value };
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /reaches a dry run and must not pass a token or key input explicitly/u,
+      `${job} '${name}' with ${key} must be rejected`,
+    );
+  }
+
+  const { workflow } = loadRepositorySnapshot();
+  for (const [job, definition] of Object.entries(workflow.jobs)) {
+    const checkouts = definition.steps.filter((step) =>
+      String(step.uses ?? "").startsWith("actions/checkout@"),
+    );
+    assert.equal(checkouts.length, 1, `${job} must check out once`);
+    assert.equal(checkouts[0].with?.["persist-credentials"], false);
+  }
+});
+
+test("refuses a dry run outside main", () => {
+  for (const [mutation, expected] of [
+    ["drop-refusal", /must refuse a dry run outside refs\/heads\/main/u],
+    ["tolerate-refusal", /must refuse a dry run outside refs\/heads\/main/u],
+    ["any-branch", /must refuse a dry run outside refs\/heads\/main/u],
+    [
+      "tag-ancestry-on-dispatch",
+      /must check the tag on a tag run and the dispatched commit on a dry run/u,
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    const metadata = jobStep(
+      snapshot,
+      "validate-release",
+      "Verify release metadata",
+    );
+    const ancestry = jobStep(
+      snapshot,
+      "validate-release",
+      "Verify the tag is on main",
+    );
+    if (mutation === "drop-refusal") {
+      metadata.run = metadata.run.replace(DRY_RUN_REFUSAL, "if false; then");
+    } else if (mutation === "tolerate-refusal") {
+      metadata.run = metadata.run.replace(
+        `${DRY_RUN_REFUSAL}\n` +
+          '  echo "A release dry run runs only on main; refusing $GITHUB_REF."\n' +
+          "  exit 1\n",
+        `${DRY_RUN_REFUSAL}\n` +
+          '  echo "A release dry run runs only on main; refusing $GITHUB_REF."\n' +
+          "  true\n",
+      );
+    } else if (mutation === "any-branch") {
+      metadata.run = metadata.run.replace(
+        '"refs/heads/main"',
+        '"refs/heads/${GITHUB_REF_NAME}"',
+      );
+    } else {
+      ancestry.run = ancestry.run.replace(
+        '"${GITHUB_SHA}^{commit}"',
+        '"${GITHUB_REF_NAME}^{commit}"',
+      );
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${mutation} must be rejected`,
+    );
+  }
+});
+
+test("derives the release tag from the tag on a tag run and from the workspace on a dry run", () => {
+  for (const [mutation, expected] of [
+    ["tag-run-from-workspace", /metadata admission must include/u],
+    ["dry-run-from-ref", /metadata admission must include/u],
+    ["no-version-comparison", /metadata admission must include/u],
+    ["no-output", /metadata admission must include/u],
+    [
+      "override-after-case",
+      /must assign release_tag only from the tag or the workspace version/u,
+    ],
+    ["no-job-output", /must publish the admitted release tag/u],
+    ["output-from-ref", /must publish the admitted release tag/u],
+    ["native-env-missing", /must take RELEASE_TAG/u],
+    ["release-env-from-ref", /must take RELEASE_TAG/u],
+  ]) {
+    const snapshot = validSnapshot();
+    const jobs = snapshot.workflow.jobs;
+    const metadata = jobStep(
+      snapshot,
+      "validate-release",
+      "Verify release metadata",
+    );
+    if (mutation === "tag-run-from-workspace") {
+      metadata.run = metadata.run.replace(
+        'push) release_tag="$GITHUB_REF_NAME" ;;',
+        'push) release_tag="v${workspace_version}" ;;',
+      );
+    } else if (mutation === "dry-run-from-ref") {
+      metadata.run = metadata.run.replace(
+        'workflow_dispatch) release_tag="v${workspace_version}" ;;',
+        'workflow_dispatch) release_tag="$GITHUB_REF_NAME" ;;',
+      );
+    } else if (mutation === "no-version-comparison") {
+      metadata.run = metadata.run.replace(
+        'if [ "$workspace_version" != "$version" ]; then',
+        "if false; then",
+      );
+    } else if (mutation === "no-output") {
+      metadata.run = metadata.run.replace(
+        'echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"',
+        "",
+      );
+    } else if (mutation === "override-after-case") {
+      metadata.run = metadata.run.replace(
+        'version="${release_tag#v}"',
+        'release_tag="v9.9.9"\nversion="${release_tag#v}"',
+      );
+    } else if (mutation === "no-job-output") {
+      delete jobs["validate-release"].outputs;
+    } else if (mutation === "output-from-ref") {
+      jobs["validate-release"].outputs["release-tag"] = "${{ github.ref_name }}";
+    } else if (mutation === "native-env-missing") {
+      delete jobs["binary-artifacts"].env;
+    } else {
+      jobs.release.env.RELEASE_TAG = "${{ github.ref_name }}";
+    }
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      expected,
+      `${mutation} must be rejected`,
+    );
+  }
+});
+
+test("names dry-run artifacts from the admitted release tag", () => {
+  for (const [job, name, mutate] of [
+    [
+      "binary-artifacts",
+      "Package native binaries",
+      (step) => {
+        step.run +=
+          'dist_name="colorful-language-${GITHUB_REF_NAME}-${TARGET}"\n';
+      },
+    ],
+    [
+      "release",
+      "Build and smoke editor packages",
+      (step) => {
+        step.run = step.run.replace(
+          'version="${RELEASE_TAG#v}"',
+          'version="${GITHUB_REF_NAME#v}"',
+        );
+      },
+    ],
+    [
+      "binary-artifacts",
+      "Build native binaries",
+      (step) => {
+        step.env.TAG = "${{ github.ref_name }}";
+      },
+    ],
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(jobStep(snapshot, job, name));
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /reaches a dry run and must name artifacts from RELEASE_TAG/u,
+      `${job} '${name}' must not name artifacts from the ref`,
+    );
+  }
+});
+
+test("the checked-in release workflow offers an event-keyed dry run", () => {
+  const { workflow } = loadRepositorySnapshot();
+  assert.deepEqual(workflow.on, {
+    push: { tags: ["v*"] },
+    workflow_dispatch: null,
+  });
+  for (const [job, definition] of Object.entries(workflow.jobs)) {
+    assert.equal(definition.if, undefined, `${job} must not be conditional`);
+    const guarded = definition.steps
+      .filter((step) => step.if !== undefined)
+      .map((step) => [step.name, step.if]);
+    assert.deepEqual(
+      guarded,
+      (TAG_ONLY_STEPS[job] ?? []).map((name) => [name, DRY_RUN_GUARD]),
+      `${job} must guard exactly its outside-effect steps`,
+    );
+  }
 });
 
 test("the checked-in repository satisfies the distribution policy", () => {
