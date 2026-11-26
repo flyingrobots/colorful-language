@@ -267,7 +267,7 @@ jobs:
           targets: wasm32-wasip1
 
       - name: Set up formula syntax Ruby
-        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1.343.0
         with:
           ruby-version: "3.4.10"
 
@@ -285,7 +285,7 @@ jobs:
           merge-multiple: true
 
       - name: Install SBOM tool
-        uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
         with:
           tool: cargo-cyclonedx@0.5.9
           fallback: none
