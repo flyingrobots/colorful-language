@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The v0.4.0 witness now declares `tagged` and records that the v0.4.0 tag
   workflow failed at packet admission and published nothing
   ([#370](https://github.com/flyingrobots/colorful-language/issues/370)).
+- **Release packet check judges the predecessor witness by its phase.** The
+  check admitted a new release train whenever the previous release's witness
+  contained one `Retrospective status: completed` line, so a `tagged` witness
+  with that line appended was accepted as a predecessor even though the same
+  witness fails the phase rules when checked as the current release. A
+  predecessor newer than v0.3.0 must now pass the full witness phase matrix
+  for its own version, previous tag, and annotated tag commit, and must be at
+  `retrospected`; v0.1.0 through v0.3.0 keep the completed-retrospective check
+  ([#383](https://github.com/flyingrobots/colorful-language/issues/383)).
 
 ## [0.4.0] - 2026-11-24
 

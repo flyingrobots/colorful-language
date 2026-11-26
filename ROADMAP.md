@@ -322,6 +322,12 @@ observe public-contract regressions before they ship.
   treats that label as authoritative; the hosted check that the bot honours it
   is recorded on the issue
   [#371](https://github.com/flyingrobots/colorful-language/issues/371).
+- **Predecessor witness judged by the phase rules:** a predecessor newer than
+  v0.3.0 must pass the witness phase matrix and be at `retrospected` before a
+  new train is admitted, so a contradictory witness can no longer stand in for
+  a completed release; the terminal phase for an abandoned tag is
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387)
+  [#383](https://github.com/flyingrobots/colorful-language/issues/383).
 - **Roadmap follow-up triage:** retain the cursor-complete transport idea in the
   scale-triggered experiment backlog; checker decomposition shipped through
   [#257](https://github.com/flyingrobots/colorful-language/issues/257)
