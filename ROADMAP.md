@@ -331,6 +331,10 @@ observe public-contract regressions before they ship.
   treats that label as authoritative; the hosted check that the bot honours it
   is recorded on the issue
   [#371](https://github.com/flyingrobots/colorful-language/issues/371).
+- **Fuzz lockfile version source:** list `fuzz/Cargo.lock` in the release
+  profile and check its workspace crate versions against the workspace version,
+  so a stale entry is named before the `--locked` lockfile error
+  [#385](https://github.com/flyingrobots/colorful-language/issues/385).
 - **Roadmap follow-up triage:** retain the cursor-complete transport idea in the
   scale-triggered experiment backlog; checker decomposition shipped through
   [#257](https://github.com/flyingrobots/colorful-language/issues/257)
