@@ -13,7 +13,8 @@ This repo adapts the Continuum release lifecycle through
 The current release path is:
 
 ```text
-release branch -> PR -> merge to main -> manual annotated tag -> tag workflow
+release branch -> PR -> merge to main -> final preflight -> release dry run
+-> manual annotated tag -> tag workflow
 -> final read-only admission -> native/editor build and attestation
 -> crates.io + editor publication
 -> GitHub Release -> Zed registry PR -> public verification -> retrospective
@@ -177,7 +178,28 @@ Final manual tag preflight is executable from clean, aligned `main`:
 bash scripts/release-preflight.sh vX.Y.Z
 ```
 
-The tag-triggered release workflow runs when a `v*` tag is pushed. It verifies
+After preflight passes, a green release workflow dry run on that commit comes
+before the tag. A manual `workflow_dispatch` run of the release workflow on
+`main` is a dry run: the event selects the mode, and the workflow has no
+dispatch inputs. It runs admission, the three native builds, SBOM generation,
+Homebrew formula generation, and editor packaging and smoke, and uploads only
+artifacts of the run itself. Exactly the steps with an effect outside the
+run carry `if: github.event_name == 'push'`: native and editor attestation,
+crates.io publication, GitHub Release creation, and the public VSIX check.
+Admission refuses a dry run on any ref other than `main`, derives the release
+tag from the workspace version instead of a pushed tag, and passes it to the
+later jobs as `RELEASE_TAG`, which names every artifact. The distribution
+policy pins the triggers, the guard on exactly those steps, unconditional jobs
+and other steps, and exact job permission grants. No repository secret
+reaches a step a dry run can run, and no dry-run step is passed the job token
+explicitly. `actions/checkout`, `actions/setup-node`, and `ruby/setup-ruby`
+still receive the job token through their default inputs, to fetch the
+repository and download toolchains; every checkout sets
+`persist-credentials: false`. A dry run's native and release jobs still hold
+their reviewed write grants, because job permissions cannot vary by event.
+The runbook lists what a dry run does not cover.
+
+The tag run of the release workflow runs when a `v*` tag is pushed. It verifies
 the profile, verifies that release metadata matches the tag, verifies that the
 tag is on `main`, and reruns the Rust and package guards. Native matrix jobs
 build `colorful` and `colorful-lsp` for Linux x86-64, Apple Silicon, and
