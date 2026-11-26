@@ -1381,6 +1381,41 @@ test("passes no secret or job token to a step a dry run reaches", () => {
   }
 });
 
+test("rejects bracket-form and whole-context credentials on a dry-run step", () => {
+  for (const expression of [
+    "${{ secrets['CARGO_REGISTRY_TOKEN'] }}",
+    '${{ secrets["CARGO_REGISTRY_TOKEN"] }}',
+    "${{ secrets [ 'CARGO_REGISTRY_TOKEN' ] }}",
+    "${{ toJSON(secrets) }}",
+    "${{ secrets }}",
+    "${{ SECRETS.CARGO_REGISTRY_TOKEN }}",
+    "${{ github['token'] }}",
+    '${{ github["token"] }}',
+    "${{ github [ 'token' ] }}",
+    "${{ github.TOKEN }}",
+    "${{ github . token }}",
+    "${{ toJSON(github) }}",
+    "${{ github[format('{0}', 'token')] }}",
+  ]) {
+    const snapshot = validSnapshot();
+    jobStep(snapshot, "release", "Generate SBOM").env = {
+      CARGO_REGISTRY_TOKEN: expression,
+    };
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /reaches a dry run and must not read a secret or the job token/u,
+      `${expression} must not reach a dry-run step`,
+    );
+  }
+
+  const ordinaryContexts = validSnapshot();
+  jobStep(ordinaryContexts, "release", "Generate SBOM").env = {
+    REPOSITORY: "${{ github.repository }}",
+    SHA: "${{ github['sha'] }}",
+  };
+  assert.doesNotThrow(() => validateReleaseDistribution(ordinaryContexts));
+});
+
 test("refuses a dry run outside main", () => {
   for (const [mutation, expected] of [
     ["drop-refusal", /must refuse a dry run outside refs\/heads\/main/u],
