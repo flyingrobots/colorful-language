@@ -605,7 +605,10 @@ Verification for release preparation, tag automation, and release witnesses.
   `scripts/check-doc-citations.mjs`, `scripts/check-repository-maintenance.mjs`).
   *Tracking:*
   [#384](https://github.com/flyingrobots/colorful-language/issues/384).
-  *Status:* planned.
+  *Evidence:* the `Tag exists, and its own tree cannot pass admission` entry
+  under `## Failure handling` in `docs/RELEASING.md`, and the passing
+  `scripts/check-repository-maintenance.mjs` and
+  `scripts/check-release-distribution.test.mjs` runs. *Status:* implemented.
 
 ## Open verification gaps
 
