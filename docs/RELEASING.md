@@ -33,7 +33,9 @@ boring facts automation can check:
   `scripts/check-editor-version-policy.mjs`,
   `scripts/release-prep.sh`, and `scripts/release-preflight.sh`;
 - current publication by pushing a `v*` tag, which triggers
-  [`.github/workflows/release.yml`](../.github/workflows/release.yml).
+  [`.github/workflows/release.yml`](../.github/workflows/release.yml); a
+  manual run of the same workflow on `main` is a dry run that publishes
+  nothing.
 
 The profile is enforced by CI and by the release workflow through:
 
@@ -66,7 +68,8 @@ programmer errors remain visible.
 Colorful currently uses:
 
 ```text
-release branch -> PR -> merge to main -> manual annotated tag -> tag workflow
+release branch -> PR -> merge to main -> final preflight -> release dry run
+-> manual annotated tag -> tag workflow
 -> native/editor build and attestation -> crates.io + editor publication
 -> GitHub Release -> Zed registry PR -> public verification -> retrospective
 ```
@@ -146,8 +149,9 @@ release-prep validation. The merge commit becomes the candidate release commit.
 
 ### tagged
 
-The release is tagged when final preflight passes from aligned `main` and an
-annotated tag is created at the candidate commit:
+The release is tagged when final preflight passes from aligned `main`, a
+[release workflow dry run](#release-workflow-dry-run) on that commit is green,
+and an annotated tag is created at the candidate commit:
 
 ```bash
 git tag -a vX.Y.Z -m "release: vX.Y.Z"
@@ -591,7 +595,13 @@ git pull --ff-only
 bash scripts/release-preflight.sh vX.Y.Z
 ```
 
-If preflight passes, create and push the annotated tag:
+If preflight passes, run the [release workflow dry run](#release-workflow-dry-run)
+on `main` at that same commit and wait for it to finish green. Do not tag
+until it does. If the dry run fails, fix the defect on a branch, merge it, and
+start again from final preflight; the tag must point at the commit whose
+preflight and dry run both passed.
+
+When both have passed, create and push the annotated tag:
 
 ```bash
 git tag -a vX.Y.Z -m "release: vX.Y.Z"
@@ -609,6 +619,96 @@ must carry a witness in the `tagged` phase or beyond: change the phase to
 `tagged` and the status line to `Annotated vX.Y.Z tag: available.`, and keep
 the three staged evidence sections unavailable until publication completes.
 See [Witness phase transitions](#witness-phase-transitions).
+
+## Release workflow dry run
+
+A tag run uses the workflow and scripts from the tagged commit, and a public
+tag cannot be moved, so a defect found only by a tag run costs a version
+number. The dry run exercises the same workflow on `main` without publishing.
+Run it after final preflight passes and before every release tag, and after
+any change to `.github/workflows/release.yml` or the scripts it runs.
+
+A dry run is a manual (`workflow_dispatch`) run of
+`.github/workflows/release.yml`. The mode is selected by the event, not by an
+input: the workflow has no dispatch inputs, and a pushed tag always runs the
+full release. Start it on `main` and watch it:
+
+```bash
+gh workflow run release.yml --repo flyingrobots/colorful-language --ref main
+gh run list --repo flyingrobots/colorful-language --workflow release.yml \
+  --event workflow_dispatch --limit 1
+gh run watch RUN_ID --repo flyingrobots/colorful-language --exit-status
+```
+
+Replace `RUN_ID` with the run ID that `gh run list` prints, and check that the
+run's commit is the commit that passed final preflight. Admission refuses a
+dry run started on any ref other than `main`, and refuses a dispatched commit
+that is not on `origin/main`.
+
+A dry run runs:
+
+- admission validation: release metadata, the commit's ancestry on
+  `origin/main`, the release profile, the release packet, editor version
+  compatibility, the distribution policy, formatting, lints, tests, the release
+  build, and the package witness;
+- the three native builds, their archives and checksums, and their upload as
+  artifacts of the run itself;
+- SBOM generation, Homebrew formula generation and its Ruby syntax check, and
+  the packaged VS Code smoke and Zed source archive.
+
+A dry run has no tag, so admission derives the release tag as `v` plus the
+`Cargo.toml` workspace version, and every artifact it builds is named from
+that tag. A tag run takes the release tag from the pushed tag and still
+requires the workspace version, changelog section, and release packet to
+match it.
+
+A dry run skips every step guarded by `github.event_name == 'push'`, so it does
+not cover:
+
+- native and editor attestation: GitHub/Sigstore attestations are public,
+  permanent records, so a dry run never writes one, and the Sigstore signing
+  identity is not exercised;
+- crates.io publication, the `CARGO_REGISTRY_TOKEN` secret, and the
+  registry-index polling;
+- GitHub Release creation and the upload of the release assets;
+- the download of the public VSIX and its byte comparison with the smoke
+  witness;
+- tag-specific admission: reading the version from the pushed tag name, and
+  resolving that tag to its commit;
+- the release packet check in the state a tag run sees it, with the annotated
+  target tag resolving to the commit being checked;
+- the tag run's own checkout of the tag ref and its concurrency group.
+
+No repository secret reaches a step a dry run can run, and no dry-run step is
+passed the job token explicitly. The distribution policy enforces both in
+every expression form, including bracket access and the whole `secrets` or
+`github` context, and in the workflow-level and job-level `env` and
+`defaults` that every step inherits.
+
+The job token still reaches three actions a dry run runs, through inputs
+whose default is `github.token`. Read from each action's `action.yml` at the
+pinned commit:
+
+| Action a dry run reaches | Default job-token use |
+| --- | --- |
+| `actions/checkout` | `token` defaults to `github.token` and fetches the repository. Every checkout sets `persist-credentials: false`, so the token is not left in the git configuration; the policy requires that setting. |
+| `actions/setup-node` | `token` defaults to `github.token` on github.com and is used to download Node.js distributions. |
+| `ruby/setup-ruby` | `token` defaults to `github.token` on github.com and is used to download Ruby release assets. |
+| `dtolnay/rust-toolchain` | No token input and no `github.token` reference. |
+| `taiki-e/install-action` | Passes `github.token` only when `fallback` is `cargo-binstall`; the workflow pins `fallback: none`, which the policy requires. |
+| `actions/upload-artifact` | No token input. |
+| `actions/download-artifact` | `github-token` has no default and is needed only for another repository or run; this workflow does not set it. |
+
+Neither artifact action takes the job token by default. The policy rejects any
+token, SSH-key, or password input set explicitly on a dry-run step.
+
+GitHub Actions cannot vary a job's permissions by event, so a dry run's
+native and release jobs still hold their reviewed `contents`, `id-token`, and
+`attestations` write grants, as the permissions comments in the workflow
+say. The steps that need those grants are tag-only, but every step in those
+jobs runs with the grant in place: the job token the three actions above
+receive carries it, and with `id-token: write` any step in the job can
+request a GitHub OIDC token. The policy cannot narrow that inside one job.
 
 ## Publication
 

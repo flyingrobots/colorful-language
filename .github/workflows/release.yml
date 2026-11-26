@@ -1,9 +1,15 @@
 name: Release
 
+# A pushed v* tag publishes. A manual run on main is a dry run: it runs
+# admission, the native builds, packaging, and the checks on the assembled
+# artifact set, and skips every step guarded by
+# `github.event_name == 'push'`: attestation, crates.io publication, GitHub
+# Release creation, and the public VSIX check. See docs/RELEASING.md.
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions: {}
 
@@ -17,6 +23,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read # Inspect the tag and origin/main without publishing.
+    outputs:
+      release-tag: ${{ steps.release-metadata.outputs.release_tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -37,10 +45,13 @@ jobs:
       - name: Install repository policy dependencies
         run: npm ci
 
+      # A tag run takes its release tag from the pushed tag and must match the
+      # workspace. A dry run has no tag, so it derives one from the workspace
+      # version, and it runs only on main.
       - name: Verify release metadata
+        id: release-metadata
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
           workspace_version="$(
             awk '
               /^\[workspace.package\]$/ { in_package = 1; next }
@@ -52,21 +63,36 @@ jobs:
               }
             ' Cargo.toml
           )"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "A release dry run runs only on main; refusing $GITHUB_REF."
+            exit 1
+          fi
+          case "$GITHUB_EVENT_NAME" in
+            push) release_tag="$GITHUB_REF_NAME" ;;
+            workflow_dispatch) release_tag="v${workspace_version}" ;;
+            *) echo "Unsupported release event $GITHUB_EVENT_NAME."; exit 1 ;;
+          esac
+          version="${release_tag#v}"
           if [ "$workspace_version" != "$version" ]; then
             echo "Workspace version $workspace_version does not match tag $version."
             exit 1
           fi
           grep -F "## [$version]" CHANGELOG.md
-          test -f "docs/goalposts/${GITHUB_REF_NAME}/release.md"
-          test -f "docs/goalposts/${GITHUB_REF_NAME}/verification.md"
+          test -f "docs/goalposts/${release_tag}/release.md"
+          test -f "docs/goalposts/${release_tag}/verification.md"
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Verify the tag is on main
         run: |
           set -euo pipefail
           git fetch -q origin main
-          tag_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
-          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
-            echo "Tag ${GITHUB_REF_NAME} is not an ancestor of origin/main; refusing to release."
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            release_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          else
+            release_commit="$(git rev-parse "${GITHUB_SHA}^{commit}")"
+          fi
+          if ! git merge-base --is-ancestor "$release_commit" origin/main; then
+            echo "${GITHUB_REF} at ${release_commit} is not an ancestor of origin/main; refusing to release."
             exit 1
           fi
 
@@ -115,6 +141,12 @@ jobs:
     needs: validate-release
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ needs.validate-release.outputs.release-tag }}
+    # GitHub Actions cannot vary job permissions by event, so a dry run holds
+    # the same grant. Only the tag-only attestation step needs the write
+    # grants, but checkout still receives the job token through its default
+    # input, and any step can request an OIDC token while id-token is write.
     permissions:
       contents: read # Read the immutable tagged source.
       id-token: write # Request the short-lived Sigstore signing identity.
@@ -158,7 +190,7 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
-          dist_name="colorful-language-${GITHUB_REF_NAME}-${TARGET}"
+          dist_name="colorful-language-${RELEASE_TAG}-${TARGET}"
           archive="${dist_name}.tar.gz"
           mkdir -p "dist/${dist_name}"
           cp \
@@ -181,7 +213,10 @@ jobs:
             )
           fi
 
+      # Attestation writes a public, permanent provenance record, so a dry run
+      # skips it.
       - name: Attest native archive
+        if: github.event_name == 'push'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: dist/*.tar.gz
@@ -203,6 +238,13 @@ jobs:
       - binary-artifacts
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      RELEASE_TAG: ${{ needs.validate-release.outputs.release-tag }}
+    # GitHub Actions cannot vary job permissions by event, so a dry run holds
+    # the same grant. Only tag-only steps need the write grants, but checkout,
+    # setup-node, and setup-ruby still receive the job token through their
+    # default inputs, and any step can request an OIDC token while id-token is
+    # write.
     permissions:
       contents: write # Create the GitHub release after all evidence passes.
       id-token: write # Request the short-lived Sigstore signing identity.
@@ -256,13 +298,13 @@ jobs:
           set -euo pipefail
           cargo cyclonedx --format json --all --manifest-path crates/colorful-cli/Cargo.toml --override-filename sbom
           cargo cyclonedx --format json --all --manifest-path crates/colorful-lsp/Cargo.toml --override-filename sbom
-          cp crates/colorful-cli/sbom.json "dist/colorful-language-${GITHUB_REF_NAME}-colorful-sbom.cdx.json"
-          cp crates/colorful-lsp/sbom.json "dist/colorful-language-${GITHUB_REF_NAME}-colorful-lsp-sbom.cdx.json"
+          cp crates/colorful-cli/sbom.json "dist/colorful-language-${RELEASE_TAG}-colorful-sbom.cdx.json"
+          cp crates/colorful-lsp/sbom.json "dist/colorful-language-${RELEASE_TAG}-colorful-lsp-sbom.cdx.json"
 
       - name: Generate Homebrew formula
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           node scripts/generate-homebrew-formula.mjs \
             --version "$version" \
             --dist-dir dist \
@@ -273,9 +315,9 @@ jobs:
         run: |
           set -euo pipefail
           npm --prefix editors/vscode run smoke:package
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           vsix="target/editor-smoke/colorful-language-${version}.vsix"
-          zed_archive="colorful-language-${GITHUB_REF_NAME}-zed-source.tar.gz"
+          zed_archive="colorful-language-${RELEASE_TAG}-zed-source.tar.gz"
           test -f "$vsix"
           test -d target/editor-smoke/zed-source
           cp "$vsix" dist/
@@ -286,7 +328,10 @@ jobs:
             sha256sum "$zed_archive" > "${zed_archive}.sha256"
           )
 
+      # Everything from here on has an effect outside the run, so a dry run
+      # stops after the assembled artifact set has been built and checked.
       - name: Attest Homebrew and editor artifacts
+        if: github.event_name == 'push'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: |
@@ -302,6 +347,7 @@ jobs:
       # and colorful-lsp precedes colorful-cli for lint parity evidence.
       # Neither edge introduces a dependency cycle.
       - name: Publish to crates.io
+        if: github.event_name == 'push'
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
@@ -333,6 +379,7 @@ jobs:
           done
 
       - name: Create GitHub Release
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -351,6 +398,7 @@ jobs:
           fi
 
       - name: Verify GitHub Release VSIX
+        if: github.event_name == 'push'
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
