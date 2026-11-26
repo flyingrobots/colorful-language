@@ -53,6 +53,25 @@ export const EXPECTED_VERSION_SOURCES = Object.freeze([
     field: "package[colorful-language-zed].version",
     required: true,
   }),
+  Object.freeze({
+    path: "fuzz/Cargo.lock",
+    type: "cargo-lock-workspace-crates",
+    field: "package[colorful-*].version",
+    required: true,
+  }),
+]);
+
+// The published workspace crates that the fuzz crate's lockfile also records.
+// Matches the crate list in scripts/release-profile-check.sh.
+export const WORKSPACE_LOCK_CRATES = Object.freeze([
+  "colorful-core",
+  "colorful-lexicon",
+  "colorful-parse",
+  "colorful-ir",
+  "colorful-lint",
+  "colorful-projection",
+  "colorful-cli",
+  "colorful-lsp",
 ]);
 
 function parseStableSemVer(version, context) {
@@ -249,6 +268,22 @@ function parseCargoLockVersion(source, packageName, path) {
   throw new Error(`${path} is missing package ${packageName}`);
 }
 
+// Returns the shared version of every workspace crate in a lockfile, or throws
+// naming the first crate that is missing or differs from `expected`.
+export function validatedWorkspaceLockVersion(
+  source,
+  expected,
+  path = "Cargo.lock",
+) {
+  for (const crate of WORKSPACE_LOCK_CRATES) {
+    const version = parseCargoLockVersion(source, crate, path);
+    if (version !== expected) {
+      throw new Error(`${path} has ${crate} ${version}; expected ${expected}`);
+    }
+  }
+  return expected;
+}
+
 function isMapping(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -300,15 +335,16 @@ export function loadRepositorySnapshot(root = ROOT) {
   );
   const cargoLock = read("Cargo.lock", root);
   const zedCargoLock = read("editors/zed/Cargo.lock", root);
+  const workspaceVersion = parseTomlSectionVersion(
+    read("Cargo.toml", root),
+    "workspace.package",
+    "Cargo.toml",
+  );
 
   return {
     policy: parseReleaseProfile(profile),
     versions: {
-      "Cargo.toml": parseTomlSectionVersion(
-        read("Cargo.toml", root),
-        "workspace.package",
-        "Cargo.toml",
-      ),
+      "Cargo.toml": workspaceVersion,
       "Cargo.lock": parseCargoLockVersion(
         cargoLock,
         "colorful-lsp",
@@ -332,6 +368,11 @@ export function loadRepositorySnapshot(root = ROOT) {
         zedCargoLock,
         "colorful-language-zed",
         "editors/zed/Cargo.lock",
+      ),
+      "fuzz/Cargo.lock": validatedWorkspaceLockVersion(
+        read("fuzz/Cargo.lock", root),
+        workspaceVersion,
+        "fuzz/Cargo.lock",
       ),
     },
     gateSources: {
