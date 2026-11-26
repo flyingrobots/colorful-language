@@ -117,6 +117,10 @@ each page's own status note before trusting a specific finding.
   separation from MSRV and time-based compatibility signals.
 - [release process](workflows/release-process/README.md) — the release runbook,
   profile adapter, automation boundary, publication, and witness discipline.
+  - [skipped v0.4.0 publication map](workflows/release-process/skipped-v0.4.0-publication-map.md):
+    which release rules apply to v0.4.1 when the previous public tag,
+    `v0.4.0`, was never published, with file and line references at one
+    commit.
 - [PR size reporting](workflows/pr-size-reporting/README.md) — informational line-count
   diff advisory signal and exclusions in CI.
 - [merge gate](workflows/merge-gate/README.md) — protected-branch requirements,
