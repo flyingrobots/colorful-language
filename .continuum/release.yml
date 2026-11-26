@@ -43,6 +43,10 @@ version_sources:
     type: cargo-lock-package
     field: package[colorful-language-zed].version
     required: true
+  - path: fuzz/Cargo.lock
+    type: cargo-lock-workspace-crates
+    field: package[colorful-*].version
+    required: true
 docs:
   changelog: CHANGELOG.md
   front_door: README.md

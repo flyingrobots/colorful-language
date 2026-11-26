@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version. The witness for such a tag, `v0.4.0` today, stays at `tagged` until
   the terminal state tracked in
   [#387](https://github.com/flyingrobots/colorful-language/issues/387) lands.
+- **`fuzz/Cargo.lock` is a release version source
+  ([#385](https://github.com/flyingrobots/colorful-language/issues/385)).**
+  `.continuum/release.yml` and the version-source check now cover the eight
+  workspace crate versions in `fuzz/Cargo.lock`. A stale entry fails with
+  `fuzz/Cargo.lock has <crate> <version>; expected <workspace version>` instead
+  of a late `--locked` lockfile error. No version or lockfile changed.
 
 ### Added
 

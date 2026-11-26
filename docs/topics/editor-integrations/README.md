@@ -95,7 +95,7 @@ pre-1.0 minor release. A different minor is treated as potentially breaking.
 Prerelease adapters and servers are unsupported until the release policy
 defines their channel and ordering semantics.
 
-The repo-local release profile lists all seven version sources. Pull-request
+The repo-local release profile lists all eight version sources. Pull-request
 CI, release preparation, and tag publication run
 `scripts/check-editor-version-policy.mjs`, which fails when a manifest,
 lockfile, policy rule, or gate command drifts.

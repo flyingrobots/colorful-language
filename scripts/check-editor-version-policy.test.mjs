@@ -1,5 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
 
 import {
@@ -347,6 +355,112 @@ test("the checked-in repository satisfies the policy", () => {
       releaseVersion,
       compatibleLsp: deriveCompatibleLspRange(releaseVersion),
       versionSourceCount: EXPECTED_VERSION_SOURCES.length,
+    },
+  );
+});
+
+const FUZZ_LOCK = "fuzz/Cargo.lock";
+const SNAPSHOT_FILES = [
+  ".continuum/release.yml",
+  ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
+  "Cargo.lock",
+  "Cargo.toml",
+  "editors/vscode/package-lock.json",
+  "editors/vscode/package.json",
+  "editors/zed/Cargo.lock",
+  "editors/zed/Cargo.toml",
+  "editors/zed/extension.toml",
+  "fuzz/Cargo.lock",
+  "scripts/release-prep.sh",
+];
+
+function withFuzzLock(transform, run) {
+  const root = mkdtempSync(join(tmpdir(), "version-policy-"));
+  try {
+    for (const path of SNAPSHOT_FILES) {
+      const source = readFileSync(
+        new URL(`../${path}`, import.meta.url),
+        "utf8",
+      );
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(
+        join(root, path),
+        path === FUZZ_LOCK ? transform(source) : source,
+      );
+    }
+    run(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+function withCrateVersion(source, crate, version) {
+  const pattern = new RegExp(`(name = "${crate}"\\nversion = )"[^"]+"`, "u");
+  assert.match(source, pattern);
+  return source.replace(pattern, `$1"${version}"`);
+}
+
+test("fuzz/Cargo.lock is a reviewed version source", () => {
+  assert.ok(
+    EXPECTED_VERSION_SOURCES.some(({ path }) => path === FUZZ_LOCK),
+    `${FUZZ_LOCK} must be listed in EXPECTED_VERSION_SOURCES`,
+  );
+  const profile = readFileSync(
+    new URL("../.continuum/release.yml", import.meta.url),
+    "utf8",
+  );
+  assert.ok(
+    parseReleaseProfile(profile).versionSources.some(
+      ({ path }) => path === FUZZ_LOCK,
+    ),
+    `.continuum/release.yml must list ${FUZZ_LOCK}`,
+  );
+});
+
+test("accepts a fuzz/Cargo.lock whose workspace crates match the workspace", () => {
+  withFuzzLock(
+    (source) => source,
+    (root) => {
+      const snapshot = loadRepositorySnapshot(root);
+      assert.equal(
+        snapshot.versions[FUZZ_LOCK],
+        snapshot.versions["Cargo.toml"],
+      );
+      assert.doesNotThrow(() => validateEditorVersionPolicy(snapshot));
+    },
+  );
+});
+
+test("a fuzz/Cargo.lock crate at a different version fails by name", () => {
+  const workspaceVersion = loadRepositorySnapshot().versions["Cargo.toml"];
+  const staleVersion = workspaceVersion === "0.0.1" ? "0.0.2" : "0.0.1";
+  withFuzzLock(
+    (source) => withCrateVersion(source, "colorful-lint", staleVersion),
+    (root) => {
+      assert.throws(
+        () => validateEditorVersionPolicy(loadRepositorySnapshot(root)),
+        new RegExp(
+          `fuzz/Cargo\\.lock has colorful-lint ${staleVersion.replaceAll(".", "\\.")}; expected ${workspaceVersion.replaceAll(".", "\\.")}`,
+          "u",
+        ),
+      );
+    },
+  );
+});
+
+test("a fuzz/Cargo.lock missing a workspace crate fails by name", () => {
+  withFuzzLock(
+    (source) =>
+      source.replace(
+        /name = "colorful-lint"/u,
+        'name = "colorful-lint-renamed"',
+      ),
+    (root) => {
+      assert.throws(
+        () => loadRepositorySnapshot(root),
+        /fuzz\/Cargo\.lock is missing package colorful-lint/u,
+      );
     },
   );
 });
