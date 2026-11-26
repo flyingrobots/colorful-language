@@ -115,7 +115,8 @@ validates the v0.4.0 witness as a whole.
 predecessor rule, for a tag whose publication was abandoned: for example a
 terminal phase that records the failed run and the superseding version, with
 its own completed retrospective, which the predecessor rule accepts in place of
-`retrospected`. The design is finding F01 and its implementation F09.
+`retrospected`. The design is finding [#379][i379] and its implementation
+[#387][i387]. The owner's decision is recorded on [#379][i379].
 
 ## b. Previous-tag identity
 
@@ -136,7 +137,8 @@ its own completed retrospective, which the predecessor rule accepts in place of
   vPREVIOUS..HEAD` (`:399-407`), and asks the release PR for `Previous tag`
   (`:530`). With `v0.4.0` as `vPREVIOUS`, the diff covers 9 commits; the last
   version users could install is `0.3.0`. Which baseline the v0.4.1 scope
-  reconciliation and notes use is finding F02.
+  reconciliation and notes use is finding [#380][i380], which records the
+  owner's decision.
 - **Compatibility policy.** `same-pre-1.0-minor` (`.continuum/release.yml:15`)
   derives the adapter range from the adapter's own version only:
   `>=0.Y.0 <0.(Y+1).0` (`scripts/check-editor-version-policy.mjs:70-78`,
@@ -152,7 +154,7 @@ its own completed retrospective, which the predecessor rule accepts in place of
   carries the breaking changes recorded under `[0.4.0]`
   (`docs/topics/ir/test-plan.md:52-55` calls them "never a silent patch
   release"). The packet check does not evaluate the rationale. This is part of
-  finding F02.
+  finding [#380][i380].
 
 ## c. Version sources
 
@@ -169,7 +171,7 @@ The release profile lists seven synchronized sources
 | `editors/zed/extension.toml:3` | `0.4.0` | editor policy |
 | `editors/zed/Cargo.toml:3` | `0.4.0` | editor policy |
 | `editors/zed/Cargo.lock:42-43` | `0.4.0` | editor policy |
-| `fuzz/Cargo.lock:88-170` (eight workspace crates) | `0.4.0` | no version check; `cargo clippy` and `cargo check` with `--locked` reject a stale lock (`scripts/release-prep.sh:49-50`, `.github/workflows/ci.yml:149-150`; E3). Not in the profile. Finding F07. |
+| `fuzz/Cargo.lock:88-170` (eight workspace crates) | `0.4.0` | no version check; `cargo clippy` and `cargo check` with `--locked` reject a stale lock (`scripts/release-prep.sh:49-50`, `.github/workflows/ci.yml:149-150`; E3). Not in the profile. Finding [#385][i385]. |
 | `Cargo.toml:15-22`, `crates/colorful-cli/Cargo.toml:39` | internal requirements `version = "0.4.0"` | none. Cargo reads `"0.4.0"` as `^0.4.0`, which 0.4.1 satisfies; E2 and E10 pass with them unchanged. Not in the profile. |
 
 The release profile check itself never compares the profile with a version; it
@@ -201,7 +203,7 @@ compare the id with the workspace version (E10). A released generation must
 name a tag and its full commit (`scripts/check-ir-compatibility.mjs:248-263`,
 `:484-531`); the existing `v0.4.0` tag satisfies that provenance check although
 nothing was published from it. Which name the generation takes is finding
-F04. The CLI reports `CARGO_PKG_VERSION`
+[#382][i382], which records the owner's decision. The CLI reports `CARGO_PKG_VERSION`
 (`crates/colorful-cli/src/cli/args.rs:36`, `crates/colorful-cli/src/cli/diagnose.rs:183`),
 so `colorful --version` output follows the workspace version without a
 fixture change.
@@ -223,7 +225,7 @@ fixture change.
 - Because `v0.4.0` exists, a `[0.4.1]` compare link from `v0.4.0` resolves.
   The `v0.2.1` precedent opened its section with a recovery paragraph naming
   the failed tag (`CHANGELOG.md:1050-1053`). Whether `[0.4.1]` restates that the
-  `[0.4.0]` changes first ship in 0.4.1 is part of finding F02.
+  `[0.4.0]` changes first ship in 0.4.1 is part of finding [#380][i380].
 
 ## e. Publication assumptions
 
@@ -295,24 +297,25 @@ example versions agree, so it is not version-bound.
   GitHub Release was published, fix the workflow and rerun publication for the
   same tag (`docs/RELEASING.md:814-818`). A rerun checks out the tagged tree,
   whose own packet self-test and check reject it (E11). The runbook names no
-  path for a tag whose tree cannot pass admission. Finding F06.
+  path for a tag whose tree cannot pass admission. Finding [#384][i384].
 - **Permanent `tagged`.** The witness "stays in the `tagged` phase" until
   publication completes (`docs/RELEASING.md:814-818`); publication of `v0.4.0`
   will not complete, and the phase cannot regress
-  (`scripts/check-release-packet.mjs:1154-1168`). Findings F01 and F09.
+  (`scripts/check-release-packet.mjs:1154-1168`). Findings [#379][i379] and
+  [#387][i387].
 - **Retrospective timing.** "No planned release train after publication
   without a retrospective" (`docs/RELEASING.md:90`) and "Run the retrospective
   immediately after tag, publication, and verification are complete. Do not
   start the next planned release train until this exists" (`:869-872`) assume
   publication. A patch release may use a "lightweight retrospective or release
   tracking update" (`:857-858`), but the predecessor rule requires the full
-  `Retrospective status: completed` regardless of release type. Finding F01.
+  `Retrospective status: completed` regardless of release type. Finding [#379][i379].
 - **Release tracker.** `[release] v0.4.0`
   ([#283](https://github.com/flyingrobots/colorful-language/issues/283)) is
   open; closing a release needs its scoped work closed, moved, or cut and the
   next posture clear (`docs/RELEASING.md:187-191`). The tracker format is one
   issue per version (`.continuum/release.yml:11`). Whether #283 closes or
-  carries v0.4.1 is finding F03.
+  carries v0.4.1 is finding [#381][i381], which records the owner's decision.
 - **Witness `Previous public tag` versus history.** The v0.4.0 witness names
   `v0.3.0` (`docs/goalposts/v0.4.0/verification.md:9`) and stays valid only
   while it is the target. No rule records, in a v0.4.1 witness, that `v0.4.0`
@@ -321,20 +324,21 @@ example versions agree, so it is not version-bound.
 
 ## Findings
 
-Each finding is a draft issue, named here by its draft file name.
+Each finding has a typed issue. The four decision issues are closed with the
+owner's decision recorded on each.
 
-| Draft | Type | Finding | Evidence |
+| Issue | Type | Finding | Evidence |
 | --- | --- | --- | --- |
-| `F01-decide-skipped-tag-terminal-state.md` | decision | No witness state records a public tag whose publication was abandoned, so the predecessor rule cannot be met honestly. | a; `scripts/check-release-packet.mjs:20-26`, `:440-465`; E1, E6 |
-| `F02-decide-v041-predecessor-and-scope-baseline.md` | decision | "Previous public tag" means the previous tag to the checks and is read as the previous release by the runbook; v0.4.1 must choose its scope baseline, notes framing, and version rationale. | b, d; `docs/RELEASING.md:264-277`, `:399-407`; E7, E8 |
-| `F03-decide-v041-release-tracker.md` | decision | Release tracker #283 has no closing path for an unpublished version. | g; `docs/RELEASING.md:187-191` |
-| `F04-decide-syntax-generation-name.md` | decision | The `workspace-v0.4.0` syntax generation can be released under a tag nothing was published from. | c; `scripts/check-ir-compatibility.mjs:248-263`, `:484-531` |
-| `F05-predecessor-rule-ignores-phase.md` | bug | The predecessor rule accepts a witness whose own phase rules reject it. | a; E5, E6 |
-| `F06-runbook-unrecoverable-tag.md` | task | The failure-handling runbook offers only a same-tag rerun, which cannot pass for `v0.4.0`. | g; `docs/RELEASING.md:814-818`; E11 |
-| `F07-fuzz-lock-version-source.md` | task | `fuzz/Cargo.lock` carries the release version but is not a listed version source. | c; E3 |
-| `F08-correct-v040-current-references.md` | task | Four current references about v0.4.0 are untrue, one pinned by a test. | f |
-| `F09-implement-skipped-tag-state.md` | feature | The decided terminal state is not yet implemented or applied to the v0.4.0 witness. | a |
-| `F10-prepare-v041-release.md` | task | v0.4.1 release preparation, blocked by the findings above and by #374. | a to g |
+| [#379][i379] | decision | No witness state records a public tag whose publication was abandoned, so the predecessor rule cannot be met honestly. | a; `scripts/check-release-packet.mjs:20-26`, `:440-465`; E1, E6 |
+| [#380][i380] | decision | "Previous public tag" means the previous tag to the checks and is read as the previous release by the runbook; v0.4.1 must choose its scope baseline, notes framing, and version rationale. | b, d; `docs/RELEASING.md:264-277`, `:399-407`; E7, E8 |
+| [#381][i381] | decision | Release tracker #283 has no closing path for an unpublished version. | g; `docs/RELEASING.md:187-191` |
+| [#382][i382] | decision | The `workspace-v0.4.0` syntax generation can be released under a tag nothing was published from. | c; `scripts/check-ir-compatibility.mjs:248-263`, `:484-531` |
+| [#383][i383] | bug | The predecessor rule accepts a witness whose own phase rules reject it. | a; E5, E6 |
+| [#384][i384] | task | The failure-handling runbook offers only a same-tag rerun, which cannot pass for `v0.4.0`. | g; `docs/RELEASING.md:814-818`; E11 |
+| [#385][i385] | task | `fuzz/Cargo.lock` carries the release version but is not a listed version source. | c; E3 |
+| [#386][i386] | task | Four current references about v0.4.0 are untrue, one pinned by a test. | f |
+| [#387][i387] | feature | The decided terminal state is not yet implemented or applied to the v0.4.0 witness. | a |
+| [#388][i388] | task | v0.4.1 release preparation, blocked by the findings above and by #374. | a to g |
 
 ## Not determined
 
@@ -348,3 +352,14 @@ Each finding is a draft issue, named here by its draft file name.
   nothing about 0.4.1.
 - The tag workflow for v0.4.1 was not exercised; a dry-run mode is
   [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+
+[i379]: https://github.com/flyingrobots/colorful-language/issues/379
+[i380]: https://github.com/flyingrobots/colorful-language/issues/380
+[i381]: https://github.com/flyingrobots/colorful-language/issues/381
+[i382]: https://github.com/flyingrobots/colorful-language/issues/382
+[i383]: https://github.com/flyingrobots/colorful-language/issues/383
+[i384]: https://github.com/flyingrobots/colorful-language/issues/384
+[i385]: https://github.com/flyingrobots/colorful-language/issues/385
+[i386]: https://github.com/flyingrobots/colorful-language/issues/386
+[i387]: https://github.com/flyingrobots/colorful-language/issues/387
+[i388]: https://github.com/flyingrobots/colorful-language/issues/388
