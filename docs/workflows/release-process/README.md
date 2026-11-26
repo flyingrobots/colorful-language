@@ -55,8 +55,8 @@ from v0.1.0 through v0.3.0 must have a non-empty retrospective with one
 explicit completed status before a new train is admitted. A later predecessor
 witness must pass the same phase matrix as a current witness, checked against
 its own version, its own previous public tag, and the commit its annotated tag
-resolves to, and must be at `retrospected`, the only phase that admits a
-successor; a contradictory witness or any earlier phase fails with
+resolves to, and must be at `retrospected` or `abandoned`, the only phases
+that admit a successor; a contradictory witness or any other phase fails with
 `E_RELEASE_PACKET_EVIDENCE`. CI, release preparation, and tag admission fail closed
 unless both versions have corresponding packets, the planned packet contains a
 concrete thesis and an exact target/previous-tag decision, every scope bucket is
@@ -81,6 +81,7 @@ The same witness advances through a fail-closed phase matrix:
 | `published` | available | completed | unavailable | unavailable |
 | `verified` | available | completed | completed | unavailable |
 | `retrospected` | available | completed | completed | completed |
+| `abandoned` | available | not applicable | not applicable | completed |
 
 `pre-publication` is admitted while the target tag does not resolve and on
 the exact commit the annotated target tag resolves to, which is the commit the
@@ -89,6 +90,14 @@ tag workflow validates. On any later commit a resolving target tag rejects
 publication has not completed; it is admitted only while the annotated target
 tag resolves from the checked history, so an absent, lightweight, or
 unreachable tag rejects it.
+`abandoned` is the terminal phase for a public tag whose publication was
+abandoned. Only a `tagged` witness may move to it, no other phase may follow
+it, and it carries the same tag requirement as `tagged`. Its publication and
+public-verification sections each declare `Evidence state: not applicable.`
+and reject completed or public evidence; its retrospective is completed; and
+its Retrospective section names exactly one `Forward version:` newer than the
+witness's own version. No other phase admits a not-applicable state or a
+forward version.
 A completed publication records the full commit behind the annotated target
 tag, one immutable GitHub Actions run URL, and the exact GitHub Release tag URL.
 Completed public verification records dated passed verification and rollback or

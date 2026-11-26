@@ -200,8 +200,14 @@ The active `docs/goalposts/vX.Y.Z/verification.md` witness declares exactly one
 phase under `## Status`:
 
 ```text
-Release phase: pre-publication | tagged | published | verified | retrospected
+Release phase: pre-publication | tagged | published | verified | retrospected | abandoned
 ```
+
+The phases run in order: `pre-publication`, `tagged`, then either
+`published`, `verified`, and `retrospected`, or the terminal `abandoned`.
+`abandoned` is for a public tag whose publication was abandoned: only a
+`tagged` witness may move to it, and an `abandoned` witness may not move to
+any other phase.
 
 The annotated target tag is unavailable or pending only during
 `pre-publication`; every later phase requires it to be available.
@@ -212,6 +218,7 @@ workflow validates. On any later commit, a resolving target tag rejects
 annotated tag exists and publication has not completed: the check admits it
 only while the annotated target tag resolves from the checked history, and
 rejects it when that tag is absent, lightweight, or not reachable from `HEAD`.
+`abandoned` carries the same tag requirement.
 The three staged evidence sections each declare exactly one structured state:
 
 | Phase | `Publication evidence` | `Public verification` | `Retrospective` |
@@ -221,11 +228,14 @@ The three staged evidence sections each declare exactly one structured state:
 | `published` | completed | unavailable | unavailable |
 | `verified` | completed | completed | unavailable |
 | `retrospected` | completed | completed | completed |
+| `abandoned` | not applicable | not applicable | completed |
 
 Write unavailable gates as `Evidence state: unavailable.` or, before
 publication, the equivalent `pending` or `not available` state. Do not add
 completed claims, commit identifiers, or public links to an unavailable
-section.
+section. Write a not-applicable gate as `Evidence state: not applicable.`;
+only `abandoned` admits that state, and the same rule applies: no completed
+claims, commit identifiers, or public links.
 
 When publication completes, change its state to `Evidence state: completed.`
 and record the commit resolved from the annotated target tag:
@@ -251,16 +261,30 @@ retrospective state to completed, declare `Retrospective status: completed.`,
 and add non-empty list entries labeled `Planned versus actual`, `Fallout`,
 `Repeatable wins`, and `Next recommendation`.
 
+When publication of a tag is abandoned, move the `tagged` witness to
+`abandoned`: change both publication and public-verification states to
+`Evidence state: not applicable.`, complete the retrospective as above, and
+add exactly one line to the Retrospective section naming the version that
+carries the work forward, which must be newer than the witness's own:
+
+```text
+Forward version: vX.Y.Z.
+```
+
+No other phase accepts a `Forward version:` line.
+
 Run the packet self-test and live check after every transition. Invalid
 ordering, skipped evidence, later-phase claims, stale unavailable placeholders,
-incomplete identities, or a phase below the available `origin/main` merge-base
-witness fail with `E_RELEASE_PACKET_EVIDENCE`. This active state machine does
+incomplete identities, a phase below the available `origin/main` merge-base
+witness, `abandoned` after any merge-base phase other than `tagged`, or any
+other phase after a merge-base `abandoned` witness fail with
+`E_RELEASE_PACKET_EVIDENCE`. This active state machine does
 not rewrite historical packets: v0.1.0 through v0.3.0 remain readable in their
 original shapes, and when one of them is the immediate predecessor only its
 completed retrospective is required when admitting a new train. A later
 immediate predecessor's witness must pass this state machine for its own
 version, previous public tag, and annotated tag commit, and must be at
-`retrospected`; a predecessor witness at any earlier phase, or one whose
+`retrospected` or `abandoned`; a predecessor witness at any other phase, or one whose
 evidence contradicts its phase, fails with `E_RELEASE_PACKET_EVIDENCE`. A clone without an `origin/main`
 remote-tracking ref, or a new packet absent from that ref, has no comparison
 baseline. If the ref and packet exist, failure to resolve their merge base or
