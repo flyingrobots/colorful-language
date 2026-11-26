@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baseline in force for work in progress; it is not a new measurement, and the
   figure moves only when `.github/coverage-policy.json` is updated through
   review.
+- **Review bot label allowlist
+  ([#371](https://github.com/flyingrobots/colorful-language/issues/371)).**
+  A new `.coderabbit.yaml` turns on CodeRabbit issue auto-labelling with an
+  explicit `labeling_instructions` list that omits `slice` and `epic`, because
+  the roadmap check treats `slice` as authoritative. A repository test checks
+  that the file parses and omits both labels. CodeRabbit's documentation says
+  the bot then suggests only the listed labels, so labels outside the list are
+  not expected to be suggested; whether the bot honours the file is a hosted
+  check recorded on the issue.
 
 ### Fixed
 
