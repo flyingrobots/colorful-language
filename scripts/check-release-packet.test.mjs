@@ -1496,6 +1496,120 @@ test("rejects regression through the tagged phase", (t) => {
   assert.equal(validateReleasePacket(loaded).phase, "tagged");
 });
 
+const PREDECESSOR_VERIFICATION_PATH = "docs/goalposts/v0.4.0/verification.md";
+
+function successorSnapshot() {
+  const snapshot = validSnapshot();
+  snapshot.version = "0.4.1";
+  snapshot.previousTag = "v0.4.0";
+  snapshot.releasePath = "docs/goalposts/v0.4.1/release.md";
+  snapshot.verificationPath = "docs/goalposts/v0.4.1/verification.md";
+  snapshot.release = snapshot.release
+    .replace("v0.4.0 — Release Packet", "v0.4.1 — Release Packet")
+    .replace("Release 0.4.0 after v0.3.0", "Release 0.4.1 after v0.4.0");
+  snapshot.verification = snapshot.verification
+    .replace("v0.4.0 — Verification Witness", "v0.4.1 — Verification Witness")
+    .replace("Target version: 0.4.0", "Target version: 0.4.1")
+    .replace("Previous public tag: v0.3.0", "Previous public tag: v0.4.0")
+    .replace("Annotated v0.4.0 tag:", "Annotated v0.4.1 tag:");
+  return snapshot;
+}
+
+function writeSuccessorFiles(root) {
+  writeRepositorySnapshot(root, successorSnapshot());
+  mkdirSync(join(root, dirname(RELEASE_PATH)), { recursive: true });
+  writeFileSync(join(root, RELEASE_PATH), validSnapshot().release);
+}
+
+function successorRepository(t, predecessorWitness) {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeSuccessorFiles(root);
+  git(root, "init", "-b", "main");
+  git(root, "config", "user.email", "release-packet@example.invalid");
+  git(root, "config", "user.name", "Release Packet Test");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "previous release");
+  git(root, "tag", "--no-sign", "-a", "v0.3.0", "-m", "release: v0.3.0");
+  writeFileSync(join(root, "predecessor-target.txt"), "predecessor\n");
+  git(root, "add", ".");
+  git(root, "commit", "-m", "predecessor target");
+  annotateTargetTag(root);
+  const predecessorCommit = gitOutput(root, "rev-parse", "HEAD");
+  writeFileSync(
+    join(root, PREDECESSOR_VERIFICATION_PATH),
+    predecessorWitness(predecessorCommit),
+  );
+  git(root, "add", ".");
+  git(root, "commit", "-m", "record the predecessor witness");
+  return { root };
+}
+
+function predecessorAtPhase(phase) {
+  return (predecessorCommit) =>
+    (phase === "tagged"
+      ? taggedVerification(validSnapshot().verification)
+      : snapshotForPhase(phase).verification
+    ).replace(TARGET_COMMIT, predecessorCommit);
+}
+
+test("rejects a predecessor witness that contradicts its own phase", (t) => {
+  const { root } = successorRepository(
+    t,
+    (commit) =>
+      `${predecessorAtPhase("tagged")(commit)}\nRetrospective status: completed.\n`,
+  );
+  assertPolicyRejection(
+    () => loadRepositorySnapshot(root),
+    "E_RELEASE_PACKET_EVIDENCE",
+    /v0\.4\.0\/verification\.md: section 'Retrospective' contradicts its unavailable state with completed or public evidence/u,
+  );
+});
+
+test("admits a predecessor witness only at a predecessor phase", (t) => {
+  for (const phase of ["tagged", "verified"]) {
+    const { root } = successorRepository(t, predecessorAtPhase(phase));
+    assertPolicyRejection(
+      () => loadRepositorySnapshot(root),
+      "E_RELEASE_PACKET_EVIDENCE",
+      new RegExp(
+        `previous release v0\\.4\\.0 is at release phase ${phase}; a new train is admitted only after release phase: retrospected`,
+        "u",
+      ),
+    );
+  }
+
+  const unbound = successorRepository(
+    t,
+    () => snapshotForPhase("retrospected").verification,
+  );
+  assertPolicyRejection(
+    () => loadRepositorySnapshot(unbound.root),
+    "E_RELEASE_PACKET_EVIDENCE",
+    /must contain the full commit behind annotated tag v0\.4\.0/u,
+  );
+
+  const { root } = successorRepository(t, predecessorAtPhase("retrospected"));
+  const loaded = loadRepositorySnapshot(root);
+  assert.equal(loaded.previousTag, "v0.4.0");
+  assert.equal(validateReleasePacket(loaded).phase, "pre-publication");
+});
+
+test("requires an earlier public tag behind a phase-machine predecessor", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "colorful-release-packet-"));
+  t.after(() => rmSync(root, { recursive: true }));
+  writeSuccessorFiles(root);
+  writeFileSync(
+    join(root, PREDECESSOR_VERIFICATION_PATH),
+    predecessorAtPhase("retrospected")(TARGET_COMMIT),
+  );
+  assertPolicyRejection(
+    () => loadRepositorySnapshot(root, { publicTags: ["v0.4.0"] }),
+    "E_RELEASE_PACKET_IDENTITY",
+    /no public release tag precedes predecessor v0\.4\.0/u,
+  );
+});
+
 test("the checked-in v0.4.0 release packet satisfies the policy", () => {
   assert.doesNotThrow(() => validateReleasePacket(loadRepositorySnapshot()));
 });
