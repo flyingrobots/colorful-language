@@ -10,9 +10,12 @@ after its command or public oracle has been observed.
 - Release phase: tagged.
 - Packet-planning issue:
   [#280](https://github.com/flyingrobots/colorful-language/issues/280)
-- Publication authorities:
-  [#154](https://github.com/flyingrobots/colorful-language/issues/154) and
-  [#37](https://github.com/flyingrobots/colorful-language/issues/37)
+- Release tracker:
+  [#283](https://github.com/flyingrobots/colorful-language/issues/283) (open).
+  Publication authority
+  [#154](https://github.com/flyingrobots/colorful-language/issues/154) is
+  closed; the Homebrew follow-up
+  [#37](https://github.com/flyingrobots/colorful-language/issues/37) is open.
 - Annotated `v0.4.0` tag: available. Tag object
   `ed2fd33febf5486ac0f5e0e100e328560b6c2f34` resolves to commit
   `bc17f09d6dec7a5fd7418a26c8f5d7066795583f`. It was pushed on 2026-11-24

@@ -637,6 +637,17 @@ Verification for release preparation, tag automation, and release witnesses.
   under `## Failure handling` in `docs/RELEASING.md`, and the passing
   `scripts/check-repository-maintenance.mjs` and
   `scripts/check-release-distribution.test.mjs` runs. *Status:* implemented.
+- **REL-19j: Documentation spine states the tagged, unpublished v0.4.0.**
+  *Requirement:* REL-19. *Behavior:* the v0.4.0 entry in `docs/README.md`,
+  labelled `Tagged v0.4.0:`, links the release packet and the witness and says
+  the release is tagged and not published, so a reader is not told the tag is
+  missing. *Oracle:* the entry starts with `**Tagged v0.4.0:**` and contains
+  the phrase `is tagged and has not been published`, which replaces the phrase
+  `not yet tagged or published`. *Evidence type:* documentation spine test.
+  *Tracking:*
+  [#386](https://github.com/flyingrobots/colorful-language/issues/386).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `documentation spine
+  links the planned packet and witness`. *Status:* implemented.
 - **REL-20a: Manual dry-run trigger.** *Requirement:* REL-20. *Behavior:* the
   release workflow triggers on a pushed `v*` tag and on `workflow_dispatch`
   with no inputs, so the dry run is selected by the event and no free-form
