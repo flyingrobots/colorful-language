@@ -129,7 +129,7 @@ each page's own status note before trusting a specific finding.
 
 ## Releases
 
-- **Planned v0.4.0:** [release packet](goalposts/v0.4.0/release.md) — hardened
+- **Tagged v0.4.0:** [release packet](goalposts/v0.4.0/release.md) — hardened
   public boundaries, responsive editor analysis, reproducible evidence, and
   signed distribution preparation. The annotated `v0.4.0` tag exists at
   `bc17f09`; the release is tagged and has not been published, because its
