@@ -271,7 +271,9 @@ carries the work forward, which must be newer than the witness's own:
 Forward version: vX.Y.Z.
 ```
 
-No other phase accepts a `Forward version:` line.
+That line is the only `Forward version:` line the witness may carry, in any
+section. No other phase accepts a `Forward version:` line anywhere in the
+witness.
 
 Run the packet self-test and live check after every transition. Invalid
 ordering, skipped evidence, later-phase claims, stale unavailable placeholders,

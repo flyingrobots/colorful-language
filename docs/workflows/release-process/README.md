@@ -96,8 +96,8 @@ it, and it carries the same tag requirement as `tagged`. Its publication and
 public-verification sections each declare `Evidence state: not applicable.`
 and reject completed or public evidence; its retrospective is completed; and
 its Retrospective section names exactly one `Forward version:` newer than the
-witness's own version. No other phase admits a not-applicable state or a
-forward version.
+witness's own version, and no other section names one. No other phase admits
+a not-applicable state or a forward version in any section.
 A completed publication records the full commit behind the annotated target
 tag, one immutable GitHub Actions run URL, and the exact GitHub Release tag URL.
 Completed public verification records dated passed verification and rollback or

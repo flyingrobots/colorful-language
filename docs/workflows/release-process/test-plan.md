@@ -707,8 +707,9 @@ Verification for release preparation, tag automation, and release witnesses.
   the retrospective is completed with exactly one
   `Retrospective status: completed.` and the four required entries; and the
   Retrospective section contains exactly one `Forward version:` line naming a
-  stable version greater than the witness's own. No other phase accepts a
-  `not applicable` evidence state or a `Forward version:` line. *Oracle:*
+  stable version greater than the witness's own, and it is the only such line
+  anywhere in the witness. No other phase accepts a `not applicable` evidence
+  state, or a `Forward version:` line in any section. *Oracle:*
   starting from the canonical `abandoned` fixture, each of these fails with
   `E_RELEASE_PACKET_EVIDENCE` and a message naming the missing rule: the
   target tag unavailable; publication or public verification declared
@@ -716,13 +717,18 @@ Verification for release preparation, tag automation, and release witnesses.
   inside a not-applicable section; the retrospective unavailable, its status
   missing or duplicated, or a required entry missing; the forward version
   missing, duplicated, not a stable version, equal to the witness's own, or
-  lower than it. A `tagged` witness with a not-applicable section, and a
-  `retrospected` witness with a `Forward version:` line, each fail with
+  lower than it; a second `Forward version:` line in the Status or
+  Pre-publication evidence section. A `tagged` witness with a not-applicable
+  section, a `retrospected` witness with a `Forward version:` line in its
+  Retrospective or Publication evidence section, and a `tagged` witness with
+  one in its Status or Pre-publication evidence section each fail with
   `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal abandoned-evidence
   mutations. *Tracking:*
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
   *Evidence:* `scripts/check-release-packet.test.mjs` `requires the abandoned
-  phase's evidence`. *Status:* implemented.
+  phase's evidence`, `rejects a forward version anywhere in a witness that is
+  not abandoned`, and `admits only the Retrospective forward version in an
+  abandoned witness`. *Status:* implemented.
 - **REL-19n: Abandoned phase requires a resolving annotated tag.**
   *Requirement:* REL-19. *Behavior:* like `tagged`, the `abandoned` phase is
   admitted only while the annotated target tag resolves from the checked

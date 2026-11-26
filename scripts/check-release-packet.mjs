@@ -69,7 +69,6 @@ const EVIDENCE_STATE_GLOBAL =
 const UNAVAILABLE_EVIDENCE_GLOBAL =
   /\b(?:not available|pending|unavailable)\b/giu;
 const NOT_APPLICABLE_EVIDENCE_GLOBAL = /\bnot applicable\b/giu;
-const FORWARD_VERSION_LABEL = /\bForward version:/iu;
 const FORWARD_VERSION_LINE_GLOBAL = /\bForward version:[^\n]*/giu;
 const FORWARD_VERSION_LINE =
   /^Forward version:\s*v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\.?\s*$/iu;
@@ -1370,6 +1369,11 @@ function validateVerificationDocument(snapshot) {
       );
     }
   });
+  const witnessForwardVersionLines = [
+    ...sectionEvidenceText({ nodes: document.children }, definitions).matchAll(
+      FORWARD_VERSION_LINE_GLOBAL,
+    ),
+  ];
   if (phase === ABANDONED_PHASE) {
     requireForwardVersion(
       retrospective,
@@ -1377,11 +1381,14 @@ function validateVerificationDocument(snapshot) {
       snapshot.version,
       snapshot.verificationPath,
     );
-  } else if (
-    FORWARD_VERSION_LABEL.test(
-      sectionEvidenceText(retrospective, definitions),
-    )
-  ) {
+    if (witnessForwardVersionLines.length !== 1) {
+      reject(
+        "E_RELEASE_PACKET_EVIDENCE",
+        snapshot.verificationPath,
+        "witness must contain exactly one 'Forward version' line, in section 'Retrospective'",
+      );
+    }
+  } else if (witnessForwardVersionLines.length > 0) {
     reject(
       "E_RELEASE_PACKET_EVIDENCE",
       snapshot.verificationPath,
