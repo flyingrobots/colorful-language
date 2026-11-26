@@ -1984,6 +1984,46 @@ test("admits an abandoned predecessor only with its retrospective and forward ve
   }
 });
 
+test("rejects a forward version anywhere in a witness that is not abandoned", () => {
+  for (const [phase, heading] of [
+    ["tagged", "Status"],
+    ["tagged", "Pre-publication evidence"],
+    ["retrospected", "Publication evidence"],
+  ]) {
+    const snapshot =
+      phase === "tagged" ? taggedSnapshot() : snapshotForPhase(phase);
+    snapshot.verification = replaceLevelTwoSection(
+      snapshot.verification,
+      heading,
+      `${sectionBody(snapshot.verification, heading)}\n- Forward version: v0.4.1.`,
+    );
+    assertPolicyRejection(
+      () => validateReleasePacket(snapshot),
+      "E_RELEASE_PACKET_EVIDENCE",
+      new RegExp(
+        `only the abandoned phase names a forward version; release phase ${phase} does not`,
+        "u",
+      ),
+    );
+  }
+});
+
+test("admits only the Retrospective forward version in an abandoned witness", () => {
+  for (const heading of ["Status", "Pre-publication evidence"]) {
+    const snapshot = snapshotForPhase("abandoned");
+    snapshot.verification = replaceLevelTwoSection(
+      snapshot.verification,
+      heading,
+      `${sectionBody(snapshot.verification, heading)}\n- Forward version: v0.4.2.`,
+    );
+    assertPolicyRejection(
+      () => validateReleasePacket(snapshot),
+      "E_RELEASE_PACKET_EVIDENCE",
+      /witness must contain exactly one 'Forward version' line, in section 'Retrospective'/u,
+    );
+  }
+});
+
 test("the checked-in v0.4.0 release packet satisfies the policy", () => {
   assert.doesNotThrow(() => validateReleasePacket(loadRepositorySnapshot()));
 });
