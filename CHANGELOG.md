@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version. The witness for such a tag, `v0.4.0` today, stays at `tagged` until
   the terminal state tracked in
   [#387](https://github.com/flyingrobots/colorful-language/issues/387) lands.
+- **`fuzz/Cargo.lock` is a release version source
+  ([#385](https://github.com/flyingrobots/colorful-language/issues/385)).**
+  `.continuum/release.yml` and the version-source check now cover the eight
+  workspace crate versions in `fuzz/Cargo.lock`. A stale entry fails with
+  `fuzz/Cargo.lock has <crate> <version>; expected <workspace version>` instead
+  of a late `--locked` lockfile error. No version or lockfile changed.
 
 ### Added
 
@@ -57,6 +63,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Current references say v0.4.0 is tagged and unpublished
+  ([#386](https://github.com/flyingrobots/colorful-language/issues/386)).**
+  `docs/README.md`, `README.md`, `ROADMAP.md`, and the v0.4.0 witness no
+  longer say the tag is missing: the annotated `v0.4.0` tag exists at
+  `bc17f09`, its publish workflow failed at admission validation, and no
+  crate, archive, VSIX, or GitHub Release was published. The documentation
+  spine test now expects that wording.
 - **Release packet check admits a tagged, unpublished release.** The packet
   check rejected every tag workflow run, because the tagged commit's witness
   declares `pre-publication` while the workflow checks it with the tag

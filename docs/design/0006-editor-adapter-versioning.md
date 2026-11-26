@@ -32,7 +32,9 @@ Use one synchronized release version for:
 
 The repo-local release profile lists every version source. One deterministic
 policy checker reads those sources and fails when any value differs from the
-workspace release version.
+workspace release version. The sources also include the workspace crate
+entries in `fuzz/Cargo.lock`, which are not an editor adapter but must move with
+the release.
 
 For an adapter released as `0.Y.Z`, the compatible `colorful-lsp` range is the
 same pre-1.0 minor line:

@@ -160,6 +160,30 @@ Verification for release preparation, tag automation, and release witnesses.
   `requires policy dependencies before the checker in every release gate`
   prove serialization independence and clean-environment dependency ordering.
   *Status:* implemented.
+- **REL-11b:** *Requirement:* REL-11. *Behavior:* the release profile also
+  lists `fuzz/Cargo.lock` as a version source, and the drift check reads the
+  eight workspace crate versions in it (`colorful-core`, `colorful-lexicon`,
+  `colorful-parse`, `colorful-ir`, `colorful-lint`, `colorful-projection`,
+  `colorful-cli`, `colorful-lsp`) so a stale entry fails with a message that
+  names `fuzz/Cargo.lock`, the crate, and both versions, instead of a late
+  `--locked` lockfile error. *Oracle:* golden: every source, including all
+  eight `fuzz/Cargo.lock` crates, at the workspace version passes; edges: a
+  `fuzz/Cargo.lock` crate at an older version fails with
+  `fuzz/Cargo.lock has <crate> <old>; expected <workspace>`, and a missing
+  workspace crate fails with `fuzz/Cargo.lock is missing package <crate>`;
+  known failure mode: the profile and `EXPECTED_VERSION_SOURCES` drifting
+  apart fails with the existing inventory message. *Evidence type:*
+  release-policy checker and mutation test. *Tracking:*
+  [#385](https://github.com/flyingrobots/colorful-language/issues/385).
+  *Evidence:* `scripts/check-editor-version-policy.test.mjs`
+  `fuzz/Cargo.lock is a reviewed version source`,
+  `accepts a fuzz/Cargo.lock whose workspace crates match the workspace`,
+  `a fuzz/Cargo.lock crate at a different version fails by name`,
+  `a fuzz/Cargo.lock missing a workspace crate fails by name`,
+  `rejects drift in fuzz/Cargo.lock`, and
+  `rejects missing, duplicated, unexpected, or reordered version sources`;
+  `.continuum/release.yml`; `scripts/check-editor-version-policy.mjs`.
+  *Status:* implemented.
 - **REL-12a** — *Requirement:* REL-12. *Behavior:* the tag workflow builds the
   two public binaries natively on `ubuntu-24.04` /
   `x86_64-unknown-linux-gnu`, `macos-15` /
@@ -613,6 +637,17 @@ Verification for release preparation, tag automation, and release witnesses.
   under `## Failure handling` in `docs/RELEASING.md`, and the passing
   `scripts/check-repository-maintenance.mjs` and
   `scripts/check-release-distribution.test.mjs` runs. *Status:* implemented.
+- **REL-19j: Documentation spine states the tagged, unpublished v0.4.0.**
+  *Requirement:* REL-19. *Behavior:* the v0.4.0 entry in `docs/README.md`,
+  labelled `Tagged v0.4.0:`, links the release packet and the witness and says
+  the release is tagged and not published, so a reader is not told the tag is
+  missing. *Oracle:* the entry starts with `**Tagged v0.4.0:**` and contains
+  the phrase `is tagged and has not been published`, which replaces the phrase
+  `not yet tagged or published`. *Evidence type:* documentation spine test.
+  *Tracking:*
+  [#386](https://github.com/flyingrobots/colorful-language/issues/386).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `documentation spine
+  links the planned packet and witness`. *Status:* implemented.
 - **REL-19k: Predecessor witness judged by the phase rules.** *Requirement:*
   REL-19. *Behavior:* when a new train is admitted, an immediate predecessor
   newer than v0.3.0 is validated by the same phase rules as a current witness,

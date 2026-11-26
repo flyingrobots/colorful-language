@@ -1621,12 +1621,12 @@ test("documentation spine links the planned packet and witness", () => {
   );
   const plannedEntry = documentationIndex
     .split("\n- ")
-    .find((entry) => entry.startsWith("**Planned v0.4.0:**"));
-  assert.ok(plannedEntry, "docs/README.md must list planned v0.4.0");
+    .find((entry) => entry.startsWith("**Tagged v0.4.0:**"));
+  assert.ok(plannedEntry, "docs/README.md must list tagged v0.4.0");
   assert.match(plannedEntry, /\(goalposts\/v0\.4\.0\/release\.md\)/u);
   assert.match(
     plannedEntry,
     /\(goalposts\/v0\.4\.0\/verification\.md\)/u,
   );
-  assert.match(plannedEntry, /\bnot yet tagged or published\b/u);
+  assert.match(plannedEntry, /\bis tagged and has not been published\b/u);
 });
