@@ -109,9 +109,64 @@ const REVIEWED_SBOM_COMMANDS = Object.freeze([
   "cargo cyclonedx --format json --all " +
     "--manifest-path crates/colorful-lsp/Cargo.toml --override-filename sbom",
   "cp crates/colorful-cli/sbom.json " +
-    '"dist/colorful-language-${GITHUB_REF_NAME}-colorful-sbom.cdx.json"',
+    '"dist/colorful-language-${RELEASE_TAG}-colorful-sbom.cdx.json"',
   "cp crates/colorful-lsp/sbom.json " +
-    '"dist/colorful-language-${GITHUB_REF_NAME}-colorful-lsp-sbom.cdx.json"',
+    '"dist/colorful-language-${RELEASE_TAG}-colorful-lsp-sbom.cdx.json"',
+]);
+
+// A manual run of the release workflow is a dry run. The mode is the event,
+// not an input, so a tag push cannot select it. Exactly these steps have an
+// effect outside the run (public attestation records, crates.io, the GitHub
+// Release, and the read of the public release asset); they run only on a tag
+// push, and every other step and job runs unconditionally in both modes.
+const RELEASE_TRIGGERS = Object.freeze({
+  push: Object.freeze({ tags: Object.freeze(["v*"]) }),
+  workflow_dispatch: null,
+});
+const DRY_RUN_GUARD = "github.event_name == 'push'";
+const TAG_ONLY_STEPS = Object.freeze({
+  "binary-artifacts": Object.freeze(["Attest native archive"]),
+  release: Object.freeze([
+    "Attest Homebrew and editor artifacts",
+    "Publish to crates.io",
+    "Create GitHub Release",
+    "Verify GitHub Release VSIX",
+  ]),
+});
+const CREDENTIAL_REFERENCE = /secrets\.|github\.token/u;
+const EXPRESSION = /\$\{\{([\s\S]*?)\}\}/gu;
+const TOKEN_LIKE_INPUT = /token|ssh-key|password/iu;
+const REF_NAME_REFERENCE = /GITHUB_REF_NAME|github\.ref_name/u;
+const RELEASE_TAG_OUTPUT = "${{ steps.release-metadata.outputs.release_tag }}";
+const RELEASE_TAG_ENV = "${{ needs.validate-release.outputs.release-tag }}";
+// A tag run takes its release tag from the pushed tag and still compares it
+// with the workspace, changelog, and packet. A dry run has no tag, so it
+// derives the tag from the workspace version, and it is refused outside main.
+const DRY_RUN_REFUSAL = Object.freeze([
+  'if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && ' +
+    '[ "$GITHUB_REF" != "refs/heads/main" ]; then',
+  /^echo /u,
+  "exit 1",
+  "fi",
+]);
+const REQUIRED_METADATA_LINES = Object.freeze([
+  'case "$GITHUB_EVENT_NAME" in',
+  'push) release_tag="$GITHUB_REF_NAME" ;;',
+  'workflow_dispatch) release_tag="v${workspace_version}" ;;',
+  'version="${release_tag#v}"',
+  'if [ "$workspace_version" != "$version" ]; then',
+  'grep -F "## [$version]" CHANGELOG.md',
+  'test -f "docs/goalposts/${release_tag}/release.md"',
+  'test -f "docs/goalposts/${release_tag}/verification.md"',
+  'echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"',
+]);
+const REVIEWED_ANCESTRY_SELECTION = Object.freeze([
+  'if [ "$GITHUB_EVENT_NAME" = "push" ]; then',
+  'release_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"',
+  "else",
+  'release_commit="$(git rev-parse "${GITHUB_SHA}^{commit}")"',
+  "fi",
+  'if ! git merge-base --is-ancestor "$release_commit" origin/main; then',
 ]);
 
 const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
@@ -128,7 +183,7 @@ const REVIEWED_RELEASE_STEP_ORDER = Object.freeze([
 ]);
 const REVIEWED_HOMEBREW_COMMANDS = Object.freeze([
   "set -euo pipefail",
-  'version="${GITHUB_REF_NAME#v}"',
+  'version="${RELEASE_TAG#v}"',
   "node scripts/generate-homebrew-formula.mjs " +
     '--version "$version" --dist-dir dist > dist/colorful.rb',
   "ruby -c dist/colorful.rb",
@@ -231,6 +286,25 @@ function shellCommandLines(source) {
     .filter((line) => line.length > 0);
 }
 
+function trimmedLines(source) {
+  return String(source ?? "")
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+function lineMatches(line, expected) {
+  return expected instanceof RegExp ? expected.test(line) : line === expected;
+}
+
+function containsLineSequence(lines, sequence) {
+  return lines.some((_, start) =>
+    sequence.every((expected, offset) =>
+      lineMatches(lines[start + offset] ?? "", expected),
+    ),
+  );
+}
+
 function validateGateCommands(gates, names, command) {
   requiredRecord(gates, "release distribution gates");
   const observed = Object.keys(gates).toSorted();
@@ -276,17 +350,34 @@ function validateAdmissionJob(job) {
   }
 
   const metadata = requiredStep(steps, "Verify release metadata", context);
-  const metadataSource = String(metadata.run ?? "");
-  for (const required of [
-    'version="${GITHUB_REF_NAME#v}"',
-    "workspace_version",
-    "CHANGELOG.md",
-    "docs/goalposts/${GITHUB_REF_NAME}/release.md",
-    "docs/goalposts/${GITHUB_REF_NAME}/verification.md",
-  ]) {
-    if (!metadataSource.includes(required)) {
+  const metadataLines = trimmedLines(metadata.run);
+  for (const required of REQUIRED_METADATA_LINES) {
+    if (!metadataLines.includes(required)) {
       throw new Error(`${context} metadata admission must include ${required}`);
     }
+  }
+  if (
+    metadataLines.filter((line) =>
+      /^(?:[\w-]+\)\s*)?release_tag=/u.test(line),
+    ).length !== 2
+  ) {
+    throw new Error(
+      `${context} metadata admission must assign release_tag only from the tag or the workspace version`,
+    );
+  }
+  if (!containsLineSequence(metadataLines, DRY_RUN_REFUSAL)) {
+    throw new Error(
+      `${context} metadata admission must refuse a dry run outside refs/heads/main`,
+    );
+  }
+  if (
+    metadata.id !== "release-metadata" ||
+    job?.outputs?.["release-tag"] !== RELEASE_TAG_OUTPUT ||
+    Object.keys(job.outputs).length !== 1
+  ) {
+    throw new Error(
+      `${context} must publish the admitted release tag as the release-tag output`,
+    );
   }
 
   const ancestry = requiredStep(steps, "Verify the tag is on main", context);
@@ -300,6 +391,16 @@ function validateAdmissionJob(job) {
     if (!ancestrySource.includes(required)) {
       throw new Error(`${context} ancestry admission must include ${required}`);
     }
+  }
+  if (
+    !containsLineSequence(
+      trimmedLines(ancestrySource),
+      REVIEWED_ANCESTRY_SELECTION,
+    )
+  ) {
+    throw new Error(
+      `${context} ancestry admission must check the tag on a tag run and the dispatched commit on a dry run`,
+    );
   }
   for (const command of REQUIRED_ADMISSION_COMMANDS) {
     if (!stepsIncludeCommand(steps, command)) {
@@ -323,12 +424,15 @@ function validateBinaryJob(job, platforms) {
     throw new Error(`${context} matrix differs from the reviewed platform list`);
   }
   if (
-    job?.permissions?.contents !== "read" ||
-    job?.permissions?.["id-token"] !== "write" ||
-    job?.permissions?.attestations !== "write"
+    !isDeepStrictEqual(job?.permissions, {
+      contents: "read",
+      "id-token": "write",
+      attestations: "write",
+    })
   ) {
     throw new Error(`${context} must grant read contents and write provenance`);
   }
+  requireAdmittedReleaseTag(job, context);
 
   const steps = Array.isArray(job?.steps) ? job.steps : [];
   const buildStep = requiredStep(steps, "Build native binaries", context);
@@ -401,12 +505,15 @@ function validateReleaseJob(job) {
     );
   }
   if (
-    job?.permissions?.contents !== "write" ||
-    job?.permissions?.["id-token"] !== "write" ||
-    job?.permissions?.attestations !== "write"
+    !isDeepStrictEqual(job?.permissions, {
+      contents: "write",
+      "id-token": "write",
+      attestations: "write",
+    })
   ) {
     throw new Error(`${context} must publish releases and signed provenance`);
   }
+  requireAdmittedReleaseTag(job, context);
 
   const steps = Array.isArray(job?.steps) ? job.steps : [];
   const formulaRuby = requiredStep(
@@ -545,6 +652,211 @@ function validateReleaseJob(job) {
   requireStepOrder(steps, REVIEWED_RELEASE_STEP_ORDER, context);
 }
 
+function requireAdmittedReleaseTag(job, context) {
+  if (job?.env?.RELEASE_TAG !== RELEASE_TAG_ENV) {
+    throw new Error(
+      `${context} must take RELEASE_TAG from the validate-release release-tag output`,
+    );
+  }
+}
+
+function validateTriggers(workflow) {
+  const context = ".github/workflows/release.yml";
+  const triggers = workflow.on;
+  const dispatch = triggers?.workflow_dispatch;
+  const inputFreeDispatch =
+    dispatch === null ||
+    (typeof dispatch === "object" &&
+      !Array.isArray(dispatch) &&
+      Object.keys(dispatch).length === 0);
+  if (
+    typeof triggers !== "object" ||
+    triggers === null ||
+    !isDeepStrictEqual(
+      Object.keys(triggers).toSorted(),
+      Object.keys(RELEASE_TRIGGERS).toSorted(),
+    ) ||
+    !isDeepStrictEqual(triggers.push, RELEASE_TRIGGERS.push) ||
+    !inputFreeDispatch
+  ) {
+    throw new Error(
+      `${context}:on must trigger on a pushed v* tag and an input-free workflow_dispatch`,
+    );
+  }
+  if (!isDeepStrictEqual(workflow.permissions, {})) {
+    throw new Error(
+      `${context}:permissions must grant nothing at workflow level`,
+    );
+  }
+}
+
+function jobModes(jobs) {
+  return Object.entries(jobs).map(([jobName, job]) => {
+    const tagOnly = TAG_ONLY_STEPS[jobName] ?? [];
+    const steps = Array.isArray(job?.steps) ? job.steps : [];
+    return {
+      job,
+      jobName,
+      context: `.github/workflows/release.yml:jobs.${jobName}`,
+      tagOnly,
+      steps: steps.map((step) => ({
+        step,
+        label: step?.name ?? step?.uses ?? "unnamed step",
+        tagOnly: tagOnly.includes(step?.name),
+      })),
+    };
+  });
+}
+
+// Conditions are the mode contract, so they are checked before any per-job
+// invariant: a condition on any step is reported as a mode violation.
+function validateExecutionConditions(jobs) {
+  for (const { job, context, tagOnly, steps } of jobModes(jobs)) {
+    if (Object.hasOwn(job ?? {}, "if")) {
+      throw new Error(
+        `${context} must not carry a job condition, so tag runs and dry runs both reach it`,
+      );
+    }
+    for (const name of tagOnly) {
+      requiredStep(
+        steps.map(({ step }) => step),
+        name,
+        context,
+      );
+    }
+    for (const { step, label, tagOnly: isTagOnly } of steps) {
+      if (isTagOnly && step.if !== DRY_RUN_GUARD) {
+        throw new Error(
+          `${context} step '${label}' must run only on a tag push through if: ${DRY_RUN_GUARD}`,
+        );
+      }
+      if (!isTagOnly && Object.hasOwn(step ?? {}, "if")) {
+        throw new Error(
+          `${context} step '${label}' must run on tag runs and dry runs alike`,
+        );
+      }
+    }
+  }
+}
+
+function stringsIn(value) {
+  if (typeof value === "string") {
+    return [value];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(stringsIn);
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value).flatMap(stringsIn);
+  }
+  return [];
+}
+
+// Actions expressions resolve context names and property names without regard
+// to case, and accept bracket access with either quote. Any use of the secrets
+// context reads a secret. The github context exposes the job token as
+// `github.token`, so a dot or literal-bracket read of `token`, a computed
+// bracket read, or the whole context (for example `toJSON(github)`) reads it.
+function expressionReadsCredential(expression) {
+  if (/\bsecrets\b/iu.test(expression)) {
+    return true;
+  }
+  for (const match of expression.matchAll(/\bgithub\b/giu)) {
+    const rest = expression.slice(match.index + match[0].length);
+    const dot = /^\s*\.\s*([A-Za-z_][\w-]*)/u.exec(rest);
+    if (dot !== null) {
+      if (dot[1].toLowerCase() === "token") {
+        return true;
+      }
+      continue;
+    }
+    const literal = /^\s*\[\s*(['"])([^'"]*)\1\s*\]/u.exec(rest);
+    if (literal !== null) {
+      if (literal[2].toLowerCase() === "token") {
+        return true;
+      }
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+function readsCredential(value) {
+  return stringsIn(value).some(
+    (text) =>
+      CREDENTIAL_REFERENCE.test(text) ||
+      [...text.matchAll(EXPRESSION)].some(([, expression]) =>
+        expressionReadsCredential(expression),
+      ),
+  );
+}
+
+// Workflow-level and job-level fields such as env and defaults are inherited
+// by every step in their scope, dry-run steps included, so a credential is
+// permitted only in the body of a tag-only step.
+function validateInheritedScopes(workflow) {
+  const { jobs, ...workflowScope } = workflow;
+  if (readsCredential(workflowScope)) {
+    throw new Error(
+      ".github/workflows/release.yml passes a secret or the job token to every step, including dry-run steps",
+    );
+  }
+  for (const { job, context } of jobModes(jobs)) {
+    const { steps, ...jobScope } = job ?? {};
+    if (readsCredential(jobScope)) {
+      throw new Error(
+        `${context} passes a secret or the job token to every step, including dry-run steps`,
+      );
+    }
+  }
+}
+
+function validateDryRunInputs(workflow) {
+  const jobs = workflow.jobs;
+  validateInheritedScopes(workflow);
+  for (const { jobName, context, steps } of jobModes(jobs)) {
+    for (const { step, label, tagOnly } of steps) {
+      if (tagOnly) {
+        continue;
+      }
+      // actions/checkout fetches with the job token through its default
+      // `token` input; persist-credentials: false keeps it out of the git
+      // configuration that later dry-run steps can read.
+      if (
+        String(step?.uses ?? "").startsWith("actions/checkout@") &&
+        step?.with?.["persist-credentials"] !== false
+      ) {
+        throw new Error(
+          `${context} must check out with persist-credentials: false`,
+        );
+      }
+      const body = JSON.stringify({ ...step, name: undefined });
+      if (readsCredential({ ...step, name: undefined })) {
+        throw new Error(
+          `${context} step '${label}' reaches a dry run and must not read a secret or the job token`,
+        );
+      }
+      if (
+        Object.keys(step?.with ?? {}).some((input) =>
+          TOKEN_LIKE_INPUT.test(input),
+        )
+      ) {
+        throw new Error(
+          `${context} step '${label}' reaches a dry run and must not pass a token or key input explicitly`,
+        );
+      }
+      // Admission reads the pushed tag on a tag run by design; every later
+      // step a dry run reaches names its artifacts from the admitted tag.
+      if (jobName !== "validate-release" && REF_NAME_REFERENCE.test(body)) {
+        throw new Error(
+          `${context} step '${label}' reaches a dry run and must name artifacts from RELEASE_TAG, not GITHUB_REF_NAME`,
+        );
+      }
+    }
+  }
+}
+
 function validateDocumentation(documentation) {
   const runbook = String(documentation.runbook ?? "");
   const topic = String(documentation.topic ?? "");
@@ -665,9 +977,12 @@ export function validateReleaseDistribution(snapshot) {
     workflow.jobs,
     ".github/workflows/release.yml:jobs",
   );
+  validateExecutionConditions(jobs);
   validateAdmissionJob(jobs["validate-release"]);
   validateBinaryJob(jobs["binary-artifacts"], EXPECTED_PLATFORMS);
   validateReleaseJob(jobs.release);
+  validateTriggers(workflow);
+  validateDryRunInputs(workflow);
 
   validateGateCommands(
     snapshot.gates,
