@@ -592,7 +592,24 @@ Verification for release preparation, tag automation, and release witnesses.
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   *Evidence:* `scripts/check-release-packet.test.mjs` `rejects regression
   through the tagged phase`. *Status:* implemented.
-- **REL-19i: Predecessor witness judged by the phase rules.** *Requirement:*
+- **REL-19i: Runbook path for a tag whose own tree cannot pass admission.**
+  *Requirement:* REL-19. *Behavior:* the failure-handling section of
+  `docs/RELEASING.md` says that a same-tag rerun cannot pass when the defect is
+  inside the tagged tree, because a tag run uses the workflow and scripts of
+  the tagged commit; that the tag is not moved or republished; that the release
+  is patched forward under a new version; how to recognise the case; and where
+  the witness stands today, without describing a terminal witness phase that is
+  not implemented. *Oracle:* the entry exists and names no unimplemented phase.
+  *Evidence type:* documentation review plus the repository documentation
+  checks (`markdownlint-cli2`, `scripts/check-internal-links.mjs`,
+  `scripts/check-doc-citations.mjs`, `scripts/check-repository-maintenance.mjs`).
+  *Tracking:*
+  [#384](https://github.com/flyingrobots/colorful-language/issues/384).
+  *Evidence:* the `Tag exists, and its own tree cannot pass admission` entry
+  under `## Failure handling` in `docs/RELEASING.md`, and the passing
+  `scripts/check-repository-maintenance.mjs` and
+  `scripts/check-release-distribution.test.mjs` runs. *Status:* implemented.
+- **REL-19j: Predecessor witness judged by the phase rules.** *Requirement:*
   REL-19. *Behavior:* when a new train is admitted, an immediate predecessor
   newer than v0.3.0 is validated by the same phase rules as a current witness,
   with its own version, its own previous public tag, and the commit its
