@@ -609,7 +609,7 @@ Verification for release preparation, tag automation, and release witnesses.
   under `## Failure handling` in `docs/RELEASING.md`, and the passing
   `scripts/check-repository-maintenance.mjs` and
   `scripts/check-release-distribution.test.mjs` runs. *Status:* implemented.
-- **REL-19j: Predecessor witness judged by the phase rules.** *Requirement:*
+- **REL-19k: Predecessor witness judged by the phase rules.** *Requirement:*
   REL-19. *Behavior:* when a new train is admitted, an immediate predecessor
   newer than v0.3.0 is validated by the same phase rules as a current witness,
   with its own version, its own previous public tag, and the commit its
