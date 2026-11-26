@@ -184,7 +184,8 @@ Verification for install paths and published artifacts.
   it rather than DIST-7a, which covers editor and server artifacts and would
   otherwise leave the SBOM unrecorded in the release witness. The first tagged
   release must record both asset filenames, their JSON validation results, and
-  their attestation verification results in the v0.4.0 publication witness.
+  their attestation verification results in the v0.4.1 publication witness,
+  because the v0.4.0 tag workflow failed before publication.
 
 ## Open verification gaps
 

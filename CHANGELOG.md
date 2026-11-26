@@ -17,6 +17,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baseline in force for work in progress; it is not a new measurement, and the
   figure moves only when `.github/coverage-policy.json` is updated through
   review.
+
+## [0.4.1] - 2026-11-26
+
+`v0.4.1` is the first installable release of the 0.4 line and the
+patch-forward release for the `v0.4.0` tag. The annotated `v0.4.0` tag was
+pushed on 2026-11-24, but its publish workflow failed at admission validation,
+so `v0.4.0` was tagged and never published: no crate, archive, VSIX, Zed
+source archive, Homebrew formula, or GitHub Release exists for it. `v0.4.1`
+carries the `v0.4.0` source unchanged plus the release-process changes below.
+For anyone upgrading from `v0.3.0`, the `0.4.0` section below lists the
+product changes that first ship in `0.4.1`, including the breaking API changes
+to `colorful_ir::vocabulary` lookups, `colorful_ir::from_classification`,
+`colorful_ir::ValidationError`, and `Rule`.
+
+### Changed
+
+- **Version 0.4.1
+  ([#388](https://github.com/flyingrobots/colorful-language/issues/388)).**
+  The workspace, the VS Code and Zed adapters, and the workspace crate entries
+  in `Cargo.lock`, `editors/zed/Cargo.lock`, `editors/vscode/package-lock.json`,
+  and `fuzz/Cargo.lock` move to 0.4.1, with no dependency change. The v0.4.1
+  packet and pre-publication witness name `v0.4.0` as the previous tag for
+  scope and say that it was never published; the editor adapters still accept
+  `colorful-lsp` `>=0.4.0 <0.5.0`.
 - **Review bot label allowlist
   ([#371](https://github.com/flyingrobots/colorful-language/issues/371)).**
   A new `.coderabbit.yaml` turns on CodeRabbit issue auto-labelling with an
@@ -1232,7 +1256,8 @@ First public release — **Goalpost 0, "English lights up."**
     semantic tokens were unified on the LSP line model; `is_number` accepts
     Unicode `\p{N}`; letter-initial alphanumeric words (`covid19`) stay whole.
 
-[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/flyingrobots/colorful-language/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/flyingrobots/colorful-language/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/flyingrobots/colorful-language/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/flyingrobots/colorful-language/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/flyingrobots/colorful-language/compare/v0.2.0...v0.2.1

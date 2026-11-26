@@ -137,8 +137,9 @@ and generated validators. The public Rust lookups
 current `PosClass` and generated `VisualRole` maps to `Some` because manifest
 validation requires complete coverage, while caller-supplied token axes without
 an authored mapping return `None`. These fallible signatures are an intentional
-breaking API change in the queued v0.4.0 line; downstream callers moving from
-v0.3 must handle the `Option` result.
+breaking API change in the 0.4 line, which is prepared for its first release
+as v0.4.1 because v0.4.0 was tagged and never published; downstream callers
+moving from v0.3 must handle the `Option` result.
 
 ## Guarantees
 
@@ -270,7 +271,11 @@ v0.3 must handle the `Option` result.
 ### Explicit wire generations
 
 `colorful.syntax/v1` currently has three supported identity generations:
-`v0.2.1`, `v0.3.0`, and the unreleased workspace `v0.4.0` identity. The
+`v0.2.1`, `v0.3.0`, and the unreleased workspace identity, labelled
+`workspace-v0.4.0` in the manifest. That generation is planned for release
+as `v0.4.1`, the first installable release of the 0.4 line
+([#382](https://github.com/flyingrobots/colorful-language/issues/382)); the
+release applies that name after publication. The
 canonical `contracts/colorful/syntax-compatibility.v1.json` manifest names each
 complete contract/schema/vocabulary tuple, schema-hash mode, predecessor,
 compatibility decision, wire-shape adapter, and migration-evidence path. Tagged

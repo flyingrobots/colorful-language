@@ -396,8 +396,10 @@ Verification for release preparation, tag automation, and release witnesses.
   stable category when the target packet is missing`,
   `derives the previous release from public tags, not packet directories`,
   `rejects a target behind the latest public release`, `ignores release tags
-  that are not reachable from HEAD`, and `the checked-in v0.4.0 release packet
-  satisfies the policy`;
+  that are not reachable from HEAD`, and `the checked-in v0.4.1 release packet
+  satisfies the policy` (named for v0.4.0 until
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388) moved
+  the workspace to 0.4.1);
   `docs/goalposts/v0.4.0/release.md`;
   `docs/goalposts/v0.4.0/verification.md`; `.github/workflows/ci.yml`;
   `.github/workflows/release.yml`; and `scripts/release-prep.sh`. *Status:*
@@ -417,8 +419,10 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-18c — Planned packet discoverability.** *Requirement:* REL-18.
   *Behavior:* the documentation spine links the planned release packet and its
   verification witness without presenting the target as tagged or published.
-  *Oracle:* removing either v0.4.0 link or its explicit pre-publication wording
-  fails a deterministic documentation-index assertion. *Evidence type:*
+  *Oracle:* removing either link of the planned entry, v0.4.1 since
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388)
+  (REL-18j), or its explicit pre-publication wording fails a deterministic
+  documentation-index assertion. *Evidence type:*
   release-packet policy test. *Tracking:*
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   *Evidence:* `scripts/check-release-packet.test.mjs`
@@ -493,9 +497,67 @@ Verification for release preparation, tag automation, and release witnesses.
   after; `scripts/check-coverage-policy.test.mjs`
   `unreleased coverage note matches the machine policy`;
   `scripts/check-release-packet.test.mjs`
-  `the checked-in v0.4.0 release packet satisfies the policy`;
+  `the checked-in v0.4.0 release packet satisfies the policy`, renamed
+  `the checked-in v0.4.1 release packet satisfies the policy` when
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388) moved
+  the workspace to 0.4.1;
   `docs/goalposts/v0.4.0/release.md`; and
   `docs/goalposts/v0.4.0/verification.md`. *Status:* implemented.
+- **REL-18i: v0.4.1 packet admitted after the abandoned v0.4.0.**
+  *Requirement:* REL-18. *Behavior:* at workspace version 0.4.1 the
+  checked-in v0.4.1 packet and pre-publication witness name `v0.4.0` as the
+  previous public tag and reconcile scope against it, while the witness
+  Status says that `v0.4.0` was tagged and never published and that the last
+  published release is `v0.3.0`, as the owner decided on
+  [#380](https://github.com/flyingrobots/colorful-language/issues/380).
+  *Oracle:* `node scripts/check-release-packet.mjs` prints
+  `v0.4.1 pre-publication packet satisfied`; the live packet test passes; a
+  test that loads the repository snapshot finds version `0.4.1`, previous tag
+  `v0.4.0`, and the never-published statement in the witness Status, and
+  fails while the workspace is at 0.4.0 or the statement is missing.
+  *Evidence type:* live repository check plus release-packet policy test.
+  *Tracking:*
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `the checked-in v0.4.1
+  release packet satisfies the policy` and `the checked-in v0.4.1 packet
+  follows the never-published v0.4.0`;
+  `docs/goalposts/v0.4.1/release.md`; and
+  `docs/goalposts/v0.4.1/verification.md`. *Status:* implemented.
+- **REL-18j: Documentation spine names the planned v0.4.1 and the abandoned
+  v0.4.0.** *Requirement:* REL-18. *Behavior:* the Releases list in the
+  documentation index has a `Planned v0.4.1:` entry that links the v0.4.1
+  packet and witness and says the release is not yet tagged or published, and
+  an `Abandoned v0.4.0:` entry that links the v0.4.0 packet and witness and
+  says the tag was tagged and never published. *Oracle:* the documentation
+  spine test requires the entry starting `**Planned v0.4.1:**`, both v0.4.1
+  links, and the phrase `not yet tagged or published`; a second test requires
+  the entry starting `**Abandoned v0.4.0:**`, both v0.4.0 links, and the
+  phrase `was tagged and never published`. Each fails while the index still
+  has only the `Tagged v0.4.0:` entry. *Evidence type:* documentation spine
+  test. *Tracking:*
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `documentation spine
+  links the planned packet and witness` and `documentation spine records the
+  abandoned v0.4.0`; `docs/README.md`. This supersedes the `Tagged v0.4.0:`
+  expectation of REL-19j. *Status:* implemented.
+- **REL-18k: Release preparation passes at 0.4.1.** *Requirement:* REL-18.
+  *Behavior:* the eight release version sources carry 0.4.1, the regenerated
+  lockfiles change only the workspace crates' own version lines, the changelog
+  has a `## [0.4.1]` section while `Unreleased` keeps the coverage-baseline
+  note, and the full release-preparation gate passes and is recorded in the
+  v0.4.1 witness. *Oracle:* `bash scripts/release-profile-check.sh` prints
+  `Release profile OK for workspace version 0.4.1`;
+  `node scripts/check-editor-version-policy.mjs` reports the sources at 0.4.1;
+  `unreleased coverage note matches the machine policy` passes; and
+  `mise exec node@22.23.1 -- bash scripts/release-prep.sh` prints
+  `RELEASE PREP PASSED`. *Evidence type:* release-preparation gate run plus
+  lockfile diff review. *Tracking:*
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388).
+  *Evidence:* the `Version sources` and `Unified release preparation` rows of
+  `docs/goalposts/v0.4.1/verification.md`;
+  `scripts/check-coverage-policy.test.mjs`
+  `unreleased coverage note matches the machine policy`; and `CHANGELOG.md`.
+  *Status:* implemented.
 - **REL-19a — Supported release-phase matrix.** *Requirement:* REL-19.
   *Behavior:* one canonical witness fixture for each supported phase carries
   exactly the completed and unavailable section states admitted at that point.
@@ -649,7 +711,10 @@ Verification for release preparation, tag automation, and release witnesses.
   *Tracking:*
   [#386](https://github.com/flyingrobots/colorful-language/issues/386).
   *Evidence:* `scripts/check-release-packet.test.mjs` `documentation spine
-  links the planned packet and witness`. *Status:* implemented.
+  links the planned packet and witness`. *Status:* implemented; superseded by
+  REL-18j, which since
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388)
+  expects an `Abandoned v0.4.0:` entry and a `Planned v0.4.1:` entry instead.
 - **REL-19k: Predecessor witness judged by the phase rules.** *Requirement:*
   REL-19. *Behavior:* when a new train is admitted, an immediate predecessor
   newer than v0.3.0 is validated by the same phase rules as a current witness,
@@ -771,7 +836,11 @@ Verification for release preparation, tag automation, and release witnesses.
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
   *Evidence:* `docs/goalposts/v0.4.0/verification.md`;
   `scripts/check-release-packet.test.mjs` `the checked-in v0.4.0 release
-  packet satisfies the policy`; and the throwaway-clone experiment recorded on
+  packet satisfies the policy`, renamed `the checked-in v0.4.1 release packet
+  satisfies the policy` under
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388), where
+  the live check validates the v0.4.0 witness as the v0.4.1 predecessor; and
+  the throwaway-clone experiment recorded on
   [PR #393](https://github.com/flyingrobots/colorful-language/pull/393#issuecomment-7184935813).
   *Status:* implemented.
 - **REL-20a: Manual dry-run trigger.** *Requirement:* REL-20. *Behavior:* the

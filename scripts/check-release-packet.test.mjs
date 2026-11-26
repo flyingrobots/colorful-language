@@ -2024,8 +2024,17 @@ test("admits only the Retrospective forward version in an abandoned witness", ()
   }
 });
 
-test("the checked-in v0.4.0 release packet satisfies the policy", () => {
+test("the checked-in v0.4.1 release packet satisfies the policy", () => {
   assert.doesNotThrow(() => validateReleasePacket(loadRepositorySnapshot()));
+});
+
+test("the checked-in v0.4.1 packet follows the never-published v0.4.0", () => {
+  const snapshot = loadRepositorySnapshot();
+  assert.equal(snapshot.version, "0.4.1");
+  assert.equal(snapshot.previousTag, "v0.4.0");
+  const status = sectionBody(snapshot.verification, "Status");
+  assert.match(status, /`v0\.4\.0` was tagged and never published\b/u);
+  assert.match(status, /\bthe last published release is `v0\.3\.0`/u);
 });
 
 test("documentation spine links the planned packet and witness", () => {
@@ -2035,12 +2044,29 @@ test("documentation spine links the planned packet and witness", () => {
   );
   const plannedEntry = documentationIndex
     .split("\n- ")
-    .find((entry) => entry.startsWith("**Tagged v0.4.0:**"));
-  assert.ok(plannedEntry, "docs/README.md must list tagged v0.4.0");
-  assert.match(plannedEntry, /\(goalposts\/v0\.4\.0\/release\.md\)/u);
+    .find((entry) => entry.startsWith("**Planned v0.4.1:**"));
+  assert.ok(plannedEntry, "docs/README.md must list planned v0.4.1");
+  assert.match(plannedEntry, /\(goalposts\/v0\.4\.1\/release\.md\)/u);
   assert.match(
     plannedEntry,
+    /\(goalposts\/v0\.4\.1\/verification\.md\)/u,
+  );
+  assert.match(plannedEntry, /\bnot yet tagged or published\b/u);
+});
+
+test("documentation spine records the abandoned v0.4.0", () => {
+  const documentationIndex = readFileSync(
+    new URL("../docs/README.md", import.meta.url),
+    "utf8",
+  );
+  const abandonedEntry = documentationIndex
+    .split("\n- ")
+    .find((entry) => entry.startsWith("**Abandoned v0.4.0:**"));
+  assert.ok(abandonedEntry, "docs/README.md must list abandoned v0.4.0");
+  assert.match(abandonedEntry, /\(goalposts\/v0\.4\.0\/release\.md\)/u);
+  assert.match(
+    abandonedEntry,
     /\(goalposts\/v0\.4\.0\/verification\.md\)/u,
   );
-  assert.match(plannedEntry, /\bis tagged and has not been published\b/u);
+  assert.match(abandonedEntry, /\bwas tagged and never published\b/u);
 });
