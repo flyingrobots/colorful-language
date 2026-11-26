@@ -312,6 +312,10 @@ observe public-contract regressions before they ship.
   and that nothing was published
   [#370](https://github.com/flyingrobots/colorful-language/issues/370).
   <!-- roadmap-primary: delivered #370 -->
+- **Documented the unrecoverable-tag path:** the release runbook says that a
+  tag whose own tree cannot pass admission is not republished or moved, is
+  patched forward under a new version, and how to recognise the case
+  [#384](https://github.com/flyingrobots/colorful-language/issues/384).
 - **Delivered current references for the tagged v0.4.0:** the documentation
   index, README, roadmap, and v0.4.0 witness state that the annotated tag
   exists and that nothing was published for it

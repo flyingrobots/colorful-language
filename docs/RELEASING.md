@@ -815,7 +815,31 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
   workflow and rerun publication for the same tag. Until publication
   completes, the witness on `main` stays in the `tagged` phase with its
   publication evidence unavailable; the packet check rejects
-  `pre-publication` on any commit after the tagged one.
+  `pre-publication` on any commit after the tagged one. This applies only
+  when the defect is outside the tagged tree; if the tagged tree itself cannot
+  pass admission, follow the next entry instead.
+- **Tag exists, and its own tree cannot pass admission:** a tag run checks out
+  the tagged commit and runs the workflow and scripts from that commit
+  (`.github/workflows/release.yml`), so a fix on `main` is never seen by a
+  rerun of the same tag. Recognise the case when the failure is in the
+  `Validate release admission` job and the same check fails when you run it
+  from a clone checked out at the tag (for example
+  `node scripts/check-release-packet.mjs` and
+  `node --test scripts/check-release-packet.test.mjs`), while the same check
+  passes on `main`. `v0.4.0` is this case: its packet self-test and packet
+  check reject the tagged tree. In this case:
+  - Do not rerun the tag workflow; the rerun cannot pass.
+  - Do not move, delete, or recreate the tag, and publish nothing from it.
+  - Patch forward: fix the defect on `main`, and release under a new version
+    through the normal flow. The abandoned tag stays the baseline for scope
+    reconciliation, because its tree holds the reviewed scope; the last
+    published version stays the baseline for user-facing notes and the
+    changelog preface, because users never received the abandoned version.
+  - The witness for the abandoned tag stays in the `tagged` phase on `main`;
+    `v0.4.0` is at `tagged` today, with its publication evidence unavailable.
+    No later phase for an abandoned tag exists yet. The packet check and this
+    runbook will be updated when it does, tracked in
+    [#387](https://github.com/flyingrobots/colorful-language/issues/387).
 - **Some crates published, another failed:** Do not move the tag. Fix the
   failing path and rerun. Already-published crates should be verified, not
   republished with different contents.

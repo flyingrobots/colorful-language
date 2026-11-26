@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the bot then suggests only the listed labels, so labels outside the list are
   not expected to be suggested; whether the bot honours the file is a hosted
   check recorded on the issue.
+- **Runbook path for a tag whose own tree cannot pass admission
+  ([#384](https://github.com/flyingrobots/colorful-language/issues/384)).**
+  `docs/RELEASING.md` now says that a same-tag rerun cannot pass when the
+  defect is inside the tagged tree, because a tag run uses the workflow and
+  scripts of the tagged commit; that the tag is not moved or republished; how
+  to recognise the case; and that the release is patched forward under a new
+  version. The witness for such a tag, `v0.4.0` today, stays at `tagged` until
+  the terminal state tracked in
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387) lands.
 
 ### Fixed
 
