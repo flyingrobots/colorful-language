@@ -423,19 +423,27 @@ test("accepts a fuzz/Cargo.lock whose workspace crates match the workspace", () 
     (source) => source,
     (root) => {
       const snapshot = loadRepositorySnapshot(root);
-      assert.equal(snapshot.versions[FUZZ_LOCK], "0.4.0");
+      assert.equal(
+        snapshot.versions[FUZZ_LOCK],
+        snapshot.versions["Cargo.toml"],
+      );
       assert.doesNotThrow(() => validateEditorVersionPolicy(snapshot));
     },
   );
 });
 
-test("a fuzz/Cargo.lock crate at an older version fails by name", () => {
+test("a fuzz/Cargo.lock crate at a different version fails by name", () => {
+  const workspaceVersion = loadRepositorySnapshot().versions["Cargo.toml"];
+  const staleVersion = workspaceVersion === "0.0.1" ? "0.0.2" : "0.0.1";
   withFuzzLock(
-    (source) => withCrateVersion(source, "colorful-lint", "0.3.0"),
+    (source) => withCrateVersion(source, "colorful-lint", staleVersion),
     (root) => {
       assert.throws(
         () => validateEditorVersionPolicy(loadRepositorySnapshot(root)),
-        /fuzz\/Cargo\.lock has colorful-lint 0\.3\.0; expected 0\.4\.0/u,
+        new RegExp(
+          `fuzz/Cargo\\.lock has colorful-lint ${staleVersion.replaceAll(".", "\\.")}; expected ${workspaceVersion.replaceAll(".", "\\.")}`,
+          "u",
+        ),
       );
     },
   );

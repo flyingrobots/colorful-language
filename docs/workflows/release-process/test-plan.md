@@ -174,7 +174,7 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence:* `scripts/check-editor-version-policy.test.mjs`
   `fuzz/Cargo.lock is a reviewed version source`,
   `accepts a fuzz/Cargo.lock whose workspace crates match the workspace`,
-  `a fuzz/Cargo.lock crate at an older version fails by name`,
+  `a fuzz/Cargo.lock crate at a different version fails by name`,
   `a fuzz/Cargo.lock missing a workspace crate fails by name`,
   `rejects drift in fuzz/Cargo.lock`, and
   `rejects missing, duplicated, unexpected, or reordered version sources`;
