@@ -1,4 +1,7 @@
 # crate-root<TAB>design-record
 #
 # An exception must name an inventoried production crate root and an existing
-# Markdown record below docs/design/. No exceptions are currently approved.
+# Markdown record below docs/design/.
+# Registration is not approval: an exception is approved only when its design
+# record says so. colorful-wasm: registered, pending architecture review.
+crates/colorful-wasm/src/lib.rs	docs/design/0007-wasm-c-abi-exports.md

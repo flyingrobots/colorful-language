@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>colorful-wasm example</title>
+<!-- Serve this directory over HTTP with colorful-wasm.mjs and colorful_wasm.wasm
+     copied next to it; see crates/colorful-wasm/README.md. -->
+<label for="text">Text</label>
+<textarea id="text" rows="3" cols="60">The cat sat on the mat.</textarea>
+<button id="run" type="button">Analyze</button>
+<pre id="out" aria-live="polite">Loading…</pre>
+<script type="module">
+  import { instantiate } from './colorful-wasm.mjs';
+
+  const out = document.getElementById('out');
+  const colorful = await instantiate(fetch('./colorful_wasm.wasm'));
+  function run() {
+    const text = document.getElementById('text').value;
+    const ir = JSON.parse(colorful.ir(text));
+    const bytes = new TextEncoder().encode(text);
+    const decoder = new TextDecoder();
+    out.textContent = ir.tokens
+      .map((t) => `${decoder.decode(bytes.subarray(t.byteRange.startUtf8, t.byteRange.endUtf8))}\t${t.tokenKind}\t${t.openClassKind ?? t.lexicalClass ?? ''}`)
+      .join('\n');
+  }
+  document.getElementById('run').addEventListener('click', run);
+  run();
+</script>
