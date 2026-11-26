@@ -47,9 +47,10 @@ Verification for release preparation, tag automation, and release witnesses.
   release evidence that does not yet exist.
 - **REL-19** A release witness must advance monotonically through
   pre-publication, tagged, published, verified, and retrospected evidence
-  states; each
-  phase must carry the minimum immutable identity and completed-or-unavailable
-  section shape required at that point.
+  states, or leave that order from tagged for the terminal abandoned state;
+  each phase must carry the minimum immutable identity and
+  completed, unavailable, or not-applicable section shape required at that
+  point.
 - **REL-20** A maintainer can run the release workflow by hand on `main` as a
   dry run that executes admission, the native builds, packaging, and the
   checks on the assembled artifact set, and reaches no step with an outside
@@ -498,8 +499,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-19a — Supported release-phase matrix.** *Requirement:* REL-19.
   *Behavior:* one canonical witness fixture for each supported phase carries
   exactly the completed and unavailable section states admitted at that point.
-  *Oracle:* pre-publication, published, verified, and retrospected fixtures all
-  pass, while changing the declared phase without changing its evidence fails
+  *Oracle:* pre-publication, published, verified, retrospected, and abandoned
+  fixtures all pass, while changing the declared phase without changing its
+  evidence fails
   with `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* deterministic witness
   phase-matrix test. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
@@ -653,9 +655,9 @@ Verification for release preparation, tag automation, and release witnesses.
   newer than v0.3.0 is validated by the same phase rules as a current witness,
   with its own version, its own previous public tag, and the commit its
   annotated tag resolves to, and is admitted only at a phase the predecessor
-  phase list names. That list holds only `retrospected` today; the terminal
-  phase for an abandoned tag joins it in
-  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  phase list names. That list holds `retrospected` and, since
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387), the
+  terminal `abandoned` phase (REL-19o).
   Historical predecessors from v0.1.0 through v0.3.0 keep the narrower
   completed-retrospective check. *Oracle:* in a temporary repository with
   annotated `v0.3.0` and `v0.4.0` tags and the workspace at 0.4.1, a v0.4.0
@@ -694,7 +696,10 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence type:* deterministic witness phase-order test plus
   temporary-repository release-packet policy test. *Tracking:*
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
-  *Status:* planned.
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs` `accepts one canonical witness for
+  every release phase` and `admits the abandoned phase only from tagged and
+  keeps it terminal`. *Status:* implemented.
 - **REL-19m: Abandoned evidence gate.** *Requirement:* REL-19. *Behavior:* in
   the `abandoned` phase the annotated target tag is available; publication
   evidence and public verification each declare exactly one
@@ -716,7 +721,8 @@ Verification for release preparation, tag automation, and release witnesses.
   `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal abandoned-evidence
   mutations. *Tracking:*
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
-  *Status:* planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs` `requires the abandoned
+  phase's evidence`. *Status:* implemented.
 - **REL-19n: Abandoned phase requires a resolving annotated tag.**
   *Requirement:* REL-19. *Behavior:* like `tagged`, the `abandoned` phase is
   admitted only while the annotated target tag resolves from the checked
@@ -726,7 +732,8 @@ Verification for release preparation, tag automation, and release witnesses.
   tag is absent or lightweight. *Evidence type:* temporary-repository
   release-packet policy test. *Tracking:*
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
-  *Status:* planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs` `admits the abandoned
+  phase only while the annotated target tag resolves`. *Status:* implemented.
 - **REL-19o: Abandoned predecessor admits a successor.** *Requirement:*
   REL-19. *Behavior:* the predecessor phase list holds `retrospected` and
   `abandoned`, so a consistent `abandoned` immediate predecessor admits a new
@@ -740,7 +747,9 @@ Verification for release preparation, tag automation, and release witnesses.
   `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* temporary-repository
   release-history test. *Tracking:*
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
-  *Status:* planned.
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs` `admits an abandoned predecessor
+  only with its retrospective and forward version`. *Status:* implemented.
 - **REL-19p: The v0.4.0 witness is abandoned.** *Requirement:* REL-19.
   *Behavior:* the checked-in v0.4.0 witness declares `abandoned`, with
   publication and public verification not applicable, a completed
