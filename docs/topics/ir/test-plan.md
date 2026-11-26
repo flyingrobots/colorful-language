@@ -52,7 +52,9 @@ Requirements:
   uncovered token axes fail soft instead of panicking, the validated embedded
   manifest gives complete coverage for every current `PosClass` and generated
   `VisualRole`, and all three fallible signatures are an explicitly documented
-  breaking API change in the queued v0.4.0 line, never a silent patch release.
+  breaking API change in the 0.4 line, never a silent patch release of the
+  0.3 line; the 0.4 line first ships as v0.4.1, because v0.4.0 was tagged and
+  never published.
 - **IR-14** `validate_document` rejects malformed received-artifact token layout
   and structure graphs, not only malformed individual ranges and identifiers.
 - **IR-15** Public adapter and projection input is validated before IR emission,

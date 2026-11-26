@@ -30,7 +30,7 @@ compile only what the target can prove.*
 | # | Depth | Reach | Milestone / epic | Status |
 | --- | --- | --- | --- | --- |
 | 0 | Closed-class lexical highlighting | CLI (ANSI) + LSP (semantic tokens) | [Goalpost 0](https://github.com/flyingrobots/colorful-language/milestone/1) | ✅ released v0.1.0 |
-| 1 | **Surface IR** — `colorful.syntax/v1`, a Wesley-generated GraphQL contract (Rust + TS) | graft (agent reads), jedit | [IR Spine](https://github.com/flyingrobots/colorful-language/milestone/4) · [#11](https://github.com/flyingrobots/colorful-language/issues/11) | 🚧 core IR released v0.2.1; consumers open; projection/artifact-hardening slices shipped [#57](https://github.com/flyingrobots/colorful-language/issues/57), [#58](https://github.com/flyingrobots/colorful-language/issues/58), [#59](https://github.com/flyingrobots/colorful-language/issues/59), [#60](https://github.com/flyingrobots/colorful-language/issues/60), [#61](https://github.com/flyingrobots/colorful-language/issues/61), [#62](https://github.com/flyingrobots/colorful-language/issues/62), [#63](https://github.com/flyingrobots/colorful-language/issues/63), [#64](https://github.com/flyingrobots/colorful-language/issues/64); a v0.4.0 hardening pass (producer `PassIdentity`, a `colorful-projection` crate, structured path-aware validation errors closing [#69](https://github.com/flyingrobots/colorful-language/issues/69); README architecture accuracy closing [#72](https://github.com/flyingrobots/colorful-language/issues/72); a documented, tested UTF-8 file/stdin input contract closing [#75](https://github.com/flyingrobots/colorful-language/issues/75); a validated IR-witness TypeScript leg closing [#77](https://github.com/flyingrobots/colorful-language/issues/77); a committed IR invariant fixture corpus closing [#101](https://github.com/flyingrobots/colorful-language/issues/101); a Wesley-generated contract outputs drift check closing [#103](https://github.com/flyingrobots/colorful-language/issues/103)) carries breaking API changes — staged for v0.4.0, which is tagged but was never published, see `CHANGELOG.md`'s 0.4.0 section |
+| 1 | **Surface IR** — `colorful.syntax/v1`, a Wesley-generated GraphQL contract (Rust + TS) | graft (agent reads), jedit | [IR Spine](https://github.com/flyingrobots/colorful-language/milestone/4) · [#11](https://github.com/flyingrobots/colorful-language/issues/11) | 🚧 core IR released v0.2.1; consumers open; projection/artifact-hardening slices shipped [#57](https://github.com/flyingrobots/colorful-language/issues/57), [#58](https://github.com/flyingrobots/colorful-language/issues/58), [#59](https://github.com/flyingrobots/colorful-language/issues/59), [#60](https://github.com/flyingrobots/colorful-language/issues/60), [#61](https://github.com/flyingrobots/colorful-language/issues/61), [#62](https://github.com/flyingrobots/colorful-language/issues/62), [#63](https://github.com/flyingrobots/colorful-language/issues/63), [#64](https://github.com/flyingrobots/colorful-language/issues/64); a v0.4.0 hardening pass (producer `PassIdentity`, a `colorful-projection` crate, structured path-aware validation errors closing [#69](https://github.com/flyingrobots/colorful-language/issues/69); README architecture accuracy closing [#72](https://github.com/flyingrobots/colorful-language/issues/72); a documented, tested UTF-8 file/stdin input contract closing [#75](https://github.com/flyingrobots/colorful-language/issues/75); a validated IR-witness TypeScript leg closing [#77](https://github.com/flyingrobots/colorful-language/issues/77); a committed IR invariant fixture corpus closing [#101](https://github.com/flyingrobots/colorful-language/issues/101); a Wesley-generated contract outputs drift check closing [#103](https://github.com/flyingrobots/colorful-language/issues/103)) carries breaking API changes — staged for v0.4.1, the first installable 0.4 release, because v0.4.0 was tagged and never published, see `CHANGELOG.md`'s 0.4.0 section |
 | 2 | Prose linter (Analyzer: passive voice, run-ons, weak words) | LSP diagnostics + CLI warnings | [Goalpost 1](https://github.com/flyingrobots/colorful-language/milestone/2) · [#6](https://github.com/flyingrobots/colorful-language/issues/6) | ✅ released v0.2.1 |
 | 3 | — | **VS Code extension** + Neovim / Helix / Zed / Emacs / JetBrains recipes | [Editor Reach](https://github.com/flyingrobots/colorful-language/milestone/5) · [#12](https://github.com/flyingrobots/colorful-language/issues/12) | 🚧 source integrations released v0.2.1; packaging open |
 | 4 | Open-class POS disambiguation (noun/verb/adj/adv) + custom legend + theme | richer color in every surface | [Goalpost 2](https://github.com/flyingrobots/colorful-language/milestone/3) · [#7](https://github.com/flyingrobots/colorful-language/issues/7) | 🚧 core/default path released v0.3.0; shipped slices [#38](https://github.com/flyingrobots/colorful-language/issues/38), [#40](https://github.com/flyingrobots/colorful-language/issues/40), [#44](https://github.com/flyingrobots/colorful-language/issues/44), [#46](https://github.com/flyingrobots/colorful-language/issues/46), and Unicode CLI/LSP position parity [#125](https://github.com/flyingrobots/colorful-language/issues/125); theme/package polish open |
@@ -294,9 +294,12 @@ observe public-contract regressions before they ship.
   evidence explicitly unavailable until real public oracles exist
   [#280](https://github.com/flyingrobots/colorful-language/issues/280).
   <!-- roadmap-primary: delivered #280 -->
-- **Active v0.4.0 release train:** keep the reviewed packet, current phase,
-  public evidence, fallout, and final closure under one versioned tracker while
-  slice issues retain their architectural goalposts
+- **Active v0.4.0 release train, superseded by v0.4.1:** the tracker keeps the
+  reviewed packet and the abandoned `v0.4.0` publication on record; as the
+  owner decided on
+  [#381](https://github.com/flyingrobots/colorful-language/issues/381), it is
+  closed as superseded when the `[release] v0.4.1` tracker is created from the
+  reviewed v0.4.1 packet after that packet merges
   [#283](https://github.com/flyingrobots/colorful-language/issues/283).
   <!-- roadmap-primary: active #283 -->
 - **Delivered the v0.4.0 tag:** after final preflight passed from clean,
@@ -351,6 +354,13 @@ observe public-contract regressions before they ship.
   version; the predecessor rule accepts it, and the v0.4.0 witness is there
   with `v0.4.1` as its forward version
   [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+- **v0.4.1 release preparation:** set every release version source to 0.4.1,
+  admit the v0.4.1 packet and pre-publication witness with `v0.4.0` as the
+  scope baseline and `v0.3.0` as the baseline for the user-facing notes, cut
+  the `0.4.1` changelog section, and pass release preparation; final
+  preflight, the release dry run, the tag, and the `[release] v0.4.1` tracker
+  follow the merge
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388).
 - **Roadmap follow-up triage:** retain the cursor-complete transport idea in the
   scale-triggered experiment backlog; checker decomposition shipped through
   [#257](https://github.com/flyingrobots/colorful-language/issues/257)
@@ -516,7 +526,9 @@ was installed, and reach the first useful editor result.
   marketplace credentials
   ([#245](https://github.com/flyingrobots/colorful-language/issues/245) and
   [#154](https://github.com/flyingrobots/colorful-language/issues/154)). The
-  `v0.4.0` tag and public verification remain owned by the release train
+  `v0.4.0` tag was never published; the `v0.4.1` tag and public verification
+  belong to the `[release] v0.4.1` train that the v0.4.1 packet opens after
+  merge, succeeding
   [#283](https://github.com/flyingrobots/colorful-language/issues/283);
   external editor-registry listings are optional follow-up channels.
   <!-- roadmap-primary: delivered #245 -->
@@ -581,7 +593,7 @@ mistaking an idea for a committed milestone or an already validated user need.
 - Build a zero-install WASM playground from the pure analysis stack
   [#175](https://github.com/flyingrobots/colorful-language/issues/175).
 - Build `colorful ir` to WebAssembly with byte-identical CLI output, the first
-  step toward that playground and the intended lead for v0.5.0 once v0.4.0 is
+  step toward that playground and the intended lead for v0.5.0 once v0.4.1 is
   tagged
   [#326](https://github.com/flyingrobots/colorful-language/issues/326).
 - Emit deterministic SARIF for CI-native lint findings
@@ -681,7 +693,8 @@ editor adapters. The Goalpost 2 epic remains open for theme visibility and
 packaging polish. The v0.4.0 hardening pass under Phase 1 carries breaking API
 changes — producer `PassIdentity`, the `colorful-projection` crate, and
 structured, path-aware `ValidationError`s — each recorded in `CHANGELOG.md`'s
-0.4.0 section. See
+0.4.0 section. `v0.4.0` was tagged and never published, so that work is
+prepared for release as `v0.4.1`. See
 [`CHANGELOG.md`](CHANGELOG.md), the
 [v0.1.0 release packet](docs/goalposts/v0.1.0/release.md), the
 [v0.2.1 release packet](docs/goalposts/v0.2.1/release.md), and the

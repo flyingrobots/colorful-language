@@ -278,17 +278,18 @@ producer/consumer boundary.
 
 ## Project Status
 
-**Latest published release — `v0.3.0`. Current `main` workspace version —
-`0.4.0`, tagged but never published.** Colorful ships deterministic open-class
+**Latest published release: `v0.3.0`. Current `main` workspace version:
+`0.4.1`, prepared but not yet tagged.** Colorful ships deterministic open-class
 noun/verb/adjective/adverb roles through the CLI, IR, LSP, and editor adapters.
-The 0.4.0 snapshot adds the IR hardening pass — producer `PassIdentity`, the
-`colorful-projection` crate, and structured, path-aware `ValidationError`s —
+The 0.4 line adds the IR hardening pass (producer `PassIdentity`, the
+`colorful-projection` crate, and structured, path-aware `ValidationError`s)
 together with an attested CycloneDX bill of materials for every tagged release.
 The breaking API changes it carries are recorded under **0.4.0** in the
 changelog. The annotated `v0.4.0` tag exists at `bc17f09`, but its publish
-workflow failed at admission validation, so no crate, archive, VSIX, or GitHub
-Release was published for it. The
-[v0.4.0 verification witness](docs/goalposts/v0.4.0/verification.md) is the
+workflow failed at admission validation, so `v0.4.0` was tagged and never
+published; `0.4.1` carries the same source forward as the first installable
+release of the 0.4 line. Until the annotated `v0.4.1` tag exists, the
+[v0.4.1 verification witness](docs/goalposts/v0.4.1/verification.md) is the
 authority on what has and has not been published.
 
 See the [Releases](https://github.com/flyingrobots/colorful-language/releases)

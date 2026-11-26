@@ -37,9 +37,10 @@ and it packages the licensed Zed source archive. It also generates a CycloneDX
 software bill of materials from the locked dependency graph and attests it with
 the same provenance as the artifacts it describes, so a consumer can audit what
 a release contains without building it. These are release mechanics, not
-current install claims. No macOS, Windows, or v0.4.0 editor asset is documented
-as available until the tagged workflow provides a real URL and verification
-evidence. Marketplace and editor-registry listings are optional discovery
+current install claims. No macOS, Windows, or 0.4-line editor asset is
+documented as available until the tagged workflow provides a real URL and
+verification evidence; `v0.4.0` was tagged and never published, and `v0.4.1`
+is prepared but not yet tagged. Marketplace and editor-registry listings are optional discovery
 channels, not release prerequisites.
 
 The same tag workflow generates `colorful.rb` only after downloading the

@@ -133,12 +133,19 @@ each page's own status note before trusting a specific finding.
 
 ## Releases
 
-- **Tagged v0.4.0:** [release packet](goalposts/v0.4.0/release.md) — hardened
-  public boundaries, responsive editor analysis, reproducible evidence, and
-  signed distribution preparation. The annotated `v0.4.0` tag exists at
-  `bc17f09`; the release is tagged and has not been published, because its
-  publish workflow failed at admission validation
-  ([verification witness](goalposts/v0.4.0/verification.md)).
+- **Planned v0.4.1:** [release packet](goalposts/v0.4.1/release.md): the
+  first installable release of the 0.4 line, carrying the `v0.4.0` source
+  unchanged plus the release-process fixes that followed its failed
+  publication. It is not yet tagged or published; the
+  [pre-publication verification witness](goalposts/v0.4.1/verification.md)
+  records its preparation evidence.
+- **Abandoned v0.4.0:** [release packet](goalposts/v0.4.0/release.md):
+  hardened public boundaries, responsive editor analysis, reproducible
+  evidence, and signed distribution preparation. The annotated `v0.4.0` tag
+  exists at `bc17f09`, but the release was tagged and never published, because
+  its publish workflow failed at admission validation; its
+  [verification witness](goalposts/v0.4.0/verification.md) is at the terminal
+  `abandoned` phase, and `v0.4.1` carries its work forward.
 - [v0.3.0](goalposts/v0.3.0/release.md) — deterministic open-class POS roles
   (noun/verb/adjective/adverb), contextual disambiguation, diagnostic JSON, and
   Plain Text editor activation fixes
