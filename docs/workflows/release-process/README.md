@@ -131,7 +131,8 @@ Editor adapters follow the same fixed release version as the Cargo workspace.
 For a pre-1.0 `0.Y.Z` release, each adapter accepts stable `colorful-lsp`
 versions from `>=0.Y.0` through `<0.(Y+1).0`. The next minor is potentially
 breaking, and prereleases are unsupported. The release profile lists the Cargo,
-VS Code, and Zed version sources. CI, release preparation, and tag publication
+VS Code, and Zed version sources, and the workspace crate versions in
+`fuzz/Cargo.lock`. CI, release preparation, and tag publication
 enforce them with:
 
 ```bash

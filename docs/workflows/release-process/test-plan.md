@@ -156,7 +156,7 @@ Verification for release preparation, tag automation, and release witnesses.
   `requires policy dependencies before the checker in every release gate`
   prove serialization independence and clean-environment dependency ordering.
   *Status:* implemented.
-- **REL-11b** — *Requirement:* REL-11. *Behavior:* the release profile also
+- **REL-11b:** *Requirement:* REL-11. *Behavior:* the release profile also
   lists `fuzz/Cargo.lock` as a version source, and the drift check reads the
   eight workspace crate versions in it (`colorful-core`, `colorful-lexicon`,
   `colorful-parse`, `colorful-ir`, `colorful-lint`, `colorful-projection`,
@@ -171,7 +171,15 @@ Verification for release preparation, tag automation, and release witnesses.
   apart fails with the existing inventory message. *Evidence type:*
   release-policy checker and mutation test. *Tracking:*
   [#385](https://github.com/flyingrobots/colorful-language/issues/385).
-  *Status:* planned.
+  *Evidence:* `scripts/check-editor-version-policy.test.mjs`
+  `fuzz/Cargo.lock is a reviewed version source`,
+  `accepts a fuzz/Cargo.lock whose workspace crates match the workspace`,
+  `a fuzz/Cargo.lock crate at an older version fails by name`,
+  `a fuzz/Cargo.lock missing a workspace crate fails by name`,
+  `rejects drift in fuzz/Cargo.lock`, and
+  `rejects missing, duplicated, unexpected, or reordered version sources`;
+  `.continuum/release.yml`; `scripts/check-editor-version-policy.mjs`.
+  *Status:* implemented.
 - **REL-12a** — *Requirement:* REL-12. *Behavior:* the tag workflow builds the
   two public binaries natively on `ubuntu-24.04` /
   `x86_64-unknown-linux-gnu`, `macos-15` /

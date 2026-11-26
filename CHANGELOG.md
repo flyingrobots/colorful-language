@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not expected to be suggested; whether the bot honours the file is a hosted
   check recorded on the issue.
 
+- **`fuzz/Cargo.lock` is a release version source
+  ([#385](https://github.com/flyingrobots/colorful-language/issues/385)).**
+  `.continuum/release.yml` and the version-source check now cover the eight
+  workspace crate versions in `fuzz/Cargo.lock`. A stale entry fails with
+  `fuzz/Cargo.lock has <crate> <version>; expected <workspace version>` instead
+  of a late `--locked` lockfile error. No version or lockfile changed.
+
 ### Fixed
 
 - **Release packet check admits a tagged, unpublished release.** The packet

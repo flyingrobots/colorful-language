@@ -279,8 +279,12 @@ changes bump the minor version.
 ## Editor adapter versioning
 
 The Cargo workspace, VS Code extension manifest and lockfile, Zed extension
-manifest, and standalone Zed crate and lockfile share the release version. A
-release-preparation version update changes them as one reviewed set.
+manifest, standalone Zed crate and lockfile, and the workspace crate entries in
+`fuzz/Cargo.lock` share the release version. A release-preparation version
+update changes them as one reviewed set; the drift check names `fuzz/Cargo.lock`,
+the crate, and both versions when one is stale. Dependabot cannot resync
+`fuzz/Cargo.lock` (`.github/dependabot.yml` limits `/fuzz` to `libfuzzer-sys`),
+so regenerate it by hand during the version bump.
 
 For an adapter version `0.Y.Z`, compatible `colorful-lsp` versions are stable
 releases in:
