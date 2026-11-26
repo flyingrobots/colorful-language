@@ -791,7 +791,29 @@ function readsCredential(value) {
   );
 }
 
-function validateDryRunInputs(jobs) {
+// Workflow-level and job-level fields such as env and defaults are inherited
+// by every step in their scope, dry-run steps included, so a credential is
+// permitted only in the body of a tag-only step.
+function validateInheritedScopes(workflow) {
+  const { jobs, ...workflowScope } = workflow;
+  if (readsCredential(workflowScope)) {
+    throw new Error(
+      ".github/workflows/release.yml passes a secret or the job token to every step, including dry-run steps",
+    );
+  }
+  for (const { job, context } of jobModes(jobs)) {
+    const { steps, ...jobScope } = job ?? {};
+    if (readsCredential(jobScope)) {
+      throw new Error(
+        `${context} passes a secret or the job token to every step, including dry-run steps`,
+      );
+    }
+  }
+}
+
+function validateDryRunInputs(workflow) {
+  const jobs = workflow.jobs;
+  validateInheritedScopes(workflow);
   for (const { jobName, context, steps } of jobModes(jobs)) {
     for (const { step, label, tagOnly } of steps) {
       if (tagOnly) {
@@ -939,7 +961,7 @@ export function validateReleaseDistribution(snapshot) {
   validateBinaryJob(jobs["binary-artifacts"], EXPECTED_PLATFORMS);
   validateReleaseJob(jobs.release);
   validateTriggers(workflow);
-  validateDryRunInputs(jobs);
+  validateDryRunInputs(workflow);
 
   validateGateCommands(
     snapshot.gates,
