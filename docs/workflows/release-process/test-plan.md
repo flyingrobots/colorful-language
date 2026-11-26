@@ -600,7 +600,8 @@ Verification for release preparation, tag automation, and release witnesses.
   the phrase `not yet tagged or published`.
   *Evidence type:* documentation spine test. *Tracking:*
   [#386](https://github.com/flyingrobots/colorful-language/issues/386).
-  *Status:* planned.
+  *Evidence:* `scripts/check-release-packet.test.mjs` `documentation spine
+  links the planned packet and witness`. *Status:* implemented.
 
 ## Open verification gaps
 
