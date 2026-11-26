@@ -676,6 +676,85 @@ Verification for release preparation, tag automation, and release witnesses.
   predecessor phase`, `requires an earlier public tag behind a phase-machine
   predecessor`, and `requires a completed predecessor retrospective`.
   *Status:* implemented.
+- **REL-19l: Abandoned phase entered only from tagged, and terminal.**
+  *Requirement:* REL-19. *Behavior:* the witness can declare
+  `Release phase: abandoned` for a public tag whose publication was abandoned.
+  The phase order is `pre-publication`, `tagged`, then either `published`,
+  `verified`, `retrospected`, or the terminal `abandoned`. Only a `tagged`
+  branch-base witness may move to `abandoned`, and an `abandoned` branch-base
+  witness may not move to any other phase. *Oracle:* the canonical `abandoned`
+  fixture is admitted in the phase matrix; branch-base `tagged` to `abandoned`
+  and `abandoned` to `abandoned` pass; branch-base `pre-publication`,
+  `published`, `verified`, or `retrospected` to `abandoned`, and branch-base
+  `abandoned` to `pre-publication`, `tagged`, `published`, `verified`, or
+  `retrospected`, each fail with `E_RELEASE_PACKET_EVIDENCE` and a message
+  naming the transition rule; a temporary repository whose `origin/main`
+  witness is `tagged` admits a committed `abandoned` witness, and one whose
+  `origin/main` witness is `abandoned` rejects a committed `tagged` witness.
+  *Evidence type:* deterministic witness phase-order test plus
+  temporary-repository release-packet policy test. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Status:* planned.
+- **REL-19m: Abandoned evidence gate.** *Requirement:* REL-19. *Behavior:* in
+  the `abandoned` phase the annotated target tag is available; publication
+  evidence and public verification each declare exactly one
+  `Evidence state: not applicable.` and carry no completed or public evidence;
+  the retrospective is completed with exactly one
+  `Retrospective status: completed.` and the four required entries; and the
+  Retrospective section contains exactly one `Forward version:` line naming a
+  stable version greater than the witness's own. No other phase accepts a
+  `not applicable` evidence state or a `Forward version:` line. *Oracle:*
+  starting from the canonical `abandoned` fixture, each of these fails with
+  `E_RELEASE_PACKET_EVIDENCE` and a message naming the missing rule: the
+  target tag unavailable; publication or public verification declared
+  completed or unavailable; a commit identifier, public URL, or completed claim
+  inside a not-applicable section; the retrospective unavailable, its status
+  missing or duplicated, or a required entry missing; the forward version
+  missing, duplicated, not a stable version, equal to the witness's own, or
+  lower than it. A `tagged` witness with a not-applicable section, and a
+  `retrospected` witness with a `Forward version:` line, each fail with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal abandoned-evidence
+  mutations. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Status:* planned.
+- **REL-19n: Abandoned phase requires a resolving annotated tag.**
+  *Requirement:* REL-19. *Behavior:* like `tagged`, the `abandoned` phase is
+  admitted only while the annotated target tag resolves from the checked
+  history. *Oracle:* a temporary repository with an annotated `v0.4.0` tag and
+  a committed `abandoned` witness is admitted; the same witness fails with
+  `E_RELEASE_PACKET_EVIDENCE` and the tag-resolution message when the target
+  tag is absent or lightweight. *Evidence type:* temporary-repository
+  release-packet policy test. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Status:* planned.
+- **REL-19o: Abandoned predecessor admits a successor.** *Requirement:*
+  REL-19. *Behavior:* the predecessor phase list holds `retrospected` and
+  `abandoned`, so a consistent `abandoned` immediate predecessor admits a new
+  train, while an `abandoned` predecessor without a completed retrospective or
+  without its forward version is rejected by the phase rules before it can
+  admit one. *Oracle:* in a temporary repository with annotated `v0.3.0` and
+  `v0.4.0` tags and the workspace at 0.4.1, a v0.4.0 predecessor witness at
+  `abandoned` loads with previous tag `v0.4.0` and the v0.4.1 packet validates;
+  the same predecessor with its retrospective unavailable, or with its
+  `Forward version:` line removed, fails packet loading with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* temporary-repository
+  release-history test. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Status:* planned.
+- **REL-19p: The v0.4.0 witness is abandoned.** *Requirement:* REL-19.
+  *Behavior:* the checked-in v0.4.0 witness declares `abandoned`, with
+  publication and public verification not applicable, a completed
+  retrospective of the failed publication, and `v0.4.1` as its forward
+  version; the live packet check admits it on every commit of the change, and
+  a throwaway clone with the workspace at 0.4.1 and a minimal v0.4.1 packet no
+  longer fails on the predecessor rule. *Oracle:*
+  `node scripts/check-release-packet.mjs` prints
+  `v0.4.0 abandoned packet satisfied`; the live test passes; the throwaway
+  clone experiment, recorded on the pull request, shows the predecessor
+  rejection gone. *Evidence type:* live repository check plus a recorded
+  throwaway-clone experiment. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Status:* planned.
 - **REL-20a: Manual dry-run trigger.** *Requirement:* REL-20. *Behavior:* the
   release workflow triggers on a pushed `v*` tag and on `workflow_dispatch`
   with no inputs, so the dry run is selected by the event and no free-form
