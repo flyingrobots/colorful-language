@@ -27,6 +27,21 @@ const PUBLISH_WORKFLOW =
   "https://github.com/flyingrobots/colorful-language/actions/runs/123456";
 const GITHUB_RELEASE =
   "https://github.com/flyingrobots/colorful-language/releases/tag/v0.4.0";
+const ABANDONED_PUBLICATION = `Evidence state: not applicable.
+
+- Publication of v0.4.0 was abandoned; the forward version carries its work.`;
+const ABANDONED_PUBLIC_VERIFICATION = `Evidence state: not applicable.
+
+- Public verification does not apply to an abandoned tag.`;
+const ABANDONED_RETROSPECTIVE = `Evidence state: completed.
+
+Retrospective status: completed.
+
+- Planned versus actual: the tag run failed admission and nothing shipped.
+- Fallout: the tag stays unpublished.
+- Repeatable wins: a release dry run before the tag.
+- Next recommendation: release the same work as v0.4.1.
+- Forward version: v0.4.1.`;
 const PREVIOUS_VERIFICATION = `# v0.3.0 verification
 
 ## Retrospective
@@ -205,6 +220,10 @@ function snapshotForPhase(phase) {
     return snapshot;
   }
   snapshot.targetCommit = TARGET_COMMIT;
+  if (phase === "abandoned") {
+    snapshot.verification = abandonedVerification(snapshot.verification);
+    return snapshot;
+  }
   snapshot.verification = snapshot.verification
     .replace("Release phase: pre-publication.", `Release phase: ${phase}.`)
     .replace(
@@ -296,6 +315,7 @@ test("accepts one canonical witness for every release phase", () => {
     "published",
     "verified",
     "retrospected",
+    "abandoned",
   ]) {
     assert.deepEqual(validateReleasePacket(snapshotForPhase(phase)), {
       version: "0.4.0",
@@ -1261,6 +1281,28 @@ function taggedVerification(source) {
     );
 }
 
+function abandonedVerification(source) {
+  let verification = taggedVerification(source).replace(
+    "Release phase: tagged.",
+    "Release phase: abandoned.",
+  );
+  verification = replaceLevelTwoSection(
+    verification,
+    "Publication evidence",
+    ABANDONED_PUBLICATION,
+  );
+  verification = replaceLevelTwoSection(
+    verification,
+    "Public verification",
+    ABANDONED_PUBLIC_VERIFICATION,
+  );
+  return replaceLevelTwoSection(
+    verification,
+    "Retrospective",
+    ABANDONED_RETROSPECTIVE,
+  );
+}
+
 function taggedSnapshot() {
   const snapshot = validSnapshot();
   snapshot.targetCommit = TARGET_COMMIT;
@@ -1608,6 +1650,378 @@ test("requires an earlier public tag behind a phase-machine predecessor", (t) =>
     "E_RELEASE_PACKET_IDENTITY",
     /no public release tag precedes predecessor v0\.4\.0/u,
   );
+});
+
+test("admits the abandoned phase only from tagged and keeps it terminal", (t) => {
+  for (const previousPhase of [undefined, "tagged", "abandoned"]) {
+    const snapshot = snapshotForPhase("abandoned");
+    snapshot.previousPhase = previousPhase;
+    assert.equal(validateReleasePacket(snapshot).phase, "abandoned");
+  }
+  for (const previousPhase of [
+    "pre-publication",
+    "published",
+    "verified",
+    "retrospected",
+  ]) {
+    const snapshot = snapshotForPhase("abandoned");
+    snapshot.previousPhase = previousPhase;
+    assertPolicyRejection(
+      () => validateReleasePacket(snapshot),
+      "E_RELEASE_PACKET_EVIDENCE",
+      new RegExp(
+        `release phase abandoned can follow only branch-base phase tagged, not ${previousPhase}`,
+        "u",
+      ),
+    );
+  }
+  for (const phase of [
+    "pre-publication",
+    "tagged",
+    "published",
+    "verified",
+    "retrospected",
+  ]) {
+    const snapshot =
+      phase === "tagged" ? taggedSnapshot() : snapshotForPhase(phase);
+    snapshot.previousPhase = "abandoned";
+    assertPolicyRejection(
+      () => validateReleasePacket(snapshot),
+      "E_RELEASE_PACKET_EVIDENCE",
+      new RegExp(
+        `release phase ${phase} cannot follow branch-base phase abandoned, which is terminal`,
+        "u",
+      ),
+    );
+  }
+
+  const { root } = releaseRepository(t);
+  annotateTargetTag(root);
+  commitWitness(
+    root,
+    taggedVerification(validSnapshot().verification),
+    "record the tag",
+  );
+  git(
+    root,
+    "update-ref",
+    "refs/remotes/origin/main",
+    gitOutput(root, "rev-parse", "HEAD"),
+  );
+  commitWitness(
+    root,
+    abandonedVerification(validSnapshot().verification),
+    "abandon the tag",
+  );
+  const abandoned = loadRepositorySnapshot(root);
+  assert.equal(abandoned.previousPhase, "tagged");
+  assert.equal(validateReleasePacket(abandoned).phase, "abandoned");
+  git(
+    root,
+    "update-ref",
+    "refs/remotes/origin/main",
+    gitOutput(root, "rev-parse", "HEAD"),
+  );
+  commitWitness(
+    root,
+    taggedVerification(validSnapshot().verification),
+    "regress to tagged",
+  );
+  const regressed = loadRepositorySnapshot(root);
+  assert.equal(regressed.previousPhase, "abandoned");
+  assertPolicyRejection(
+    () => validateReleasePacket(regressed),
+    "E_RELEASE_PACKET_EVIDENCE",
+    /release phase tagged cannot follow branch-base phase abandoned, which is terminal/u,
+  );
+});
+
+test("requires the abandoned phase's evidence", () => {
+  const appendToSection = (heading, line) => (source) =>
+    replaceLevelTwoSection(
+      source,
+      heading,
+      `${sectionBody(source, heading)}\n${line}`,
+    );
+  const notApplicable = (name) =>
+    new RegExp(
+      `section '${name}' must declare exactly one not applicable evidence state`,
+      "u",
+    );
+  const contradicted = (name) =>
+    new RegExp(
+      `section '${name}' contradicts its not applicable state with completed or public evidence`,
+      "u",
+    );
+  const oneForwardVersion =
+    /section 'Retrospective' must contain exactly one 'Forward version' line/u;
+  const newerForwardVersion =
+    /forward version v0\.(?:4\.0|3\.9) must be newer than v0\.4\.0/u;
+  const cases = [
+    [
+      (source) =>
+        source.replace(
+          "Annotated v0.4.0 tag: available.",
+          "Annotated v0.4.0 tag: not available.",
+        ),
+      /keep annotated target tag v0\.4\.0 available during the abandoned phase/u,
+    ],
+    [
+      (source) =>
+        replaceLevelTwoSection(
+          source,
+          "Publication evidence",
+          sectionBody(
+            snapshotForPhase("published").verification,
+            "Publication evidence",
+          ),
+        ),
+      notApplicable("Publication evidence"),
+    ],
+    [
+      (source) =>
+        replaceLevelTwoSection(
+          source,
+          "Publication evidence",
+          "Evidence state: unavailable.\n\n- Tag and registries: not available.",
+        ),
+      notApplicable("Publication evidence"),
+    ],
+    [
+      appendToSection(
+        "Publication evidence",
+        `- Publish workflow: ${PUBLISH_WORKFLOW}.`,
+      ),
+      contradicted("Publication evidence"),
+    ],
+    [
+      appendToSection(
+        "Publication evidence",
+        `- Tag target commit: ${TARGET_COMMIT}.`,
+      ),
+      contradicted("Publication evidence"),
+    ],
+    [
+      (source) =>
+        replaceLevelTwoSection(
+          source,
+          "Public verification",
+          sectionBody(
+            snapshotForPhase("verified").verification,
+            "Public verification",
+          ),
+        ),
+      notApplicable("Public verification"),
+    ],
+    [
+      appendToSection(
+        "Public verification",
+        "- Verification result: passed on 2026-07-30.",
+      ),
+      contradicted("Public verification"),
+    ],
+    [
+      (source) =>
+        source.replace(
+          "## Retrospective\n\nEvidence state: completed.",
+          "## Retrospective\n\nEvidence state: unavailable.",
+        ),
+      /section 'Retrospective' must declare exactly one completed evidence state/u,
+    ],
+    [
+      (source) => source.replace("Retrospective status: completed.\n\n", ""),
+      /section 'Retrospective' must contain exactly one completed retrospective status/u,
+    ],
+    [
+      (source) =>
+        source.replace(
+          "Retrospective status: completed.",
+          "Retrospective status: completed.\n\nRetrospective status: completed.",
+        ),
+      /section 'Retrospective' must contain exactly one completed retrospective status/u,
+    ],
+    ...[
+      "Planned versus actual",
+      "Fallout",
+      "Repeatable wins",
+      "Next recommendation",
+    ].map((label) => [
+      (source) => source.replace(new RegExp(`^- ${label}:.*\\n?`, "mu"), ""),
+      new RegExp(
+        `section 'Retrospective' must contain exactly one non-empty '${label}' entry`,
+        "u",
+      ),
+    ]),
+    [
+      (source) => source.replace("\n- Forward version: v0.4.1.", ""),
+      oneForwardVersion,
+    ],
+    [
+      (source) =>
+        source.replace(
+          "- Forward version: v0.4.1.",
+          "- Forward version: v0.4.1.\n- Forward version: v0.4.2.",
+        ),
+      oneForwardVersion,
+    ],
+    [
+      (source) =>
+        source.replace(
+          "- Forward version: v0.4.1.",
+          "- Forward version: v0.4.1-rc.1.",
+        ),
+      /section 'Retrospective' must name its forward version as one stable vX\.Y\.Z version/u,
+    ],
+    [
+      (source) =>
+        source.replace(
+          "- Forward version: v0.4.1.",
+          "- Forward version: v0.4.0.",
+        ),
+      newerForwardVersion,
+    ],
+    [
+      (source) =>
+        source.replace(
+          "- Forward version: v0.4.1.",
+          "- Forward version: v0.3.9.",
+        ),
+      newerForwardVersion,
+    ],
+  ];
+  for (const [mutate, message] of cases) {
+    const snapshot = snapshotForPhase("abandoned");
+    snapshot.verification = mutate(snapshot.verification);
+    assertPolicyRejection(
+      () => validateReleasePacket(snapshot),
+      "E_RELEASE_PACKET_EVIDENCE",
+      message,
+    );
+  }
+
+  const taggedNotApplicable = taggedSnapshot();
+  taggedNotApplicable.verification = replaceLevelTwoSection(
+    taggedNotApplicable.verification,
+    "Publication evidence",
+    ABANDONED_PUBLICATION,
+  );
+  assertPolicyRejection(
+    () => validateReleasePacket(taggedNotApplicable),
+    "E_RELEASE_PACKET_EVIDENCE",
+    /section 'Publication evidence' must declare exactly one unavailable evidence state/u,
+  );
+  const retrospectedForward = snapshotForPhase("retrospected");
+  retrospectedForward.verification = retrospectedForward.verification.replace(
+    "- Next recommendation: begin held-out validation.",
+    "- Next recommendation: begin held-out validation.\n- Forward version: v0.4.1.",
+  );
+  assertPolicyRejection(
+    () => validateReleasePacket(retrospectedForward),
+    "E_RELEASE_PACKET_EVIDENCE",
+    /only the abandoned phase names a forward version; release phase retrospected does not/u,
+  );
+});
+
+test("admits the abandoned phase only while the annotated target tag resolves", (t) => {
+  const abandoned = abandonedVerification(validSnapshot().verification);
+  const unresolved =
+    /release phase abandoned requires annotated tag v0\.4\.0 to resolve/u;
+
+  const annotated = releaseRepository(t);
+  annotateTargetTag(annotated.root);
+  commitWitness(annotated.root, abandoned, "abandon the tag");
+  assert.equal(
+    validateReleasePacket(loadRepositorySnapshot(annotated.root)).phase,
+    "abandoned",
+  );
+
+  const absent = releaseRepository(t);
+  commitWitness(absent.root, abandoned, "abandon an absent tag");
+  assertPolicyRejection(
+    () => validateReleasePacket(loadRepositorySnapshot(absent.root)),
+    "E_RELEASE_PACKET_EVIDENCE",
+    unresolved,
+  );
+
+  const lightweight = releaseRepository(t);
+  git(lightweight.root, "tag", "--no-sign", "v0.4.0");
+  commitWitness(lightweight.root, abandoned, "abandon a lightweight tag");
+  assertPolicyRejection(
+    () => validateReleasePacket(loadRepositorySnapshot(lightweight.root)),
+    "E_RELEASE_PACKET_EVIDENCE",
+    unresolved,
+  );
+});
+
+test("admits an abandoned predecessor only with its retrospective and forward version", (t) => {
+  const { root } = successorRepository(t, predecessorAtPhase("abandoned"));
+  const loaded = loadRepositorySnapshot(root);
+  assert.equal(loaded.previousTag, "v0.4.0");
+  assert.equal(validateReleasePacket(loaded).phase, "pre-publication");
+
+  for (const [mutate, message] of [
+    [
+      (source) =>
+        source.replace(
+          "## Retrospective\n\nEvidence state: completed.",
+          "## Retrospective\n\nEvidence state: unavailable.",
+        ),
+      /v0\.4\.0\/verification\.md: section 'Retrospective' must declare exactly one completed evidence state/u,
+    ],
+    [
+      (source) => source.replace("\n- Forward version: v0.4.1.", ""),
+      /v0\.4\.0\/verification\.md: section 'Retrospective' must contain exactly one 'Forward version' line/u,
+    ],
+  ]) {
+    const incomplete = successorRepository(t, (commit) =>
+      mutate(predecessorAtPhase("abandoned")(commit)),
+    );
+    assertPolicyRejection(
+      () => loadRepositorySnapshot(incomplete.root),
+      "E_RELEASE_PACKET_EVIDENCE",
+      message,
+    );
+  }
+});
+
+test("rejects a forward version anywhere in a witness that is not abandoned", () => {
+  for (const [phase, heading] of [
+    ["tagged", "Status"],
+    ["tagged", "Pre-publication evidence"],
+    ["retrospected", "Publication evidence"],
+  ]) {
+    const snapshot =
+      phase === "tagged" ? taggedSnapshot() : snapshotForPhase(phase);
+    snapshot.verification = replaceLevelTwoSection(
+      snapshot.verification,
+      heading,
+      `${sectionBody(snapshot.verification, heading)}\n- Forward version: v0.4.1.`,
+    );
+    assertPolicyRejection(
+      () => validateReleasePacket(snapshot),
+      "E_RELEASE_PACKET_EVIDENCE",
+      new RegExp(
+        `only the abandoned phase names a forward version; release phase ${phase} does not`,
+        "u",
+      ),
+    );
+  }
+});
+
+test("admits only the Retrospective forward version in an abandoned witness", () => {
+  for (const heading of ["Status", "Pre-publication evidence"]) {
+    const snapshot = snapshotForPhase("abandoned");
+    snapshot.verification = replaceLevelTwoSection(
+      snapshot.verification,
+      heading,
+      `${sectionBody(snapshot.verification, heading)}\n- Forward version: v0.4.2.`,
+    );
+    assertPolicyRejection(
+      () => validateReleasePacket(snapshot),
+      "E_RELEASE_PACKET_EVIDENCE",
+      /witness must contain exactly one 'Forward version' line, in section 'Retrospective'/u,
+    );
+  }
 });
 
 test("the checked-in v0.4.0 release packet satisfies the policy", () => {

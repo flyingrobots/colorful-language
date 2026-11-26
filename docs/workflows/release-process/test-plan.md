@@ -47,9 +47,10 @@ Verification for release preparation, tag automation, and release witnesses.
   release evidence that does not yet exist.
 - **REL-19** A release witness must advance monotonically through
   pre-publication, tagged, published, verified, and retrospected evidence
-  states; each
-  phase must carry the minimum immutable identity and completed-or-unavailable
-  section shape required at that point.
+  states, or leave that order from tagged for the terminal abandoned state;
+  each phase must carry the minimum immutable identity and
+  completed, unavailable, or not-applicable section shape required at that
+  point.
 - **REL-20** A maintainer can run the release workflow by hand on `main` as a
   dry run that executes admission, the native builds, packaging, and the
   checks on the assembled artifact set, and reaches no step with an outside
@@ -498,8 +499,9 @@ Verification for release preparation, tag automation, and release witnesses.
 - **REL-19a — Supported release-phase matrix.** *Requirement:* REL-19.
   *Behavior:* one canonical witness fixture for each supported phase carries
   exactly the completed and unavailable section states admitted at that point.
-  *Oracle:* pre-publication, published, verified, and retrospected fixtures all
-  pass, while changing the declared phase without changing its evidence fails
+  *Oracle:* pre-publication, published, verified, retrospected, and abandoned
+  fixtures all pass, while changing the declared phase without changing its
+  evidence fails
   with `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* deterministic witness
   phase-matrix test. *Tracking:*
   [#281](https://github.com/flyingrobots/colorful-language/issues/281).
@@ -604,10 +606,10 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence:* `scripts/check-release-packet.test.mjs` `accepts the tagged
   phase while the annotated target tag resolves`, `rejects the tagged phase
   when the annotated target tag does not resolve`, and `rejects a tagged
-  witness with an unavailable tag or completed publication`;
-  `docs/goalposts/v0.4.0/verification.md`; and `scripts/check-release-packet.test.mjs`
-  `the checked-in v0.4.0 release packet satisfies the policy`. *Status:*
-  implemented.
+  witness with an unavailable tag or completed publication`. The checked-in
+  `docs/goalposts/v0.4.0/verification.md` held this phase until
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387) moved
+  it to `abandoned` (REL-19p). *Status:* implemented.
 - **REL-19h: No regression through the tagged phase.** *Requirement:* REL-19.
   *Behavior:* the phase order is pre-publication, tagged, published, verified,
   retrospected; a witness cannot move from `tagged` back to `pre-publication`
@@ -653,9 +655,9 @@ Verification for release preparation, tag automation, and release witnesses.
   newer than v0.3.0 is validated by the same phase rules as a current witness,
   with its own version, its own previous public tag, and the commit its
   annotated tag resolves to, and is admitted only at a phase the predecessor
-  phase list names. That list holds only `retrospected` today; the terminal
-  phase for an abandoned tag joins it in
-  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  phase list names. That list holds `retrospected` and, since
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387), the
+  terminal `abandoned` phase (REL-19o).
   Historical predecessors from v0.1.0 through v0.3.0 keep the narrower
   completed-retrospective check. *Oracle:* in a temporary repository with
   annotated `v0.3.0` and `v0.4.0` tags and the workspace at 0.4.1, a v0.4.0
@@ -675,6 +677,102 @@ Verification for release preparation, tag automation, and release witnesses.
   contradicts its own phase`, `admits a predecessor witness only at a
   predecessor phase`, `requires an earlier public tag behind a phase-machine
   predecessor`, and `requires a completed predecessor retrospective`.
+  *Status:* implemented.
+- **REL-19l: Abandoned phase entered only from tagged, and terminal.**
+  *Requirement:* REL-19. *Behavior:* the witness can declare
+  `Release phase: abandoned` for a public tag whose publication was abandoned.
+  The phase order is `pre-publication`, `tagged`, then either `published`,
+  `verified`, `retrospected`, or the terminal `abandoned`. Only a `tagged`
+  branch-base witness may move to `abandoned`, and an `abandoned` branch-base
+  witness may not move to any other phase. *Oracle:* the canonical `abandoned`
+  fixture is admitted in the phase matrix; branch-base `tagged` to `abandoned`
+  and `abandoned` to `abandoned` pass; branch-base `pre-publication`,
+  `published`, `verified`, or `retrospected` to `abandoned`, and branch-base
+  `abandoned` to `pre-publication`, `tagged`, `published`, `verified`, or
+  `retrospected`, each fail with `E_RELEASE_PACKET_EVIDENCE` and a message
+  naming the transition rule; a temporary repository whose `origin/main`
+  witness is `tagged` admits a committed `abandoned` witness, and one whose
+  `origin/main` witness is `abandoned` rejects a committed `tagged` witness.
+  *Evidence type:* deterministic witness phase-order test plus
+  temporary-repository release-packet policy test. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs` `accepts one canonical witness for
+  every release phase` and `admits the abandoned phase only from tagged and
+  keeps it terminal`. *Status:* implemented.
+- **REL-19m: Abandoned evidence gate.** *Requirement:* REL-19. *Behavior:* in
+  the `abandoned` phase the annotated target tag is available; publication
+  evidence and public verification each declare exactly one
+  `Evidence state: not applicable.` and carry no completed or public evidence;
+  the retrospective is completed with exactly one
+  `Retrospective status: completed.` and the four required entries; and the
+  Retrospective section contains exactly one `Forward version:` line naming a
+  stable version greater than the witness's own, and it is the only such line
+  anywhere in the witness. No other phase accepts a `not applicable` evidence
+  state, or a `Forward version:` line in any section. *Oracle:*
+  starting from the canonical `abandoned` fixture, each of these fails with
+  `E_RELEASE_PACKET_EVIDENCE` and a message naming the missing rule: the
+  target tag unavailable; publication or public verification declared
+  completed or unavailable; a commit identifier, public URL, or completed claim
+  inside a not-applicable section; the retrospective unavailable, its status
+  missing or duplicated, or a required entry missing; the forward version
+  missing, duplicated, not a stable version, equal to the witness's own, or
+  lower than it; a second `Forward version:` line in the Status or
+  Pre-publication evidence section. A `tagged` witness with a not-applicable
+  section, a `retrospected` witness with a `Forward version:` line in its
+  Retrospective or Publication evidence section, and a `tagged` witness with
+  one in its Status or Pre-publication evidence section each fail with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* minimal abandoned-evidence
+  mutations. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `requires the abandoned
+  phase's evidence`, `rejects a forward version anywhere in a witness that is
+  not abandoned`, and `admits only the Retrospective forward version in an
+  abandoned witness`. *Status:* implemented.
+- **REL-19n: Abandoned phase requires a resolving annotated tag.**
+  *Requirement:* REL-19. *Behavior:* like `tagged`, the `abandoned` phase is
+  admitted only while the annotated target tag resolves from the checked
+  history. *Oracle:* a temporary repository with an annotated `v0.4.0` tag and
+  a committed `abandoned` witness is admitted; the same witness fails with
+  `E_RELEASE_PACKET_EVIDENCE` and the tag-resolution message when the target
+  tag is absent or lightweight. *Evidence type:* temporary-repository
+  release-packet policy test. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Evidence:* `scripts/check-release-packet.test.mjs` `admits the abandoned
+  phase only while the annotated target tag resolves`. *Status:* implemented.
+- **REL-19o: Abandoned predecessor admits a successor.** *Requirement:*
+  REL-19. *Behavior:* the predecessor phase list holds `retrospected` and
+  `abandoned`, so a consistent `abandoned` immediate predecessor admits a new
+  train, while an `abandoned` predecessor without a completed retrospective or
+  without its forward version is rejected by the phase rules before it can
+  admit one. *Oracle:* in a temporary repository with annotated `v0.3.0` and
+  `v0.4.0` tags and the workspace at 0.4.1, a v0.4.0 predecessor witness at
+  `abandoned` loads with previous tag `v0.4.0` and the v0.4.1 packet validates;
+  the same predecessor with its retrospective unavailable, or with its
+  `Forward version:` line removed, fails packet loading with
+  `E_RELEASE_PACKET_EVIDENCE`. *Evidence type:* temporary-repository
+  release-history test. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs` `admits an abandoned predecessor
+  only with its retrospective and forward version`. *Status:* implemented.
+- **REL-19p: The v0.4.0 witness is abandoned.** *Requirement:* REL-19.
+  *Behavior:* the checked-in v0.4.0 witness declares `abandoned`, with
+  publication and public verification not applicable, a completed
+  retrospective of the failed publication, and `v0.4.1` as its forward
+  version; the live packet check admits it on every commit of the change, and
+  a throwaway clone with the workspace at 0.4.1 and a minimal v0.4.1 packet no
+  longer fails on the predecessor rule. *Oracle:*
+  `node scripts/check-release-packet.mjs` prints
+  `v0.4.0 abandoned packet satisfied`; the live test passes; the throwaway
+  clone experiment, recorded on the pull request, shows the predecessor
+  rejection gone. *Evidence type:* live repository check plus a recorded
+  throwaway-clone experiment. *Tracking:*
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  *Evidence:* `docs/goalposts/v0.4.0/verification.md`;
+  `scripts/check-release-packet.test.mjs` `the checked-in v0.4.0 release
+  packet satisfies the policy`; and the throwaway-clone experiment recorded on
+  [PR #393](https://github.com/flyingrobots/colorful-language/pull/393#issuecomment-7184935813).
   *Status:* implemented.
 - **REL-20a: Manual dry-run trigger.** *Requirement:* REL-20. *Behavior:* the
   release workflow triggers on a pushed `v*` tag and on `workflow_dispatch`

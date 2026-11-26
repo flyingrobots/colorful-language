@@ -44,6 +44,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Abandoned witness phase
+  ([#387](https://github.com/flyingrobots/colorful-language/issues/387)).**
+  The release packet check has a terminal witness phase, `abandoned`, for a
+  public tag whose publication was abandoned. Only a `tagged` witness may move
+  to it, and no phase may follow it. It requires the annotated target tag to
+  resolve, records publication and public verification as
+  `Evidence state: not applicable.` with no completed or public evidence,
+  requires a completed retrospective, and names exactly one
+  `Forward version:` newer than the witness's own. The predecessor rule now
+  admits a new train after `retrospected` or `abandoned`. The v0.4.0 witness
+  moved to `abandoned` with a completed retrospective of the failed
+  publication and `v0.4.1` as its forward version, so a 0.4.1 target passes
+  the predecessor rule.
+
 - **Release workflow dry run.** A manual `workflow_dispatch` run of the release
   workflow on `main` now runs admission, the three native builds, SBOM
   generation, Homebrew formula generation, and editor packaging and smoke

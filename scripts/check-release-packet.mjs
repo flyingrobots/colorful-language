@@ -23,11 +23,33 @@ const RELEASE_PHASES = Object.freeze([
   "published",
   "verified",
   "retrospected",
+  "abandoned",
 ]);
+// The terminal phase for a public tag whose publication was abandoned. Only a
+// tagged witness may enter it, and no other phase may follow it.
+const ABANDONED_PHASE = "abandoned";
+// The phases a witness advances through in order; the abandoned phase leaves
+// this order from tagged instead of following retrospected.
+const ORDERED_PHASES = Object.freeze(
+  RELEASE_PHASES.filter((phase) => phase !== ABANDONED_PHASE),
+);
 // The release phases at which a witness may stand as the immediate
 // predecessor of a new train: final phases whose evidence the phase rules
-// fully determine. Issue #387 adds the terminal phase for an abandoned tag.
-const PREDECESSOR_PHASES = Object.freeze(["retrospected"]);
+// fully determine.
+const PREDECESSOR_PHASES = Object.freeze(["retrospected", ABANDONED_PHASE]);
+const COMPLETED = "completed";
+const UNAVAILABLE = "unavailable";
+const NOT_APPLICABLE = "not applicable";
+// The evidence state each phase requires of the publication, public
+// verification, and retrospective sections, in that order.
+const PHASE_EVIDENCE_STATES = Object.freeze({
+  "pre-publication": [UNAVAILABLE, UNAVAILABLE, UNAVAILABLE],
+  tagged: [UNAVAILABLE, UNAVAILABLE, UNAVAILABLE],
+  published: [COMPLETED, UNAVAILABLE, UNAVAILABLE],
+  verified: [COMPLETED, COMPLETED, UNAVAILABLE],
+  retrospected: [COMPLETED, COMPLETED, COMPLETED],
+  [ABANDONED_PHASE]: [NOT_APPLICABLE, NOT_APPLICABLE, COMPLETED],
+});
 // Witnesses up to this version predate the phase machine and keep their
 // original shapes; as predecessors they need only a completed retrospective.
 const LAST_HISTORICAL_WITNESS_VERSION = Object.freeze([0, 3, 0]);
@@ -43,9 +65,13 @@ const SCOPE_BUCKETS = Object.freeze([
 const COMPLETED_EVIDENCE =
   /\b(?:available|complete|completed|created|finished|installed|landed|pass|passed|published|released|successful|successfully|uploaded|verified)\b|\b[0-9a-f]{7,40}\b|✅|https?:\/\//iu;
 const EVIDENCE_STATE_GLOBAL =
-  /\bEvidence state:\s*(completed|not available|pending|unavailable)\b/giu;
+  /\bEvidence state:\s*(completed|not applicable|not available|pending|unavailable)\b/giu;
 const UNAVAILABLE_EVIDENCE_GLOBAL =
   /\b(?:not available|pending|unavailable)\b/giu;
+const NOT_APPLICABLE_EVIDENCE_GLOBAL = /\bnot applicable\b/giu;
+const FORWARD_VERSION_LINE_GLOBAL = /\bForward version:[^\n]*/giu;
+const FORWARD_VERSION_LINE =
+  /^Forward version:\s*v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\.?\s*$/iu;
 
 export const CHECK_COMMAND = "node scripts/check-release-packet.mjs";
 export const SELF_TEST_COMMAND =
@@ -525,7 +551,7 @@ function validateCompletedRetrospective(source, path) {
 }
 
 function normalizedEvidenceState(state) {
-  return state === "completed" ? state : "unavailable";
+  return state === COMPLETED || state === NOT_APPLICABLE ? state : UNAVAILABLE;
 }
 
 function hasUnavailablePlaceholder(section) {
@@ -571,16 +597,72 @@ function requireEvidenceState(
       );
     }
   } else {
-    const claims = text.replace(UNAVAILABLE_EVIDENCE_GLOBAL, "");
+    const claims = text
+      .replace(UNAVAILABLE_EVIDENCE_GLOBAL, "")
+      .replace(NOT_APPLICABLE_EVIDENCE_GLOBAL, "");
     if (COMPLETED_EVIDENCE.test(claims)) {
       reject(
         "E_RELEASE_PACKET_EVIDENCE",
         path,
-        `section '${sectionName}' contradicts its unavailable state with completed or public evidence`,
+        `section '${sectionName}' contradicts its ${expectedState} state with completed or public evidence`,
       );
     }
   }
   return text;
+}
+
+function requireForwardVersion(section, definitions, version, path) {
+  const lines = [
+    ...sectionEvidenceText(section, definitions).matchAll(
+      FORWARD_VERSION_LINE_GLOBAL,
+    ),
+  ];
+  if (lines.length !== 1) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      "section 'Retrospective' must contain exactly one 'Forward version' line",
+    );
+  }
+  const match = FORWARD_VERSION_LINE.exec(lines[0][0].trim());
+  if (match === null) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      "section 'Retrospective' must name its forward version as one stable vX.Y.Z version",
+    );
+  }
+  const forward = match[1];
+  if (
+    compareVersions(
+      parseVersion(forward, path),
+      parseVersion(version, path),
+    ) <= 0
+  ) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      path,
+      `forward version v${forward} must be newer than v${version}`,
+    );
+  }
+}
+
+function phaseTransitionError(previousPhase, phase) {
+  if (previousPhase === ABANDONED_PHASE) {
+    return phase === ABANDONED_PHASE
+      ? undefined
+      : `release phase ${phase} cannot follow branch-base phase ${ABANDONED_PHASE}, which is terminal`;
+  }
+  if (phase === ABANDONED_PHASE) {
+    return previousPhase === "tagged"
+      ? undefined
+      : `release phase ${ABANDONED_PHASE} can follow only branch-base phase tagged, not ${previousPhase}`;
+  }
+  const previousPhaseIndex = ORDERED_PHASES.indexOf(previousPhase);
+  return previousPhaseIndex === -1 ||
+    ORDERED_PHASES.indexOf(phase) < previousPhaseIndex
+    ? `release phase ${phase} cannot regress from branch-base phase ${previousPhase}`
+    : undefined;
 }
 
 function requireOneMatch(text, expression, sectionName, description, path) {
@@ -1204,7 +1286,10 @@ function validateVerificationDocument(snapshot) {
       `release phase ${phase} is admitted only on the commit ${expectedTargetTag} resolves to; ${expectedTargetTag} already resolves to ${snapshot.targetCommit}, not to the commit being checked`,
     );
   }
-  if (phase === "tagged" && snapshot.targetCommit === undefined) {
+  if (
+    (phase === "tagged" || phase === ABANDONED_PHASE) &&
+    snapshot.targetCommit === undefined
+  ) {
     reject(
       "E_RELEASE_PACKET_EVIDENCE",
       snapshot.verificationPath,
@@ -1212,17 +1297,15 @@ function validateVerificationDocument(snapshot) {
     );
   }
   if (snapshot.previousPhase !== undefined) {
-    const previousPhaseIndex = RELEASE_PHASES.indexOf(
+    const transitionError = phaseTransitionError(
       snapshot.previousPhase,
+      phase,
     );
-    if (
-      previousPhaseIndex === -1 ||
-      phaseIndex < previousPhaseIndex
-    ) {
+    if (transitionError !== undefined) {
       reject(
         "E_RELEASE_PACKET_EVIDENCE",
         snapshot.verificationPath,
-        `release phase ${phase} cannot regress from branch-base phase ${snapshot.previousPhase}`,
+        transitionError,
       );
     }
   }
@@ -1242,7 +1325,6 @@ function validateVerificationDocument(snapshot) {
     {
       name: "Publication evidence",
       section: publication,
-      completedFrom: RELEASE_PHASES.indexOf("published"),
       validate: () =>
         requirePublicationEvidence(
           publication,
@@ -1255,7 +1337,6 @@ function validateVerificationDocument(snapshot) {
     {
       name: "Public verification",
       section: publicVerification,
-      completedFrom: RELEASE_PHASES.indexOf("verified"),
       validate: () =>
         requirePublicVerificationEvidence(
           publicVerification,
@@ -1266,7 +1347,6 @@ function validateVerificationDocument(snapshot) {
     {
       name: "Retrospective",
       section: retrospective,
-      completedFrom: RELEASE_PHASES.indexOf("retrospected"),
       validate: () =>
         requireRetrospectiveEvidence(
           retrospective,
@@ -1275,18 +1355,45 @@ function validateVerificationDocument(snapshot) {
         ),
     },
   ];
-  for (const evidence of evidenceSections) {
-    if (phaseIndex >= evidence.completedFrom) {
+  PHASE_EVIDENCE_STATES[phase].forEach((expectedState, index) => {
+    const evidence = evidenceSections[index];
+    if (expectedState === COMPLETED) {
       evidence.validate();
     } else {
       requireEvidenceState(
         evidence.section,
         evidence.name,
-        "unavailable",
+        expectedState,
         definitions,
         snapshot.verificationPath,
       );
     }
+  });
+  const witnessForwardVersionLines = [
+    ...sectionEvidenceText({ nodes: document.children }, definitions).matchAll(
+      FORWARD_VERSION_LINE_GLOBAL,
+    ),
+  ];
+  if (phase === ABANDONED_PHASE) {
+    requireForwardVersion(
+      retrospective,
+      definitions,
+      snapshot.version,
+      snapshot.verificationPath,
+    );
+    if (witnessForwardVersionLines.length !== 1) {
+      reject(
+        "E_RELEASE_PACKET_EVIDENCE",
+        snapshot.verificationPath,
+        "witness must contain exactly one 'Forward version' line, in section 'Retrospective'",
+      );
+    }
+  } else if (witnessForwardVersionLines.length > 0) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      snapshot.verificationPath,
+      `only the abandoned phase names a forward version; release phase ${phase} does not`,
+    );
   }
   return { phase };
 }
