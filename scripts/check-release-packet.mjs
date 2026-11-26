@@ -24,6 +24,13 @@ const RELEASE_PHASES = Object.freeze([
   "verified",
   "retrospected",
 ]);
+// The release phases at which a witness may stand as the immediate
+// predecessor of a new train: final phases whose evidence the phase rules
+// fully determine. Issue #387 adds the terminal phase for an abandoned tag.
+const PREDECESSOR_PHASES = Object.freeze(["retrospected"]);
+// Witnesses up to this version predate the phase machine and keep their
+// original shapes; as predecessors they need only a completed retrospective.
+const LAST_HISTORICAL_WITNESS_VERSION = Object.freeze([0, 3, 0]);
 const RELEASE_PHASE_GLOBAL = new RegExp(
   `Release phase:\\s*(${RELEASE_PHASES.join("|")})\\b`,
   "giu",
@@ -328,15 +335,68 @@ function previousPublicRelease(root, targetVersion, publicTags) {
       `no public release tag precedes ${targetVersion}`,
     );
   }
-  const previous = predecessors[0];
+  const [previous, earlier] = predecessors;
   readRequiredFile(root, `docs/goalposts/${previous.tag}/release.md`);
   const previousVerificationPath =
     `docs/goalposts/${previous.tag}/verification.md`;
-  validateCompletedRetrospective(
-    readRequiredFile(root, previousVerificationPath),
-    previousVerificationPath,
-  );
+  if (
+    compareVersions(previous.version, LAST_HISTORICAL_WITNESS_VERSION) <= 0
+  ) {
+    validateCompletedRetrospective(
+      readRequiredFile(root, previousVerificationPath),
+      previousVerificationPath,
+    );
+  } else {
+    validatePredecessorWitness(
+      root,
+      previous,
+      earlier,
+      publicTags,
+      previousVerificationPath,
+    );
+  }
   return previous;
+}
+
+function validatePredecessorWitness(
+  root,
+  previous,
+  earlier,
+  publicTags,
+  verificationPath,
+) {
+  if (earlier === undefined) {
+    reject(
+      "E_RELEASE_PACKET_IDENTITY",
+      "git tags",
+      `no public release tag precedes predecessor ${previous.tag}`,
+    );
+  }
+  const version = previous.tag.slice(1);
+  const targetCommit = targetTagCommit(
+    root,
+    version,
+    publicTags,
+    verificationPath,
+  );
+  const { phase } = validateVerificationDocument({
+    version,
+    previousTag: earlier.tag,
+    targetCommit,
+    headCommit:
+      targetCommit === undefined
+        ? undefined
+        : checkedCommit(root, verificationPath),
+    verificationPath,
+    verification: readRequiredFile(root, verificationPath),
+  });
+  if (!PREDECESSOR_PHASES.includes(phase)) {
+    reject(
+      "E_RELEASE_PACKET_EVIDENCE",
+      verificationPath,
+      `previous release ${previous.tag} is at release phase ${phase}; a new train is admitted only after release phase: ${PREDECESSOR_PHASES.join(", ")}`,
+    );
+  }
 }
 
 export function parseDocument(source, path) {

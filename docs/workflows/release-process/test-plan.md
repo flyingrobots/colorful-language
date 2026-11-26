@@ -614,7 +614,12 @@ Verification for release preparation, tag automation, and release witnesses.
   tag fails with `E_RELEASE_PACKET_IDENTITY`. *Evidence type:*
   temporary-repository release-history mutation test. *Tracking:*
   [#383](https://github.com/flyingrobots/colorful-language/issues/383).
-  *Status:* planned.
+  *Evidence:* `scripts/check-release-packet.mjs`;
+  `scripts/check-release-packet.test.mjs` `rejects a predecessor witness that
+  contradicts its own phase`, `admits a predecessor witness only at a
+  predecessor phase`, `requires an earlier public tag behind a phase-machine
+  predecessor`, and `requires a completed predecessor retrospective`.
+  *Status:* implemented.
 
 ## Open verification gaps
 
