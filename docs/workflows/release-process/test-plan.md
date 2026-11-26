@@ -606,10 +606,10 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence:* `scripts/check-release-packet.test.mjs` `accepts the tagged
   phase while the annotated target tag resolves`, `rejects the tagged phase
   when the annotated target tag does not resolve`, and `rejects a tagged
-  witness with an unavailable tag or completed publication`;
-  `docs/goalposts/v0.4.0/verification.md`; and `scripts/check-release-packet.test.mjs`
-  `the checked-in v0.4.0 release packet satisfies the policy`. *Status:*
-  implemented.
+  witness with an unavailable tag or completed publication`. The checked-in
+  `docs/goalposts/v0.4.0/verification.md` held this phase until
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387) moved
+  it to `abandoned` (REL-19p). *Status:* implemented.
 - **REL-19h: No regression through the tagged phase.** *Requirement:* REL-19.
   *Behavior:* the phase order is pre-publication, tagged, published, verified,
   retrospected; a witness cannot move from `tagged` back to `pre-publication`

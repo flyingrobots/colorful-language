@@ -7,7 +7,18 @@ after its command or public oracle has been observed.
 
 - Target version: `0.4.0`
 - Previous public tag: `v0.3.0`
-- Release phase: tagged.
+- Release phase: abandoned. Publication of `v0.4.0` was abandoned: the tag
+  is kept, neither moved nor rerun, as the runbook's failure-handling entry
+  for a tag whose own tree cannot pass admission requires
+  ([#384](https://github.com/flyingrobots/colorful-language/issues/384)), and
+  the same work is to be released as `v0.4.1`, as the owner's decisions on
+  [#380](https://github.com/flyingrobots/colorful-language/issues/380) and
+  [#382](https://github.com/flyingrobots/colorful-language/issues/382) record
+  ([#388](https://github.com/flyingrobots/colorful-language/issues/388)
+  prepares it). The terminal phase was decided on
+  [#379](https://github.com/flyingrobots/colorful-language/issues/379) and
+  named and applied under
+  [#387](https://github.com/flyingrobots/colorful-language/issues/387).
 - Packet-planning issue:
   [#280](https://github.com/flyingrobots/colorful-language/issues/280)
 - Release tracker:
@@ -48,54 +59,86 @@ after its command or public oracle has been observed.
 
 ## Publication evidence
 
-Evidence state: unavailable.
+Evidence state: not applicable.
 
-Publication evidence is not available. The following rows are filled
-from the immutable tag workflow; this packet does not authorize or claim those
-side effects.
+Publication of `v0.4.0` was abandoned, so no publication evidence will be
+recorded here. The Status section records the failed tag workflow run, and the
+Retrospective section records what happened. Evidence for each surface below
+belongs to the `v0.4.1` witness instead.
 
-| Surface | Required evidence | Result |
-| --- | --- | --- |
-| Tag | Annotated `v0.4.0` tag and target commit | Not available. |
-| Publish workflow | GitHub Actions run URL and final conclusion | Not available. |
-| crates.io | All eight `cargo info <crate>@0.4.0` registry oracles | Not available. |
-| Native archives | Three archive URLs, SHA-256 sidecars, and GitHub attestation verification | Not available. |
-| VS Code VSIX | GitHub Release asset URL, SHA-256 sidecar, attestation, and downloaded-byte parity with the smoke witness | Not available. |
-| Zed | Versioned GitHub Release source archive and attestation; optional registry pull-request state | Not available. |
-| Homebrew formula | Attested GitHub Release formula asset | Not available. |
-| Software bill of materials | Two CycloneDX assets, one per shipped binary, with JSON well-formedness and GitHub attestation verification | Not available. |
-| GitHub Release | Release URL and full asset inventory | Not available. |
+| Surface | Result for `v0.4.0` |
+| --- | --- |
+| crates.io | Not applicable. |
+| Native archives | Not applicable. |
+| VS Code VSIX | Not applicable. |
+| Zed source archive | Not applicable. |
+| Homebrew formula | Not applicable. |
+| Software bill of materials | Not applicable. |
+| GitHub Release | Not applicable. |
 
 ## Public verification
 
-Evidence state: unavailable.
+Evidence state: not applicable.
 
-Public verification is not available. After publication, record the exact
-commands, host/toolchain identity, timestamps, public URLs, and results for:
-
-- clean-machine CLI and LSP installation on every supported native platform;
-- `colorful --version`, CLI input contracts, and the real LSP transcript;
-- manual GitHub Release VSIX installation, activation, semantic tokens,
-  diagnostics, theme fallback, install-to-first-highlight timing, removal, and
-  previous-compatible-asset reinstall when one exists;
-- Zed source-archive inventory and isolated build, plus registry installation
-  only when an external submission is accepted;
-- Homebrew install, upgrade, and rollback after a public tap exists;
-- checksum, provenance, and public-package byte verification;
-- one bounded rollback or patch-forward rehearsal per release channel.
-
-Until those oracles run, current-reference publication claims remain absent.
+Nothing from `v0.4.0` reached a public channel, so there is nothing to verify
+publicly. Clean installation, checksum and provenance checks, and the rollback
+or patch-forward rehearsal belong to the `v0.4.1` witness.
 
 ## Retrospective
 
-Evidence state: unavailable.
+Evidence state: completed.
 
-The release retrospective is pending and therefore not available. After public
-verification, record:
+Retrospective status: completed.
 
-- planned versus actual scope;
-- must-ship, may-slip, and excluded outcomes;
-- publication failures, reruns, or operator interventions;
-- user-visible regressions and fallout issues;
-- repeatable wins and process changes;
-- the next release or patch recommendation.
+Recorded on 2026-11-25 for
+[#387](https://github.com/flyingrobots/colorful-language/issues/387), after
+the publication was abandoned.
+
+- Planned versus actual: the plan was to publish the reviewed v0.4.0 scope
+  from the annotated tag through the tag workflow: eight crates, three native
+  archives, the VSIX, the Zed source archive, the Homebrew formula asset, two
+  SBOMs, and a GitHub Release. The tag was pushed on 2026-11-24 (Pacific time)
+  at `bc17f09d6dec7a5fd7418a26c8f5d7066795583f`. Its publish workflow run
+  [45537925550](https://github.com/flyingrobots/colorful-language/actions/runs/45537925550)
+  failed in the `Validate release admission` job at the step
+  `Self-test release packet policy`, and the native-binary and
+  build-and-publish jobs were skipped. Nothing was published: on 2026-11-25
+  the newest GitHub Release is `v0.3.0`, no GitHub Release exists for
+  `v0.4.0`, seven of the eight crates are at 0.3.0 on crates.io with no 0.4.0
+  version, and `colorful-projection` has no crates.io release. None of the
+  must-ship, may-slip, or excluded scope reached users.
+- Fallout: the cause was in the tagged tree. Its packet check rejected a
+  `pre-publication` witness once the target tag resolved, including on the
+  tagged commit itself, so no release could pass its own admission; the rule
+  had never run in a tag workflow
+  ([#370](https://github.com/flyingrobots/colorful-language/issues/370)).
+  Because a tag run uses the workflow and scripts of the tagged commit, a
+  rerun of the same tag cannot pass, and the tag is kept rather than moved.
+  The same rule also failed the required documentation check on `main` until
+  #370 was fixed. Users saw no change: 0.3.0 stays the installable release.
+- Repeatable wins: admission failed closed before any build, attestation, or
+  publication step, so no partial release reached a registry or the GitHub
+  Release page. Final preflight had passed at the tagged commit, and the
+  [skipped-publication map](../../workflows/release-process/skipped-v0.4.0-publication-map.md)
+  reproduced the failure in a clone checked out at the tag (experiment E11).
+- Process changes: the `tagged` witness phase
+  ([#370](https://github.com/flyingrobots/colorful-language/issues/370));
+  a release workflow dry-run mode
+  ([#374](https://github.com/flyingrobots/colorful-language/issues/374)), with
+  a green dry run on `main` recorded on #374
+  ([run 45762319581](https://github.com/flyingrobots/colorful-language/actions/runs/45762319581),
+  at `e974103727ac3e98ce44e6a1036eba4553f117a8`); the runbook entry for a tag
+  whose own tree cannot pass admission
+  ([#384](https://github.com/flyingrobots/colorful-language/issues/384)); the
+  predecessor rule judged by the phase rules
+  ([#383](https://github.com/flyingrobots/colorful-language/issues/383));
+  `fuzz/Cargo.lock` listed as a release version source
+  ([#385](https://github.com/flyingrobots/colorful-language/issues/385)); and
+  this terminal `abandoned` phase
+  ([#387](https://github.com/flyingrobots/colorful-language/issues/387)).
+- Next recommendation: release the same work as `v0.4.1` through
+  [#388](https://github.com/flyingrobots/colorful-language/issues/388), with
+  `v0.4.0` as the scope baseline and `v0.3.0` as the baseline for user-facing
+  notes ([#380](https://github.com/flyingrobots/colorful-language/issues/380)),
+  and a second green dry run on the prepared v0.4.1 tree before its tag.
+- Forward version: v0.4.1.

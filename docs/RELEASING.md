@@ -967,11 +967,13 @@ Record evidence in `docs/goalposts/vX.Y.Z/verification.md`:
     reconciliation, because its tree holds the reviewed scope; the last
     published version stays the baseline for user-facing notes and the
     changelog preface, because users never received the abandoned version.
-  - The witness for the abandoned tag stays in the `tagged` phase on `main`;
-    `v0.4.0` is at `tagged` today, with its publication evidence unavailable.
-    No later phase for an abandoned tag exists yet. The packet check and this
-    runbook will be updated when it does, tracked in
-    [#387](https://github.com/flyingrobots/colorful-language/issues/387).
+  - Move the witness for the abandoned tag from `tagged` to the terminal
+    `abandoned` phase on `main`, as
+    [Witness phase transitions](#witness-phase-transitions) describes: record
+    publication and public verification as not applicable, complete the
+    retrospective, and name the forward version. `v0.4.0` is at `abandoned`
+    today, with `v0.4.1` as its forward version
+    ([#387](https://github.com/flyingrobots/colorful-language/issues/387)).
 - **Some crates published, another failed:** Do not move the tag. Fix the
   failing path and rerun. Already-published crates should be verified, not
   republished with different contents.
