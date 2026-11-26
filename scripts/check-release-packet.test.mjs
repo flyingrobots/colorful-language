@@ -1514,5 +1514,5 @@ test("documentation spine links the planned packet and witness", () => {
     plannedEntry,
     /\(goalposts\/v0\.4\.0\/verification\.md\)/u,
   );
-  assert.match(plannedEntry, /\bnot yet tagged or published\b/u);
+  assert.match(plannedEntry, /\bis tagged and has not been published\b/u);
 });
