@@ -1416,6 +1416,69 @@ test("rejects bracket-form and whole-context credentials on a dry-run step", () 
   assert.doesNotThrow(() => validateReleaseDistribution(ordinaryContexts));
 });
 
+test("rejects credentials inherited by dry-run steps from workflow or job scope", () => {
+  for (const [scope, mutate] of [
+    [
+      "workflow env",
+      (workflow) => {
+        workflow.env = {
+          CARGO_REGISTRY_TOKEN: "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+        };
+      },
+    ],
+    [
+      "workflow env, job token",
+      (workflow) => {
+        workflow.env = { GH_TOKEN: "${{ github['token'] }}" };
+      },
+    ],
+    [
+      "workflow defaults",
+      (workflow) => {
+        workflow.defaults = {
+          run: { "working-directory": "${{ secrets.WORKDIR }}" },
+        };
+      },
+    ],
+    ...["validate-release", "binary-artifacts", "release"].flatMap((job) => [
+      [
+        `${job} env`,
+        (workflow) => {
+          workflow.jobs[job].env = {
+            ...workflow.jobs[job].env,
+            CARGO_REGISTRY_TOKEN: "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+          };
+        },
+      ],
+      [
+        `${job} env, job token`,
+        (workflow) => {
+          workflow.jobs[job].env = {
+            ...workflow.jobs[job].env,
+            GH_TOKEN: "${{ github.token }}",
+          };
+        },
+      ],
+      [
+        `${job} defaults`,
+        (workflow) => {
+          workflow.jobs[job].defaults = {
+            run: { shell: "bash", "working-directory": "${{ secrets.DIR }}" },
+          };
+        },
+      ],
+    ]),
+  ]) {
+    const snapshot = validSnapshot();
+    mutate(snapshot.workflow);
+    assert.throws(
+      () => validateReleaseDistribution(snapshot),
+      /passes a secret or the job token to every step, including dry-run steps/u,
+      `${scope} must not carry a credential`,
+    );
+  }
+});
+
 test("refuses a dry run outside main", () => {
   for (const [mutation, expected] of [
     ["drop-refusal", /must refuse a dry run outside refs\/heads\/main/u],
