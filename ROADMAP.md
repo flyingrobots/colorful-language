@@ -317,6 +317,10 @@ observe public-contract regressions before they ship.
   without publishing, so final preflight is followed by a green dry run before
   the v0.4.1 tag
   [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+- **Documented the unrecoverable-tag path:** the release runbook says that a
+  tag whose own tree cannot pass admission is not republished or moved, is
+  patched forward under a new version, and how to recognise the case
+  [#384](https://github.com/flyingrobots/colorful-language/issues/384).
 - **Delivered release-witness transitions:** extend the pre-publication admission
   state machine with explicit published, verified, and retrospective evidence
   gates before the public distribution authority closes
