@@ -653,8 +653,12 @@ Verification for release preparation, tag automation, and release witnesses.
   *Evidence type:* deterministic distribution-policy mutation test.
   *Tracking:*
   [#374](https://github.com/flyingrobots/colorful-language/issues/374).
+  A credential counts in any expression form: dot or bracket access with either
+  quote, any letter case, a computed index, or the whole `secrets` or `github`
+  context.
   *Evidence:* `scripts/check-release-distribution.test.mjs` `passes no secret
-  or job token to a step a dry run reaches`. *Status:* implemented.
+  or job token to a step a dry run reaches` and `rejects bracket-form and
+  whole-context credentials on a dry-run step`. *Status:* implemented.
 - **REL-20f: Dry run refused outside `main`.** *Requirement:* REL-20.
   *Behavior:* admission refuses a manual run whose ref is not
   `refs/heads/main`, and verifies that the dispatched commit is an ancestor of

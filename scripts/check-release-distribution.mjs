@@ -134,6 +134,7 @@ const TAG_ONLY_STEPS = Object.freeze({
   ]),
 });
 const CREDENTIAL_REFERENCE = /secrets\.|github\.token/u;
+const EXPRESSION = /\$\{\{([\s\S]*?)\}\}/gu;
 const REF_NAME_REFERENCE = /GITHUB_REF_NAME|github\.ref_name/u;
 const RELEASE_TAG_OUTPUT = "${{ steps.release-metadata.outputs.release_tag }}";
 const RELEASE_TAG_ENV = "${{ needs.validate-release.outputs.release-tag }}";
@@ -737,6 +738,59 @@ function validateExecutionConditions(jobs) {
   }
 }
 
+function stringsIn(value) {
+  if (typeof value === "string") {
+    return [value];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(stringsIn);
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value).flatMap(stringsIn);
+  }
+  return [];
+}
+
+// Actions expressions resolve context names and property names without regard
+// to case, and accept bracket access with either quote. Any use of the secrets
+// context reads a secret. The github context exposes the job token as
+// `github.token`, so a dot or literal-bracket read of `token`, a computed
+// bracket read, or the whole context (for example `toJSON(github)`) reads it.
+function expressionReadsCredential(expression) {
+  if (/\bsecrets\b/iu.test(expression)) {
+    return true;
+  }
+  for (const match of expression.matchAll(/\bgithub\b/giu)) {
+    const rest = expression.slice(match.index + match[0].length);
+    const dot = /^\s*\.\s*([A-Za-z_][\w-]*)/u.exec(rest);
+    if (dot !== null) {
+      if (dot[1].toLowerCase() === "token") {
+        return true;
+      }
+      continue;
+    }
+    const literal = /^\s*\[\s*(['"])([^'"]*)\1\s*\]/u.exec(rest);
+    if (literal !== null) {
+      if (literal[2].toLowerCase() === "token") {
+        return true;
+      }
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+function readsCredential(value) {
+  return stringsIn(value).some(
+    (text) =>
+      CREDENTIAL_REFERENCE.test(text) ||
+      [...text.matchAll(EXPRESSION)].some(([, expression]) =>
+        expressionReadsCredential(expression),
+      ),
+  );
+}
+
 function validateDryRunInputs(jobs) {
   for (const { jobName, context, steps } of jobModes(jobs)) {
     for (const { step, label, tagOnly } of steps) {
@@ -744,7 +798,7 @@ function validateDryRunInputs(jobs) {
         continue;
       }
       const body = JSON.stringify({ ...step, name: undefined });
-      if (CREDENTIAL_REFERENCE.test(body)) {
+      if (readsCredential({ ...step, name: undefined })) {
         throw new Error(
           `${context} step '${label}' reaches a dry run and must not read a secret or the job token`,
         );
